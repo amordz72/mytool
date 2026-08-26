@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "suppliers": [
+    {
+      "id": "topup-dz",
+      "name": "topup-dz",
+      "file_name": "topup-dz",
+      "enabled": true,
+      "order": 1
+    },
+    {
+      "id": "waffarli",
+      "name": "وفرلي",
+      "file_name": "waffarli",
+      "enabled": true,
+      "order": 2
+    },
+    {
+      "id": "check-and-store",
+      "name": "Check and Store",
+      "file_name": "check-and-store",
+      "enabled": true,
+      "order": 3
+    },
+    {
+      "id": "tehna-pay",
+      "name": "Tehna Pay",
+      "file_name": "tehna-pay",
+      "enabled": true,
+      "order": 4
+    }
+  ]
+}
