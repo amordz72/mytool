@@ -16,18 +16,11 @@
       "order": 2
     },
     {
-      "id": "check-and-store",
-      "name": "Check and Store",
-      "file_name": "check-and-store",
+      "id": "token-store",
+      "name": "Token Store",
+      "file_name": "token-store",
       "enabled": true,
       "order": 3
-    },
-    {
-      "id": "tehna-pay",
-      "name": "Tehna Pay",
-      "file_name": "tehna-pay",
-      "enabled": true,
-      "order": 4
     }
   ]
 }
