@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "cardTypes": [
+    {
+      "id": "mobilis",
+      "name": "Mobilis",
+      "enabled": true,
+      "order": 10,
+      "hint": "أخذ رقم البطاقة الموجود قبل الفاصلة فقط وحذف SN وما بعدها، مع التحقق الصارم من صيغة Mobilis.",
+      "placeholder": "مثال:\n840779241509233,251112500016999\n841742619957843,251112500017000",
+      "separators": [",", "،"],
+      "take": "before",
+      "numbersOnly": true,
+      "length": 15,
+      "snRequired": true,
+      "snNumbersOnly": true,
+      "snLength": null,
+      "uniformFormat": true,
+      "outputTitle": "بطاقات Mobilis بدون SN",
+      "filePrefix": "MOB",
+      "detectValueFromFilename": true,
+      "defaultValue": "CARTE",
+      "outputBom": false
+    },
+    {
+      "id": "idoom",
+      "name": "Idoom",
+      "enabled": true,
+      "order": 20,
+      "hint": "أخذ رقم بطاقة Idoom الموجود قبل الفاصلة فقط وحذف SN وما بعدها، ثم التحقق من طول رقم البطاقة.",
+      "placeholder": "مثال:\n3642622584288601,260820010067546\n3652432591324035,260820010067536",
+      "separators": [",", "،"],
+      "take": "before",
+      "numbersOnly": true,
+      "length": 16,
+      "snRequired": true,
+      "snNumbersOnly": true,
+      "snLength": 15,
+      "uniformFormat": true,
+      "outputTitle": "بطاقات Idoom بدون SN",
+      "filePrefix": "IDOOM",
+      "detectValueFromFilename": false,
+      "defaultValue": "",
+      "outputBom": false
+    }
+  ]
+}
