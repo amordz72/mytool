@@ -99,14 +99,17 @@ const demoCases=[
   {phone:'0660000002',group:'SAMA'},
   {phone:'0660000003',group:'PIXX'}
 ];
-let demoIndex=0,demoTimer=null,suppressManualStop=false;
+let demoIndex=0,demoTimers=[],demoRunning=false,suppressManualStop=false;
 const showPresentationGroup=groupName=>{const selected=groups.find(group=>group.dataset.presentationGroup===groupName);groups.forEach(group=>group.classList.toggle('active',group===selected));offerCount.textContent=selected?`${selected.querySelectorAll('.offer').length} عروض`:'0 عروض';return selected;};
 const digits=()=>phone.value.replace(/\D/g,'').slice(0,10);const format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
-const stopAutoDemo=()=>{if(demoTimer){clearInterval(demoTimer);demoTimer=null;}demoToggle.textContent='تشغيل العرض التلقائي';};
+const clearDemoTimers=()=>{demoTimers.forEach(clearTimeout);demoTimers=[];};
+const stopAutoDemo=()=>{demoRunning=false;clearDemoTimers();search.classList.remove('loading');demoToggle.textContent='تشغيل العرض التلقائي';};
 phone.addEventListener('input',()=>{if(!suppressManualStop)stopAutoDemo();const n=digits();phone.value=format(n);const isMobilis=n.startsWith('06');operator.textContent=isMobilis?'M':'—';operator.classList.toggle('mobilis',isMobilis);search.disabled=!(isMobilis&&n.length===10);results.classList.remove('show');statusBox.classList.remove('show');hint.textContent=!n.length?'أدخل رقمًا جزائريًا من 10 أرقام.':!isMobilis&&n.length>=2?'هذا النموذج يعرض موبيليس 06 فقط حاليًا.':n.length<10?`بقي ${10-n.length} رقم`:'تم التعرف على موبيليس.';});
-const showDemoCase=item=>{suppressManualStop=true;phone.value=format(item.phone);phone.dispatchEvent(new Event('input'));suppressManualStop=false;showPresentationGroup(item.group);statusBox.textContent=`عرض تلقائي: الرقم التجريبي مصنف ضمن ${item.group}. سيتغير المثال بعد 5 ثوانٍ.`;statusBox.classList.add('show');results.classList.add('show');};
-const startAutoDemo=()=>{stopAutoDemo();demoToggle.textContent='إيقاف العرض التلقائي';showDemoCase(demoCases[demoIndex]);demoTimer=setInterval(()=>{demoIndex=(demoIndex+1)%demoCases.length;showDemoCase(demoCases[demoIndex]);},5000);};
-demoToggle.addEventListener('click',()=>{if(demoTimer)stopAutoDemo();else startAutoDemo();});
+const prepareDemoCase=item=>{suppressManualStop=true;phone.value=format(item.phone);phone.dispatchEvent(new Event('input'));suppressManualStop=false;search.classList.add('loading');statusBox.textContent='جاري اكتشاف عروض الرقم التجريبي…';statusBox.classList.add('show');results.classList.remove('show');};
+const revealDemoCase=item=>{search.classList.remove('loading');showPresentationGroup(item.group);statusBox.textContent=`نتيجة المعاينة: مجموعة ${item.group}. ستبقى ظاهرة ثانيتين.`;statusBox.classList.add('show');results.classList.add('show');};
+const runDemoCycle=()=>{if(!demoRunning)return;const item=demoCases[demoIndex];prepareDemoCase(item);demoTimers.push(setTimeout(()=>{if(!demoRunning)return;revealDemoCase(item);demoTimers.push(setTimeout(()=>{if(!demoRunning)return;demoIndex=(demoIndex+1)%demoCases.length;runDemoCycle();},2000));},1000));};
+const startAutoDemo=()=>{clearDemoTimers();demoRunning=true;demoToggle.textContent='إيقاف العرض التلقائي';runDemoCycle();};
+demoToggle.addEventListener('click',()=>{if(demoRunning)stopAutoDemo();else startAutoDemo();});
 search.addEventListener('click',()=>{const n=digits(),groupName=demoGroupsByPhone[n];search.disabled=true;search.classList.add('loading');statusBox.textContent='جاري البحث عن عروض الرقم…';statusBox.classList.add('show');results.classList.remove('show');setTimeout(()=>{search.classList.remove('loading');search.disabled=false;const selected=showPresentationGroup(groupName);if(selected){statusBox.textContent=`معاينة نتيجة Discovery: مجموعة ${groupName}. لا تظهر المجموعات الأخرى معها.`;results.classList.add('show');results.scrollIntoView({behavior:'smooth',block:'start'});}else{statusBox.textContent='لا توجد نتيجة Discovery تجريبية محفوظة لهذا الرقم في المعاينة.';}},1100);});
 document.querySelectorAll('.offer').forEach(x=>x.addEventListener('click',()=>{document.querySelectorAll('.offer').forEach(y=>y.classList.remove('selected'));x.classList.add('selected')}));
 startAutoDemo();
