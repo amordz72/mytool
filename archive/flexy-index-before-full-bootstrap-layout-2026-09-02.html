@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0d6efd">
+  <title>فليكسي — MyTool</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <style>
+    :root{--app-blue:#1769e0;--app-blue-soft:#eef5ff;--app-ink:#172331;--app-muted:#6d7e91;--app-bg:#f2f5f9}
+    body{font-family:Tahoma,Arial,sans-serif;background:var(--app-bg);color:var(--app-ink);min-height:100vh}
+    .app-shell{min-height:100vh;background:#fff}
+    .app-header{height:68px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);z-index:1030}
+    .brand-title{font-size:1.15rem;font-weight:800}
+    .back-btn{width:42px;height:42px}
+    .hero-title{font-size:clamp(1.45rem,3vw,2rem);font-weight:800}
+    .text-muted-app{color:var(--app-muted)}
+    .soft-card{border:1px solid #e3e9f1;border-radius:1.35rem;box-shadow:0 .65rem 2rem rgba(28,49,77,.07)}
+    .phone-box{height:64px;border:2px solid #e1e7ef;border-radius:1rem;background:#fbfcfe;transition:.2s}
+    .phone-box:focus-within{border-color:var(--app-blue);box-shadow:0 0 0 .25rem rgba(23,105,224,.1);background:#fff}
+    .phone-input{font-size:clamp(1.2rem,3vw,1.6rem);letter-spacing:.08em}
+    .phone-input:focus{box-shadow:none}
+    .operator-logo{width:48px;height:48px;flex:0 0 48px;border:0;border-radius:.85rem;background:linear-gradient(135deg,#57bb45,#15913f);color:#fff;font-size:.72rem;font-weight:800;line-height:1;box-shadow:0 .3rem .8rem rgba(31,157,70,.25);cursor:pointer}
+    .operator-logo.paused{filter:grayscale(1);opacity:.65}
+    .discover-btn{height:54px;border:0;border-radius:1rem;background:linear-gradient(135deg,#287cff,#1457c4);font-weight:800;box-shadow:0 .55rem 1.2rem rgba(36,120,255,.2)}
+    .status-box{background:var(--app-blue-soft);color:#245b9d;border-radius:1rem}
+    .offer-card{border:1px solid #e1e7ef;border-radius:1rem;background:#fff;transition:.18s;cursor:pointer}
+    .offer-card:hover,.offer-card.selected{border-color:var(--app-blue);background:#f3f7ff;transform:translateY(-1px);box-shadow:0 .35rem 1rem rgba(23,105,224,.09)}
+    .offer-name{font-weight:800;color:#064dbb}
+    .offer-price{font-weight:800;color:#0d5bd7;white-space:nowrap}
+    .offer-details{font-size:.78rem;color:var(--app-muted)}
+    .preview-note{border:1px dashed #e7b44b;background:#fff9e8;color:#765d1d;border-radius:1rem}
+    .bottom-nav{height:72px;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);z-index:1030}
+    .bottom-nav a{color:#7b8998;text-decoration:none;font-size:.72rem}
+    .bottom-nav a.active{color:var(--app-blue)}
+    .nav-icon{font-size:1.25rem;line-height:1}
+    .desktop-side{background:linear-gradient(155deg,#1769e0,#0646a8);color:#fff;border-radius:1.5rem;min-height:240px}
+    .demo-dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35)}
+    .demo-dot.active{background:#fff;transform:scale(1.25)}
+    .loading-line{height:3px;background:#dce9fb;overflow:hidden;border-radius:10px}
+    .loading-line span{display:block;height:100%;width:0;background:var(--app-blue)}
+    .loading-line.running span{animation:hold 7s linear forwards}
+    @keyframes hold{from{width:0}to{width:100%}}
+    @media(max-width:991.98px){
+      body{padding-bottom:72px}
+      .app-shell{max-width:600px;margin:auto}
+      .desktop-side{display:none}
+      .content-wrap{padding-bottom:1.5rem}
+    }
+    @media(min-width:992px){
+      body{padding:24px}
+      .app-shell{max-width:1240px;min-height:calc(100vh - 48px);margin:auto;border-radius:1.75rem;overflow:hidden;box-shadow:0 1rem 3.5rem rgba(23,43,70,.11)}
+      .bottom-nav{display:none!important}
+      .content-wrap{padding:2rem!important}
+      .results-column{max-height:calc(100vh - 155px);overflow:auto;padding-inline-start:.35rem}
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="app-header sticky-top border-bottom d-flex align-items-center justify-content-between px-3 px-lg-4">
+    <button class="back-btn btn btn-light rounded-4 fs-5" onclick="location.href='../'" aria-label="رجوع">←</button>
+    <div class="brand-title">فليكسي</div>
+    <span class="badge rounded-pill text-bg-primary px-3 py-2 d-none d-lg-inline">معاينة</span>
+    <span class="d-lg-none" style="width:42px"></span>
+  </header>
+
+  <main class="content-wrap container-fluid p-3 p-md-4">
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-5">
+        <section class="desktop-side p-4 mb-4">
+          <div class="badge rounded-pill bg-white text-primary mb-4">MobileKit × Bootstrap 5</div>
+          <h1 class="h2 fw-bold mb-3">اكتشف عروض الرقم</h1>
+          <p class="opacity-75 mb-4">عرض تلقائي لتجربة شكل البرنامج على الهاتف والكمبيوتر قبل ربطه بالنظام الحقيقي.</p>
+          <div class="d-flex gap-2" id="demoDots">
+            <span class="demo-dot active"></span><span class="demo-dot"></span><span class="demo-dot"></span>
+          </div>
+        </section>
+
+        <section class="d-lg-none mb-4">
+          <h1 class="hero-title mb-2">اكتشف عروض الرقم</h1>
+          <p class="text-muted-app mb-0">أدخل رقم الهاتف، وسنعرض شكل العروض المتاحة لهذا الرقم.</p>
+        </section>
+
+        <section class="soft-card bg-white p-3 p-md-4">
+          <label for="phone" class="form-label fw-bold">رقم الهاتف</label>
+          <div class="phone-box d-flex align-items-center direction-ltr px-2" dir="ltr">
+            <button id="operator" class="operator-logo" type="button" aria-label="إيقاف العرض التلقائي" title="إيقاف أو تشغيل العرض التلقائي">mobilis</button>
+            <input id="phone" class="phone-input form-control border-0 bg-transparent h-100" inputmode="numeric" autocomplete="tel" maxlength="14" placeholder="06 XX XX XX XX" aria-describedby="hint">
+          </div>
+          <div id="hint" class="form-text text-end mt-2">العرض التلقائي يعمل. اضغط على شعار Mobilis لإيقافه.</div>
+          <button id="search" class="discover-btn btn btn-primary w-100 mt-3" disabled>استكشاف العروض</button>
+          <div id="status" class="status-box mt-3 p-3 small" role="status">جاري تجهيز العرض التلقائي…</div>
+          <div id="loadingLine" class="loading-line mt-3"><span></span></div>
+        </section>
+      </div>
+
+      <div class="col-lg-7 results-column">
+        <section id="results" class="d-none">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+              <div id="groupLabel" class="small text-muted-app mb-1">مجموعة العروض</div>
+              <h2 class="h4 fw-bold mb-0">العروض المتاحة</h2>
+            </div>
+            <span id="offerCount" class="badge rounded-pill text-bg-light border px-3 py-2">0 عروض</span>
+          </div>
+          <div id="offersList" class="d-grid gap-2"></div>
+          <div class="preview-note p-3 small mt-4">هذه معاينة للواجهة فقط. لم يُرسل أي أمر إلى المودم، ولم يُنفذ شحن أو خصم رصيد.</div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav fixed-bottom border-top d-flex justify-content-around align-items-center">
+  <a href="../" class="text-center"><div class="nav-icon">⌂</div><span>الأدوات</span></a>
+  <a href="./" class="active text-center"><div class="nav-icon">◉</div><span>فليكسي</span></a>
+  <a href="#" class="text-center"><div class="nav-icon">☰</div><span>القائمة</span></a>
+</nav>
+
+<script>
+const catalog={
+  REVOLUTION:[
+    ['Revolution 50','50 دج','عرض خارجي للمعاينة — التنفيذ غير مؤكد'],
+    ['Revolution 100','100 دج','عرض خارجي للمعاينة — التنفيذ غير مؤكد'],
+    ['Revolution 2500','2,500 دج','عرض Revolution'],
+    ['Revolution 2000','2,000 دج','عرض Revolution'],
+    ['Revolution 1800','1,800 دج','عرض Revolution'],
+    ['Revolution 1500','1,500 دج','عرض Revolution'],
+    ['Revolution 1200','1,200 دج','عرض Revolution'],
+    ['Revolution 1000','1,000 دج','عرض Revolution']
+  ],
+  SAMA:[
+    ['Sama Mix 100','100 دج','500Mo + غير محدود + 200 دج لكل الشبكات — يوم واحد'],
+    ['Sama Mix 500','500 دج','5Go + غير محدود + 1,000 دج لكل الشبكات — 15 يومًا'],
+    ['Sama Mix 1000','1,000 دج','15Go + Facebook مجاني + 2,000 دج لكل الشبكات — 30 يومًا'],
+    ['Sama Mix 1500','1,500 دج','30Go + Facebook مجاني + 3,000 دج لكل الشبكات — 30 يومًا'],
+    ['Sama Mix 2000','2,000 دج','50Go + Facebook مجاني + 4,000 دج لكل الشبكات — 30 يومًا'],
+    ['Sama Talk 500','500 دج','500Mo + غير محدود + 2,000 دج لكل الشبكات — 15 يومًا'],
+    ['Sama Talk 1000','1,000 دج','2Go + غير محدود + 4,000 دج لكل الشبكات — 30 يومًا'],
+    ['Sama Net 500','500 دج','10Go + 100 دج لكل الشبكات — 15 يومًا'],
+    ['Sama Net 1000','1,000 دج','30Go + 200 دج لكل الشبكات — 30 يومًا']
+  ],
+  PIXX:[
+    ['PixX 50','50 دج','500Mo + 600 دج نحو موبيليس + 50 دج لكل الشبكات — يوم واحد'],
+    ['PixX 100','100 دج','1Go + مكالمات ورسائل غير محدودة + 150 دج لكل الشبكات — يوم واحد'],
+    ['PixX 500','500 دج','5Go + مكالمات ورسائل غير محدودة + 750 دج لكل الشبكات — 15 يومًا'],
+    ['PixX 1000','1,000 دج','13Go + Facebook مجاني + 2,000 دج لكل الشبكات — 30 يومًا'],
+    ['PixX 2000','2,000 دج','30Go + Facebook مجاني']
+  ]
+};
+const demoCases=[
+  {phone:'0660000001',group:'REVOLUTION'},
+  {phone:'0660000002',group:'SAMA'},
+  {phone:'0660000003',group:'PIXX'}
+];
+const knownGroups={
+  '0660000001':'REVOLUTION','0660000002':'SAMA','0660000003':'PIXX',
+  '0667028297':'REVOLUTION','0667038943':'SAMA','0675278081':'PIXX'
+};
+const phone=document.getElementById('phone');
+const operator=document.getElementById('operator');
+const search=document.getElementById('search');
+const hint=document.getElementById('hint');
+const statusBox=document.getElementById('status');
+const results=document.getElementById('results');
+const offersList=document.getElementById('offersList');
+const offerCount=document.getElementById('offerCount');
+const groupLabel=document.getElementById('groupLabel');
+const loadingLine=document.getElementById('loadingLine');
+const dots=[...document.querySelectorAll('.demo-dot')];
+let demoIndex=0,timers=[],running=false,silentInput=false;
+const digits=()=>phone.value.replace(/\D/g,'').slice(0,10);
+const format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+const clearTimers=()=>{timers.forEach(clearTimeout);timers=[]};
+const setDots=()=>dots.forEach((dot,i)=>dot.classList.toggle('active',i===demoIndex));
+const renderOffers=group=>{
+  const offers=catalog[group]||[];
+  groupLabel.textContent='مجموعة '+group;
+  offerCount.textContent=offers.length+' عروض';
+  offersList.innerHTML=offers.map(([name,price,details])=>`
+    <button class="offer-card p-3 text-end" type="button">
+      <div class="d-flex align-items-center justify-content-between gap-3">
+        <div class="min-w-0"><div class="offer-name">${name}</div><div class="offer-details mt-1">${details}</div></div>
+        <div class="offer-price">${price}</div>
+      </div>
+    </button>`).join('');
+  offersList.querySelectorAll('.offer-card').forEach(card=>card.addEventListener('click',()=>{
+    offersList.querySelectorAll('.offer-card').forEach(x=>x.classList.remove('selected'));
+    card.classList.add('selected');
+  }));
+};
+const updatePhoneState=()=>{
+  const n=digits();phone.value=format(n);
+  const valid=n.startsWith('06')&&n.length===10;
+  search.disabled=!valid;
+  if(!silentInput)stopDemo();
+};
+phone.addEventListener('input',updatePhoneState);
+const prepare=item=>{
+  silentInput=true;phone.value=format(item.phone);updatePhoneState();silentInput=false;
+  setDots();results.classList.add('d-none');
+  statusBox.textContent='جاري اكتشاف عروض الرقم التجريبي…';
+  search.disabled=true;search.innerHTML='<span class="spinner-border spinner-border-sm ms-2" aria-hidden="true"></span>جاري البحث';
+  loadingLine.classList.remove('running');
+};
+const reveal=item=>{
+  renderOffers(item.group);
+  results.classList.remove('d-none');
+  statusBox.textContent='نتيجة المعاينة: مجموعة '+item.group+'. ستبقى ظاهرة 7 ثوانٍ.';
+  search.disabled=false;search.textContent='استكشاف العروض';
+  loadingLine.classList.remove('running');void loadingLine.offsetWidth;loadingLine.classList.add('running');
+};
+const cycle=()=>{
+  if(!running)return;
+  const item=demoCases[demoIndex];prepare(item);
+  timers.push(setTimeout(()=>{
+    if(!running)return;reveal(item);
+    timers.push(setTimeout(()=>{
+      if(!running)return;demoIndex=(demoIndex+1)%demoCases.length;cycle();
+    },7000));
+  },1000));
+};
+function stopDemo(){
+  if(!running)return;
+  running=false;clearTimers();loadingLine.classList.remove('running');operator.classList.add('paused');
+  operator.setAttribute('aria-label','تشغيل العرض التلقائي');
+  hint.textContent='تم إيقاف العرض التلقائي. اضغط على شعار Mobilis لتشغيله.';
+}
+const startDemo=()=>{
+  clearTimers();running=true;operator.classList.remove('paused');
+  operator.setAttribute('aria-label','إيقاف العرض التلقائي');
+  hint.textContent='العرض التلقائي يعمل. اضغط على شعار Mobilis لإيقافه.';
+  cycle();
+};
+operator.addEventListener('click',()=>running?stopDemo():startDemo());
+search.addEventListener('click',()=>{
+  stopDemo();const n=digits(),group=knownGroups[n];
+  if(group){renderOffers(group);results.classList.remove('d-none');statusBox.textContent='معاينة نتيجة Discovery: مجموعة '+group+'.';}
+  else{results.classList.add('d-none');statusBox.textContent='لا توجد نتيجة Discovery تجريبية محفوظة لهذا الرقم.';}
+});
+startDemo();
+</script>
+</body>
+</html>
