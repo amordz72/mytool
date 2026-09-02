@@ -10,7 +10,7 @@
   <style>
     :root{--brand:#6366f1;--brand-dark:#4f46e5;--page:#f5f6fb;--ink:#52657a;--side:270px}
     body{font-family:Tahoma,Arial,sans-serif;background:var(--page);color:var(--ink);min-height:100vh}
-    .sidebar{width:var(--side);background:#fff;border-left:1px solid #e7e9f0;z-index:1040}
+    .sidebar{width:var(--side);background:#fff;border-left:1px solid #e7e9f0;z-index:1040;right:0;left:auto}
     .main-area{min-height:100vh;padding-bottom:82px}
     .sidebar-logo{height:108px}.sidebar .nav-link{color:#1f2937;border-radius:.4rem;padding:.8rem 1rem;font-weight:700}
     .sidebar .nav-link.active{background:#ededff;color:var(--brand);border-right:4px solid var(--brand)}
@@ -30,8 +30,8 @@
     .progress.run .progress-bar{animation:hold 7s linear forwards}@keyframes hold{to{width:100%}}
     .bottom-nav{height:66px;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);z-index:1050}
     .bottom-nav a{color:#68788a;text-decoration:none;font-size:.72rem}.bottom-nav a.active{color:var(--brand)}
-    @media(min-width:1200px){.main-area{margin-right:var(--side);padding-bottom:2rem}}
-    @media(max-width:1199.98px){.content-pad{padding-inline:1rem!important}.phone-card{padding:1.35rem}}
+    @media(min-width:1400px){.main-area{margin-right:var(--side);padding-bottom:2rem}}
+    @media(max-width:1399.98px){.content-pad{padding-inline:1rem!important}.phone-card{padding:1.35rem}}
     @media(max-width:767.98px){
       .page-title{font-size:1.45rem}.phone-card{padding:1.25rem .8rem}.phone-label{font-size:1.35rem}
       .phone-icon{width:54px}.phone-box{min-height:74px;max-width:100%}.operator-logo{width:70px;font-size:.72rem}
@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<aside class="sidebar d-none d-xl-flex position-fixed top-0 end-0 vh-100 flex-column p-3">
+<aside class="sidebar d-none d-xxl-flex position-fixed top-0 vh-100 flex-column p-3">
   <div class="sidebar-logo d-flex align-items-center justify-content-center">
     <div class="text-center"><div class="fs-2">⚡</div><strong>Tehna Connect</strong></div>
   </div>
@@ -112,7 +112,7 @@
   </div>
 </div>
 
-<nav class="bottom-nav d-xl-none fixed-bottom border-top d-flex justify-content-around align-items-center">
+<nav class="bottom-nav d-xxl-none fixed-bottom border-top d-flex justify-content-around align-items-center">
   <a href="../" class="text-center"><div class="fs-5">⌂</div>الرئيسية</a>
   <a href="./" class="active text-center"><div class="fs-5">☎</div>فليكسي</a>
   <a href="#" class="text-center"><div class="fs-5">▣</div>البطاقات</a>
