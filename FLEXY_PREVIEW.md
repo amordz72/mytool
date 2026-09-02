@@ -12,7 +12,9 @@
 - مرجع التجميع المعتمد: `developer/telecom/MOBILIS-CUSTOMER-OFFER-PRESENTATION.md`.
 - نتيجة Discovery تحدد `presentation_group` واحدة فقط؛ لا تتبدل المجموعات زمنيًا ولا تظهر معًا.
 - `SAMA` تعرض Sama Mix وSama Talk وSama Net، و`PIXX` تعرض PixX فقط، و`REVOLUTION` تعرض Revolution فقط.
-- نموذج المعاينة الحالي يحاكي نتيجة `SAMA` فقط إلى أن يُربط بالـBackend الحقيقي.
+- نموذج المعاينة يربط ثلاثة أرقام مراجعة بنتائج واقعية محفوظة: `0667028297 → REVOLUTION`، و`0667038943 → SAMA`، و`0675278081 → PIXX`.
+- أي رقم آخر لا يُمنح مجموعة وهمية؛ تظهر رسالة أنه لا توجد له نتيجة Discovery تجريبية محفوظة.
+- عروض PixX الخمسة وRevolution الثمانية معروضة وفق دليل الكتالوج الخارجي المسجل، مع بقاء حالة التنفيذ منفصلة.
 - تعرض معاينة SAMA كل العروض المثبتة في Discovery الحي: 5 Mix و4 Talk و4 Net (المجموع 13).
 - تفاصيل الإنترنت والرصيد والمدة مأخوذة من دليل العرض الخارجي المسجل في `developer/telecom/MOBILIS-OFFER-CATALOG-EVIDENCE.md`، وليست دليل تنفيذ مستقلًا.
 - صور مراجعة الهاتف محفوظة في `docs/screenshots/flexy/2026-09-02/`.
