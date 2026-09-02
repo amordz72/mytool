@@ -33,10 +33,18 @@
     .offer-modal .modal-header{border-bottom:1px solid #edf0f5}.offer-modal .modal-footer{border-top:0}
     .status-box{background:#f0f2ff;color:#4f5f86}.progress{height:3px}.progress-bar{background:var(--brand);width:0}
     .progress.run .progress-bar{animation:hold 7s linear forwards}@keyframes hold{to{width:100%}}
+    .mobile-toolbar{min-height:58px;background:#fff}.menu-trigger{width:42px;height:42px;border:0;background:transparent;color:#52657a;font-size:1.55rem;border-radius:.5rem}
+    .menu-trigger:hover,.menu-trigger:focus{background:#f0f2ff;color:var(--brand)}
+    .mobile-sidebar{--bs-offcanvas-width:280px}.mobile-sidebar .nav-link{color:#1f2937;border-radius:.45rem;padding:.75rem 1rem;font-weight:700}
+    .mobile-sidebar .nav-link.active{background:#ededff;color:var(--brand);border-right:4px solid var(--brand)}
     .bottom-nav{height:66px;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);z-index:1050}
-    .bottom-nav a{color:#68788a;text-decoration:none;font-size:.72rem}.bottom-nav a.active{color:var(--brand)}
+    .bottom-nav a,.bottom-nav button{color:#68788a;text-decoration:none;font-size:.72rem;border:0;background:transparent}.bottom-nav a.active{color:var(--brand)}
     @media(min-width:1400px){.main-area{margin-right:var(--side);padding-bottom:2rem}}
-    @media(max-width:1399.98px){.content-pad{padding-inline:1rem!important}.phone-card{padding:1.35rem}}
+    @media(max-width:1399.98px){
+      .content-pad{padding-inline:1rem!important}.phone-card{padding:1.35rem}
+      .mobile-sidebar.offcanvas-start{right:0!important;left:auto!important;border-left:1px solid #dee2e6;border-right:0;transform:translateX(100%)}
+      .mobile-sidebar.offcanvas-start.show,.mobile-sidebar.offcanvas-start.showing{transform:none}
+    }
     @media(max-width:767.98px){
       .main-area{padding-bottom:96px}.content-pad{padding:.65rem .7rem 7rem!important}
       .page-title{font-size:1.2rem;margin-bottom:.7rem!important}.accordion{margin-bottom:.85rem!important}
@@ -78,9 +86,35 @@
   </nav>
 </aside>
 
+<div class="offcanvas offcanvas-start mobile-sidebar d-xxl-none" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarTitle">
+  <div class="offcanvas-header border-bottom">
+    <h2 class="offcanvas-title h5 fw-bold mb-0" id="mobileSidebarTitle">Tehna Connect</h2>
+    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="offcanvas" aria-label="إغلاق"></button>
+  </div>
+  <div class="offcanvas-body">
+    <nav class="nav nav-pills flex-column gap-1">
+      <a class="nav-link" href="../">⌂&nbsp;&nbsp; الصفحة الرئيسية</a>
+      <div class="sidebar-label">الخدمات</div>
+      <a class="nav-link active" href="./">☎&nbsp;&nbsp; فليكسي</a>
+      <a class="nav-link disabled" href="#">◉&nbsp;&nbsp; فليكسي جملة</a>
+      <a class="nav-link disabled" href="#">●&nbsp;&nbsp; تعبئة المودم</a>
+      <div class="sidebar-label">البطاقات</div>
+      <a class="nav-link disabled" href="#">▣&nbsp;&nbsp; بطاقات</a>
+      <div class="sidebar-label">العمليات</div>
+      <a class="nav-link disabled" href="#">▤&nbsp;&nbsp; كل العمليات</a>
+      <a class="nav-link disabled" href="#">◎&nbsp;&nbsp; الاستهلاك</a>
+    </nav>
+  </div>
+</div>
+
 <div class="main-area">
   <div class="content-pad container-fluid px-xl-4 py-3">
-    <h1 class="page-title h3 mb-3">فليكسي</h1>
+    <header class="mobile-toolbar surface d-xxl-none d-flex align-items-center justify-content-between px-2 mb-3">
+      <button class="menu-trigger d-flex align-items-center justify-content-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="فتح القائمة الجانبية">☰</button>
+      <strong class="fs-5">فليكسي</strong>
+      <span class="d-block" style="width:42px" aria-hidden="true"></span>
+    </header>
+    <h1 class="page-title h3 mb-3 d-none d-xxl-block">فليكسي</h1>
 
     <div class="accordion mb-4" id="ratioBox">
       <div class="accordion-item surface overflow-hidden">
@@ -161,7 +195,7 @@
   <a href="../" class="text-center"><div class="fs-5">⌂</div>الرئيسية</a>
   <a href="./" class="active text-center"><div class="fs-5">☎</div>فليكسي</a>
   <a href="#" class="text-center"><div class="fs-5">▣</div>البطاقات</a>
-  <a href="#" class="text-center"><div class="fs-5">☰</div>القائمة</a>
+  <button type="button" class="text-center" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar"><div class="fs-5">☰</div>القائمة</button>
 </nav>
 
 <script>
