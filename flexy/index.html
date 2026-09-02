@@ -25,9 +25,10 @@
     .mode-tabs .nav-link.active{background:var(--brand);color:#fff;box-shadow:0 .2rem .55rem rgba(99,102,241,.28)}
     .offer-row{min-height:56px;color:#52657a;padding:.8rem 1rem;cursor:pointer}.offer-row:hover,.offer-row:focus,.offer-row.selected{background:#f2f2ff;color:#334155}
     .offer-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .offer-actions{flex:0 0 auto}.offer-price{background:var(--brand);color:#fff;border-radius:.35rem;padding:.38rem .7rem;font-size:1rem;font-weight:800;white-space:nowrap}
-    .offer-info{width:34px;height:34px;border:1px solid #d7ddec;background:#fff;color:var(--brand);border-radius:50%;font-weight:800;line-height:1}
-    .offer-info:hover,.offer-info:focus{background:var(--brand);border-color:var(--brand);color:#fff}
+    .offer-actions{flex:0 0 auto;position:relative}.offer-price{display:inline-block;background:var(--brand);color:#fff;border-radius:.35rem;padding:.38rem .75rem;font-size:1rem;font-weight:800;white-space:nowrap}
+    .offer-info{position:absolute;top:-7px;left:-7px;width:19px;height:19px;padding:0;border:2px solid #fff;background:#334155;color:#fff;border-radius:50%;font-size:.68rem;font-weight:800;line-height:1;box-shadow:0 .1rem .25rem rgba(15,23,42,.25)}
+    .offer-info:hover,.offer-info:focus{background:#111827;color:#fff;transform:scale(1.08)}
+    .operation-item{border:1px solid #e0e5ee;border-radius:.65rem;background:#fff}.operation-label{font-size:.72rem;color:#8a98aa}.operation-value{font-weight:700;color:#52657a}
     .offer-modal .modal-content{border:0;border-radius:1rem;box-shadow:0 1rem 3rem rgba(15,23,42,.2)}
     .offer-modal .modal-header{border-bottom:1px solid #edf0f5}.offer-modal .modal-footer{border-top:0}
     .status-box{background:#f0f2ff;color:#4f5f86}.progress{height:3px}.progress-bar{background:var(--brand);width:0}
@@ -109,7 +110,18 @@
     </section>
 
     <h2 class="page-title h4 mt-5 mb-3">آخر العمليات</h2>
-    <section class="card surface p-4 text-center text-muted">لا توجد عمليات في المعاينة.</section>
+    <section class="card surface p-3 p-md-4">
+      <article class="operation-item p-3" aria-label="عملية تجريبية">
+        <div class="row g-3 align-items-center">
+          <div class="col-6 col-md-2"><div class="operation-label">النوع</div><div class="operation-value">عرض</div></div>
+          <div class="col-6 col-md-2"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">06 75 27 80 81</div></div>
+          <div class="col-6 col-md-2"><div class="operation-label">العرض</div><div class="operation-value">PixX 500</div></div>
+          <div class="col-6 col-md-2"><div class="operation-label">المبلغ</div><div class="operation-value">500 دج</div></div>
+          <div class="col-6 col-md-2"><div class="operation-label">الحالة</div><span class="badge text-bg-success">ناجحة</span></div>
+          <div class="col-6 col-md-2"><div class="operation-label">الوضع</div><span class="badge text-bg-light border">معاينة</span></div>
+        </div>
+      </article>
+    </section>
   </div>
 </div>
 
@@ -184,7 +196,7 @@ let index=0,timeouts=[],running=false,silent=false;
 const digits=()=>phone.value.replace(/\D/g,'').slice(0,10),format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
 const clear=()=>{timeouts.forEach(clearTimeout);timeouts=[]};
 const escapeAttr=value=>String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const offerRows=offers=>offers.map(offer=>`<div class="offer-row list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3 text-end" role="button" tabindex="0" aria-label="اختيار ${escapeAttr(offer.name)}" data-network-index="${offer.index??''}" data-offer-name="${escapeAttr(offer.name)}" data-offer-price="${escapeAttr(offer.price)}" data-offer-details="${escapeAttr(offer.details||'التفاصيل غير متوفرة في المعاينة حاليًا.')}"><span class="offer-name">${offer.name}</span><span class="offer-actions d-flex align-items-center gap-2"><span class="offer-price">${offer.price}</span><button class="offer-info d-inline-flex align-items-center justify-content-center" type="button" aria-label="تفاصيل ${escapeAttr(offer.name)}" title="تفاصيل العرض">i</button></span></div>`).join('');
+const offerRows=offers=>offers.map(offer=>`<div class="offer-row list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3 text-end" role="button" tabindex="0" aria-label="اختيار ${escapeAttr(offer.name)}" data-network-index="${offer.index??''}" data-offer-name="${escapeAttr(offer.name)}" data-offer-price="${escapeAttr(offer.price)}" data-offer-details="${escapeAttr(offer.details||'التفاصيل غير متوفرة في المعاينة حاليًا.')}"><span class="offer-name">${offer.name}</span><span class="offer-actions"><span class="offer-price">${offer.price}</span><button class="offer-info d-inline-flex align-items-center justify-content-center" type="button" aria-label="تفاصيل ${escapeAttr(offer.name)}" title="تفاصيل العرض">i</button></span></div>`).join('');
 const selectOffer=row=>{offersList.querySelectorAll('.offer-row').forEach(y=>y.classList.remove('selected'));row.classList.add('selected')};
 const showDetails=row=>{detailName.textContent=row.dataset.offerName;detailPrice.textContent=row.dataset.offerPrice;detailText.textContent=row.dataset.offerDetails;bootstrap.Modal.getOrCreateInstance(detailsModal).show()};
 const bindOffers=()=>offersList.querySelectorAll('.offer-row').forEach(row=>{row.addEventListener('click',()=>selectOffer(row));row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectOffer(row)}});row.querySelector('.offer-info').addEventListener('click',event=>{event.stopPropagation();showDetails(row)})});
