@@ -18,8 +18,6 @@
     .offers{grid-template-columns:1fr}
     .offer{width:100%;min-height:72px;padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:16px}
     .offer strong{margin:0}.offer span{white-space:nowrap}
-    .family-title{margin:18px 3px 9px;font-size:14px;color:#40566d}.family-title:first-of-type{margin-top:8px}
-    .offer-copy{min-width:0}.offer-copy small{display:block;margin-top:6px;color:var(--muted);font-size:12px;line-height:1.55;font-weight:400}
     .results .group{display:none;animation:groupIn .28s ease}
     .results .group.active{display:block}
     @keyframes groupIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
@@ -29,27 +27,7 @@
 <main><section class="intro"><h1>اكتشف عروض الرقم</h1><p>أدخل رقم الهاتف، وسنعرض لك شكل العروض المتاحة لهذا الرقم.</p></section>
 <section class="panel"><label for="phone">رقم الهاتف</label><div class="phone-wrap"><div id="operator" class="operator" aria-label="المتعامل">—</div><input id="phone" inputmode="numeric" autocomplete="tel" maxlength="14" placeholder="06 XX XX XX XX" aria-describedby="hint"></div><div id="hint" class="hint">أدخل رقمًا جزائريًا من 10 أرقام.</div><button id="search" class="search" disabled>استكشاف العروض</button><div id="status" class="status" role="status"></div></section>
 <section id="results" class="results"><div class="results-head"><div><h2>العروض المتاحة</h2></div><span id="offerCount" class="count">3 عروض</span></div>
- <div class="group" data-presentation-group="SAMA"><div class="group-title">مجموعة سما</div>
-  <h3 class="family-title">Sama Mix</h3><div class="offers">
-   <button class="offer"><span class="offer-copy"><strong>Sama Mix 100</strong><small>500Mo + غير محدود + 200 دج لكل الشبكات — يوم واحد</small></span><span>100 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Mix 500</strong><small>5Go + غير محدود + 1,000 دج لكل الشبكات — 15 يومًا</small></span><span>500 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Mix 1000</strong><small>15Go + Facebook مجاني + غير محدود + 2,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,000 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Mix 1500</strong><small>30Go + Facebook مجاني + غير محدود + 3,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,500 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Mix 2000</strong><small>50Go + Facebook مجاني + غير محدود + 4,000 دج لكل الشبكات — 30 يومًا</small></span><span>2,000 دج</span></button>
-  </div>
-  <h3 class="family-title">Sama Talk</h3><div class="offers">
-   <button class="offer"><span class="offer-copy"><strong>Sama Talk 500</strong><small>500Mo + غير محدود + 2,000 دج لكل الشبكات — 15 يومًا</small></span><span>500 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Talk 1000</strong><small>2Go + غير محدود + 4,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,000 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Talk 1500</strong><small>3Go + غير محدود + 6,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,500 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Talk 2000</strong><small>4Go + غير محدود + 8,000 دج لكل الشبكات — 30 يومًا</small></span><span>2,000 دج</span></button>
-  </div>
-  <h3 class="family-title">Sama Net</h3><div class="offers">
-   <button class="offer"><span class="offer-copy"><strong>Sama Net 500</strong><small>10Go + 100 دج لكل الشبكات — 15 يومًا</small></span><span>500 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Net 1000</strong><small>30Go + 200 دج لكل الشبكات — 30 يومًا</small></span><span>1,000 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Net 1500</strong><small>60Go + 300 دج لكل الشبكات — 30 يومًا</small></span><span>1,500 دج</span></button>
-   <button class="offer"><span class="offer-copy"><strong>Sama Net 2000</strong><small>90Go + 400 دج لكل الشبكات — 30 يومًا</small></span><span>2,000 دج</span></button>
-  </div>
- </div>
+ <div class="group" data-presentation-group="SAMA"><div class="group-title">مجموعة سما</div><div class="offers"><button class="offer"><strong>Sama Mix</strong><span>500 دج</span></button><button class="offer"><strong>Sama Talk</strong><span>500 دج</span></button><button class="offer"><strong>Sama Net</strong><span>1,000 دج</span></button></div></div>
  <div class="group" data-presentation-group="PIXX"><div class="group-title">مجموعة PixX</div><div class="offers"><button class="offer"><strong>PixX</strong><span>100 دج</span></button><button class="offer"><strong>PixX</strong><span>500 دج</span></button></div></div>
  <div class="group" data-presentation-group="REVOLUTION"><div class="group-title">مجموعة Revolution</div><div class="offers"><button class="offer"><strong>Revolution</strong><span>1,500 دج</span></button><button class="offer"><strong>Revolution</strong><span>2,000 دج</span></button></div></div>
  <div class="preview-note">هذه معاينة للواجهة فقط. لم يُرسل أي أمر إلى المودم، ولم يُنفذ شحن أو خصم رصيد.</div></section></main>
