@@ -20,25 +20,25 @@
     .offer strong{margin:0}.offer span{white-space:nowrap}
     .results .group{display:none;animation:groupIn .28s ease}
     .results .group.active{display:block}
+    .rotation-note{margin:2px 3px 0;color:var(--muted);font-size:11px}
     @keyframes groupIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
   </style>
 </head>
 <body><div class="shell"><header><button class="back" onclick="location.href='../'" aria-label="رجوع">→</button><div class="title">فليكسي</div><div class="spacer"></div></header>
 <main><section class="intro"><h1>اكتشف عروض الرقم</h1><p>أدخل رقم الهاتف، وسنعرض لك شكل العروض المتاحة لهذا الرقم.</p></section>
 <section class="panel"><label for="phone">رقم الهاتف</label><div class="phone-wrap"><div id="operator" class="operator" aria-label="المتعامل">—</div><input id="phone" inputmode="numeric" autocomplete="tel" maxlength="14" placeholder="06 XX XX XX XX" aria-describedby="hint"></div><div id="hint" class="hint">أدخل رقمًا جزائريًا من 10 أرقام.</div><button id="search" class="search" disabled>استكشاف العروض</button><div id="status" class="status" role="status"></div></section>
-<section id="results" class="results"><div class="results-head"><div><h2>العروض المتاحة</h2></div><span id="offerCount" class="count">3 عروض</span></div>
- <div class="group" data-presentation-group="SAMA"><div class="group-title">مجموعة سما</div><div class="offers"><button class="offer"><strong>Sama Mix</strong><span>500 دج</span></button><button class="offer"><strong>Sama Talk</strong><span>500 دج</span></button><button class="offer"><strong>Sama Net</strong><span>1,000 دج</span></button></div></div>
- <div class="group" data-presentation-group="PIXX"><div class="group-title">مجموعة PixX</div><div class="offers"><button class="offer"><strong>PixX</strong><span>100 دج</span></button><button class="offer"><strong>PixX</strong><span>500 دج</span></button></div></div>
- <div class="group" data-presentation-group="REVOLUTION"><div class="group-title">مجموعة Revolution</div><div class="offers"><button class="offer"><strong>Revolution</strong><span>1,500 دج</span></button><button class="offer"><strong>Revolution</strong><span>2,000 دج</span></button></div></div>
+<section id="results" class="results"><div class="results-head"><div><h2>العروض المتاحة</h2><div class="rotation-note">يتغير نوع العرض تلقائيًا كل 10 ثوانٍ</div></div><span id="offerCount" class="count">3 عروض</span></div>
+ <div class="group active"><div class="group-title">سما</div><div class="offers"><button class="offer"><strong>Sama Mix</strong><span>500 دج</span></button><button class="offer"><strong>Sama Talk</strong><span>500 دج</span></button><button class="offer"><strong>Sama Net</strong><span>1,000 دج</span></button></div></div>
+ <div class="group"><div class="group-title">PixX</div><div class="offers"><button class="offer"><strong>PixX</strong><span>100 دج</span></button><button class="offer"><strong>PixX</strong><span>500 دج</span></button></div></div>
+ <div class="group"><div class="group-title">Revolution</div><div class="offers"><button class="offer"><strong>Revolution</strong><span>1,500 دج</span></button><button class="offer"><strong>Revolution</strong><span>2,000 دج</span></button></div></div>
  <div class="preview-note">هذه معاينة للواجهة فقط. لم يُرسل أي أمر إلى المودم، ولم يُنفذ شحن أو خصم رصيد.</div></section></main>
 <nav><a href="../"><b>⌂</b>الأدوات</a><a class="active" href="./"><b>◉</b>فليكسي</a><a href="#"><b>☰</b>القائمة</a></nav></div>
 <script>
-const phone=document.getElementById('phone'),operator=document.getElementById('operator'),search=document.getElementById('search'),hint=document.getElementById('hint'),statusBox=document.getElementById('status'),results=document.getElementById('results'),offerCount=document.getElementById('offerCount'),groups=[...document.querySelectorAll('.results .group')];
-// قيمة تجريبية فقط؛ لاحقًا تأتي من نتيجة Discovery الحقيقية.
-const demoPresentationGroup='SAMA';
-const showPresentationGroup=groupName=>{const selected=groups.find(group=>group.dataset.presentationGroup===groupName);groups.forEach(group=>group.classList.toggle('active',group===selected));offerCount.textContent=selected?`${selected.querySelectorAll('.offer').length} عروض`:'0 عروض';};
+const phone=document.getElementById('phone'),operator=document.getElementById('operator'),search=document.getElementById('search'),hint=document.getElementById('hint'),statusBox=document.getElementById('status'),results=document.getElementById('results'),offerCount=document.getElementById('offerCount'),groups=[...document.querySelectorAll('.results .group')];let activeGroup=0,rotationTimer;
+const showGroup=index=>{activeGroup=index%groups.length;groups.forEach((group,i)=>group.classList.toggle('active',i===activeGroup));offerCount.textContent=`${groups[activeGroup].querySelectorAll('.offer').length} عروض`;};
+const startRotation=()=>{clearInterval(rotationTimer);showGroup(0);rotationTimer=setInterval(()=>showGroup(activeGroup+1),10000);};
 const digits=()=>phone.value.replace(/\D/g,'').slice(0,10);const format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
 phone.addEventListener('input',()=>{const n=digits();phone.value=format(n);const isMobilis=n.startsWith('06');operator.textContent=isMobilis?'M':'—';operator.classList.toggle('mobilis',isMobilis);search.disabled=!(isMobilis&&n.length===10);results.classList.remove('show');statusBox.classList.remove('show');hint.textContent=!n.length?'أدخل رقمًا جزائريًا من 10 أرقام.':!isMobilis&&n.length>=2?'هذا النموذج يعرض موبيليس 06 فقط حاليًا.':n.length<10?`بقي ${10-n.length} رقم`:'تم التعرف على موبيليس.';});
-search.addEventListener('click',()=>{search.disabled=true;search.classList.add('loading');statusBox.textContent='جاري البحث عن عروض الرقم…';statusBox.classList.add('show');results.classList.remove('show');setTimeout(()=>{search.classList.remove('loading');search.disabled=false;showPresentationGroup(demoPresentationGroup);statusBox.textContent='معاينة نتيجة Discovery: مجموعة SAMA. لا تظهر المجموعات الأخرى معها.';results.classList.add('show');results.scrollIntoView({behavior:'smooth',block:'start'});},1100);});
+search.addEventListener('click',()=>{search.disabled=true;search.classList.add('loading');statusBox.textContent='جاري البحث عن عروض الرقم…';statusBox.classList.add('show');results.classList.remove('show');clearInterval(rotationTimer);setTimeout(()=>{search.classList.remove('loading');search.disabled=false;statusBox.textContent='اكتمل البحث التجريبي. النتائج التالية للمعاينة وليست نتيجة شبكة حقيقية.';results.classList.add('show');startRotation();results.scrollIntoView({behavior:'smooth',block:'start'});},1100);});
 document.querySelectorAll('.offer').forEach(x=>x.addEventListener('click',()=>{document.querySelectorAll('.offer').forEach(y=>y.classList.remove('selected'));x.classList.add('selected')}));
 </script></body></html>
