@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#2ea8e6">
+  <title>MyTool - أدوات العمل</title>
+  <style>
+    :root{--orange:#ff8a1f;--blue:#2ea8e6;--text:#163047;--muted:#61778a;--line:#dbe7f0;--soft:#f6fbff}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Tahoma,sans-serif;background:linear-gradient(135deg,#fff7ef,#eef9ff);color:var(--text);min-height:100vh;padding:16px}
+    .app{max-width:900px;margin:auto}
+    .hero{background:linear-gradient(135deg,var(--orange),#7fd3ff);color:#fff;border-radius:22px;padding:24px 20px;box-shadow:0 10px 30px rgba(22,48,71,.12)}
+    .hero h1{margin:0 0 6px;font-size:28px}.hero p{margin:0;opacity:.95}
+    .section-title{margin:24px 4px 12px;font-size:17px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(22,48,71,.07);transition:.15s}
+    .card:active{transform:scale(.985)}
+    .icon{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:27px;background:linear-gradient(135deg,#fff0df,#e9f8ff);margin-bottom:12px}
+    .card h2{font-size:17px;margin:0 0 6px}.card p{font-size:13px;color:var(--muted);margin:0;line-height:1.6}
+    .soon{opacity:.55;pointer-events:none}
+    .foot{margin-top:20px;text-align:center;color:var(--muted);font-size:12px}
+    @media(max-width:600px){body{padding:10px}.grid{grid-template-columns:1fr}.hero{padding:20px 16px}.hero h1{font-size:24px}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero"><h1>MyTool</h1><p>لوحة أدوات العمل — نجمع هنا الأدوات الصغيرة التي نستعملها يوميًا.</p></section>
+    <h2 class="section-title">الأدوات</h2>
+    <section class="grid">
+      <a class="card" href="cards/"><div class="icon">🎫</div><h2>معالج البطاقات</h2><p>Mobilis وToken Store، استخراج البطاقات، تسمية TXT، وتقسيمها إلى أقسام قابلة للتعديل.</p></a>
+      <div class="card soon"><div class="icon">＋</div><h2>أداة جديدة</h2><p>مكان جاهز لإضافة النشاط أو الأداة التالية.</p></div>
+    </section>
+    <div class="foot">غير مخصص للفهرسة في محركات البحث.</div>
+  </main>
+</body>
+</html>
