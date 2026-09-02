@@ -38,14 +38,25 @@
     @media(min-width:1400px){.main-area{margin-right:var(--side);padding-bottom:2rem}}
     @media(max-width:1399.98px){.content-pad{padding-inline:1rem!important}.phone-card{padding:1.35rem}}
     @media(max-width:767.98px){
-      .page-title{font-size:1.45rem}.phone-card{padding:1.25rem .8rem}.phone-label{font-size:1.35rem}
-      .phone-icon{width:54px}.phone-box{min-height:74px;max-width:100%}.operator-logo{width:70px;font-size:.72rem}
-      .phone-input{font-size:1.65rem;padding-inline:.75rem}.offers-card{padding:1.25rem!important}
-      .offer-row{font-size:.95rem}.offer-price{font-size:.9rem}.section-head{font-size:1.3rem}
+      .main-area{padding-bottom:96px}.content-pad{padding:.65rem .7rem 7rem!important}
+      .page-title{font-size:1.2rem;margin-bottom:.7rem!important}.accordion{margin-bottom:.85rem!important}
+      .accordion-button{padding:.7rem .8rem;font-size:.9rem;min-height:44px}
+      .phone-card{padding:.85rem .7rem;margin-bottom:.85rem!important}.phone-card .row{--bs-gutter-y:.7rem}
+      .phone-label{font-size:1.05rem}.phone-icon{width:42px;height:40px;font-size:1rem!important}
+      .phone-box{min-height:58px;max-width:100%}.operator-logo{width:58px;font-size:.62rem}
+      .phone-input{font-size:1.25rem;padding:.45rem .5rem;letter-spacing:.07em}.form-text{font-size:.72rem;margin-top:.35rem!important}
+      .mode-tabs{margin-bottom:.65rem!important}.mode-tabs .nav-link{padding:.58rem;font-size:.9rem}
+      .status-box{padding:.65rem .75rem!important;margin-bottom:.6rem!important;font-size:.78rem;line-height:1.55}
+      .progress{margin-bottom:.75rem!important}.offers-card{padding:.8rem!important;border-radius:.65rem}
+      .section-head{font-size:1.05rem;margin-bottom:.65rem!important}
+      .offer-row{min-height:44px;padding:.5rem .65rem;font-size:.82rem;gap:.55rem!important}
+      .offer-price{font-size:.78rem;padding:.28rem .4rem .28rem .52rem;gap:.3rem}.offer-info{width:14px;height:14px;font-size:.5rem}
+      .operation-item{padding:.75rem!important}.operation-value{font-size:.86rem}
+      .bottom-nav{height:62px}.bottom-nav a{font-size:.66rem}
       .offer-modal .modal-dialog{position:absolute;right:0;bottom:0;left:0;width:100%;max-width:none;margin:0}
       .offer-modal .modal-content{border-radius:1.1rem 1.1rem 0 0}
     }
-    @media(max-width:420px){.phone-input{font-size:1.35rem;letter-spacing:.07em}.operator-logo{width:62px}}
+    @media(max-width:420px){.phone-input{font-size:1.12rem;letter-spacing:.045em}.operator-logo{width:54px}}
   </style>
 </head>
 <body>
@@ -204,10 +215,10 @@ const render=group=>{
  const data=catalog[group],families=data?.families||[];
  groupTitle.textContent='مجموعة '+group;
  if(group==='SAMA'){
-  offersList.className='accordion mb-4';offersList.id='samaFamilies';
+  offersList.className='accordion mb-0';offersList.id='samaFamilies';
   offersList.innerHTML=families.map((family,i)=>`<div class="accordion-item"><h3 class="accordion-header"><button class="accordion-button ${i?'collapsed':''} fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#family-${i}">${family.name}</button></h3><div id="family-${i}" class="accordion-collapse collapse ${i===0?'show':''}" data-bs-parent="#samaFamilies"><div class="list-group list-group-flush">${offerRows(family.offers)}</div></div></div>`).join('');
  }else{
-  offersList.className='list-group mb-4';offersList.removeAttribute('id');offersList.innerHTML=offerRows(families[0]?.offers||[]);
+  offersList.className='list-group mb-0';offersList.removeAttribute('id');offersList.innerHTML=offerRows(families[0]?.offers||[]);
  }
  bindOffers();
 };
