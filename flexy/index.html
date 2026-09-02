@@ -35,10 +35,12 @@
     .progress.run .progress-bar{animation:hold 7s linear forwards}@keyframes hold{to{width:100%}}
     .mobile-toolbar{min-height:58px;background:#fff}.menu-trigger{width:42px;height:42px;border:0;background:transparent;color:#52657a;font-size:1.55rem;border-radius:.5rem}
     .menu-trigger:hover,.menu-trigger:focus{background:#f0f2ff;color:var(--brand)}
-    .mobile-sidebar{--bs-offcanvas-width:280px}.mobile-sidebar .nav-link{color:#1f2937;border-radius:.45rem;padding:.75rem 1rem;font-weight:700}
+    .mobile-sidebar{--bs-offcanvas-width:280px;z-index:1070}.offcanvas-backdrop{z-index:1065}
+    .mobile-sidebar .nav-link{color:#1f2937;border-radius:.45rem;padding:.75rem 1rem;font-weight:700}
     .mobile-sidebar .nav-link.active{background:#ededff;color:var(--brand);border-right:4px solid var(--brand)}
-    .bottom-nav{height:66px;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);z-index:1050}
-    .bottom-nav a,.bottom-nav button{color:#68788a;text-decoration:none;font-size:.72rem;border:0;background:transparent}.bottom-nav a.active{color:var(--brand)}
+    .bottom-nav{height:66px;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);z-index:1050;display:grid!important;grid-template-columns:repeat(5,1fr)}
+    .bottom-nav a,.bottom-nav button{color:#68788a;text-decoration:none;font-size:.68rem;border:0;background:transparent;text-align:center}.bottom-nav a.active{color:var(--brand)}
+    .bottom-nav .home-center{align-self:end;color:#52657a}.home-center .home-icon{width:44px;height:44px;margin:-18px auto 2px;border-radius:50%;background:#fff;color:var(--brand);border:1px solid #e2e6ef;box-shadow:0 .3rem .8rem rgba(40,55,80,.18);font-size:1.25rem}
     @media(min-width:1400px){.main-area{margin-right:var(--side);padding-bottom:2rem}}
     @media(max-width:1399.98px){
       .content-pad{padding-inline:1rem!important}.phone-card{padding:1.35rem}
@@ -191,11 +193,12 @@
   </div>
 </div>
 
-<nav class="bottom-nav d-xxl-none fixed-bottom border-top d-flex justify-content-around align-items-center">
-  <a href="../" class="text-center"><div class="fs-5">⌂</div>الرئيسية</a>
-  <a href="./" class="active text-center"><div class="fs-5">☎</div>فليكسي</a>
-  <a href="#" class="text-center"><div class="fs-5">▣</div>البطاقات</a>
-  <button type="button" class="text-center" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar"><div class="fs-5">☰</div>القائمة</button>
+<nav class="bottom-nav d-xxl-none fixed-bottom border-top align-items-center" aria-label="التنقل السفلي">
+  <a href="./" class="active"><div class="fs-5">☎</div>فليكسي</a>
+  <a href="#"><div class="fs-5">▣</div>البطاقات</a>
+  <a href="../" class="home-center"><div class="home-icon d-flex align-items-center justify-content-center">⌂</div>الرئيسية</a>
+  <a href="#"><div class="fs-5">◇</div>الأدوات</a>
+  <button type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar"><div class="fs-5">☰</div>القائمة</button>
 </nav>
 
 <script>
