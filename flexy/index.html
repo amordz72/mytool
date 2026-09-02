@@ -50,17 +50,36 @@
    <button class="offer"><span class="offer-copy"><strong>Sama Net 2000</strong><small>90Go + 400 دج لكل الشبكات — 30 يومًا</small></span><span>2,000 دج</span></button>
   </div>
  </div>
- <div class="group" data-presentation-group="PIXX"><div class="group-title">مجموعة PixX</div><div class="offers"><button class="offer"><strong>PixX</strong><span>100 دج</span></button><button class="offer"><strong>PixX</strong><span>500 دج</span></button></div></div>
- <div class="group" data-presentation-group="REVOLUTION"><div class="group-title">مجموعة Revolution</div><div class="offers"><button class="offer"><strong>Revolution</strong><span>1,500 دج</span></button><button class="offer"><strong>Revolution</strong><span>2,000 دج</span></button></div></div>
+ <div class="group" data-presentation-group="PIXX"><div class="group-title">مجموعة PixX</div><div class="offers">
+  <button class="offer"><span class="offer-copy"><strong>PixX 50</strong><small>500Mo + 600 دج نحو موبيليس + رسائل غير محدودة نحو موبيليس + 50 دج لكل الشبكات — يوم واحد</small></span><span>50 دج</span></button>
+  <button class="offer"><span class="offer-copy"><strong>PixX 100</strong><small>1Go + مكالمات ورسائل غير محدودة نحو موبيليس + 150 دج لكل الشبكات — يوم واحد</small></span><span>100 دج</span></button>
+  <button class="offer"><span class="offer-copy"><strong>PixX 500</strong><small>5Go + مكالمات ورسائل غير محدودة نحو موبيليس + 750 دج لكل الشبكات — 15 يومًا</small></span><span>500 دج</span></button>
+  <button class="offer"><span class="offer-copy"><strong>PixX 1000</strong><small>13Go + Facebook مجاني + مكالمات ورسائل غير محدودة نحو موبيليس + 2,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,000 دج</span></button>
+  <button class="offer"><span class="offer-copy"><strong>PixX 2000</strong><small>30Go + Facebook مجاني — بقية التفاصيل لم تظهر كاملة في المصدر</small></span><span>2,000 دج</span></button>
+ </div></div>
+ <div class="group" data-presentation-group="REVOLUTION"><div class="group-title">مجموعة Revolution</div><div class="offers">
+  <button class="offer"><strong>Revolution 50</strong><span>50 دج</span></button>
+  <button class="offer"><strong>Revolution 100</strong><span>100 دج</span></button>
+  <button class="offer"><strong>Revolution 2500</strong><span>2,500 دج</span></button>
+  <button class="offer"><strong>Revolution 2000</strong><span>2,000 دج</span></button>
+  <button class="offer"><strong>Revolution 1800</strong><span>1,800 دج</span></button>
+  <button class="offer"><strong>Revolution 1500</strong><span>1,500 دج</span></button>
+  <button class="offer"><strong>Revolution 1200</strong><span>1,200 دج</span></button>
+  <button class="offer"><strong>Revolution 1000</strong><span>1,000 دج</span></button>
+ </div></div>
  <div class="preview-note">هذه معاينة للواجهة فقط. لم يُرسل أي أمر إلى المودم، ولم يُنفذ شحن أو خصم رصيد.</div></section></main>
 <nav><a href="../"><b>⌂</b>الأدوات</a><a class="active" href="./"><b>◉</b>فليكسي</a><a href="#"><b>☰</b>القائمة</a></nav></div>
 <script>
 const phone=document.getElementById('phone'),operator=document.getElementById('operator'),search=document.getElementById('search'),hint=document.getElementById('hint'),statusBox=document.getElementById('status'),results=document.getElementById('results'),offerCount=document.getElementById('offerCount'),groups=[...document.querySelectorAll('.results .group')];
-// قيمة تجريبية فقط؛ لاحقًا تأتي من نتيجة Discovery الحقيقية.
-const demoPresentationGroup='SAMA';
-const showPresentationGroup=groupName=>{const selected=groups.find(group=>group.dataset.presentationGroup===groupName);groups.forEach(group=>group.classList.toggle('active',group===selected));offerCount.textContent=selected?`${selected.querySelectorAll('.offer').length} عروض`:'0 عروض';};
+// ربط تجريبي لأرقام مراجعة مع نتائج Discovery المعروفة؛ لا يوجد اتصال حي بالمودم.
+const demoGroupsByPhone={
+  '0667028297':'REVOLUTION',
+  '0667038943':'SAMA',
+  '0675278081':'PIXX'
+};
+const showPresentationGroup=groupName=>{const selected=groups.find(group=>group.dataset.presentationGroup===groupName);groups.forEach(group=>group.classList.toggle('active',group===selected));offerCount.textContent=selected?`${selected.querySelectorAll('.offer').length} عروض`:'0 عروض';return selected;};
 const digits=()=>phone.value.replace(/\D/g,'').slice(0,10);const format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
 phone.addEventListener('input',()=>{const n=digits();phone.value=format(n);const isMobilis=n.startsWith('06');operator.textContent=isMobilis?'M':'—';operator.classList.toggle('mobilis',isMobilis);search.disabled=!(isMobilis&&n.length===10);results.classList.remove('show');statusBox.classList.remove('show');hint.textContent=!n.length?'أدخل رقمًا جزائريًا من 10 أرقام.':!isMobilis&&n.length>=2?'هذا النموذج يعرض موبيليس 06 فقط حاليًا.':n.length<10?`بقي ${10-n.length} رقم`:'تم التعرف على موبيليس.';});
-search.addEventListener('click',()=>{search.disabled=true;search.classList.add('loading');statusBox.textContent='جاري البحث عن عروض الرقم…';statusBox.classList.add('show');results.classList.remove('show');setTimeout(()=>{search.classList.remove('loading');search.disabled=false;showPresentationGroup(demoPresentationGroup);statusBox.textContent='معاينة نتيجة Discovery: مجموعة SAMA. لا تظهر المجموعات الأخرى معها.';results.classList.add('show');results.scrollIntoView({behavior:'smooth',block:'start'});},1100);});
+search.addEventListener('click',()=>{const n=digits(),groupName=demoGroupsByPhone[n];search.disabled=true;search.classList.add('loading');statusBox.textContent='جاري البحث عن عروض الرقم…';statusBox.classList.add('show');results.classList.remove('show');setTimeout(()=>{search.classList.remove('loading');search.disabled=false;const selected=showPresentationGroup(groupName);if(selected){statusBox.textContent=`معاينة نتيجة Discovery: مجموعة ${groupName}. لا تظهر المجموعات الأخرى معها.`;results.classList.add('show');results.scrollIntoView({behavior:'smooth',block:'start'});}else{statusBox.textContent='لا توجد نتيجة Discovery تجريبية محفوظة لهذا الرقم في المعاينة.';}},1100);});
 document.querySelectorAll('.offer').forEach(x=>x.addEventListener('click',()=>{document.querySelectorAll('.offer').forEach(y=>y.classList.remove('selected'));x.classList.add('selected')}));
 </script></body></html>
