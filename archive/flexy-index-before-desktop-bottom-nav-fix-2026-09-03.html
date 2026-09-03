@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#6366f1">
+  <title>فليكسي — MyTool</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <style>
+    :root{--brand:#6366f1;--brand-dark:#4f46e5;--page:#f5f6fb;--ink:#52657a;--side:270px}
+    body{font-family:Tahoma,Arial,sans-serif;background:var(--page);color:var(--ink);min-height:100vh}
+    .sidebar{width:var(--side);background:#fff;border-left:1px solid #e7e9f0;z-index:1040;right:0;left:auto}
+    .main-area{min-height:100vh;padding-bottom:82px}
+    .sidebar-logo{height:108px}.sidebar .nav-link{color:#1f2937;border-radius:.4rem;padding:.8rem 1rem;font-weight:700}
+    .sidebar .nav-link.active{background:#ededff;color:var(--brand);border-right:4px solid var(--brand)}
+    .sidebar-label{font-size:.75rem;color:#a0aabc;padding:.9rem 1rem .35rem}
+    .page-title{font-weight:800;color:#5c7086}.surface{border:0;border-radius:.55rem;box-shadow:0 .15rem .55rem rgba(40,55,80,.08)}
+    .phone-card{padding:2rem}.phone-label{font-size:1.45rem;font-weight:800;color:#52657a}
+    .phone-icon{width:62px;height:48px;border:1px solid var(--brand);color:var(--brand);border-radius:.45rem}
+    .phone-box{max-width:680px;min-height:92px;border:1px solid var(--brand);border-radius:.45rem;background:#fff;box-shadow:0 .2rem .7rem rgba(45,55,90,.18)}
+    .operator-logo{width:96px;align-self:stretch;border:0;background:#4daf32;color:#fff;font-size:1rem;font-weight:800;cursor:pointer}
+    .operator-logo.paused{filter:grayscale(1);opacity:.6}.phone-input{font-size:clamp(1.55rem,3.2vw,3.1rem);letter-spacing:.12em;color:#65778a}
+    .phone-input:focus{box-shadow:none}.mode-tabs .nav-link{color:#63758a;border-radius:.35rem;font-weight:700;padding:.8rem}
+    .mode-tabs .nav-link.active{background:var(--brand);color:#fff;box-shadow:0 .2rem .55rem rgba(99,102,241,.28)}
+    .offer-row{min-height:56px;color:#52657a;padding:.8rem 1rem;cursor:pointer}.offer-row:hover,.offer-row:focus,.offer-row.selected{background:#f2f2ff;color:#334155}
+    .offer-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .offer-actions{flex:0 0 auto}.offer-price{position:relative;display:inline-flex;align-items:center;background:var(--brand);color:#fff;border-radius:.4rem;padding:.42rem .65rem .34rem 1.35rem;font-size:1rem;font-weight:800;white-space:nowrap}
+    .offer-info{position:absolute;top:3px;left:3px;display:flex;width:13px;height:13px;padding:0;border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.14);color:#fff;border-radius:50%;font-size:.46rem;font-weight:800;line-height:1;box-shadow:none}
+    .offer-info:hover,.offer-info:focus{background:#fff;color:var(--brand);transform:none}
+    .operation-item{border:1px solid #e0e5ee;border-radius:.65rem;background:#fff}.operation-label{font-size:.72rem;color:#8a98aa}.operation-value{font-weight:700;color:#52657a}
+    .offer-modal .modal-content{border:0;border-radius:1rem;box-shadow:0 1rem 3rem rgba(15,23,42,.2)}
+    .offer-modal .modal-header{border-bottom:1px solid #edf0f5}.offer-modal .modal-footer{border-top:0}
+    .status-box{background:#f0f2ff;color:#4f5f86}.progress{height:3px}.progress-bar{background:var(--brand);width:0}
+    .progress.run .progress-bar{animation:hold 7s linear forwards}@keyframes hold{to{width:100%}}
+    .mobile-toolbar{min-height:58px;background:#fff}.menu-trigger{width:42px;height:42px;border:0;background:transparent;color:#52657a;font-size:1.55rem;border-radius:.5rem}
+    .menu-trigger:hover,.menu-trigger:focus{background:#f0f2ff;color:var(--brand)}
+    .mobile-sidebar{--bs-offcanvas-width:280px;z-index:1070}.offcanvas-backdrop{z-index:1065}
+    .mobile-sidebar .nav-link{color:#1f2937;border-radius:.45rem;padding:.75rem 1rem;font-weight:700}
+    .mobile-sidebar .nav-link.active{background:#ededff;color:var(--brand);border-right:4px solid var(--brand)}
+    .bottom-nav{height:66px;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);z-index:1050;display:grid!important;grid-template-columns:repeat(5,1fr)}
+    .bottom-nav a,.bottom-nav button{color:#68788a;text-decoration:none;font-size:.68rem;border:0;background:transparent;text-align:center}.bottom-nav a.active{color:var(--brand)}
+    .bottom-nav .home-center{align-self:end;color:#52657a}.home-center .home-icon{width:44px;height:44px;margin:-18px auto 2px;border-radius:50%;background:#fff;color:var(--brand);border:1px solid #e2e6ef;box-shadow:0 .3rem .8rem rgba(40,55,80,.18);font-size:1.25rem}
+    @media(min-width:1400px){.main-area{margin-right:var(--side);padding-bottom:2rem}}
+    @media(max-width:1399.98px){
+      .content-pad{padding-inline:1rem!important}.phone-card{padding:1.35rem}
+      .mobile-sidebar.offcanvas-start{right:0!important;left:auto!important;border-left:1px solid #dee2e6;border-right:0;transform:translateX(100%)}
+      .mobile-sidebar.offcanvas-start.show,.mobile-sidebar.offcanvas-start.showing{transform:none}
+    }
+    @media(max-width:767.98px){
+      .main-area{padding-bottom:96px}.content-pad{padding:.65rem .7rem 7rem!important}
+      .page-title{font-size:1.2rem;margin-bottom:.7rem!important}.accordion{margin-bottom:.85rem!important}
+      .accordion-button{padding:.7rem .8rem;font-size:.9rem;min-height:44px}
+      .phone-card{padding:.85rem .7rem;margin-bottom:.85rem!important}.phone-card .row{--bs-gutter-y:.7rem}
+      .phone-label{font-size:1.05rem}.phone-icon{width:42px;height:40px;font-size:1rem!important}
+      .phone-box{min-height:58px;max-width:100%}.operator-logo{width:58px;font-size:.62rem}
+      .phone-input{font-size:1.25rem;padding:.45rem .5rem;letter-spacing:.07em}.form-text{font-size:.72rem;margin-top:.35rem!important}
+      .mode-tabs{margin-bottom:.65rem!important}.mode-tabs .nav-link{padding:.58rem;font-size:.9rem}
+      .status-box{padding:.65rem .75rem!important;margin-bottom:.6rem!important;font-size:.78rem;line-height:1.55}
+      .progress{margin-bottom:.75rem!important}.offers-card{padding:.8rem!important;border-radius:.65rem}
+      .section-head{font-size:1.05rem;margin-bottom:.65rem!important}
+      .offer-row{min-height:44px;padding:.5rem .65rem;font-size:.82rem;gap:.55rem!important}
+      .offer-price{font-size:.78rem;padding:.32rem .5rem .27rem 1.05rem}.offer-info{top:2px;left:2px;width:11px;height:11px;font-size:.38rem}
+      .operation-item{padding:.75rem!important}.operation-value{font-size:.86rem}
+      .bottom-nav{height:62px}.bottom-nav a{font-size:.66rem}
+      .offer-modal .modal-dialog{position:absolute;right:0;bottom:0;left:0;width:100%;max-width:none;margin:0}
+      .offer-modal .modal-content{border-radius:1.1rem 1.1rem 0 0}
+    }
+    @media(max-width:420px){.phone-input{font-size:1.12rem;letter-spacing:.045em}.operator-logo{width:54px}}
+  </style>
+</head>
+<body>
+<aside class="sidebar d-none d-xxl-flex position-fixed top-0 vh-100 flex-column p-3" style="right:0!important;left:auto!important">
+  <div class="sidebar-logo d-flex align-items-center justify-content-center">
+    <div class="text-center"><div class="fs-2">⚡</div><strong>Tehna Connect</strong></div>
+  </div>
+  <nav class="nav nav-pills flex-column gap-1">
+    <a class="nav-link" href="../">⌂&nbsp;&nbsp; الصفحة الرئيسية</a>
+    <div class="sidebar-label">الخدمات</div>
+    <a class="nav-link active" href="./">☎&nbsp;&nbsp; فليكسي</a>
+    <a class="nav-link disabled" href="#">◉&nbsp;&nbsp; فليكسي جملة</a>
+    <a class="nav-link disabled" href="#">●&nbsp;&nbsp; تعبئة المودم</a>
+    <div class="sidebar-label">البطاقات</div>
+    <a class="nav-link disabled" href="#">▣&nbsp;&nbsp; بطاقات</a>
+    <div class="sidebar-label">العمليات</div>
+    <a class="nav-link disabled" href="#">▤&nbsp;&nbsp; كل العمليات</a>
+    <a class="nav-link disabled" href="#">◎&nbsp;&nbsp; الاستهلاك</a>
+  </nav>
+</aside>
+
+<div class="offcanvas offcanvas-start mobile-sidebar d-xxl-none" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarTitle">
+  <div class="offcanvas-header border-bottom">
+    <h2 class="offcanvas-title h5 fw-bold mb-0" id="mobileSidebarTitle">Tehna Connect</h2>
+    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="offcanvas" aria-label="إغلاق"></button>
+  </div>
+  <div class="offcanvas-body">
+    <nav class="nav nav-pills flex-column gap-1">
+      <a class="nav-link" href="../">⌂&nbsp;&nbsp; الصفحة الرئيسية</a>
+      <div class="sidebar-label">الخدمات</div>
+      <a class="nav-link active" href="./">☎&nbsp;&nbsp; فليكسي</a>
+      <a class="nav-link disabled" href="#">◉&nbsp;&nbsp; فليكسي جملة</a>
+      <a class="nav-link disabled" href="#">●&nbsp;&nbsp; تعبئة المودم</a>
+      <div class="sidebar-label">البطاقات</div>
+      <a class="nav-link disabled" href="#">▣&nbsp;&nbsp; بطاقات</a>
+      <div class="sidebar-label">العمليات</div>
+      <a class="nav-link disabled" href="#">▤&nbsp;&nbsp; كل العمليات</a>
+      <a class="nav-link disabled" href="#">◎&nbsp;&nbsp; الاستهلاك</a>
+    </nav>
+  </div>
+</div>
+
+<div class="main-area">
+  <div class="content-pad container-fluid px-xl-4 py-3">
+    <header class="mobile-toolbar surface d-xxl-none d-flex align-items-center justify-content-between px-2 mb-3">
+      <button class="menu-trigger d-flex align-items-center justify-content-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="فتح القائمة الجانبية">☰</button>
+      <strong class="fs-5">فليكسي</strong>
+      <span class="d-block" style="width:42px" aria-hidden="true"></span>
+    </header>
+    <h1 class="page-title h3 mb-3 d-none d-xxl-block">فليكسي</h1>
+
+    <div class="accordion mb-4" id="ratioBox">
+      <div class="accordion-item surface overflow-hidden">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed py-3" type="button" data-bs-toggle="collapse" data-bs-target="#ratio">النسب %</button>
+        </h2>
+        <div id="ratio" class="accordion-collapse collapse" data-bs-parent="#ratioBox"><div class="accordion-body">قسم تجريبي للمعاينة.</div></div>
+      </div>
+    </div>
+
+    <section class="card surface phone-card mb-4">
+      <div class="row align-items-center g-3">
+        <div class="col-md-3 d-flex align-items-center justify-content-md-center gap-3">
+          <span class="phone-icon d-flex align-items-center justify-content-center fs-4">▣</span>
+          <span class="phone-label">رقم الهاتف</span>
+        </div>
+        <div class="col-md-9">
+          <div class="phone-box d-flex align-items-stretch mx-auto" dir="ltr">
+            <button id="operator" class="operator-logo" type="button" aria-label="إيقاف العرض التلقائي" title="إيقاف أو تشغيل العرض التلقائي">mobilis</button>
+            <input id="phone" class="phone-input form-control border-0 bg-transparent text-center" inputmode="numeric" maxlength="14" placeholder="06 XX XX XX XX">
+          </div>
+          <div id="hint" class="form-text text-center mt-2">العرض التلقائي يعمل. اضغط على شعار Mobilis لإيقافه.</div>
+        </div>
+      </div>
+    </section>
+
+    <ul class="mode-tabs nav nav-pills nav-fill gap-2 mb-3">
+      <li class="nav-item"><button class="nav-link" type="button">▣&nbsp; رصيد</button></li>
+      <li class="nav-item"><button class="nav-link active" type="button">✹&nbsp; عروض</button></li>
+    </ul>
+
+    <div id="status" class="status-box rounded-3 p-3 mb-3 small">جاري تجهيز العرض التلقائي…</div>
+    <div id="timer" class="progress mb-3"><div class="progress-bar"></div></div>
+
+    <section id="results" class="card surface offers-card p-3 p-md-4 d-none">
+      <h2 id="groupTitle" class="section-head h5 fw-bold mb-3">العروض</h2>
+      <div id="offersList" class="list-group mb-0"></div>
+    </section>
+
+    <h2 class="page-title h4 mt-5 mb-3">آخر العمليات</h2>
+    <section class="card surface p-3 p-md-4">
+      <article class="operation-item p-3" aria-label="عملية تجريبية">
+        <div class="row g-3 align-items-center">
+          <div class="col-6 col-md-2"><div class="operation-label">النوع</div><div class="operation-value">عرض</div></div>
+          <div class="col-6 col-md-2"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">06 75 27 80 81</div></div>
+          <div class="col-6 col-md-2"><div class="operation-label">العرض</div><div class="operation-value">PixX 500</div></div>
+          <div class="col-6 col-md-2"><div class="operation-label">المبلغ</div><div class="operation-value">500 دج</div></div>
+          <div class="col-6 col-md-2"><div class="operation-label">الحالة</div><span class="badge text-bg-success">ناجحة</span></div>
+          <div class="col-6 col-md-2"><div class="operation-label">الوضع</div><span class="badge text-bg-light border">معاينة</span></div>
+        </div>
+      </article>
+    </section>
+  </div>
+</div>
+
+<div class="modal fade offer-modal" id="offerDetailsModal" tabindex="-1" aria-labelledby="offerDetailsTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5 fw-bold" id="offerDetailsTitle">تفاصيل العرض</h2>
+        <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+          <strong id="detailName" class="fs-5"></strong>
+          <span id="detailPrice" class="offer-price"></span>
+        </div>
+        <p id="detailText" class="mb-0 text-muted"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light w-100" data-bs-dismiss="modal">إغلاق</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav d-xxl-none fixed-bottom border-top align-items-center" aria-label="التنقل السفلي">
+  <a href="./" class="active"><div class="fs-5">☎</div>فليكسي</a>
+  <a href="#"><div class="fs-5">▣</div>البطاقات</a>
+  <a href="../" class="home-center"><div class="home-icon d-flex align-items-center justify-content-center">⌂</div>الرئيسية</a>
+  <a href="#"><div class="fs-5">◇</div>الأدوات</a>
+  <button type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar"><div class="fs-5">☰</div>القائمة</button>
+</nav>
+
+<script>
+const catalog={
+ SAMA:{families:[
+  {name:'Sama Mix',offers:[
+   {name:'Sama Mix 100',price:'100 دج',index:1,details:'500Mo — يوم واحد'},
+   {name:'Sama Mix 500',price:'500 دج',index:2,details:'5Go — 15 يومًا'},
+   {name:'Sama Mix 1000',price:'1,000 دج',index:3,details:'15Go — 30 يومًا'},
+   {name:'Sama Mix 1500',price:'1,500 دج',index:4,details:'30Go — 30 يومًا'},
+   {name:'Sama Mix 2000',price:'2,000 دج',index:5,details:'50Go — 30 يومًا'}]},
+  {name:'Sama Talk',offers:[
+   {name:'Sama Talk 500',price:'500 دج',index:6,details:'500Mo — 15 يومًا'},
+   {name:'Sama Talk 1000',price:'1,000 دج',index:7,details:'2Go — 30 يومًا'},
+   {name:'Sama Talk 1500',price:'1,500 دج',index:8,details:'3Go — 30 يومًا'},
+   {name:'Sama Talk 2000',price:'2,000 دج',index:9,details:'4Go — 30 يومًا'}]},
+  {name:'Sama Net',offers:[
+   {name:'Sama Net 500',price:'500 دج',index:1,details:'10Go — 15 يومًا'},
+   {name:'Sama Net 1000',price:'1,000 دج',index:2,details:'30Go — 30 يومًا'},
+   {name:'Sama Net 1500',price:'1,500 دج',index:3,details:'60Go — 30 يومًا'},
+   {name:'Sama Net 2000',price:'2,000 دج',index:4,details:'90Go — 30 يومًا'}]}
+ ]},
+ PIXX:{families:[{name:'PixX',offers:[
+  {name:'PixX 50',price:'50 دج',index:1,details:'500Mo — يوم واحد'},
+  {name:'PixX 100 (1Go)',price:'100 دج',index:2,details:'1Go — يوم واحد'},
+  {name:'PixX 500 (5Go)',price:'500 دج',index:3,details:'5Go — 15 يومًا'},
+  {name:'PixX 1000 (13Go)',price:'1,000 دج',index:4,details:'13Go — 30 يومًا'},
+  {name:'PixX 2000 (30Go)',price:'2,000 دج',index:5,details:'30Go'}]}]},
+ REVOLUTION:{families:[{name:'Revolution',offers:[
+  {name:'Revolution 50',price:'50 دج',index:null,details:'كتالوج خارجي — التنفيذ غير مؤكد'},
+  {name:'Revolution 100',price:'100 دج',index:null,details:'كتالوج خارجي — التنفيذ غير مؤكد'},
+  {name:'Revolution 1000',price:'1,000 دج',index:6,details:''},
+  {name:'Revolution 1200',price:'1,200 دج',index:5,details:''},
+  {name:'Revolution 1500',price:'1,500 دج',index:4,details:''},
+  {name:'Revolution 1800',price:'1,800 دج',index:3,details:''},
+  {name:'Revolution 2000',price:'2,000 دج',index:2,details:''},
+  {name:'Revolution 2500',price:'2,500 دج',index:1,details:''}]}]}
+};
+const cases=[{phone:'0660000001',group:'REVOLUTION'},{phone:'0660000002',group:'SAMA'},{phone:'0660000003',group:'PIXX'}];
+const known={'0660000001':'REVOLUTION','0660000002':'SAMA','0660000003':'PIXX','0667028297':'REVOLUTION','0667038943':'SAMA','0675278081':'PIXX'};
+const phone=document.getElementById('phone'),operator=document.getElementById('operator'),hint=document.getElementById('hint'),statusBox=document.getElementById('status'),timer=document.getElementById('timer'),results=document.getElementById('results'),offersList=document.getElementById('offersList'),groupTitle=document.getElementById('groupTitle'),detailsModal=document.getElementById('offerDetailsModal'),detailName=document.getElementById('detailName'),detailPrice=document.getElementById('detailPrice'),detailText=document.getElementById('detailText');
+let index=0,timeouts=[],running=false,silent=false;
+const digits=()=>phone.value.replace(/\D/g,'').slice(0,10),format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+const clear=()=>{timeouts.forEach(clearTimeout);timeouts=[]};
+const escapeAttr=value=>String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const offerRows=offers=>offers.map(offer=>`<div class="offer-row list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3 text-end" role="button" tabindex="0" aria-label="اختيار ${escapeAttr(offer.name)}" data-network-index="${offer.index??''}" data-offer-name="${escapeAttr(offer.name)}" data-offer-price="${escapeAttr(offer.price)}" data-offer-details="${escapeAttr(offer.details||'التفاصيل غير متوفرة في المعاينة حاليًا.')}"><span class="offer-name">${offer.name}</span><span class="offer-actions"><span class="offer-price"><span>${offer.price}</span><button class="offer-info d-inline-flex align-items-center justify-content-center" type="button" aria-label="تفاصيل ${escapeAttr(offer.name)}" title="تفاصيل العرض">i</button></span></span></div>`).join('');
+const selectOffer=row=>{offersList.querySelectorAll('.offer-row').forEach(y=>y.classList.remove('selected'));row.classList.add('selected')};
+const showDetails=row=>{detailName.textContent=row.dataset.offerName;detailPrice.textContent=row.dataset.offerPrice;detailText.textContent=row.dataset.offerDetails;bootstrap.Modal.getOrCreateInstance(detailsModal).show()};
+const bindOffers=()=>offersList.querySelectorAll('.offer-row').forEach(row=>{row.addEventListener('click',()=>selectOffer(row));row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectOffer(row)}});row.querySelector('.offer-info').addEventListener('click',event=>{event.stopPropagation();showDetails(row)})});
+const render=group=>{
+ const data=catalog[group],families=data?.families||[];
+ groupTitle.textContent='مجموعة '+group;
+ if(group==='SAMA'){
+  offersList.className='accordion mb-0';offersList.id='samaFamilies';
+  offersList.innerHTML=families.map((family,i)=>`<div class="accordion-item"><h3 class="accordion-header"><button class="accordion-button ${i?'collapsed':''} fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#family-${i}">${family.name}</button></h3><div id="family-${i}" class="accordion-collapse collapse ${i===0?'show':''}" data-bs-parent="#samaFamilies"><div class="list-group list-group-flush">${offerRows(family.offers)}</div></div></div>`).join('');
+ }else{
+  offersList.className='list-group mb-0';offersList.removeAttribute('id');offersList.innerHTML=offerRows(families[0]?.offers||[]);
+ }
+ bindOffers();
+};
+const stop=()=>{if(!running)return;running=false;clear();timer.classList.remove('run');operator.classList.add('paused');hint.textContent='تم إيقاف العرض. اضغط على شعار Mobilis لتشغيله.'};
+phone.addEventListener('input',()=>{phone.value=format(digits());if(!silent)stop()});
+const prepare=item=>{silent=true;phone.value=format(item.phone);silent=false;results.classList.add('d-none');statusBox.textContent='جاري اكتشاف عروض الرقم التجريبي…';timer.classList.remove('run')};
+const reveal=item=>{render(item.group);results.classList.remove('d-none');statusBox.textContent='نتيجة المعاينة: مجموعة '+item.group+'. ستبقى ظاهرة 7 ثوانٍ.';timer.classList.remove('run');void timer.offsetWidth;timer.classList.add('run')};
+const cycle=()=>{if(!running)return;const item=cases[index];prepare(item);timeouts.push(setTimeout(()=>{if(!running)return;reveal(item);timeouts.push(setTimeout(()=>{if(!running)return;index=(index+1)%cases.length;cycle()},7000))},1000))};
+const start=()=>{clear();running=true;operator.classList.remove('paused');hint.textContent='العرض التلقائي يعمل. اضغط على شعار Mobilis لإيقافه.';cycle()};
+operator.addEventListener('click',()=>running?stop():start());
+start();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
