@@ -144,11 +144,11 @@
     </section>
 
     <ul class="mode-tabs nav nav-pills nav-fill gap-2 mb-3">
-      <li class="nav-item"><button class="nav-link" type="button">▣&nbsp; رصيد</button></li>
-      <li class="nav-item"><button class="nav-link active" type="button">✹&nbsp; عروض</button></li>
+      <li class="nav-item"><button id="balanceMode" class="nav-link active" type="button" aria-selected="true">▣&nbsp; رصيد</button></li>
+      <li class="nav-item"><button id="offersMode" class="nav-link" type="button" aria-selected="false">✹&nbsp; عروض</button></li>
     </ul>
 
-    <div id="status" class="status-box rounded-3 p-3 mb-3 small">جاري تجهيز العرض التلقائي…</div>
+    <div id="status" class="status-box rounded-3 p-3 mb-3 small">الفليكسي العادي محدد افتراضيًا. اضغط «عروض» لمشاهدة العروض.</div>
     <div id="timer" class="progress mb-3"><div class="progress-bar"></div></div>
 
     <section id="results" class="card surface offers-card p-3 p-md-4 d-none">
@@ -239,8 +239,8 @@ const catalog={
 };
 const cases=[{phone:'0660000001',group:'REVOLUTION'},{phone:'0660000002',group:'SAMA'},{phone:'0660000003',group:'PIXX'}];
 const known={'0660000001':'REVOLUTION','0660000002':'SAMA','0660000003':'PIXX','0667028297':'REVOLUTION','0667038943':'SAMA','0675278081':'PIXX'};
-const phone=document.getElementById('phone'),operator=document.getElementById('operator'),hint=document.getElementById('hint'),statusBox=document.getElementById('status'),timer=document.getElementById('timer'),results=document.getElementById('results'),offersList=document.getElementById('offersList'),groupTitle=document.getElementById('groupTitle'),detailsModal=document.getElementById('offerDetailsModal'),detailName=document.getElementById('detailName'),detailPrice=document.getElementById('detailPrice'),detailText=document.getElementById('detailText');
-let index=0,timeouts=[],running=false,silent=false;
+const phone=document.getElementById('phone'),operator=document.getElementById('operator'),hint=document.getElementById('hint'),statusBox=document.getElementById('status'),timer=document.getElementById('timer'),balanceMode=document.getElementById('balanceMode'),offersMode=document.getElementById('offersMode'),results=document.getElementById('results'),offersList=document.getElementById('offersList'),groupTitle=document.getElementById('groupTitle'),detailsModal=document.getElementById('offerDetailsModal'),detailName=document.getElementById('detailName'),detailPrice=document.getElementById('detailPrice'),detailText=document.getElementById('detailText');
+let index=0,timeouts=[],running=false,silent=false,selectedMode='balance',lastItem=null;
 const digits=()=>phone.value.replace(/\D/g,'').slice(0,10),format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
 const clear=()=>{timeouts.forEach(clearTimeout);timeouts=[]};
 const escapeAttr=value=>String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -261,11 +261,15 @@ const render=group=>{
 };
 const stop=()=>{if(!running)return;running=false;clear();timer.classList.remove('run');operator.classList.add('paused');hint.textContent='تم إيقاف العرض. اضغط على شعار Mobilis لتشغيله.'};
 phone.addEventListener('input',()=>{phone.value=format(digits());if(!silent)stop()});
-const prepare=item=>{silent=true;phone.value=format(item.phone);silent=false;results.classList.add('d-none');statusBox.textContent='جاري اكتشاف عروض الرقم التجريبي…';timer.classList.remove('run')};
-const reveal=item=>{render(item.group);results.classList.remove('d-none');statusBox.textContent='نتيجة المعاينة: مجموعة '+item.group+'. ستبقى ظاهرة 7 ثوانٍ.';timer.classList.remove('run');void timer.offsetWidth;timer.classList.add('run')};
+const setMode=mode=>{selectedMode=mode;const showOffers=mode==='offers';balanceMode.classList.toggle('active',!showOffers);offersMode.classList.toggle('active',showOffers);balanceMode.setAttribute('aria-selected',String(!showOffers));offersMode.setAttribute('aria-selected',String(showOffers));results.classList.toggle('d-none',!showOffers||!lastItem);if(showOffers){statusBox.textContent=lastItem?'نتيجة المعاينة: مجموعة '+lastItem.group+'.':'جاري تجهيز نتيجة العروض…'}else{timer.classList.remove('run');statusBox.textContent='الفليكسي العادي محدد افتراضيًا. اضغط «عروض» لمشاهدة العروض.'}};
+const prepare=item=>{silent=true;phone.value=format(item.phone);silent=false;results.classList.add('d-none');if(selectedMode==='offers')statusBox.textContent='جاري اكتشاف عروض الرقم التجريبي…';timer.classList.remove('run')};
+const reveal=item=>{lastItem=item;render(item.group);if(selectedMode==='offers'){results.classList.remove('d-none');statusBox.textContent='نتيجة المعاينة: مجموعة '+item.group+'. ستبقى ظاهرة 7 ثوانٍ.';timer.classList.remove('run');void timer.offsetWidth;timer.classList.add('run')}};
 const cycle=()=>{if(!running)return;const item=cases[index];prepare(item);timeouts.push(setTimeout(()=>{if(!running)return;reveal(item);timeouts.push(setTimeout(()=>{if(!running)return;index=(index+1)%cases.length;cycle()},7000))},1000))};
 const start=()=>{clear();running=true;operator.classList.remove('paused');hint.textContent='العرض التلقائي يعمل. اضغط على شعار Mobilis لإيقافه.';cycle()};
 operator.addEventListener('click',()=>running?stop():start());
+balanceMode.addEventListener('click',()=>setMode('balance'));
+offersMode.addEventListener('click',()=>setMode('offers'));
+setMode('balance');
 start();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
