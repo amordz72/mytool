@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#f4f6f8">
+  <title>فليكسي — MyTool</title>
+  <style>
+    :root{--blue:#2478ff;--blue-dark:#1256c4;--ink:#172331;--muted:#718096;--bg:#f3f5f8;--line:#e5e9ef;--green:#1ca66a;--danger:#db4b4b}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Tahoma,sans-serif;min-height:100vh}.shell{width:min(100%,560px);min-height:100vh;margin:auto;background:#fff;padding-bottom:92px;box-shadow:0 0 28px rgba(20,37,63,.07)}
+    header{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:3}.back{width:40px;height:40px;border:0;background:#f1f4f8;border-radius:13px;font-size:22px;color:var(--ink);cursor:pointer}.title{font-size:19px;font-weight:800}.spacer{width:40px}
+    main{padding:22px 16px}.intro h1{font-size:25px;margin:0 0 8px}.intro p{margin:0;color:var(--muted);font-size:14px;line-height:1.7}.panel{margin-top:22px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:17px;box-shadow:0 10px 30px rgba(20,37,63,.06)}
+    label{display:block;font-weight:700;font-size:14px;margin-bottom:10px}.phone-wrap{height:62px;border:2px solid var(--line);border-radius:17px;display:flex;direction:ltr;align-items:center;padding:7px;background:#fbfcfd;transition:.2s}.phone-wrap:focus-within{border-color:var(--blue);box-shadow:0 0 0 4px rgba(36,120,255,.1);background:#fff}.operator{width:44px;height:44px;flex:0 0 44px;border-radius:13px;background:#e8edf3;color:#8895a4;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;transition:.2s}.operator.mobilis{background:linear-gradient(135deg,#54b948,#138b3e);color:#fff;box-shadow:0 5px 14px rgba(28,166,106,.25)}
+    input{width:100%;height:100%;border:0;outline:0;background:transparent;padding:0 13px;font-size:22px;letter-spacing:1px;text-align:left;color:var(--ink)}input::placeholder{color:#adb7c2}.hint{min-height:21px;margin:8px 3px 0;font-size:12px;color:var(--muted)}
+    .search{width:100%;height:54px;margin-top:14px;border:0;border-radius:16px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:#fff;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 9px 20px rgba(36,120,255,.22)}.search:disabled{background:#cbd3dd;box-shadow:none;cursor:not-allowed}.search.loading{color:transparent;position:relative}.search.loading:after{content:"";position:absolute;left:calc(50% - 10px);top:17px;width:18px;height:18px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .status{display:none;margin-top:16px;padding:14px;border-radius:15px;background:#eef5ff;color:#245b9d;font-size:13px;line-height:1.6}.status.show{display:block}.demo-toggle{width:100%;margin-top:10px;border:1px solid var(--line);border-radius:13px;background:#fff;color:#47627f;padding:10px 12px;font-weight:700;cursor:pointer}.demo-toggle:hover{background:#f7faff}.results{display:none;margin-top:24px}.results.show{display:block}.results-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}.results h2{font-size:18px;margin:0}.count{font-size:12px;background:#edf3fb;color:#47627f;border-radius:999px;padding:6px 10px}.group{margin-top:17px}.group-title{font-size:13px;color:var(--muted);font-weight:700;margin:0 3px 9px}.offers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.offer{border:1.5px solid var(--line);border-radius:17px;padding:14px;background:#fff;text-align:right;cursor:pointer;min-height:89px}.offer.selected{border-color:var(--blue);background:#f2f7ff;box-shadow:0 0 0 3px rgba(36,120,255,.08)}.offer strong{display:block;font-size:16px;margin-bottom:7px}.offer span{color:var(--blue-dark);font-size:15px;font-weight:800}.preview-note{margin-top:20px;padding:13px 14px;border:1px dashed #e4b34f;background:#fff9e9;border-radius:15px;color:#79601d;font-size:12px;line-height:1.65}
+    nav{position:fixed;z-index:4;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,560px);height:72px;background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}nav a{text-decoration:none;color:#7f8b99;font-size:12px;text-align:center}nav b{display:block;font-size:20px;margin-bottom:3px}.active{color:var(--blue)!important}
+    @media(min-width:720px){body{padding:24px}.shell{min-height:calc(100vh - 48px);border-radius:26px;overflow:hidden}.operator{width:48px;height:48px;flex-basis:48px}nav{bottom:24px;border-radius:0 0 26px 26px}}
+    @media(min-width:1000px){
+      .shell{width:min(calc(100% - 48px),1180px)}
+      nav{width:min(calc(100% - 48px),1180px)}
+      header{padding-inline:28px}
+      main{padding:28px 30px}
+      .intro,.panel,.results{max-width:none}
+      .panel{padding:22px}
+      .phone-wrap{max-width:760px}
+      .search{max-width:760px}
+      .status{max-width:760px}
+      .offer{min-height:76px;padding-inline:22px}
+      .offer strong{font-size:17px}
+      .offer-copy small{font-size:13px}
+    }
+    /* العرض الطولي المعتمد: عرض واحد في كل سطر */
+    .offers{grid-template-columns:1fr}
+    .offer{width:100%;min-height:72px;padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .offer strong{margin:0}.offer span{white-space:nowrap}
+    .family-title{margin:18px 3px 9px;font-size:14px;color:#40566d}.family-title:first-of-type{margin-top:8px}
+    .offer-copy{min-width:0}.offer-copy small{display:block;margin-top:6px;color:var(--muted);font-size:12px;line-height:1.55;font-weight:400}
+    .results .group{display:none;animation:groupIn .28s ease}
+    .results .group.active{display:block}
+    @keyframes groupIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  </style>
+</head>
+<body><div class="shell"><header><button class="back" onclick="location.href='../'" aria-label="رجوع">→</button><div class="title">فليكسي</div><div class="spacer"></div></header>
+<main><section class="intro"><h1>اكتشف عروض الرقم</h1><p>أدخل رقم الهاتف، وسنعرض لك شكل العروض المتاحة لهذا الرقم.</p></section>
+<section class="panel"><label for="phone">رقم الهاتف</label><div class="phone-wrap"><div id="operator" class="operator" aria-label="المتعامل">—</div><input id="phone" inputmode="numeric" autocomplete="tel" maxlength="14" placeholder="06 XX XX XX XX" aria-describedby="hint"></div><div id="hint" class="hint">أدخل رقمًا جزائريًا من 10 أرقام.</div><button id="search" class="search" disabled>استكشاف العروض</button><div id="status" class="status" role="status"></div><button id="demoToggle" class="demo-toggle" type="button">إيقاف العرض التلقائي</button></section>
+<section id="results" class="results"><div class="results-head"><div><h2>العروض المتاحة</h2></div><span id="offerCount" class="count">3 عروض</span></div>
+ <div class="group" data-presentation-group="SAMA"><div class="group-title">مجموعة سما</div>
+  <h3 class="family-title">Sama Mix</h3><div class="offers">
+   <button class="offer"><span class="offer-copy"><strong>Sama Mix 100</strong><small>500Mo + غير محدود + 200 دج لكل الشبكات — يوم واحد</small></span><span>100 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Mix 500</strong><small>5Go + غير محدود + 1,000 دج لكل الشبكات — 15 يومًا</small></span><span>500 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Mix 1000</strong><small>15Go + Facebook مجاني + غير محدود + 2,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,000 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Mix 1500</strong><small>30Go + Facebook مجاني + غير محدود + 3,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,500 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Mix 2000</strong><small>50Go + Facebook مجاني + غير محدود + 4,000 دج لكل الشبكات — 30 يومًا</small></span><span>2,000 دج</span></button>
+  </div>
+  <h3 class="family-title">Sama Talk</h3><div class="offers">
+   <button class="offer"><span class="offer-copy"><strong>Sama Talk 500</strong><small>500Mo + غير محدود + 2,000 دج لكل الشبكات — 15 يومًا</small></span><span>500 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Talk 1000</strong><small>2Go + غير محدود + 4,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,000 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Talk 1500</strong><small>3Go + غير محدود + 6,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,500 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Talk 2000</strong><small>4Go + غير محدود + 8,000 دج لكل الشبكات — 30 يومًا</small></span><span>2,000 دج</span></button>
+  </div>
+  <h3 class="family-title">Sama Net</h3><div class="offers">
+   <button class="offer"><span class="offer-copy"><strong>Sama Net 500</strong><small>10Go + 100 دج لكل الشبكات — 15 يومًا</small></span><span>500 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Net 1000</strong><small>30Go + 200 دج لكل الشبكات — 30 يومًا</small></span><span>1,000 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Net 1500</strong><small>60Go + 300 دج لكل الشبكات — 30 يومًا</small></span><span>1,500 دج</span></button>
+   <button class="offer"><span class="offer-copy"><strong>Sama Net 2000</strong><small>90Go + 400 دج لكل الشبكات — 30 يومًا</small></span><span>2,000 دج</span></button>
+  </div>
+ </div>
+ <div class="group" data-presentation-group="PIXX"><div class="group-title">مجموعة PixX</div><div class="offers">
+  <button class="offer"><span class="offer-copy"><strong>PixX 50</strong><small>500Mo + 600 دج نحو موبيليس + رسائل غير محدودة نحو موبيليس + 50 دج لكل الشبكات — يوم واحد</small></span><span>50 دج</span></button>
+  <button class="offer"><span class="offer-copy"><strong>PixX 100</strong><small>1Go + مكالمات ورسائل غير محدودة نحو موبيليس + 150 دج لكل الشبكات — يوم واحد</small></span><span>100 دج</span></button>
+  <button class="offer"><span class="offer-copy"><strong>PixX 500</strong><small>5Go + مكالمات ورسائل غير محدودة نحو موبيليس + 750 دج لكل الشبكات — 15 يومًا</small></span><span>500 دج</span></button>
+  <button class="offer"><span class="offer-copy"><strong>PixX 1000</strong><small>13Go + Facebook مجاني + مكالمات ورسائل غير محدودة نحو موبيليس + 2,000 دج لكل الشبكات — 30 يومًا</small></span><span>1,000 دج</span></button>
+  <button class="offer"><span class="offer-copy"><strong>PixX 2000</strong><small>30Go + Facebook مجاني — بقية التفاصيل لم تظهر كاملة في المصدر</small></span><span>2,000 دج</span></button>
+ </div></div>
+ <div class="group" data-presentation-group="REVOLUTION"><div class="group-title">مجموعة Revolution</div><div class="offers">
+  <button class="offer"><strong>Revolution 50</strong><span>50 دج</span></button>
+  <button class="offer"><strong>Revolution 100</strong><span>100 دج</span></button>
+  <button class="offer"><strong>Revolution 2500</strong><span>2,500 دج</span></button>
+  <button class="offer"><strong>Revolution 2000</strong><span>2,000 دج</span></button>
+  <button class="offer"><strong>Revolution 1800</strong><span>1,800 دج</span></button>
+  <button class="offer"><strong>Revolution 1500</strong><span>1,500 دج</span></button>
+  <button class="offer"><strong>Revolution 1200</strong><span>1,200 دج</span></button>
+  <button class="offer"><strong>Revolution 1000</strong><span>1,000 دج</span></button>
+ </div></div>
+ <div class="preview-note">هذه معاينة للواجهة فقط. لم يُرسل أي أمر إلى المودم، ولم يُنفذ شحن أو خصم رصيد.</div></section></main>
+<nav><a href="../"><b>⌂</b>الأدوات</a><a class="active" href="./"><b>◉</b>فليكسي</a><a href="#"><b>☰</b>القائمة</a></nav></div>
+<script>
+const phone=document.getElementById('phone'),operator=document.getElementById('operator'),search=document.getElementById('search'),hint=document.getElementById('hint'),statusBox=document.getElementById('status'),results=document.getElementById('results'),offerCount=document.getElementById('offerCount'),demoToggle=document.getElementById('demoToggle'),groups=[...document.querySelectorAll('.results .group')];
+// ربط تجريبي لأرقام مراجعة مع نتائج Discovery المعروفة؛ لا يوجد اتصال حي بالمودم.
+const demoGroupsByPhone={
+  '0660000001':'REVOLUTION',
+  '0660000002':'SAMA',
+  '0660000003':'PIXX',
+  '0667028297':'REVOLUTION',
+  '0667038943':'SAMA',
+  '0675278081':'PIXX'
+};
+const demoCases=[
+  {phone:'0660000001',group:'REVOLUTION'},
+  {phone:'0660000002',group:'SAMA'},
+  {phone:'0660000003',group:'PIXX'}
+];
+let demoIndex=0,demoTimer=null,suppressManualStop=false;
+const showPresentationGroup=groupName=>{const selected=groups.find(group=>group.dataset.presentationGroup===groupName);groups.forEach(group=>group.classList.toggle('active',group===selected));offerCount.textContent=selected?`${selected.querySelectorAll('.offer').length} عروض`:'0 عروض';return selected;};
+const digits=()=>phone.value.replace(/\D/g,'').slice(0,10);const format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+const stopAutoDemo=()=>{if(demoTimer){clearInterval(demoTimer);demoTimer=null;}demoToggle.textContent='تشغيل العرض التلقائي';};
+phone.addEventListener('input',()=>{if(!suppressManualStop)stopAutoDemo();const n=digits();phone.value=format(n);const isMobilis=n.startsWith('06');operator.textContent=isMobilis?'M':'—';operator.classList.toggle('mobilis',isMobilis);search.disabled=!(isMobilis&&n.length===10);results.classList.remove('show');statusBox.classList.remove('show');hint.textContent=!n.length?'أدخل رقمًا جزائريًا من 10 أرقام.':!isMobilis&&n.length>=2?'هذا النموذج يعرض موبيليس 06 فقط حاليًا.':n.length<10?`بقي ${10-n.length} رقم`:'تم التعرف على موبيليس.';});
+const showDemoCase=item=>{suppressManualStop=true;phone.value=format(item.phone);phone.dispatchEvent(new Event('input'));suppressManualStop=false;showPresentationGroup(item.group);statusBox.textContent=`عرض تلقائي: الرقم التجريبي مصنف ضمن ${item.group}. سيتغير المثال بعد 5 ثوانٍ.`;statusBox.classList.add('show');results.classList.add('show');};
+const startAutoDemo=()=>{stopAutoDemo();demoToggle.textContent='إيقاف العرض التلقائي';showDemoCase(demoCases[demoIndex]);demoTimer=setInterval(()=>{demoIndex=(demoIndex+1)%demoCases.length;showDemoCase(demoCases[demoIndex]);},5000);};
+demoToggle.addEventListener('click',()=>{if(demoTimer)stopAutoDemo();else startAutoDemo();});
+search.addEventListener('click',()=>{const n=digits(),groupName=demoGroupsByPhone[n];search.disabled=true;search.classList.add('loading');statusBox.textContent='جاري البحث عن عروض الرقم…';statusBox.classList.add('show');results.classList.remove('show');setTimeout(()=>{search.classList.remove('loading');search.disabled=false;const selected=showPresentationGroup(groupName);if(selected){statusBox.textContent=`معاينة نتيجة Discovery: مجموعة ${groupName}. لا تظهر المجموعات الأخرى معها.`;results.classList.add('show');results.scrollIntoView({behavior:'smooth',block:'start'});}else{statusBox.textContent='لا توجد نتيجة Discovery تجريبية محفوظة لهذا الرقم في المعاينة.';}},1100);});
+document.querySelectorAll('.offer').forEach(x=>x.addEventListener('click',()=>{document.querySelectorAll('.offer').forEach(y=>y.classList.remove('selected'));x.classList.add('selected')}));
+startAutoDemo();
+</script></body></html>

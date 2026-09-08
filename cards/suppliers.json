@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "suppliers": [
+    {
+      "id": "topup-dz",
+      "name": "topup-dz",
+      "file_name": "topup-dz",
+      "enabled": true,
+      "order": 1
+    },
+    {
+      "id": "waffarli",
+      "name": "وفرلي",
+      "file_name": "waffarli",
+      "enabled": true,
+      "order": 2
+    },
+    {
+      "id": "token-store",
+      "name": "Token Store",
+      "file_name": "token-store",
+      "enabled": true,
+      "order": 3
+    }
+  ]
+}
