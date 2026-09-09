@@ -3,12 +3,43 @@
   if(!result)return;
 
   const SPLIT_PREFIX='mytool.cards.split.';
-  const readSplit=id=>{try{const v=localStorage.getItem(SPLIT_PREFIX+id);return v===null?id==='mobilis':v!=='0'}catch(e){return id==='mobilis'}};
+  const TRIM_KEY='mytool.cards.trim';
+  const readBool=(key,def)=>{try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}};
+  const readSplit=id=>readBool(SPLIT_PREFIX+id,id==='mobilis');
+
+  const pad=n=>String(n).padStart(2,'0');
+  function plainName(count,part,total){
+    const d=new Date(),tm=pad(d.getHours())+pad(d.getMinutes()),dt=pad(d.getDate())+pad(d.getMonth()+1)+String(d.getFullYear()).slice(-2),p=part?`_P${part}-${total}`:'';
+    return `TXT_${count}${p}_${tm}_${dt}.txt`;
+  }
+
+  // النص العادي لا ينشئ أدوات تقسيم إلا إذا فعّلها المستخدم من الإعدادات.
+  if(typeof window.processPlain==='function'&&!window.processPlain.__mytoolPlainSplit){
+    const original=window.processPlain;
+    const wrapped=function(){
+      if(!readSplit('plain'))return original();
+      if(typeof window.group!=='function'||typeof window.bindGroup!=='function')return original();
+      const box=document.getElementById('text');
+      if(!box)return original();
+      let raw=box.value;
+      if(typeof window.cleanWhatsAppEnvelope==='function')raw=window.cleanWhatsAppEnvelope(raw);
+      let lines=String(raw||'').split(/\r\n|\n|\r/);
+      if(readBool(TRIM_KEY,true))lines=lines.map(x=>x.trim());
+      lines=lines.filter(x=>x!=='');
+      if(!lines.length)return original();
+      const nameFn=(n,a,b)=>plainName(n,a,b),filename=plainName(lines.length);
+      result.innerHTML=window.group('النص جاهز',lines,filename,'plain',nameFn,true);
+      window.bindGroup('plain',lines,filename,nameFn,true,true);
+    };
+    wrapped.__mytoolPlainSplit=true;
+    window.processPlain=wrapped;
+  }
 
   function detectGroupType(group){
     const down=group.querySelector('.actions button[id$="download"]');
     if(!down)return null;
     const id=down.id||'';
+    if(id==='plaindownload')return'plain';
     if(/^waf\d+download$/.test(id))return'waffarly';
     if(/^tok\d+download$/.test(id))return'token';
     const m=id.match(/^card-(.+)download$/);
