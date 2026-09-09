@@ -29,89 +29,16 @@ const readLocalBool=(key,def=true)=>{try{const v=localStorage.getItem(key);retur
 const trim={checked:readLocalBool(TRIM_KEY,true)},autoDetect={checked:readLocalBool(AUTO_DETECT_KEY,true)};
 window.cardOptionState={trim,autoDetect};
 let cardRules=[],type='mobilis',uploaded='',rulesLoaded=false;
-
-function normalizeRule(r){
-  return {
-    id:String(r.id||'').trim(),
-    name:String(r.name||r.id||'').trim(),
-    enabled:r.enabled!==false,
-    order:Number.isFinite(Number(r.order))?Number(r.order):999,
-    hint:String(r.hint||''),
-    placeholder:String(r.placeholder||''),
-    separators:Array.isArray(r.separators)&&r.separators.length?r.separators.map(String):[',','،'],
-    take:r.take||'before',
-    numbersOnly:r.numbersOnly!==false,
-    length:Number.isInteger(Number(r.length))?Number(r.length):null,
-    snRequired:r.snRequired!==false,
-    snNumbersOnly:r.snNumbersOnly!==false,
-    snLength:r.snLength===null||r.snLength===''||r.snLength===undefined?null:Number(r.snLength),
-    uniformFormat:r.uniformFormat!==false,
-    outputTitle:String(r.outputTitle||('بطاقات '+(r.name||r.id||''))),
-    filePrefix:String(r.filePrefix||r.id||'CARD').trim(),
-    detectValueFromFilename:r.detectValueFromFilename===true,
-    defaultValue:String(r.defaultValue||''),
-    outputBom:r.outputBom===true
-  };
-}
-function validRule(r){
-  return r.id&&r.name&&r.take==='before'&&r.separators.length&&(!r.length||Number.isInteger(r.length))&&(r.snLength===null||Number.isInteger(r.snLength));
-}
-async function loadRules(){
-  let source=fallbackRules,warning='';
-  try{
-    const res=await fetch('../card-rules/card-rules.json',{cache:'no-store'});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    if(!data||!Array.isArray(data.cardTypes))throw new Error('cardTypes مفقودة');
-    source=data;
-    rulesLoaded=true;
-  }catch(e){
-    warning='تعذر تحميل card-rules.json؛ تم تشغيل قاعدة Mobilis الاحتياطية فقط.';
-    console.error(e);
-  }
-  cardRules=source.cardTypes.map(normalizeRule).filter(r=>r.enabled&&validRule(r)).sort((a,b)=>a.order-b.order);
-  if(!cardRules.length)cardRules=fallbackRules.cardTypes.map(normalizeRule);
-  renderTabs();
-  if(!cardRules.some(r=>r.id===type))type=cardRules[0].id;
-  selectType(type);
-  if(warning)statusEl.textContent=warning;
-}
-function renderTabs(){
-  const cardButtons=cardRules.map(r=>`<button class="tab" data-type="${esc(r.id)}">${esc(r.name)}</button>`).join('');
-  $('tabs').innerHTML=cardButtons+'<button class="tab" data-type="waffarly">وفرلي</button><button class="tab" data-type="token">Token Store</button><button class="tab" data-type="plain">نص عادي</button>';
-  $('subtitle').textContent=[...cardRules.map(r=>r.name),'وفرلي','Token Store','TXT'].join(' • ');
-  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>selectType(b.dataset.type));
-}
+function normalizeRule(r){return{id:String(r.id||'').trim(),name:String(r.name||r.id||'').trim(),enabled:r.enabled!==false,order:Number.isFinite(Number(r.order))?Number(r.order):999,hint:String(r.hint||''),placeholder:String(r.placeholder||''),separators:Array.isArray(r.separators)&&r.separators.length?r.separators.map(String):[',','،'],take:r.take||'before',numbersOnly:r.numbersOnly!==false,length:Number.isInteger(Number(r.length))?Number(r.length):null,snRequired:r.snRequired!==false,snNumbersOnly:r.snNumbersOnly!==false,snLength:r.snLength===null||r.snLength===''||r.snLength===undefined?null:Number(r.snLength),uniformFormat:r.uniformFormat!==false,outputTitle:String(r.outputTitle||('بطاقات '+(r.name||r.id||''))),filePrefix:String(r.filePrefix||r.id||'CARD').trim(),detectValueFromFilename:r.detectValueFromFilename===true,defaultValue:String(r.defaultValue||''),outputBom:r.outputBom===true}}
+function validRule(r){return r.id&&r.name&&r.take==='before'&&r.separators.length&&(!r.length||Number.isInteger(r.length))&&(r.snLength===null||Number.isInteger(r.snLength))}
+async function loadRules(){let source=fallbackRules,warning='';try{const res=await fetch('../card-rules/card-rules.json',{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);const data=await res.json();if(!data||!Array.isArray(data.cardTypes))throw new Error('cardTypes مفقودة');source=data;rulesLoaded=true}catch(e){warning='تعذر تحميل card-rules.json؛ تم تشغيل قاعدة Mobilis الاحتياطية فقط.';console.error(e)}cardRules=source.cardTypes.map(normalizeRule).filter(r=>r.enabled&&validRule(r)).sort((a,b)=>a.order-b.order);if(!cardRules.length)cardRules=fallbackRules.cardTypes.map(normalizeRule);renderTabs();if(!cardRules.some(r=>r.id===type))type=cardRules[0].id;selectType(type);if(warning)statusEl.textContent=warning}
+function renderTabs(){const cardButtons=cardRules.map(r=>`<button class="tab" data-type="${esc(r.id)}">${esc(r.name)}</button>`).join('');$('tabs').innerHTML=cardButtons+'<button class="tab" data-type="waffarly">وفرلي</button><button class="tab" data-type="token">Token Store</button><button class="tab" data-type="plain">نص عادي</button>';$('subtitle').textContent=[...cardRules.map(r=>r.name),'وفرلي','Token Store','TXT'].join(' • ');document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>selectType(b.dataset.type))}
 function currentRule(){return cardRules.find(r=>r.id===type)||null}
-function selectType(next){
-  type=next;
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.type===type));
-  const rule=currentRule(),info=rule?[rule.hint,rule.placeholder]:type==='waffarly'?waffarlyInfo:type==='token'?tokenInfo:plainInfo;
-  $('hint').textContent=info[0];
-  text.placeholder=info[1];
-  result.innerHTML='';
-  statusEl.textContent='';
-}
+function selectType(next){type=next;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.type===type));const rule=currentRule(),info=rule?[rule.hint,rule.placeholder]:type==='waffarly'?waffarlyInfo:type==='token'?tokenInfo:plainInfo;$('hint').textContent=info[0];text.placeholder=info[1];result.innerHTML='';statusEl.textContent=''}
 function typeName(id){if(id==='waffarly')return'وفرلي';if(id==='token')return'Token Store';if(id==='plain')return'نص عادي';return cardRules.find(r=>r.id===id)?.name||id}
-function detectContentType(raw){
-  const value=String(raw||'');
-  if(!value.trim())return null;
-  if(validateWaffarlySource(value).ok)return'waffarly';
-  if(validateTokenSource(value).ok)return'token';
-  for(const rule of cardRules){if(validateCardSource(value,rule).ok)return rule.id}
-  return'plain';
-}
-function applyAutoDetection(raw){
-  if(!autoDetect.checked)return;
-  const detected=detectContentType(raw);
-  if(!detected)return;
-  selectType(detected);
-  statusEl.textContent=detected==='plain'?'لم يتطابق المحتوى مع أي تنسيق معروف — تم التحويل تلقائيًا إلى نص عادي.':`تم التعرف تلقائيًا: ${typeName(detected)}.`;
-}
-$('pick').onclick=()=>file.click();
-file.onchange=async()=>{const f=file.files[0];if(!f)return;uploaded=f.name;fname.textContent='الملف: '+f.name;text.value=await f.text();applyAutoDetection(text.value);if(!autoDetect.checked)statusEl.textContent='تمت قراءة الملف.'};
-text.addEventListener('paste',()=>{if(!autoDetect.checked)return;setTimeout(()=>applyAutoDetection(text.value),0)});
-
+function detectContentType(raw){const value=String(raw||'');if(!value.trim())return null;if(validateWaffarlySource(value).ok)return'waffarly';if(validateTokenSource(value).ok)return'token';for(const rule of cardRules){if(validateCardSource(value,rule).ok)return rule.id}return'plain'}
+function applyAutoDetection(raw){if(!autoDetect.checked)return;const detected=detectContentType(raw);if(!detected)return;selectType(detected);statusEl.textContent=detected==='plain'?'لم يتطابق المحتوى مع أي تنسيق معروف — تم التحويل تلقائيًا إلى نص عادي.':`تم التعرف تلقائيًا: ${typeName(detected)}.`}
+$('pick').onclick=()=>file.click();file.onchange=async()=>{const f=file.files[0];if(!f)return;uploaded=f.name;fname.textContent='الملف: '+f.name;text.value=await f.text();applyAutoDetection(text.value);if(!autoDetect.checked)statusEl.textContent='تمت قراءة الملف.'};text.addEventListener('paste',()=>{if(!autoDetect.checked)return;setTimeout(()=>applyAutoDetection(text.value),0)});
 const pad=n=>String(n).padStart(2,'0');
 function stamp(){const d=new Date;return{tm:pad(d.getHours())+'-'+pad(d.getMinutes()),dt:pad(d.getDate())+pad(d.getMonth()+1)+d.getFullYear()}}
 function shortStamp(){const d=new Date;return{tm:pad(d.getHours())+pad(d.getMinutes()),dt:pad(d.getDate())+pad(d.getMonth()+1)+String(d.getFullYear()).slice(-2)}}
@@ -125,55 +52,8 @@ function namePlain(count){const s=stamp();return `Text_count-${count}_${s.tm}_${
 function download(content,name,withBom=true){const bytes=new TextEncoder().encode(content),parts=withBom?[new Uint8Array([239,187,191]),bytes]:[bytes],blob=new Blob(parts,{type:'text/plain;charset=utf-8'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),800)}
 function copy(t){navigator.clipboard.writeText(t).then(()=>statusEl.textContent='تم النسخ.')}
 function validationError(title,details=[]){result.innerHTML=`<div class="group validationBox"><div class="error">⚠️ ${esc(title)}</div>${details.length?`<ul class="validationList">${details.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}<div class="hint">لم يتم إنشاء أي مخرج. راجع المصدر ثم أعد المعالجة.</div></div>`;statusEl.textContent='تم إيقاف المعالجة لحماية البطاقات.';return false}
-
-function validateCardSource(raw,rule){
-  const lines=String(raw||'').split(/\r\n|\n|\r/),valid=[],bad=[];let sig=null;
-  lines.forEach((original,i)=>{
-    const line=trim.checked?original.trim():original;
-    if(line==='')return;
-    const found=rule.separators.map(sep=>({sep,pos:line.indexOf(sep)})).filter(x=>x.pos>=0).sort((a,b)=>a.pos-b.pos)[0];
-    if(!found){bad.push(`السطر ${i+1}: لا توجد فاصلة معتمدة بين رقم البطاقة وSN`);return}
-    if(line.indexOf(found.sep,found.pos+found.sep.length)>=0){bad.push(`السطر ${i+1}: يحتوي أكثر من فاصل من النوع نفسه`);return}
-    const left=line.slice(0,found.pos).trim(),right=line.slice(found.pos+found.sep.length).trim();
-    if(rule.numbersOnly&&!/^\d+$/.test(left)){bad.push(`السطر ${i+1}: رقم ${rule.name} قبل الفاصلة يجب أن يكون أرقامًا فقط`);return}
-    if(rule.length&&left.length!==rule.length){bad.push(`السطر ${i+1}: رقم بطاقة ${rule.name} يجب أن يكون ${rule.length} رقمًا بالضبط (الموجود ${left.length})`);return}
-    if(rule.snRequired&&!right){bad.push(`السطر ${i+1}: SN مفقود بعد الفاصلة`);return}
-    if(right&&rule.snNumbersOnly&&!/^\d+$/.test(right)){bad.push(`السطر ${i+1}: SN يجب أن يكون أرقامًا فقط`);return}
-    if(right&&rule.snLength!==null&&right.length!==rule.snLength){bad.push(`السطر ${i+1}: طول SN يجب أن يكون ${rule.snLength} رقمًا (الموجود ${right.length})`);return}
-    const now={left:left.length,right:right.length,sep:found.sep};
-    if(rule.uniformFormat){
-      if(!sig)sig=now;
-      else if(now.left!==sig.left||now.right!==sig.right||now.sep!==sig.sep){bad.push(`السطر ${i+1}: يختلف عن صيغة بقية بطاقات ${rule.name}`);return}
-    }
-    valid.push(left);
-  });
-  if(!valid.length)return{ok:false,details:[`لم يتم العثور على بطاقات ${rule.name} بالصيغة الرقمية المتوقعة.`]};
-  if(bad.length)return{ok:false,details:bad.slice(0,8).concat(bad.length>8?[`ويوجد ${bad.length-8} أسطر أخرى تحتاج مراجعة.`]:[])};
-  return{ok:true,cards:valid};
-}
-function validateWaffarlySource(raw){
-  const lines=String(raw||'').replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()),groups={},bad=[];let total=0,found=0;
-  const productRe=/^(.+?)\s*--\s*(.+)$/;
-  const qtyRe=/^(?:Quantity\s*:?|Qty\s*:)\s*(\d+)\s*$/i;
-  const separatorRe=/^-{5,}$/;
-  for(let i=0;i<lines.length;i++){
-    const pm=lines[i].match(productRe);if(!pm)continue;
-    const product=pm[1].trim(),variant=pm[2].trim();if(!product||!variant)continue;
-    let q=-1,sep=-1;
-    for(let j=i+1;j<Math.min(lines.length,i+5);j++){
-      const qm=lines[j].match(qtyRe);if(qm){q=Number(qm[1]);for(let k=j+1;k<Math.min(lines.length,j+4);k++){if(separatorRe.test(lines[k])){sep=k;break}}break}
-    }
-    if(q<1||sep<0){bad.push(`القسم قرب السطر ${i+1}: Quantity/Qty أو الخط الفاصل غير واضح`);continue}
-    const codes=[];let k=sep+1;
-    while(k<lines.length&&codes.length<q){const v=lines[k].trim();if(v&& !productRe.test(v)&&!qtyRe.test(v)&&!separatorRe.test(v)){codes.push(v)}k++}
-    if(codes.length!==q){bad.push(`${product} -- ${variant}: الكمية ${q} لكن تم العثور على ${codes.length} كود فقط`);continue}
-    if(codes.some(c=>c.length<4||/\s/.test(c))){bad.push(`${product} -- ${variant}: يوجد كود غير صالح أو يحتوي فراغات`);continue}
-    const key=`${product} -- ${variant}`;(groups[key]??=[]).push(...codes);total+=codes.length;found++;i=k-1;
-  }
-  if(!found)return{ok:false,details:bad.length?bad.slice(0,6):['لم يتم العثور على صيغة وفرلي: اسم المنتج -- الفئة ثم Quantity/Qty ثم الخط الفاصل.']};
-  if(bad.length)return{ok:false,details:bad.slice(0,6).concat(bad.length>6?[`ويوجد ${bad.length-6} أقسام أخرى تحتاج مراجعة.`]:[])};
-  return{ok:true,groups,total};
-}
+function validateCardSource(raw,rule){const lines=String(raw||'').split(/\r\n|\n|\r/),valid=[],bad=[];let sig=null;lines.forEach((original,i)=>{const line=trim.checked?original.trim():original;if(line==='')return;const found=rule.separators.map(sep=>({sep,pos:line.indexOf(sep)})).filter(x=>x.pos>=0).sort((a,b)=>a.pos-b.pos)[0];if(!found){bad.push(`السطر ${i+1}: لا توجد فاصلة معتمدة بين رقم البطاقة وSN`);return}if(line.indexOf(found.sep,found.pos+found.sep.length)>=0){bad.push(`السطر ${i+1}: يحتوي أكثر من فاصل من النوع نفسه`);return}const left=line.slice(0,found.pos).trim(),right=line.slice(found.pos+found.sep.length).trim();if(rule.numbersOnly&&!/^\d+$/.test(left)){bad.push(`السطر ${i+1}: رقم ${rule.name} قبل الفاصلة يجب أن يكون أرقامًا فقط`);return}if(rule.length&&left.length!==rule.length){bad.push(`السطر ${i+1}: رقم بطاقة ${rule.name} يجب أن يكون ${rule.length} رقمًا بالضبط (الموجود ${left.length})`);return}if(rule.snRequired&&!right){bad.push(`السطر ${i+1}: SN مفقود بعد الفاصلة`);return}if(right&&rule.snNumbersOnly&&!/^\d+$/.test(right)){bad.push(`السطر ${i+1}: SN يجب أن يكون أرقامًا فقط`);return}if(right&&rule.snLength!==null&&right.length!==rule.snLength){bad.push(`السطر ${i+1}: طول SN يجب أن يكون ${rule.snLength} رقمًا (الموجود ${right.length})`);return}const now={left:left.length,right:right.length,sep:found.sep};if(rule.uniformFormat){if(!sig)sig=now;else if(now.left!==sig.left||now.right!==sig.right||now.sep!==sig.sep){bad.push(`السطر ${i+1}: يختلف عن صيغة بقية بطاقات ${rule.name}`);return}}valid.push(left)});if(!valid.length)return{ok:false,details:[`لم يتم العثور على بطاقات ${rule.name} بالصيغة الرقمية المتوقعة.`]};if(bad.length)return{ok:false,details:bad.slice(0,8).concat(bad.length>8?[`ويوجد ${bad.length-8} أسطر أخرى تحتاج مراجعة.`]:[])};return{ok:true,cards:valid}}
+function validateWaffarlySource(raw){const lines=String(raw||'').replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()),groups={},bad=[];let total=0,found=0;const productRe=/^(.+?)\s*--\s*(.+)$/,qtyRe=/^(?:Quantity\s*:?|Qty\s*:)\s*(\d+)\s*$/i,separatorRe=/^-{5,}$/;for(let i=0;i<lines.length;i++){const pm=lines[i].match(productRe);if(!pm)continue;const product=pm[1].trim(),variant=pm[2].trim();if(!product||!variant)continue;let q=-1,sep=-1;for(let j=i+1;j<Math.min(lines.length,i+5);j++){const qm=lines[j].match(qtyRe);if(qm){q=Number(qm[1]);for(let k=j+1;k<Math.min(lines.length,j+4);k++){if(separatorRe.test(lines[k])){sep=k;break}}break}}if(q<1||sep<0){bad.push(`القسم قرب السطر ${i+1}: Quantity/Qty أو الخط الفاصل غير واضح`);continue}const codes=[];let k=sep+1;while(k<lines.length&&codes.length<q){const v=lines[k].trim();if(v&&!productRe.test(v)&&!qtyRe.test(v)&&!separatorRe.test(v))codes.push(v);k++}if(codes.length!==q){bad.push(`${product} -- ${variant}: الكمية ${q} لكن تم العثور على ${codes.length} كود فقط`);continue}if(codes.some(c=>c.length<4||/\s/.test(c))){bad.push(`${product} -- ${variant}: يوجد كود غير صالح أو يحتوي فراغات`);continue}const key=`${product} -- ${variant}`;(groups[key]??=[]).push(...codes);total+=codes.length;found++;i=k-1}if(!found)return{ok:false,details:bad.length?bad.slice(0,6):['لم يتم العثور على صيغة وفرلي: اسم المنتج -- الفئة ثم Quantity/Qty ثم الخط الفاصل.']};if(bad.length)return{ok:false,details:bad.slice(0,6).concat(bad.length>6?[`ويوجد ${bad.length-6} أقسام أخرى تحتاج مراجعة.`]:[])};return{ok:true,groups,total}}
 function validateTokenSource(raw){const normalized=String(raw||'').replace(/\r\n?/g,'\n'),start=normalized.search(/^[ \t]*PRODUCT DETAILS[ \t]*$/im);if(start<0)return{ok:false,details:['لم يتم العثور على PRODUCT DETAILS. قد يكون تنسيق المصدر قد تغيّر.']};let body=normalized.slice(start);const footer=body.search(/^[ \t]*(?:HOW TO USE YOUR CODE|NEED HELP\?|Are you a Telegram user\?)[ \t]*$/im);if(footer>=0)body=body.slice(0,footer);const blocks=body.split(/^[ \t]*PRODUCT DETAILS[ \t]*$/gim).map(x=>x.trim()).filter(Boolean),g={},bad=[];let productCount=0,codeCount=0,extracted=0;blocks.forEach((block,index)=>{const lines=block.split('\n'),products=[],codes=[];for(let i=0;i<lines.length;i++){const line=lines[i].trim().replace(/\*\*/g,'').trim();let m=line.match(/^Product\s*:\s*(.*)$/i);if(m){const v=m[1].trim();if(v)products.push(v);continue}m=line.match(/^Code\s*:\s*(.*)$/i);if(m){let v=m[1].trim();if(!v){for(let j=i+1;j<lines.length;j++){const next=lines[j].trim().replace(/\*\*/g,'').trim();if(!next)continue;if(/^(?:Product|Price|Serial|Code)\s*:/i.test(next)||/^(?:PRODUCT DETAILS|HOW TO USE YOUR CODE|NEED HELP\?)$/i.test(next))break;v=next;break}}if(v)codes.push(v)}}const uniqueProducts=[...new Set(products)],uniqueCodes=[...new Set(codes)];if(uniqueProducts.length===1)productCount++;if(uniqueCodes.length===1)codeCount++;if(uniqueProducts.length!==1||uniqueCodes.length!==1){bad.push(`القسم ${index+1}: ${uniqueProducts.length!==1?'اسم Product غير واضح':'Code غير واضح أو مفقود'}`);return}const p=uniqueProducts[0].replace(/[/\\?%*:|"<>]/g,'-'),c=uniqueCodes[0];(g[p]??=[]).push(c);extracted++});if(!blocks.length)return{ok:false,details:['لم يتم العثور على أي قسم PRODUCT DETAILS صالح.']};if(bad.length||productCount!==blocks.length||codeCount!==blocks.length||extracted!==blocks.length)return{ok:false,details:[`Product المكتشفة: ${productCount}`,`Code المكتشفة: ${codeCount}`,`البطاقات المستخرجة فعليًا: ${extracted}`,...bad.slice(0,5),bad.length>5?`ويوجد ${bad.length-5} أقسام أخرى تحتاج مراجعة.`:''].filter(Boolean)};return{ok:true,groups:g,total:extracted}}
 function suggested(total,parts){const b=Math.floor(total/parts),r=total%parts;return Array.from({length:parts},(_,i)=>b+(i<r?1:0))}
 function splitTopUI(id,items){if(items.length<2)return'';return `<div class="splitQuick"><div class="splitQuickRow"><span class="splitQuickLabel">عدد الأقسام</span><input id="${id}parts" type="number" inputmode="numeric" min="2" max="${items.length}" value="2"><button id="${id}prep" class="btn green miniBtn">تحضير</button></div><div id="${id}confirm" class="splitConfirm">2 أقسام • ${items.length} بطاقة</div></div>`}
@@ -185,27 +65,8 @@ function processPlain(){let lines=text.value.split(/\r\n|\n|\r/);if(trim.checked
 function processCard(rule){const checked=validateCardSource(text.value,rule);if(!checked.ok)return validationError(`تنسيق بطاقات ${rule.name} غير متطابق`,checked.details);const cards=checked.cards,id='card-'+safe(rule.id),nameFn=(n,a,b)=>nameCard(rule,n,a,b);result.innerHTML=group(rule.outputTitle,cards,nameCard(rule,cards.length),id,nameFn,true);bindGroup(id,cards,nameCard(rule,cards.length),nameFn,true,rule.outputBom);statusEl.textContent=`تم التحقق من ${cards.length} بطاقة ${rule.name} — الصيغة متطابقة وتم حذف SN.`}
 function processWaffarly(){const checked=validateWaffarlySource(text.value);if(!checked.ok)return validationError('صيغة وفرلي تحتاج مراجعة',checked.details);const g=checked.groups,keys=Object.keys(g);result.innerHTML=keys.map((p,i)=>group('📦 '+p,g[p],nameWaffarly(p,g[p].length),'waf'+i,(n,a,b)=>nameWaffarly(p,n,a,b),true)).join('');keys.forEach((p,i)=>bindGroup('waf'+i,g[p],nameWaffarly(p,g[p].length),(n,a,b)=>nameWaffarly(p,n,a,b),true,false));statusEl.textContent=`تم التعرف على صيغة وفرلي واستخراج ${checked.total} بطاقة — جاهزة للتحميل ورفعها إلى متجرك.`}
 function processToken(){const checked=validateTokenSource(text.value);if(!checked.ok)return validationError('تنسيق Token Store يحتاج مراجعة',checked.details);const g=checked.groups,keys=Object.keys(g);result.innerHTML=keys.map((p,i)=>group('📦 '+p,g[p],nameToken(p,g[p].length),'tok'+i,(n,a,b)=>nameToken(p,n,a,b),true)).join('');keys.forEach((p,i)=>bindGroup('tok'+i,g[p],nameToken(p,g[p].length),(n,a,b)=>nameToken(p,n,a,b),true,true));statusEl.textContent=`تم التحقق واستخراج ${checked.total} بطاقة.`}
-$('process').onclick=()=>{
-  result.innerHTML='';statusEl.textContent='';
-  if(!text.value.trim()){result.innerHTML='<div class="error">ألصق النص أو ارفع ملفًا أولًا.</div>';return}
-  if(autoDetect.checked){
-    const detected=detectContentType(text.value);
-    if(detected){
-      selectType(detected);
-      if(detected==='plain'){
-        processPlain();
-        statusEl.textContent='لم يتطابق المحتوى مع أي تنسيق معروف — تم تحويله إلى نص عادي وتجهيزه.';
-        return;
-      }
-      if(detected==='waffarly'){processWaffarly();return}
-      if(detected==='token'){processToken();return}
-      const detectedRule=cardRules.find(r=>r.id===detected);
-      if(detectedRule){processCard(detectedRule);return}
-    }
-  }
-  const rule=currentRule();if(rule)processCard(rule);else if(type==='waffarly')processWaffarly();else if(type==='token')processToken();else processPlain();
-};
+$('process').onclick=()=>{result.innerHTML='';statusEl.textContent='';if(!text.value.trim()){result.innerHTML='<div class="error">ألصق النص أو ارفع ملفًا أولًا.</div>';return}if(autoDetect.checked){const detected=detectContentType(text.value);if(detected){selectType(detected);if(detected==='plain'){processPlain();statusEl.textContent='لم يتطابق المحتوى مع أي تنسيق معروف — تم تحويله إلى نص عادي وتجهيزه.';return}if(detected==='waffarly'){processWaffarly();return}if(detected==='token'){processToken();return}const detectedRule=cardRules.find(r=>r.id===detected);if(detectedRule){processCard(detectedRule);return}}}const rule=currentRule();if(rule)processCard(rule);else if(type==='waffarly')processWaffarly();else if(type==='token')processToken();else processPlain()};
 loadRules();
 </script>
-<script src="./auto-settings.js"></script>
+<script src="./auto-settings.js?v=20260909-2326"></script>
 </body></html>
