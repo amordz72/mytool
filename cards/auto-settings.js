@@ -37,8 +37,46 @@
     if(mount)return mount;
     mount=document.createElement('div');
     mount.id='mainOptionsMount';
-    processBtn.insertAdjacentElement('beforebegin',mount);
+    mount.hidden=true;
+    const row=processBtn.closest('.row');
+    if(row)row.insertBefore(mount,row.firstChild);else processBtn.insertAdjacentElement('beforebegin',mount);
     return mount;
+  }
+
+  function saveSessionText(){sessionSet(SESSION.text,text.value)}
+
+  function clearCurrentWork(){
+    clearTimeout(timer);
+    text.value='';
+    try{file.value=''}catch(e){}
+    try{if(typeof uploaded!=='undefined')uploaded=''}catch(e){}
+    sessionSet(SESSION.text,'');
+    sessionSet(SESSION.filename,'');
+    if(fname)fname.textContent='لم يتم اختيار ملف.';
+    if(result)result.innerHTML='';
+    if(status)status.textContent='تم تنظيف النص والنتائج.';
+    text.focus();
+  }
+
+  function ensureActionBar(){
+    let bar=document.getElementById('cardsActionBar');
+    if(bar)return bar;
+    const row=processBtn.closest('.row');
+    bar=document.createElement('div');
+    bar.id='cardsActionBar';
+    bar.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%';
+    if(row)processBtn.insertAdjacentElement('beforebegin',bar);else processBtn.parentElement?.insertBefore(bar,processBtn);
+    bar.appendChild(processBtn);
+    const clearBtn=document.createElement('button');
+    clearBtn.id='clearCurrentWork';
+    clearBtn.type='button';
+    clearBtn.className='btn';
+    clearBtn.textContent='🧹 تنظيف';
+    clearBtn.style.cssText='width:100%;background:#6b7c89';
+    clearBtn.addEventListener('click',clearCurrentWork);
+    bar.appendChild(clearBtn);
+    processBtn.style.width='100%';
+    return bar;
   }
 
   function renderMainOptions(){
@@ -49,6 +87,7 @@
     const mount=ensureMount();
     mount.innerHTML='';
     mount.hidden=!show;
+    mount.style.marginBottom=show?'8px':'0';
 
     if(show){
       mount.innerHTML='<div class="options"><label class="opt"><input id="quickTrim" type="checkbox"> إزالة الفراغات من أول وآخر كل سطر</label><label class="opt"><input id="quickAutoDetect" type="checkbox"> التعرف التلقائي على النوع عند اللصق أو رفع الملف</label></div>';
@@ -60,10 +99,10 @@
     }
 
     if(row){
-      row.style.display=show?'grid':'block';
+      row.style.display='block';
       row.style.marginTop='8px';
     }
-    processBtn.style.width='100%';
+    ensureActionBar();
   }
 
   function syncSettings(){
@@ -73,7 +112,6 @@
     renderMainOptions();
   }
 
-  function saveSessionText(){sessionSet(SESSION.text,text.value)}
   function restoreSession(){
     const savedText=sessionGet(SESSION.text);
     if(!text.value&&savedText)text.value=savedText;
@@ -102,6 +140,7 @@
     setTimeout(()=>observer.disconnect(),3000);
   }
 
+  ensureActionBar();
   syncSettings();
   restoreSession();
   restoreTypeWhenReady();
