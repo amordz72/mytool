@@ -13,22 +13,23 @@
 <body><main class="wrap">
 <a class="back" href="./">← الرجوع إلى معالج البطاقات</a>
 <section class="app"><header class="head"><h1>⚙️ إعدادات معالج البطاقات</h1><p>تُحفظ الإعدادات على هذا الجهاز فقط.</p></header><div class="body">
-<div class="note">الإعدادات الأساسية مفعّلة افتراضيًا. لا يتم حفظ نصوص البطاقات أو الأكواد في LocalStorage.</div>
+<div class="note">أي تغيير هنا يُحفظ تلقائيًا. لا يتم حفظ نصوص البطاقات أو الأكواد في LocalStorage.</div>
 <label class="setting"><span><b>إزالة الفراغات</b><small>إزالة الفراغات من أول وآخر كل سطر أثناء المعالجة.</small></span><input id="trim" class="switch" type="checkbox"></label>
 <label class="setting"><span><b>التعرف التلقائي على الصيغة</b><small>يتعرف تلقائيًا على وفرلي / OneClick / Mobilis / Token Store وغيرها من الصيغ المعروفة.</small></span><input id="detect" class="switch" type="checkbox"></label>
 <label class="setting"><span><b>المعالجة التلقائية</b><small>عند اللصق أو رفع ملف، يتم تجهيز النتيجة مباشرة بدون الضغط على زر معالجة.</small></span><input id="process" class="switch" type="checkbox"></label>
+<label class="setting"><span><b>إظهار الخيارات السريعة في الصفحة الرئيسية</b><small>مغلق افتراضيًا لتبقى الواجهة نظيفة. عند تفعيله تظهر خيارات مثل إزالة الفراغات والتعرف التلقائي داخل المعالج نفسه.</small></span><input id="showMainOptions" class="switch" type="checkbox"></label>
 
 <h2 class="sectionTitle">إظهار تقسيم الملفات</h2>
-<div class="note">فعّل التقسيم فقط للأنواع التي تحتاجه. Mobilis ظاهر افتراضيًا، والأنواع الأخرى مخفية حتى تفعّلها من هنا.</div>
+<div class="note">فعّل التقسيم فقط للأنواع التي تحتاجه. Mobilis ظاهر افتراضيًا، والأنواع الأخرى ومنها النص العادي مخفية حتى تفعّلها من هنا.</div>
 <div id="splitSettings"></div>
 
-<div class="actions"><button id="save" class="btn green">حفظ الإعدادات</button><button id="defaults" class="btn">إرجاع الافتراضي</button></div>
+<div class="actions"><button id="save" class="btn green">حفظ الآن</button><button id="defaults" class="btn">إرجاع الافتراضي</button></div>
 <div id="status" class="status"></div>
 </div></section></main>
 <script>
-const KEYS={trim:'mytool.cards.trim',detect:'mytool.cards.autoDetect',process:'mytool.cards.autoProcess',splitPrefix:'mytool.cards.split.'};
-const trim=document.getElementById('trim'),detect=document.getElementById('detect'),process=document.getElementById('process'),status=document.getElementById('status'),splitSettings=document.getElementById('splitSettings');
-const fallbackTypes=[{id:'mobilis',name:'Mobilis'},{id:'idoom',name:'Idoom'},{id:'waffarly',name:'وفرلي / OneClick'},{id:'token',name:'Token Store'}];
+const KEYS={trim:'mytool.cards.trim',detect:'mytool.cards.autoDetect',process:'mytool.cards.autoProcess',showMainOptions:'mytool.cards.showMainOptions',splitPrefix:'mytool.cards.split.'};
+const trim=document.getElementById('trim'),detect=document.getElementById('detect'),process=document.getElementById('process'),showMainOptions=document.getElementById('showMainOptions'),status=document.getElementById('status'),splitSettings=document.getElementById('splitSettings');
+const fallbackTypes=[{id:'mobilis',name:'Mobilis'},{id:'idoom',name:'Idoom'},{id:'waffarly',name:'وفرلي / OneClick'},{id:'token',name:'Token Store'},{id:'plain',name:'نص عادي / TXT'}];
 let splitTypes=[];
 function read(key,def=true){try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}}
 function splitDefault(id){return id==='mobilis'}
@@ -38,26 +39,28 @@ async function loadTypes(){
     const res=await fetch('../card-rules/card-rules.json',{cache:'no-store'});
     if(res.ok){const data=await res.json();if(data&&Array.isArray(data.cardTypes))list=data.cardTypes.filter(x=>x&&x.enabled!==false&&x.id).map(x=>({id:String(x.id),name:String(x.name||x.id)}))}
   }catch(e){}
-  const all=[...list,{id:'waffarly',name:'وفرلي / OneClick'},{id:'token',name:'Token Store'}];
+  const all=[...list,{id:'waffarly',name:'وفرلي / OneClick'},{id:'token',name:'Token Store'},{id:'plain',name:'نص عادي / TXT'}];
   const seen=new Set();splitTypes=all.filter(x=>!seen.has(x.id)&&seen.add(x.id));
   if(!splitTypes.length)splitTypes=fallbackTypes;
   renderSplits();
 }
 function renderSplits(){
   splitSettings.innerHTML=splitTypes.map(x=>`<label class="setting"><span><b>${escapeHtml(x.name)}</b><small>إظهار أدوات تقسيم الملفات لهذا النوع داخل النتائج.</small></span><input class="switch split-toggle" type="checkbox" data-type="${escapeHtml(x.id)}"></label>`).join('');
-  document.querySelectorAll('.split-toggle').forEach(el=>{el.checked=read(KEYS.splitPrefix+el.dataset.type,splitDefault(el.dataset.type))});
+  document.querySelectorAll('.split-toggle').forEach(el=>{el.checked=read(KEYS.splitPrefix+el.dataset.type,splitDefault(el.dataset.type));el.addEventListener('change',save)});
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function load(){trim.checked=read(KEYS.trim,true);detect.checked=read(KEYS.detect,true);process.checked=read(KEYS.process,true)}
+function load(){trim.checked=read(KEYS.trim,true);detect.checked=read(KEYS.detect,true);process.checked=read(KEYS.process,true);showMainOptions.checked=read(KEYS.showMainOptions,false)}
 function save(){try{
   localStorage.setItem(KEYS.trim,trim.checked?'1':'0');
   localStorage.setItem(KEYS.detect,detect.checked?'1':'0');
   localStorage.setItem(KEYS.process,process.checked?'1':'0');
+  localStorage.setItem(KEYS.showMainOptions,showMainOptions.checked?'1':'0');
   document.querySelectorAll('.split-toggle').forEach(el=>localStorage.setItem(KEYS.splitPrefix+el.dataset.type,el.checked?'1':'0'));
-  status.textContent='تم حفظ الإعدادات.';
+  status.textContent='تم حفظ الإعدادات تلقائيًا.';
 }catch(e){status.textContent='تعذر حفظ الإعدادات على هذا المتصفح.'}}
-document.getElementById('save').onclick=save;
-document.getElementById('defaults').onclick=()=>{trim.checked=true;detect.checked=true;process.checked=true;document.querySelectorAll('.split-toggle').forEach(el=>el.checked=splitDefault(el.dataset.type));save()};
+[trim,detect,process,showMainOptions].forEach(el=>el.addEventListener('change',save));
+document.getElementById('save').onclick=()=>{save();status.textContent='تم حفظ الإعدادات.'};
+document.getElementById('defaults').onclick=()=>{trim.checked=true;detect.checked=true;process.checked=true;showMainOptions.checked=false;document.querySelectorAll('.split-toggle').forEach(el=>el.checked=splitDefault(el.dataset.type));save();status.textContent='تم إرجاع الإعدادات الافتراضية وحفظها.'};
 load();loadTypes();
 </script>
 </body></html>
