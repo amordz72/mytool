@@ -15,19 +15,20 @@
 <div id="hint" class="hint">جاري تحميل قواعد البطاقات...</div>
 <div class="upload"><button id="pick" class="btn">📂 رفع ملف</button><div id="fname" class="file">لم يتم اختيار ملف.</div><input id="file" type="file" accept=".txt,.csv,.log,text/plain,text/csv" hidden></div>
 <textarea id="text" placeholder="جاري تحميل القواعد..."></textarea>
-<div class="row"><div class="options"><label class="opt"><input id="trim" type="checkbox" checked> إزالة الفراغات من أول وآخر كل سطر</label><label class="opt"><input id="autoDetect" type="checkbox" checked> التعرف التلقائي على النوع عند اللصق أو رفع الملف</label></div><button id="process" class="btn">معالجة وتحضير</button></div>
+<div class="row" style="display:block"><div id="mainOptionsMount" hidden></div><button id="process" class="btn">معالجة وتحضير</button></div>
 <div id="status" class="status"></div><div id="result" class="result"></div>
 </div></section></main>
 <script>
-const $=id=>document.getElementById(id),text=$('text'),file=$('file'),fname=$('fname'),result=$('result'),statusEl=$('status'),trim=$('trim'),autoDetect=$('autoDetect');
+const $=id=>document.getElementById(id),text=$('text'),file=$('file'),fname=$('fname'),result=$('result'),statusEl=$('status');
 const tokenInfo=['استخراج Product و Code وتجميع كل منتج وحده مع التحقق من تغيّر تنسيق المصدر.','ألصق رسالة Token Store هنا...'];
 const waffarlyInfo=['استخراج أكواد وفرلي تلقائيًا من صيغة المنتج + Quantity أو Qty + الخط الفاصل. نفس تنسيق OneClick مدعوم.','ألصق رسالة وفرلي أو OneClick هنا...'];
 const plainInfo=['حفظ النص في TXT مع اسم منظم.','ألصق النص هنا...'];
 const fallbackRules={version:1,cardTypes:[{id:'mobilis',name:'Mobilis',enabled:true,order:10,hint:'أخذ الرقم الموجود قبل أول فاصلة فقط وحذف SN وما بعدها. يتم التحقق من صيغة كل سطر قبل المعالجة.',placeholder:'مثال وهمي للاختبار فقط:\n000000000000001,000000000000001\n000000000000002,000000000000002',separators:[',','،'],take:'before',numbersOnly:true,length:15,snRequired:true,snNumbersOnly:true,snLength:null,uniformFormat:true,outputTitle:'بطاقات Mobilis بدون SN',filePrefix:'MOB',detectValueFromFilename:true,defaultValue:'CARTE',outputBom:false}]};
-const AUTO_DETECT_KEY='mytool.cards.autoDetect';
+const TRIM_KEY='mytool.cards.trim',AUTO_DETECT_KEY='mytool.cards.autoDetect';
+const readLocalBool=(key,def=true)=>{try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}};
+const trim={checked:readLocalBool(TRIM_KEY,true)},autoDetect={checked:readLocalBool(AUTO_DETECT_KEY,true)};
+window.cardOptionState={trim,autoDetect};
 let cardRules=[],type='mobilis',uploaded='',rulesLoaded=false;
-try{autoDetect.checked=localStorage.getItem(AUTO_DETECT_KEY)!=='0'}catch(e){autoDetect.checked=true}
-autoDetect.onchange=()=>{try{localStorage.setItem(AUTO_DETECT_KEY,autoDetect.checked?'1':'0')}catch(e){}};
 
 function normalizeRule(r){
   return {
