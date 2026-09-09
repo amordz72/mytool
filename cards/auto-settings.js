@@ -3,6 +3,12 @@
   const text=document.getElementById('text'),file=document.getElementById('file'),trim=document.getElementById('trim'),detect=document.getElementById('autoDetect'),processBtn=document.getElementById('process'),result=document.getElementById('result'),status=document.getElementById('status'),hint=document.getElementById('hint');
   if(!text||!file||!trim||!detect||!processBtn)return;
 
+  function loadScript(src,next){
+    if(document.querySelector(`script[data-helper="${src}"]`)){if(next)next();return}
+    const s=document.createElement('script');s.src=src;s.dataset.helper=src;s.onload=()=>next&&next();document.body.appendChild(s);
+  }
+  loadScript('./whatsapp-cleanup.js',()=>loadScript('./result-ui.js'));
+
   const read=key=>{try{return localStorage.getItem(key)!=='0'}catch(e){return true}};
   let autoProcess=true,timer=null;
 
