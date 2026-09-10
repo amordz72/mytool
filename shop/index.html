@@ -18,41 +18,20 @@
     .ok{background:#ecfdf5;color:#047857;padding:10px;border-radius:12px;margin-top:10px;font-size:13px}.stock{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
     .stock-item{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px}.stock-name{font-size:13px}.stock-num{font-size:23px;font-weight:900;margin-top:5px}
     .toolbar{display:flex;gap:8px;align-items:center}.toolbar button{width:auto;padding:9px 13px}.pill{display:inline-block;background:#ecfeff;color:#0f766e;border-radius:99px;padding:5px 9px;font-size:11px;font-weight:800}
-    .login{max-width:460px;margin:7vh auto}.login h1{margin-bottom:8px}.login .field{margin-bottom:11px}.switch{margin-top:12px;text-align:center}.switch button{width:auto;border:0;background:transparent;color:var(--main);font-weight:800;padding:6px}.identity{margin-top:5px;font-size:13px;font-weight:700}.soon{opacity:.65}.footer{text-align:center;color:var(--muted);font-size:11px;padding:10px}
+    .login{max-width:460px;margin:7vh auto}.login h1{margin-bottom:8px}.login .field{margin-bottom:11px}.identity{margin-top:5px;font-size:13px;font-weight:700}.soon{opacity:.65}.footer{text-align:center;color:var(--muted);font-size:11px;padding:10px}
     .worker-list{display:grid;gap:8px;margin-top:14px}.worker-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid var(--line);border-radius:14px;background:#f8fafc}.worker-meta{min-width:0}.worker-meta small{display:block;color:var(--muted);margin-top:3px;word-break:break-word}.worker-actions{display:flex;gap:6px;flex-shrink:0}.worker-actions button{width:auto;padding:7px 9px;font-size:12px}.status-on{color:#047857;font-weight:800}.status-off{color:var(--danger);font-weight:800}.setting-line{display:flex;gap:10px;align-items:end}.setting-line>div{flex:1}.setting-line button{width:auto;min-width:110px}
     @media(max-width:620px){.grid,.stock{grid-template-columns:1fr}.app{padding:10px}.top{align-items:flex-start}.toolbar{flex-wrap:wrap}.worker-row{align-items:flex-start;flex-direction:column}.worker-actions{width:100%}.worker-actions button{flex:1}.setting-line{align-items:stretch;flex-direction:column}.setting-line button{width:100%}}
   </style>
 </head>
 <body>
 <div id="app" class="app" v-cloak>
-  <template v-if="loading"><div class="card">جاري الاتصال بقاعدة البيانات…</div></template>
+  <template v-if="loading"><div class="card">جاري التحقق من جلسة MyTool…</div></template>
 
   <template v-else-if="!isLoggedIn">
     <section class="card login">
       <a class="back" href="../">← MyTool</a>
       <h1>حساب المحل</h1>
-
-      <template v-if="loginMode==='worker'">
-        <p class="muted">دخول الخدام لتسجيل المبيعات.</p>
-        <form @submit.prevent="workerLogin">
-          <div class="field"><label>اسم المستخدم</label><input v-model.trim="workerUsername" autocomplete="username" required></div>
-          <div class="field"><label>كلمة المرور</label><input v-model="workerPassword" type="password" autocomplete="current-password" required></div>
-          <button class="btn" :disabled="busy">{{ busy ? 'جاري الدخول…' : 'دخول' }}</button>
-        </form>
-        <div class="switch"><button type="button" @click="setLoginMode('admin')">دخول الإدارة</button></div>
-      </template>
-
-      <template v-else>
-        <p class="muted">دخول الإدارة عبر Supabase Auth.</p>
-        <form @submit.prevent="adminLogin">
-          <div class="field"><label>البريد الإلكتروني</label><input v-model.trim="email" type="email" autocomplete="username" required></div>
-          <div class="field"><label>كلمة المرور</label><input v-model="password" type="password" autocomplete="current-password" required></div>
-          <button class="btn" :disabled="busy">{{ busy ? 'جاري الدخول…' : 'دخول الإدارة' }}</button>
-        </form>
-        <div class="switch"><button type="button" @click="setLoginMode('worker')">دخول الخدام</button></div>
-      </template>
-
-      <div v-if="message" :class="messageType">{{ message }}</div>
+      <p class="muted">يتم تسجيل الدخول من الصفحة الرئيسية لـ MyTool.</p>
     </section>
   </template>
 
@@ -219,15 +198,16 @@
       if(userMode.value==='admin'){await supabase.auth.signOut();clearAdminExpiry()}
       if(userMode.value==='worker'&&workerToken.value){try{await supabase.rpc('worker_logout',{p_session_token:workerToken.value})}catch(_e){}clearWorkerSession()}
       session.value=null;staff.value=[];products.value=[];inventory.value=[];adminWorkers.value=[];sale.value={sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''}
+      window.location.replace('../')
     }
 
     async function enforceTimeout(){
       if(userMode.value==='admin'){
         const expires=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)
-        if(expires&&Date.now()>=expires){await logout();loginMode.value='admin';notify('انتهت مدة جلسة الإدارة. ادخل من جديد.','error')}
+        if(expires&&Date.now()>=expires){await logout()}
       }else if(userMode.value==='worker'){
         const expires=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)
-        if(!expires||Date.now()>=expires){clearWorkerSession();products.value=[];inventory.value=[];notify('انتهت جلسة العامل. ادخل من جديد.','error')}
+        if(!expires||Date.now()>=expires){clearWorkerSession();products.value=[];inventory.value=[];window.location.replace('../')}
       }
     }
 
@@ -237,7 +217,7 @@
       if(userMode.value==='worker'){
         const {data,error}=await supabase.rpc('worker_get_catalog',{p_session_token:workerToken.value})
         busy.value=false
-        if(error){clearWorkerSession();return notify('انتهت جلسة الدخول. ادخل من جديد.','error')}
+        if(error){clearWorkerSession();window.location.replace('../');return}
         inventory.value=data||[]
         products.value=(data||[]).map(x=>({id:x.product_id,name:x.name}))
         return
@@ -326,11 +306,12 @@
       if(session.value){
         clearWorkerSession()
         const expires=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)
-        if(expires&&Date.now()>=expires){await supabase.auth.signOut();session.value=null;clearAdminExpiry();loginMode.value='admin';notify('انتهت مدة جلسة الإدارة. ادخل من جديد.','error')}
+        if(expires&&Date.now()>=expires){await supabase.auth.signOut();session.value=null;clearAdminExpiry()}
         else if(!expires)setAdminExpiry()
       }
       loading.value=false
-      if(isLoggedIn.value)await loadAll()
+      if(!isLoggedIn.value){window.location.replace('../');return}
+      await loadAll()
       supabase.auth.onAuthStateChange((_event,newSession)=>{session.value=newSession;if(newSession)clearWorkerSession()})
       setInterval(enforceTimeout,30000)
     })
