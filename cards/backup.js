@@ -113,3 +113,12 @@
   window.addEventListener('mytool:custom-sources-changed',refreshSoon);
   window.addEventListener('mytool:backup-updated',refreshSoon);
 })();
+
+(()=>{
+  if(!document.getElementById('text')||typeof window.processPlain!=='function')return;
+  if(document.querySelector('script[data-helper="./smart-table-extractor-v2.js?v=20260910-0830"]'))return;
+  const s=document.createElement('script');
+  s.src='./smart-table-extractor-v2.js?v=20260910-0830';
+  s.dataset.helper='./smart-table-extractor-v2.js?v=20260910-0830';
+  document.body.appendChild(s);
+})();
