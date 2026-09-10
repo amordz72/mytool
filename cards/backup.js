@@ -115,10 +115,41 @@
 })();
 
 (()=>{
-  if(!document.getElementById('text')||typeof window.processPlain!=='function')return;
-  if(document.querySelector('script[data-helper="./smart-table-extractor-v2.js?v=20260910-0830"]'))return;
-  const s=document.createElement('script');
-  s.src='./smart-table-extractor-v2.js?v=20260910-0830';
-  s.dataset.helper='./smart-table-extractor-v2.js?v=20260910-0830';
-  document.body.appendChild(s);
+  const text=document.getElementById('text');
+  const baseProcess=typeof window.processPlain==='function'?window.processPlain:null;
+  const baseAnalyze=typeof window.smartExtractCodes==='function'?window.smartExtractCodes:null;
+  if(!text||!baseProcess||window.__mytoolWebTableExtractorActive)return;
+  window.__mytoolWebTableExtractorActive=true;
+
+  const INVISIBLE=/[\u200B-\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]/g;
+  const NBSP=/[\u00A0\u202F]/g;
+  const normalize=value=>String(value??'').replace(INVISIBLE,'').replace(NBSP,' ').trim();
+
+  function expandCopiedText(raw){
+    const out=[];
+    String(raw||'').replace(/\r\n?/g,'\n').split('\n').forEach(original=>{
+      const line=normalize(original);
+      if(!line)return;
+      const seen=new Set();
+      const add=value=>{const v=normalize(value);if(v&&!seen.has(v)){seen.add(v);out.push(v)}};
+      add(line);
+      line.split(/\t+|\s*\|\s*|;+\s*/).forEach(add);
+      (line.match(/\d{5,96}/g)||[]).forEach(run=>{if(run!==line)add(run)});
+    });
+    return out.join('\n');
+  }
+
+  function currentType(){
+    try{return typeof window.detectContentType==='function'?window.detectContentType(text.value):'plain'}catch(e){return'plain'}
+  }
+
+  window.processPlain=function(){
+    const detected=currentType();
+    if(detected&&detected!=='plain')return baseProcess();
+    const raw=text.value,expanded=expandCopiedText(raw);
+    if(expanded===raw)return baseProcess();
+    try{text.value=expanded;return baseProcess()}finally{text.value=raw}
+  };
+  if(baseAnalyze)window.smartExtractCodes=raw=>baseAnalyze(expandCopiedText(raw));
+  window.expandCopiedTableText=expandCopiedText;
 })();
