@@ -154,3 +154,10 @@
     if(text.value.trim()&&typeof window.detectContentType==='function'&&window.detectContentType(text.value)==='plain')renderSmart();
   },0);
 })();
+(()=>{
+  if(document.querySelector('script[data-helper="./custom-sources.js?v=20260910-0543"]'))return;
+  const s=document.createElement('script');
+  s.src='./custom-sources.js?v=20260910-0543';
+  s.dataset.helper='./custom-sources.js?v=20260910-0543';
+  document.body.appendChild(s);
+})();

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2ea8e6">
+<title>صيغ المصادر - MyTool</title>
+<style>
+:root{--o:#f47700;--b:#2ea8e6;--t:#163047;--m:#61778a;--l:#d7e5ee;--g:#0f9f6e;--r:#d84c4c}*{box-sizing:border-box}body{margin:0;padding:8px;font-family:Arial,Tahoma,sans-serif;color:var(--t);background:linear-gradient(135deg,#fff7ef,#eef9ff)}.wrap{max-width:820px;margin:auto}.back{display:block;text-decoration:none;color:var(--t);font-weight:bold;background:#fff;border:1px solid var(--l);border-radius:10px;padding:10px 12px;margin-bottom:8px}.app{background:#fff;border:1px solid var(--l);border-radius:20px;overflow:hidden;box-shadow:0 8px 24px #16304718}.head{padding:14px 16px;color:#fff;background:linear-gradient(135deg,var(--o),#7fd3ff)}.head h1{font-size:20px;margin:0}.head p{margin:4px 0 0;font-size:12px}.body{padding:12px}.note{font-size:12px;color:var(--m);background:#f7fbfe;border-radius:10px;padding:10px;margin-bottom:10px;line-height:1.7}.source{border:1px solid var(--l);border-radius:13px;padding:11px;margin-bottom:8px;background:#fbfdff}.sourceHead{display:flex;align-items:center;justify-content:space-between;gap:8px}.sourceTitle{font-weight:bold}.badge{font-size:11px;border-radius:99px;padding:3px 8px;color:#fff;background:var(--g)}.off{background:#7f8b93}.source small{display:block;color:var(--m);margin-top:5px;line-height:1.6}.sourceActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:9px}.btn{border:0;border-radius:10px;padding:10px 12px;font-weight:bold;color:#fff;background:linear-gradient(135deg,var(--o),var(--b));cursor:pointer}.green{background:var(--g)}.gray{background:#6b7c89}.red{background:var(--r)}.sectionTitle{font-size:16px;margin:18px 0 9px;padding-top:12px;border-top:1px solid var(--l)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field{display:block}.field.full{grid-column:1/-1}.field b{display:block;font-size:13px;margin-bottom:5px}.field small{display:block;color:var(--m);font-size:11px;line-height:1.5;margin-top:5px}.field input,.field textarea,.field select{width:100%;border:1px solid var(--l);border-radius:10px;padding:10px;font:inherit;background:#fff}.field textarea{min-height:92px;resize:vertical}.checks{display:grid;grid-template-columns:1fr 1fr;gap:8px}.check{border:1px solid var(--l);border-radius:10px;padding:10px;background:#fbfdff;font-size:13px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.status{min-height:22px;margin-top:8px;font-size:13px;font-weight:bold;color:var(--g)}.testBox{margin-top:10px;border:1px solid var(--l);border-radius:13px;padding:10px;background:#fffaf5}.testBox textarea{width:100%;min-height:150px;border:1px solid var(--l);border-radius:10px;padding:10px;font-family:monospace;direction:ltr;text-align:left}.testResult{margin-top:8px;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;white-space:pre-wrap;direction:ltr;text-align:left;font-family:monospace;font-size:12px;min-height:44px}@media(max-width:620px){.grid,.checks,.actions,.sourceActions{grid-template-columns:1fr}.field.full{grid-column:auto}}
+</style>
+</head>
+<body><main class="wrap">
+<a class="back" href="./">← الرجوع إلى معالج البطاقات</a>
+<section class="app"><header class="head"><h1>🧩 صيغ المصادر</h1><p>سجّل صيغة المورد مرة واحدة، وبعدها MyTool يتعرف عليها تلقائيًا.</p></header><div class="body">
+<div class="note">الصيغ تُحفظ على هذا الجهاز فقط داخل المتصفح. لا يتم رفع الأكواد أو نصوص البطاقات إلى GitHub. الأفضل أن تبدأ بعلامة واضحة للمصدر ثم تحدد شكل الكود.</div>
+<div id="sources"></div>
+<button id="newRule" class="btn" type="button">＋ إضافة صيغة جديدة</button>
+<h2 class="sectionTitle" id="formTitle">إضافة صيغة جديدة</h2>
+<form id="form" autocomplete="off">
+<input id="ruleId" type="hidden">
+<div class="grid">
+<label class="field"><b>اسم المصدر</b><input id="name" placeholder="مثال: Digital Home" required></label>
+<label class="field"><b>بادئة اسم ملف TXT</b><input id="filePrefix" placeholder="مثال: DIGITALHOME"></label>
+<label class="field full"><b>علامات التعرف على المصدر</b><textarea id="markers" placeholder="كل سطر علامة مستقلة&#10;مثال:&#10;www.digital-home.org&#10;Product:"></textarea><small>MyTool يبحث عن هذه العبارات داخل النص قبل اعتماد الصيغة.</small></label>
+<label class="field"><b>طريقة مطابقة العلامات</b><select id="detectMode"><option value="all">يجب وجود كل العلامات</option><option value="any">تكفي علامة واحدة</option></select></label>
+<label class="field"><b>نوع الكود</b><select id="codeKind"><option value="digits">أرقام فقط</option><option value="alnum">حروف + أرقام</option><option value="mixed">حروف/أرقام مع - أو _</option><option value="any">كود عام مع رموز بسيطة</option></select></label>
+<label class="field"><b>طول الكود</b><input id="codeLength" type="number" min="1" inputmode="numeric" placeholder="مثال: 16"></label>
+<label class="field"><b>علامة بداية منطقة الأكواد</b><input id="startAfter" placeholder="اختياري — استخرج بعد هذه العبارة"></label>
+<label class="field"><b>علامة نهاية منطقة الأكواد</b><input id="stopBefore" placeholder="اختياري — توقف قبل هذه العبارة"></label>
+<label class="field"><b>علامة اسم المنتج</b><input id="productLabel" placeholder="مثال: Product:"></label>
+<label class="field"><b>علامات الكمية</b><textarea id="quantityLabels" placeholder="Quantity:&#10;Qty:"></textarea></label>
+</div>
+<div class="checks">
+<label class="check"><input id="removeSpaces" type="checkbox" checked> حذف المسافات داخل سطر الكود قبل فحصه</label>
+<label class="check"><input id="removeHyphens" type="checkbox"> حذف الشرطات - داخل الكود قبل فحصه</label>
+<label class="check"><input id="enabled" type="checkbox" checked> الصيغة مفعّلة</label>
+</div>
+<div class="actions"><button class="btn green" type="submit">حفظ الصيغة</button><button id="cancelEdit" class="btn gray" type="button">مسح الحقول</button></div>
+<div id="status" class="status"></div>
+</form>
+<h2 class="sectionTitle">اختبار قبل الحفظ</h2>
+<div class="testBox"><textarea id="sample" placeholder="ألصق هنا مثالًا حقيقيًا أو وهميًا من المصدر..."></textarea><button id="testRule" class="btn" type="button" style="margin-top:8px;width:100%">اختبار الصيغة الحالية</button><div id="testResult" class="testResult">لا يوجد اختبار بعد.</div></div>
+</div></section></main>
+<script src="./custom-sources.js?v=20260910-0543"></script>
+<script>
+const api=window.mytoolCustomSources;
+const $=id=>document.getElementById(id),sources=$('sources'),form=$('form'),status=$('status');
+const fields={id:$('ruleId'),name:$('name'),filePrefix:$('filePrefix'),markers:$('markers'),detectMode:$('detectMode'),codeKind:$('codeKind'),codeLength:$('codeLength'),startAfter:$('startAfter'),stopBefore:$('stopBefore'),productLabel:$('productLabel'),quantityLabels:$('quantityLabels'),removeSpaces:$('removeSpaces'),removeHyphens:$('removeHyphens'),enabled:$('enabled')};
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function currentRule(){return api.normalizeRule({id:fields.id.value||undefined,name:fields.name.value,filePrefix:fields.filePrefix.value,markers:fields.markers.value,detectMode:fields.detectMode.value,codeKind:fields.codeKind.value,codeLength:fields.codeLength.value,startAfter:fields.startAfter.value,stopBefore:fields.stopBefore.value,productLabel:fields.productLabel.value,quantityLabels:fields.quantityLabels.value,removeSpaces:fields.removeSpaces.checked,removeHyphens:fields.removeHyphens.checked,enabled:fields.enabled.checked})}
+function resetForm(){fields.id.value='';fields.name.value='';fields.filePrefix.value='';fields.markers.value='';fields.detectMode.value='all';fields.codeKind.value='digits';fields.codeLength.value='';fields.startAfter.value='';fields.stopBefore.value='';fields.productLabel.value='';fields.quantityLabels.value='';fields.removeSpaces.checked=true;fields.removeHyphens.checked=false;fields.enabled.checked=true;$('formTitle').textContent='إضافة صيغة جديدة';status.textContent=''}
+function fill(rule){fields.id.value=rule.id;fields.name.value=rule.name;fields.filePrefix.value=rule.filePrefix;fields.markers.value=rule.markers.join('\n');fields.detectMode.value=rule.detectMode;fields.codeKind.value=rule.codeKind;fields.codeLength.value=rule.codeLength||'';fields.startAfter.value=rule.startAfter;fields.stopBefore.value=rule.stopBefore;fields.productLabel.value=rule.productLabel;fields.quantityLabels.value=rule.quantityLabels.join('\n');fields.removeSpaces.checked=rule.removeSpaces;fields.removeHyphens.checked=rule.removeHyphens;fields.enabled.checked=rule.enabled;$('formTitle').textContent='تعديل: '+rule.name;window.scrollTo({top:$('formTitle').offsetTop-10,behavior:'smooth'})}
+function render(){const rules=api.readRules();if(!rules.length){sources.innerHTML='<div class="note">لا توجد صيغة مخصصة حتى الآن. أضف أول مصدر من الزر أو النموذج أدناه.</div>';return}sources.innerHTML=rules.map(rule=>`<div class="source"><div class="sourceHead"><span class="sourceTitle">${esc(rule.name)}</span><span class="badge ${rule.enabled?'':'off'}">${rule.enabled?'مفعّلة':'متوقفة'}</span></div><small>${rule.markers.length?`علامات: ${esc(rule.markers.join(' • '))}`:'بدون علامات'} • النوع: ${esc(rule.codeKind)}${rule.codeLength?` • الطول: ${rule.codeLength}`:''}</small><div class="sourceActions"><button class="btn" data-edit="${esc(rule.id)}">تعديل</button><button class="btn gray" data-toggle="${esc(rule.id)}">${rule.enabled?'إيقاف':'تفعيل'}</button><button class="btn red" data-delete="${esc(rule.id)}">حذف</button></div></div>`).join('');sources.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const r=api.readRules().find(x=>x.id===b.dataset.edit);if(r)fill(r)});sources.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{const list=api.readRules(),r=list.find(x=>x.id===b.dataset.toggle);if(!r)return;r.enabled=!r.enabled;api.writeRules(list);render()});sources.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{const r=api.readRules().find(x=>x.id===b.dataset.delete);if(!r)return;if(!confirm(`حذف صيغة ${r.name}؟`))return;api.writeRules(api.readRules().filter(x=>x.id!==r.id));if(fields.id.value===r.id)resetForm();render()})}
+form.addEventListener('submit',e=>{e.preventDefault();const rule=currentRule();if(!rule.name.trim()){status.textContent='اكتب اسم المصدر.';return}if(!rule.markers.length){status.textContent='أضف علامة واحدة على الأقل للتعرف على المصدر.';return}const list=api.readRules();const idx=list.findIndex(x=>x.id===rule.id);if(idx>=0)list[idx]=rule;else list.push(rule);if(!api.writeRules(list)){status.textContent='تعذر الحفظ على هذا المتصفح.';return}status.textContent='تم حفظ الصيغة.';render();fill(rule)});
+$('cancelEdit').onclick=resetForm;$('newRule').onclick=()=>{resetForm();window.scrollTo({top:$('formTitle').offsetTop-10,behavior:'smooth'})};
+$('testRule').onclick=()=>{const raw=$('sample').value,rule=currentRule();if(!raw.trim()){$('testResult').textContent='ألصق مثالًا أولًا.';return}const data=api.extract(rule,raw),matched=api.matches(rule,raw);$('testResult').textContent=[`مطابقة المصدر: ${matched?'نعم':'لا'}`,`المنتج: ${data.product||'-'}`,`الكمية: ${data.quantity||'-'}`,`عدد الأكواد: ${data.codes.length}`,data.codes.length?'':'لا توجد أكواد مطابقة.',...data.codes.slice(0,30)].join('\n')};
+render();resetForm();
+</script>
+</body></html>
