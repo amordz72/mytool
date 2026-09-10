@@ -35,13 +35,13 @@
 
       <div id="emergencyBox" hidden>
         <h2 class="recovery-title">دخول الاسترجاع</h2>
-        <p>تعذر الوصول إلى خدمة دخول الإدارة. أدخل رمز الاسترجاع الخاص بك.</p>
+        <p>تعذر دخول الإدارة بالطريقة العادية. أدخل رمز الاسترجاع الخاص بك.</p>
         <div class="field"><label for="recoveryCode">رمز الاسترجاع</label><div class="password-wrap"><input id="recoveryCode" type="password" autocomplete="off"><button id="toggleRecovery" class="password-toggle" type="button" aria-label="إظهار رمز الاسترجاع">إظهار</button></div></div>
         <div class="recovery-actions">
           <button id="recoveryBtn" class="btn" type="button">دخول</button>
           <button id="backToLoginBtn" class="btn secondary" type="button">الرجوع للدخول العادي</button>
         </div>
-        <div class="offline-note">هذا الوضع يفتح أدوات MyTool المحلية فقط أثناء تعذر Supabase. بيانات Supabase تحتاج عودة الخدمة.</div>
+        <div class="offline-note">هذا الوضع يفتح أدوات MyTool المحلية فقط. بيانات Supabase تحتاج الخدمة متاحة ودخولًا عاديًا.</div>
       </div>
 
       <div id="loginMessage" class="msg" hidden></div>
@@ -115,18 +115,11 @@
     });
   }
 
-  function isServiceUnavailable(err){
-    const status=Number(err?.status||0);
-    const name=String(err?.name||'').toLowerCase();
-    const msg=String(err?.message||'').toLowerCase();
-    return status>=500 || name==='typeerror' || msg.includes('failed to fetch') || msg.includes('network') || msg.includes('fetch') || msg.includes('timeout') || msg.includes('load failed') || msg.includes('dynamically imported module');
-  }
-
   function showRecovery(){
     hideMessage();
     $('loginForm').hidden=true;
     $('emergencyBox').hidden=false;
-    $('loginIntro').textContent='تعذر الاتصال بخدمة دخول الإدارة.';
+    $('loginIntro').textContent='تعذر دخول الإدارة بالطريقة العادية.';
     setTimeout(()=>$('recoveryCode').focus(),50);
   }
 
@@ -234,12 +227,10 @@
     try{
       await normalLogin(identity,$('password').value);
     }catch(err){
-      if(identity.includes('@')&&isServiceUnavailable(err)){
+      if(identity.includes('@')){
         showRecovery();
       }else if(err?.message==='INVALID_LOGIN'){
         showMessage('اسم المستخدم أو كلمة المرور غير صحيحة.');
-      }else if(identity.includes('@')){
-        showMessage('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
       }else{
         showMessage('تعذر تسجيل الدخول.');
       }
