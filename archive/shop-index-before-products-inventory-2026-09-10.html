@@ -19,8 +19,8 @@
     .stock-item{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px}.stock-name{font-size:13px}.stock-num{font-size:23px;font-weight:900;margin-top:5px}
     .toolbar{display:flex;gap:8px;align-items:center}.toolbar button{width:auto;padding:9px 13px}.pill{display:inline-block;background:#ecfeff;color:#0f766e;border-radius:99px;padding:5px 9px;font-size:11px;font-weight:800}
     .login{max-width:460px;margin:7vh auto}.login h1{margin-bottom:8px}.login .field{margin-bottom:11px}.identity{margin-top:5px;font-size:13px;font-weight:700}.soon{opacity:.65}.footer{text-align:center;color:var(--muted);font-size:11px;padding:10px}
-    .dashboard{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.metric{background:linear-gradient(135deg,#ffffff,#f0fdfa);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.04)}.metric-label{font-size:12px;color:var(--muted);font-weight:700}.metric-value{font-size:24px;font-weight:900;margin-top:6px;color:var(--text)}.metric small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.worker-list{display:grid;gap:8px;margin-top:14px}.worker-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid var(--line);border-radius:14px;background:#f8fafc}.worker-meta{min-width:0}.worker-meta small{display:block;color:var(--muted);margin-top:3px;word-break:break-word}.worker-actions{display:flex;gap:6px;flex-shrink:0}.worker-actions button{width:auto;padding:7px 9px;font-size:12px}.status-on{color:#047857;font-weight:800}.status-off{color:var(--danger);font-weight:800}.setting-line{display:flex;gap:10px;align-items:end}.setting-line>div{flex:1}.setting-line button{width:auto;min-width:110px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 14px}.tab{width:auto;padding:9px 13px;background:#fff;color:var(--main);border:1px solid var(--line);font-weight:800;cursor:pointer}.tab.active{background:var(--main);color:#fff;border-color:var(--main)}.product-list,.count-list{display:grid;gap:9px}.product-row,.count-row{border:1px solid var(--line);border-radius:14px;padding:12px;background:#f8fafc}.product-row{display:flex;gap:8px;align-items:center}.product-row input{flex:1}.product-row button{width:auto;min-width:80px}.count-row{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(90px,.6fr));gap:8px;align-items:center}.count-name{font-weight:800}.count-label{font-size:11px;color:var(--muted);margin-bottom:4px}.diff{font-weight:900;font-size:18px}.diff.plus{color:#047857}.diff.minus{color:var(--danger)}.audit-summary{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.audit-summary .pill{font-size:12px}.section-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.section-actions button{width:auto}.empty{padding:14px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px}
-    @media(max-width:620px){.dashboard{grid-template-columns:repeat(2,minmax(0,1fr))}.grid,.stock{grid-template-columns:1fr}.app{padding:10px}.top{align-items:flex-start}.toolbar{flex-wrap:wrap}.worker-row{align-items:flex-start;flex-direction:column}.worker-actions{width:100%}.worker-actions button{flex:1}.setting-line{align-items:stretch;flex-direction:column}.setting-line button{width:100%}.count-row{grid-template-columns:1fr 1fr}.count-name{grid-column:1/-1}.product-row{align-items:stretch;flex-direction:column}.product-row button{width:100%}.section-actions button{flex:1;min-width:130px}}
+    .dashboard{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.metric{background:linear-gradient(135deg,#ffffff,#f0fdfa);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.04)}.metric-label{font-size:12px;color:var(--muted);font-weight:700}.metric-value{font-size:24px;font-weight:900;margin-top:6px;color:var(--text)}.metric small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.worker-list{display:grid;gap:8px;margin-top:14px}.worker-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid var(--line);border-radius:14px;background:#f8fafc}.worker-meta{min-width:0}.worker-meta small{display:block;color:var(--muted);margin-top:3px;word-break:break-word}.worker-actions{display:flex;gap:6px;flex-shrink:0}.worker-actions button{width:auto;padding:7px 9px;font-size:12px}.status-on{color:#047857;font-weight:800}.status-off{color:var(--danger);font-weight:800}.setting-line{display:flex;gap:10px;align-items:end}.setting-line>div{flex:1}.setting-line button{width:auto;min-width:110px}
+    @media(max-width:620px){.dashboard{grid-template-columns:repeat(2,minmax(0,1fr))}.grid,.stock{grid-template-columns:1fr}.app{padding:10px}.top{align-items:flex-start}.toolbar{flex-wrap:wrap}.worker-row{align-items:flex-start;flex-direction:column}.worker-actions{width:100%}.worker-actions button{flex:1}.setting-line{align-items:stretch;flex-direction:column}.setting-line button{width:100%}}
   </style>
 </head>
 <body>
@@ -91,58 +91,14 @@
 
     <section class="card">
       <div class="top" style="margin:0 0 12px">
-        <div><h2 style="margin:0">المنتجات والمخزون</h2><div class="muted">المنتجات منفصلة عن حركة المخزون، والجرد الفعلي يسجل الفرق كتعديل مستقل.</div></div>
+        <div><h2 style="margin:0">المخزون الحالي</h2><div class="muted">محسوب من الحركات المسجلة.</div></div>
         <div class="pill">{{ inventory.length }} سلع</div>
       </div>
-
-      <div v-if="userMode==='admin'" class="tabs">
-        <button class="tab" :class="{active:inventoryTab==='products'}" @click="inventoryTab='products'">المنتجات</button>
-        <button class="tab" :class="{active:inventoryTab==='stock'}" @click="inventoryTab='stock'">المخزون</button>
-        <button class="tab" :class="{active:inventoryTab==='count'}" @click="openPhysicalCount">الجرد الفعلي</button>
+      <div class="stock">
+        <div class="stock-item" v-for="item in inventory" :key="item.product_id">
+          <div class="stock-name">{{ item.name }}</div><div class="stock-num">{{ item.stock_quantity }}</div>
+        </div>
       </div>
-
-      <template v-if="userMode!=='admin' || inventoryTab==='stock'">
-        <div class="stock">
-          <div class="stock-item" v-for="item in inventory" :key="item.product_id">
-            <div class="stock-name">{{ item.name }}</div><div class="stock-num">{{ item.stock_quantity }}</div>
-          </div>
-        </div>
-      </template>
-
-      <template v-if="userMode==='admin' && inventoryTab==='products'">
-        <form @submit.prevent="addProduct" class="grid" style="margin-bottom:12px">
-          <div><label>اسم المنتج الجديد</label><input v-model.trim="newProductName" required placeholder="مثال: كابل Type-C"></div>
-          <div style="align-self:end"><button class="btn" :disabled="busy">إضافة منتج</button></div>
-        </form>
-        <div class="product-list">
-          <div class="product-row" v-for="p in products" :key="p.id">
-            <input v-model.trim="productNames[p.id]" :aria-label="'اسم '+p.name">
-            <button class="btn secondary" @click="renameProduct(p)" :disabled="busy || !productNames[p.id]">حفظ الاسم</button>
-          </div>
-        </div>
-        <div class="muted" style="margin-top:10px">لا نحذف المنتجات التي لها سجل مبيعات؛ تغيير الاسم يحافظ على تاريخ الحركات.</div>
-      </template>
-
-      <template v-if="userMode==='admin' && inventoryTab==='count'">
-        <p class="muted">اكتب العدد الموجود فعليًا فقط للسلع التي قمت بعدها. اترك الباقي فارغًا، ولن يتغير.</p>
-        <div class="count-list">
-          <div class="count-row" v-for="item in inventory" :key="item.product_id">
-            <div class="count-name">{{ item.name }}</div>
-            <div><div class="count-label">كمية النظام</div><strong>{{ item.stock_quantity }}</strong></div>
-            <div><div class="count-label">العدد الحقيقي</div><input v-model.number="physicalCounts[item.product_id]" type="number" min="0" step="1" inputmode="numeric" placeholder="—"></div>
-            <div><div class="count-label">الفرق</div><div class="diff" :class="difference(item)>0?'plus':(difference(item)<0?'minus':'')">{{ physicalCounts[item.product_id] === '' || physicalCounts[item.product_id] == null ? '—' : signed(difference(item)) }}</div></div>
-          </div>
-        </div>
-        <div class="audit-summary" v-if="countedItems.length">
-          <span class="pill">تم عد {{ countedItems.length }} سلعة</span>
-          <span class="pill">إجمالي الفرق {{ signed(totalCountDifference) }}</span>
-        </div>
-        <div><label>سبب الجرد</label><input v-model.trim="physicalReason" placeholder="مثال: جرد نهاية اليوم"></div>
-        <div class="section-actions">
-          <button class="btn" @click="applyPhysicalCount" :disabled="busy || !countedItems.length">تأكيد الجرد وتسجيل الفروق</button>
-          <button class="btn secondary" @click="resetPhysicalCount" :disabled="busy">مسح العد</button>
-        </div>
-      </template>
     </section>
 
     <template v-if="userMode==='admin'">
@@ -184,7 +140,7 @@
         <div class="muted" style="margin-top:8px">المدة الحالية: {{ adminSessionHours }} ساعة.</div>
       </section>
 
-
+      <section class="card soon"><h2>الجرد الحقيقي</h2><p class="muted">مؤجل حاليًا. لاحقًا يدخل العدد الحقيقي لكل سلعة ويُسجل الفرق كتعديل جرد.</p><button disabled>مؤجل</button></section>
     </template>
 
     <div class="footer">البيانات التشغيلية محفوظة في Supabase وليست داخل GitHub.</div>
@@ -217,7 +173,6 @@
     const loading=ref(true),busy=ref(false),loginMode=ref('worker'),email=ref(''),password=ref(''),workerUsername=ref(''),workerPassword=ref('')
     const message=ref(''),messageType=ref('ok'),staff=ref([]),products=ref([]),inventory=ref([]),adminWorkers=ref([]),todaySales=ref([])
     const sale=ref({sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''})
-    const inventoryTab=ref('stock'),newProductName=ref(''),productNames=ref({}),physicalCounts=ref({}),physicalReason=ref('جرد فعلي')
     const workerForm=ref({username:'',nickname:'',phone:'',password:''})
     const adminSessionHours=ref(clampHours(localStorage.getItem(ADMIN_SESSION_HOURS_KEY)||24))
 
@@ -226,8 +181,6 @@
     const stockUnits=computed(()=>(inventory.value||[]).reduce((sum,x)=>sum+Number(x.stock_quantity||0),0))
     const todaySalesCount=computed(()=>todaySales.value.length)
     const todayRevenue=computed(()=>(todaySales.value||[]).reduce((sum,x)=>sum+(Number(x.quantity||0)*Number(x.unit_price||0)),0))
-    const countedItems=computed(()=>(inventory.value||[]).filter(x=>physicalCounts.value[x.product_id] !== '' && physicalCounts.value[x.product_id] != null))
-    const totalCountDifference=computed(()=>countedItems.value.reduce((sum,x)=>sum+difference(x),0))
     const money=value=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(Number(value||0))
 
     function notify(text,type='ok'){message.value=text;messageType.value=type==='error'?'error':'ok'}
@@ -299,7 +252,6 @@
       const error=s.error||p.error||i.error||w.error||t.error
       if(error)return notify('خطأ في قراءة البيانات: '+error.message,'error')
       staff.value=s.data||[];products.value=p.data||[];inventory.value=i.data||[];adminWorkers.value=w.data||[];todaySales.value=t.data||[]
-      productNames.value=Object.fromEntries((products.value||[]).map(x=>[x.id,x.name]))
     }
 
     async function saveSale(){
@@ -326,82 +278,6 @@
       if(error)return notify('لم يتم حفظ البيع: '+error.message,'error')
       notify('تم تسجيل البيع بنجاح.')
       sale.value.product_id='';sale.value.quantity=1;sale.value.unit_price='';sale.value.notes='';await loadAll()
-    }
-
-    function signed(value){const n=Number(value||0);return n>0?'+'+n:String(n)}
-    function difference(item){
-      const actual=physicalCounts.value[item.product_id]
-      if(actual===''||actual==null)return 0
-      return Number(actual)-Number(item.stock_quantity||0)
-    }
-    function openPhysicalCount(){inventoryTab.value='count'}
-    function resetPhysicalCount(){physicalCounts.value={};physicalReason.value='جرد فعلي'}
-
-    async function addProduct(){
-      if(userMode.value!=='admin')return
-      const name=(newProductName.value||'').trim()
-      if(!name)return notify('اكتب اسم المنتج.','error')
-      busy.value=true;message.value=''
-      const {error}=await supabase.from('products').insert({name})
-      busy.value=false
-      if(error)return notify('لم تتم إضافة المنتج: '+error.message,'error')
-      newProductName.value='';notify('تمت إضافة المنتج.')
-      await loadAll();inventoryTab.value='products'
-    }
-
-    async function renameProduct(product){
-      if(userMode.value!=='admin')return
-      const name=(productNames.value[product.id]||'').trim()
-      if(!name)return notify('اسم المنتج لا يمكن أن يكون فارغًا.','error')
-      if(name===product.name)return notify('الاسم لم يتغير.')
-      busy.value=true;message.value=''
-      const {error}=await supabase.from('products').update({name}).eq('id',product.id)
-      busy.value=false
-      if(error)return notify('تعذر تعديل اسم المنتج: '+error.message,'error')
-      notify('تم تحديث اسم المنتج.')
-      await loadAll();inventoryTab.value='products'
-    }
-
-    async function findAdjustmentColumn(candidates){
-      for(const column of candidates){
-        const {error}=await supabase.from('stock_adjustments').select(column).limit(1)
-        if(!error)return column
-      }
-      return null
-    }
-
-    async function applyPhysicalCount(){
-      if(userMode.value!=='admin')return
-      const rows=countedItems.value
-      if(!rows.length)return notify('أدخل عددًا حقيقيًا لسلعة واحدة على الأقل.','error')
-      for(const item of rows){
-        const actual=Number(physicalCounts.value[item.product_id])
-        if(!Number.isInteger(actual)||actual<0)return notify('العدد الحقيقي لـ '+item.name+' غير صحيح.','error')
-      }
-      const changed=rows.filter(item=>difference(item)!==0)
-      if(!changed.length){notify('الجرد مطابق للمخزون المسجل، لا توجد فروق للحفظ.');resetPhysicalCount();return}
-      const reason=(physicalReason.value||'').trim()
-      if(!reason)return notify('اكتب سبب الجرد قبل التأكيد.','error')
-      if(!confirm('سيتم تسجيل '+changed.length+' تعديل مخزون. متابعة؟'))return
-
-      busy.value=true;message.value=''
-      const qtyColumn=await findAdjustmentColumn(['quantity','quantity_change','quantity_delta','adjustment_quantity','adjustment','delta','change_quantity'])
-      const reasonColumn=await findAdjustmentColumn(['reason','notes','note','description'])
-      if(!qtyColumn||!reasonColumn){
-        busy.value=false
-        return notify('تعذر التعرف على بنية جدول stock_adjustments. أرسل الخطأ للمطور قبل تسجيل الجرد.','error')
-      }
-
-      for(const item of changed){
-        const payload={product_id:Number(item.product_id)}
-        payload[qtyColumn]=difference(item)
-        payload[reasonColumn]=reason
-        const {error}=await supabase.from('stock_adjustments').insert(payload)
-        if(error){busy.value=false;return notify('توقف الجرد عند '+item.name+': '+error.message,'error')}
-      }
-      busy.value=false
-      notify('تم تسجيل فروق الجرد بنجاح.')
-      resetPhysicalCount();await loadAll();inventoryTab.value='stock'
     }
 
     async function createWorker(){
@@ -460,7 +336,7 @@
       setInterval(enforceTimeout,30000)
     })
 
-    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,message,messageType,staff,products,inventory,adminWorkers,todaySales,sale,workerForm,adminSessionHours,inventoryTab,newProductName,productNames,physicalCounts,physicalReason,userMode,isLoggedIn,stockUnits,todaySalesCount,todayRevenue,countedItems,totalCountDifference,money,signed,difference,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale,openPhysicalCount,resetPhysicalCount,addProduct,renameProduct,applyPhysicalCount,createWorker,toggleWorker,deleteWorker,saveAdminSessionHours}
+    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,message,messageType,staff,products,inventory,adminWorkers,todaySales,sale,workerForm,adminSessionHours,userMode,isLoggedIn,stockUnits,todaySalesCount,todayRevenue,money,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale,createWorker,toggleWorker,deleteWorker,saveAdminSessionHours}
   }}).mount('#app')
 </script>
 </body>
