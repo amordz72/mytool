@@ -392,14 +392,15 @@
         return notify('تعذر التعرف على بنية جدول stock_adjustments. أرسل الخطأ للمطور قبل تسجيل الجرد.','error')
       }
 
-      for(const item of changed){
+      const adjustments=changed.map(item=>{
         const payload={product_id:Number(item.product_id)}
         payload[qtyColumn]=difference(item)
         payload[reasonColumn]=reason
-        const {error}=await supabase.from('stock_adjustments').insert(payload)
-        if(error){busy.value=false;return notify('توقف الجرد عند '+item.name+': '+error.message,'error')}
-      }
+        return payload
+      })
+      const {error}=await supabase.from('stock_adjustments').insert(adjustments)
       busy.value=false
+      if(error)return notify('لم يتم حفظ الجرد: '+error.message,'error')
       notify('تم تسجيل فروق الجرد بنجاح.')
       resetPhysicalCount();await loadAll();inventoryTab.value='stock'
     }
