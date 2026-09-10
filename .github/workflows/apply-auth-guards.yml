@@ -1,0 +1,51 @@
+name: Apply remaining MyTool auth guards
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-auth-guards.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Inject shared auth guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          marker = '<script src="../auth-guard.js" data-access="admin"></script>'
+          paths = [
+              Path('cards/index.html'),
+              Path('flexy/index.html'),
+              Path('programs/index.html'),
+          ]
+
+          for path in paths:
+              text = path.read_text(encoding='utf-8')
+              if marker in text:
+                  print(f'{path}: guard already present')
+                  continue
+              if '</head>' not in text:
+                  raise SystemExit(f'{path}: </head> not found')
+              text = text.replace('</head>', marker + '\n</head>', 1)
+              path.write_text(text, encoding='utf-8')
+              print(f'{path}: guard added')
+
+          Path('.github/workflows/apply-auth-guards.yml').unlink()
+          PY
+
+      - name: Commit guarded pages and remove one-time workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add cards/index.html flexy/index.html programs/index.html .github/workflows/apply-auth-guards.yml
+          git commit -m "feat: protect remaining MyTool pages with shared auth guard"
+          git push
