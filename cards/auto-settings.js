@@ -18,7 +18,7 @@
     if(document.querySelector(`script[data-helper="${src}"]`)){if(next)next();return}
     const s=document.createElement('script');s.src=src;s.dataset.helper=src;s.onload=()=>next&&next();document.body.appendChild(s);
   }
-  loadScript('./whatsapp-cleanup.js',()=>loadScript('./result-ui.js'));
+  loadScript('./whatsapp-cleanup.js',()=>loadScript('./result-ui.js',()=>loadScript('./smart-extractor.js?v=20260910-0117')));
 
   const read=(key,def=true)=>{try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}};
   const write=(key,value)=>{try{localStorage.setItem(key,value?'1':'0')}catch(e){}};
@@ -97,7 +97,7 @@
     if(fname)fname.textContent='لم يتم اختيار ملف.';
     if(result)result.innerHTML='';
     routeCurrentContent(false);
-    setTimeout(()=>{if(status)status.textContent='تم تنظيف النص والنتائج. جاهز كنص عادي.'},0);
+    setTimeout(()=>{if(status)status.textContent='تم تنظيف النص والنتائج. جاهز للاستخراج الذكي.'},0);
     text.focus();
   }
 
