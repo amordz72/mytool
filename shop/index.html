@@ -19,8 +19,8 @@
     .stock-item{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px}.stock-name{font-size:13px}.stock-num{font-size:23px;font-weight:900;margin-top:5px}
     .toolbar{display:flex;gap:8px;align-items:center}.toolbar button{width:auto;padding:9px 13px}.pill{display:inline-block;background:#ecfeff;color:#0f766e;border-radius:99px;padding:5px 9px;font-size:11px;font-weight:800}
     .login{max-width:460px;margin:7vh auto}.login h1{margin-bottom:8px}.login .field{margin-bottom:11px}.identity{margin-top:5px;font-size:13px;font-weight:700}.soon{opacity:.65}.footer{text-align:center;color:var(--muted);font-size:11px;padding:10px}
-    .worker-list{display:grid;gap:8px;margin-top:14px}.worker-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid var(--line);border-radius:14px;background:#f8fafc}.worker-meta{min-width:0}.worker-meta small{display:block;color:var(--muted);margin-top:3px;word-break:break-word}.worker-actions{display:flex;gap:6px;flex-shrink:0}.worker-actions button{width:auto;padding:7px 9px;font-size:12px}.status-on{color:#047857;font-weight:800}.status-off{color:var(--danger);font-weight:800}.setting-line{display:flex;gap:10px;align-items:end}.setting-line>div{flex:1}.setting-line button{width:auto;min-width:110px}
-    @media(max-width:620px){.grid,.stock{grid-template-columns:1fr}.app{padding:10px}.top{align-items:flex-start}.toolbar{flex-wrap:wrap}.worker-row{align-items:flex-start;flex-direction:column}.worker-actions{width:100%}.worker-actions button{flex:1}.setting-line{align-items:stretch;flex-direction:column}.setting-line button{width:100%}}
+    .dashboard{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.metric{background:linear-gradient(135deg,#ffffff,#f0fdfa);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.04)}.metric-label{font-size:12px;color:var(--muted);font-weight:700}.metric-value{font-size:24px;font-weight:900;margin-top:6px;color:var(--text)}.metric small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.worker-list{display:grid;gap:8px;margin-top:14px}.worker-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid var(--line);border-radius:14px;background:#f8fafc}.worker-meta{min-width:0}.worker-meta small{display:block;color:var(--muted);margin-top:3px;word-break:break-word}.worker-actions{display:flex;gap:6px;flex-shrink:0}.worker-actions button{width:auto;padding:7px 9px;font-size:12px}.status-on{color:#047857;font-weight:800}.status-off{color:var(--danger);font-weight:800}.setting-line{display:flex;gap:10px;align-items:end}.setting-line>div{flex:1}.setting-line button{width:auto;min-width:110px}
+    @media(max-width:620px){.dashboard{grid-template-columns:repeat(2,minmax(0,1fr))}.grid,.stock{grid-template-columns:1fr}.app{padding:10px}.top{align-items:flex-start}.toolbar{flex-wrap:wrap}.worker-row{align-items:flex-start;flex-direction:column}.worker-actions{width:100%}.worker-actions button{flex:1}.setting-line{align-items:stretch;flex-direction:column}.setting-line button{width:100%}}
   </style>
 </head>
 <body>
@@ -48,6 +48,19 @@
         <button class="btn secondary" @click="logout">خروج</button>
       </div>
     </header>
+
+    <section class="card">
+      <div class="top" style="margin:0 0 12px">
+        <div><h2 style="margin:0">Dashboard المحل</h2><div class="muted">نظرة سريعة على حالة المحل الآن.</div></div>
+        <span class="pill">مباشر</span>
+      </div>
+      <div class="dashboard">
+        <div class="metric"><div class="metric-label">عدد السلع</div><div class="metric-value">{{ products.length }}</div><small>سلعة مسجلة</small></div>
+        <div class="metric"><div class="metric-label">إجمالي المخزون</div><div class="metric-value">{{ stockUnits }}</div><small>وحدة حسب الحركات</small></div>
+        <div v-if="userMode==='admin'" class="metric"><div class="metric-label">عمليات اليوم</div><div class="metric-value">{{ todaySalesCount }}</div><small>عملية بيع</small></div>
+        <div v-if="userMode==='admin'" class="metric"><div class="metric-label">مبيعات اليوم</div><div class="metric-value">{{ money(todayRevenue) }}</div><small>دج</small></div>
+      </div>
+    </section>
 
     <section class="card">
       <h2>تسجيل بيع</h2>
@@ -158,13 +171,17 @@
 
     const session=ref(null),workerToken=ref(storedWorkerToken),workerNickname=ref(storedWorkerNickname)
     const loading=ref(true),busy=ref(false),loginMode=ref('worker'),email=ref(''),password=ref(''),workerUsername=ref(''),workerPassword=ref('')
-    const message=ref(''),messageType=ref('ok'),staff=ref([]),products=ref([]),inventory=ref([]),adminWorkers=ref([])
+    const message=ref(''),messageType=ref('ok'),staff=ref([]),products=ref([]),inventory=ref([]),adminWorkers=ref([]),todaySales=ref([])
     const sale=ref({sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''})
     const workerForm=ref({username:'',nickname:'',phone:'',password:''})
     const adminSessionHours=ref(clampHours(localStorage.getItem(ADMIN_SESSION_HOURS_KEY)||24))
 
     const userMode=computed(()=>session.value?'admin':(workerToken.value?'worker':'none'))
     const isLoggedIn=computed(()=>userMode.value!=='none')
+    const stockUnits=computed(()=>(inventory.value||[]).reduce((sum,x)=>sum+Number(x.stock_quantity||0),0))
+    const todaySalesCount=computed(()=>todaySales.value.length)
+    const todayRevenue=computed(()=>(todaySales.value||[]).reduce((sum,x)=>sum+(Number(x.quantity||0)*Number(x.unit_price||0)),0))
+    const money=value=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(Number(value||0))
 
     function notify(text,type='ok'){message.value=text;messageType.value=type==='error'?'error':'ok'}
     function setLoginMode(mode){loginMode.value=mode;message.value=''}
@@ -197,7 +214,7 @@
       message.value=''
       if(userMode.value==='admin'){await supabase.auth.signOut();clearAdminExpiry()}
       if(userMode.value==='worker'&&workerToken.value){try{await supabase.rpc('worker_logout',{p_session_token:workerToken.value})}catch(_e){}clearWorkerSession()}
-      session.value=null;staff.value=[];products.value=[];inventory.value=[];adminWorkers.value=[];sale.value={sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''}
+      session.value=null;staff.value=[];products.value=[];inventory.value=[];adminWorkers.value=[];todaySales.value=[];sale.value={sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''}
       window.location.replace('../')
     }
 
@@ -222,16 +239,19 @@
         products.value=(data||[]).map(x=>({id:x.product_id,name:x.name}))
         return
       }
-      const [s,p,i,w]=await Promise.all([
+      const dayStart=new Date();dayStart.setHours(0,0,0,0)
+      const dayEnd=new Date(dayStart);dayEnd.setDate(dayEnd.getDate()+1)
+      const [s,p,i,w,t]=await Promise.all([
         supabase.from('staff').select('id,name').eq('active',true).order('id'),
         supabase.from('products').select('id,name').order('id'),
         supabase.from('inventory_summary').select('product_id,name,stock_quantity').order('product_id'),
-        supabase.from('worker_accounts').select('id,username,phone,nickname,staff_id,active,created_at').order('id')
+        supabase.from('worker_accounts').select('id,username,phone,nickname,staff_id,active,created_at').order('id'),
+        supabase.from('sales').select('quantity,unit_price,operation_at').gte('operation_at',dayStart.toISOString()).lt('operation_at',dayEnd.toISOString()).order('operation_at',{ascending:false})
       ])
       busy.value=false
-      const error=s.error||p.error||i.error||w.error
+      const error=s.error||p.error||i.error||w.error||t.error
       if(error)return notify('خطأ في قراءة البيانات: '+error.message,'error')
-      staff.value=s.data||[];products.value=p.data||[];inventory.value=i.data||[];adminWorkers.value=w.data||[]
+      staff.value=s.data||[];products.value=p.data||[];inventory.value=i.data||[];adminWorkers.value=w.data||[];todaySales.value=t.data||[]
     }
 
     async function saveSale(){
@@ -316,7 +336,7 @@
       setInterval(enforceTimeout,30000)
     })
 
-    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,message,messageType,staff,products,inventory,adminWorkers,sale,workerForm,adminSessionHours,userMode,isLoggedIn,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale,createWorker,toggleWorker,deleteWorker,saveAdminSessionHours}
+    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,message,messageType,staff,products,inventory,adminWorkers,todaySales,sale,workerForm,adminSessionHours,userMode,isLoggedIn,stockUnits,todaySalesCount,todayRevenue,money,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale,createWorker,toggleWorker,deleteWorker,saveAdminSessionHours}
   }}).mount('#app')
 </script>
 </body>
