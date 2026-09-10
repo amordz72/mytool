@@ -18,7 +18,7 @@
     if(document.querySelector(`script[data-helper="${src}"]`)){if(next)next();return}
     const s=document.createElement('script');s.src=src;s.dataset.helper=src;s.onload=()=>next&&next();document.body.appendChild(s);
   }
-  loadScript('./whatsapp-cleanup.js',()=>loadScript('./result-ui.js',()=>loadScript('./smart-extractor.js?v=20260910-0117')));
+  loadScript('./whatsapp-cleanup.js',()=>loadScript('./result-ui.js',()=>loadScript('./smart-extractor.js?v=20260910-0926')));
 
   const read=(key,def=true)=>{try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}};
   const write=(key,value)=>{try{localStorage.setItem(key,value?'1':'0')}catch(e){}};
