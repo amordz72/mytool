@@ -11,15 +11,16 @@
     *{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
     [v-cloak]{display:none}.app{max-width:900px;margin:auto;padding:14px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
     .back{color:var(--main);text-decoration:none;font-weight:700}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 5px 18px rgba(15,23,42,.05)}
-    h1{font-size:24px;margin:0}h2{font-size:18px;margin:0 0 14px}.muted{color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    h1{font-size:24px;margin:0}h2{font-size:18px;margin:0 0 14px}h3{font-size:15px;margin:0}.muted{color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     label{display:block;font-size:13px;font-weight:700;margin:0 0 6px}input,select,textarea,button{width:100%;font:inherit;border-radius:12px;border:1px solid var(--line);padding:12px;background:#fff}
     textarea{min-height:70px;resize:vertical}.btn{border:0;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;font-weight:800;cursor:pointer}.btn:disabled{opacity:.55;cursor:not-allowed}
-    .btn.secondary{background:#fff;color:var(--main);border:1px solid var(--main)}.error{background:#fff1f2;color:var(--danger);padding:10px;border-radius:12px;margin-top:10px;font-size:13px}
+    .btn.secondary{background:#fff;color:var(--main);border:1px solid var(--main)}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}.error{background:#fff1f2;color:var(--danger);padding:10px;border-radius:12px;margin-top:10px;font-size:13px}
     .ok{background:#ecfdf5;color:#047857;padding:10px;border-radius:12px;margin-top:10px;font-size:13px}.stock{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
     .stock-item{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px}.stock-name{font-size:13px}.stock-num{font-size:23px;font-weight:900;margin-top:5px}
     .toolbar{display:flex;gap:8px;align-items:center}.toolbar button{width:auto;padding:9px 13px}.pill{display:inline-block;background:#ecfeff;color:#0f766e;border-radius:99px;padding:5px 9px;font-size:11px;font-weight:800}
     .login{max-width:460px;margin:7vh auto}.login h1{margin-bottom:8px}.login .field{margin-bottom:11px}.switch{margin-top:12px;text-align:center}.switch button{width:auto;border:0;background:transparent;color:var(--main);font-weight:800;padding:6px}.identity{margin-top:5px;font-size:13px;font-weight:700}.soon{opacity:.65}.footer{text-align:center;color:var(--muted);font-size:11px;padding:10px}
-    @media(max-width:620px){.grid,.stock{grid-template-columns:1fr}.app{padding:10px}.top{align-items:flex-start}.toolbar{flex-wrap:wrap}}
+    .worker-list{display:grid;gap:8px;margin-top:14px}.worker-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid var(--line);border-radius:14px;background:#f8fafc}.worker-meta{min-width:0}.worker-meta small{display:block;color:var(--muted);margin-top:3px;word-break:break-word}.worker-actions{display:flex;gap:6px;flex-shrink:0}.worker-actions button{width:auto;padding:7px 9px;font-size:12px}.status-on{color:#047857;font-weight:800}.status-off{color:var(--danger);font-weight:800}.setting-line{display:flex;gap:10px;align-items:end}.setting-line>div{flex:1}.setting-line button{width:auto;min-width:110px}
+    @media(max-width:620px){.grid,.stock{grid-template-columns:1fr}.app{padding:10px}.top{align-items:flex-start}.toolbar{flex-wrap:wrap}.worker-row{align-items:flex-start;flex-direction:column}.worker-actions{width:100%}.worker-actions button{flex:1}.setting-line{align-items:stretch;flex-direction:column}.setting-line button{width:100%}}
   </style>
 </head>
 <body>
@@ -108,7 +109,48 @@
       </div>
     </section>
 
-    <section v-if="userMode==='admin'" class="card soon"><h2>الجرد الحقيقي</h2><p class="muted">مؤجل حاليًا. لاحقًا يدخل العدد الحقيقي لكل سلعة ويُسجل الفرق كتعديل جرد.</p><button disabled>مؤجل</button></section>
+    <template v-if="userMode==='admin'">
+      <section class="card">
+        <h2>إدارة المستخدمين</h2>
+        <p class="muted">أضف حساب عامل من هنا. إذا تركت كلمة المرور فارغة يستعمل النظام كلمة المرور الافتراضية المحفوظة داخل قاعدة البيانات.</p>
+        <form @submit.prevent="createWorker">
+          <div class="grid">
+            <div><label>اسم المستخدم</label><input v-model.trim="workerForm.username" required placeholder="مثال: kamal"></div>
+            <div><label>الاسم المستعار</label><input v-model.trim="workerForm.nickname" required placeholder="مثال: كمال"></div>
+            <div><label>الهاتف (اختياري)</label><input v-model.trim="workerForm.phone" inputmode="tel"></div>
+            <div><label>كلمة مرور خاصة (اختياري)</label><input v-model="workerForm.password" type="password" autocomplete="new-password" placeholder="اتركها فارغة للافتراضية"></div>
+          </div>
+          <button class="btn" style="margin-top:10px" :disabled="busy">{{ busy ? 'جاري الحفظ…' : 'إضافة المستخدم' }}</button>
+        </form>
+
+        <div class="worker-list" v-if="adminWorkers.length">
+          <div class="worker-row" v-for="w in adminWorkers" :key="w.id">
+            <div class="worker-meta">
+              <h3>{{ w.nickname || w.username }} — {{ w.username }}</h3>
+              <small>{{ w.phone || 'بدون هاتف' }} · <span :class="w.active?'status-on':'status-off'">{{ w.active ? 'مفعّل' : 'موقوف' }}</span></small>
+            </div>
+            <div class="worker-actions">
+              <button class="btn secondary" @click="toggleWorker(w)" :disabled="busy">{{ w.active ? 'إيقاف' : 'تفعيل' }}</button>
+              <button class="btn danger" @click="deleteWorker(w)" :disabled="busy">حذف</button>
+            </div>
+          </div>
+        </div>
+        <div v-else class="muted" style="margin-top:12px">لا توجد حسابات خدام بعد.</div>
+      </section>
+
+      <section class="card">
+        <h2>إعدادات جلسة الأدمن</h2>
+        <p class="muted">اختر مدة الجلسة من 1 إلى 96 ساعة. عند انتهاء المدة يخرج MyTool من حساب الإدارة تلقائيًا.</p>
+        <div class="setting-line">
+          <div><label>عدد الساعات</label><input v-model.number="adminSessionHours" type="number" min="1" max="96" step="1"></div>
+          <button class="btn" @click="saveAdminSessionHours" :disabled="busy">حفظ المدة</button>
+        </div>
+        <div class="muted" style="margin-top:8px">المدة الحالية: {{ adminSessionHours }} ساعة.</div>
+      </section>
+
+      <section class="card soon"><h2>الجرد الحقيقي</h2><p class="muted">مؤجل حاليًا. لاحقًا يدخل العدد الحقيقي لكل سلعة ويُسجل الفرق كتعديل جرد.</p><button disabled>مؤجل</button></section>
+    </template>
+
     <div class="footer">البيانات التشغيلية محفوظة في Supabase وليست داخل GitHub.</div>
   </template>
 </div>
@@ -123,25 +165,40 @@
 
   const WORKER_TOKEN_KEY = 'mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY = 'mytool_shop_worker_nickname'
+  const WORKER_EXPIRES_KEY = 'mytool_shop_worker_expires_at'
+  const ADMIN_SESSION_HOURS_KEY = 'mytool_admin_session_hours'
+  const ADMIN_EXPIRES_KEY = 'mytool_admin_expires_at'
+  const WORKER_SESSION_MS = 10 * 24 * 60 * 60 * 1000
+
+  function clampHours(value){const n=Math.floor(Number(value)||24);return Math.min(96,Math.max(1,n))}
 
   createApp({setup(){
-    const session=ref(null),workerToken=ref(localStorage.getItem(WORKER_TOKEN_KEY)||''),workerNickname=ref(localStorage.getItem(WORKER_NICKNAME_KEY)||'')
+    const storedWorkerExpiry=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)
+    const storedWorkerToken=(storedWorkerExpiry>Date.now())?(localStorage.getItem(WORKER_TOKEN_KEY)||''):''
+    const storedWorkerNickname=storedWorkerToken?(localStorage.getItem(WORKER_NICKNAME_KEY)||''):''
+
+    const session=ref(null),workerToken=ref(storedWorkerToken),workerNickname=ref(storedWorkerNickname)
     const loading=ref(true),busy=ref(false),loginMode=ref('worker'),email=ref(''),password=ref(''),workerUsername=ref(''),workerPassword=ref('')
-    const message=ref(''),messageType=ref('ok'),staff=ref([]),products=ref([]),inventory=ref([]),sale=ref({sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''})
+    const message=ref(''),messageType=ref('ok'),staff=ref([]),products=ref([]),inventory=ref([]),adminWorkers=ref([])
+    const sale=ref({sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''})
+    const workerForm=ref({username:'',nickname:'',phone:'',password:''})
+    const adminSessionHours=ref(clampHours(localStorage.getItem(ADMIN_SESSION_HOURS_KEY)||24))
 
     const userMode=computed(()=>session.value?'admin':(workerToken.value?'worker':'none'))
     const isLoggedIn=computed(()=>userMode.value!=='none')
 
     function notify(text,type='ok'){message.value=text;messageType.value=type==='error'?'error':'ok'}
     function setLoginMode(mode){loginMode.value=mode;message.value=''}
-    function clearWorkerSession(){workerToken.value='';workerNickname.value='';localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY)}
+    function clearWorkerSession(){workerToken.value='';workerNickname.value='';localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY);localStorage.removeItem(WORKER_EXPIRES_KEY)}
+    function setAdminExpiry(){localStorage.setItem(ADMIN_EXPIRES_KEY,String(Date.now()+adminSessionHours.value*60*60*1000))}
+    function clearAdminExpiry(){localStorage.removeItem(ADMIN_EXPIRES_KEY)}
 
     async function adminLogin(){
       busy.value=true;message.value=''
       const {data,error}=await supabase.auth.signInWithPassword({email:email.value,password:password.value})
       busy.value=false
       if(error)return notify('تعذر تسجيل الدخول: '+error.message,'error')
-      clearWorkerSession();session.value=data.session;password.value='';await loadAll()
+      clearWorkerSession();session.value=data.session;password.value='';setAdminExpiry();await loadAll()
     }
 
     async function workerLogin(){
@@ -151,18 +208,31 @@
       if(error||!data?.length)return notify('اسم المستخدم أو كلمة المرور غير صحيحة.','error')
       const row=data[0]
       workerToken.value=row.session_token;workerNickname.value=row.nickname||workerUsername.value
-      localStorage.setItem(WORKER_TOKEN_KEY,workerToken.value);localStorage.setItem(WORKER_NICKNAME_KEY,workerNickname.value)
-      workerPassword.value='';workerUsername.value='';session.value=null;await loadAll()
+      localStorage.setItem(WORKER_TOKEN_KEY,workerToken.value)
+      localStorage.setItem(WORKER_NICKNAME_KEY,workerNickname.value)
+      localStorage.setItem(WORKER_EXPIRES_KEY,String(Date.now()+WORKER_SESSION_MS))
+      workerPassword.value='';workerUsername.value='';session.value=null;clearAdminExpiry();await loadAll()
     }
 
     async function logout(){
       message.value=''
-      if(userMode.value==='admin') await supabase.auth.signOut()
+      if(userMode.value==='admin'){await supabase.auth.signOut();clearAdminExpiry()}
       if(userMode.value==='worker'&&workerToken.value){try{await supabase.rpc('worker_logout',{p_session_token:workerToken.value})}catch(_e){}clearWorkerSession()}
-      session.value=null;staff.value=[];products.value=[];inventory.value=[];sale.value={sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''}
+      session.value=null;staff.value=[];products.value=[];inventory.value=[];adminWorkers.value=[];sale.value={sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''}
+    }
+
+    async function enforceTimeout(){
+      if(userMode.value==='admin'){
+        const expires=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)
+        if(expires&&Date.now()>=expires){await logout();loginMode.value='admin';notify('انتهت مدة جلسة الإدارة. ادخل من جديد.','error')}
+      }else if(userMode.value==='worker'){
+        const expires=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)
+        if(!expires||Date.now()>=expires){clearWorkerSession();products.value=[];inventory.value=[];notify('انتهت جلسة العامل. ادخل من جديد.','error')}
+      }
     }
 
     async function loadAll(){
+      await enforceTimeout();if(!isLoggedIn.value)return
       busy.value=true;message.value=''
       if(userMode.value==='worker'){
         const {data,error}=await supabase.rpc('worker_get_catalog',{p_session_token:workerToken.value})
@@ -172,15 +242,16 @@
         products.value=(data||[]).map(x=>({id:x.product_id,name:x.name}))
         return
       }
-      const [s,p,i]=await Promise.all([
+      const [s,p,i,w]=await Promise.all([
         supabase.from('staff').select('id,name').eq('active',true).order('id'),
         supabase.from('products').select('id,name').order('id'),
-        supabase.from('inventory_summary').select('product_id,name,stock_quantity').order('product_id')
+        supabase.from('inventory_summary').select('product_id,name,stock_quantity').order('product_id'),
+        supabase.from('worker_accounts').select('id,username,phone,nickname,staff_id,active,created_at').order('id')
       ])
       busy.value=false
-      const error=s.error||p.error||i.error
+      const error=s.error||p.error||i.error||w.error
       if(error)return notify('خطأ في قراءة البيانات: '+error.message,'error')
-      staff.value=s.data||[];products.value=p.data||[];inventory.value=i.data||[]
+      staff.value=s.data||[];products.value=p.data||[];inventory.value=i.data||[];adminWorkers.value=w.data||[]
     }
 
     async function saveSale(){
@@ -209,15 +280,62 @@
       sale.value.product_id='';sale.value.quantity=1;sale.value.unit_price='';sale.value.notes='';await loadAll()
     }
 
+    async function createWorker(){
+      if(userMode.value!=='admin')return
+      const payload={username:workerForm.value.username,nickname:workerForm.value.nickname,phone:workerForm.value.phone||null}
+      if(workerForm.value.password)payload.password=workerForm.value.password
+      busy.value=true;message.value=''
+      const {error}=await supabase.from('worker_accounts').insert(payload)
+      busy.value=false
+      if(error)return notify('لم تتم إضافة المستخدم: '+error.message,'error')
+      workerForm.value={username:'',nickname:'',phone:'',password:''}
+      notify('تمت إضافة المستخدم بنجاح.')
+      await loadAll()
+    }
+
+    async function toggleWorker(w){
+      if(userMode.value!=='admin')return
+      busy.value=true;message.value=''
+      const {error}=await supabase.from('worker_accounts').update({active:!w.active}).eq('id',w.id)
+      busy.value=false
+      if(error)return notify('تعذر تحديث الحساب: '+error.message,'error')
+      notify(w.active?'تم إيقاف الحساب.':'تم تفعيل الحساب.')
+      await loadAll()
+    }
+
+    async function deleteWorker(w){
+      if(userMode.value!=='admin'||!confirm('حذف حساب '+(w.nickname||w.username)+'؟'))return
+      busy.value=true;message.value=''
+      const {error}=await supabase.from('worker_accounts').delete().eq('id',w.id)
+      busy.value=false
+      if(error)return notify('تعذر حذف الحساب: '+error.message,'error')
+      notify('تم حذف الحساب.')
+      await loadAll()
+    }
+
+    function saveAdminSessionHours(){
+      adminSessionHours.value=clampHours(adminSessionHours.value)
+      localStorage.setItem(ADMIN_SESSION_HOURS_KEY,String(adminSessionHours.value))
+      if(userMode.value==='admin')setAdminExpiry()
+      notify('تم حفظ مدة جلسة الإدارة: '+adminSessionHours.value+' ساعة.')
+    }
+
     onMounted(async()=>{
+      if(!storedWorkerToken)clearWorkerSession()
       const {data}=await supabase.auth.getSession();session.value=data.session
-      if(session.value)clearWorkerSession()
+      if(session.value){
+        clearWorkerSession()
+        const expires=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)
+        if(expires&&Date.now()>=expires){await supabase.auth.signOut();session.value=null;clearAdminExpiry();loginMode.value='admin';notify('انتهت مدة جلسة الإدارة. ادخل من جديد.','error')}
+        else if(!expires)setAdminExpiry()
+      }
       loading.value=false
       if(isLoggedIn.value)await loadAll()
       supabase.auth.onAuthStateChange((_event,newSession)=>{session.value=newSession;if(newSession)clearWorkerSession()})
+      setInterval(enforceTimeout,30000)
     })
 
-    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,message,messageType,staff,products,inventory,sale,userMode,isLoggedIn,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale}
+    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,message,messageType,staff,products,inventory,adminWorkers,sale,workerForm,adminSessionHours,userMode,isLoggedIn,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale,createWorker,toggleWorker,deleteWorker,saveAdminSessionHours}
   }}).mount('#app')
 </script>
 </body>
