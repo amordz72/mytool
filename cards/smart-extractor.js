@@ -2,6 +2,8 @@
   const IGNORE_KEY='mytool.cards.smartIgnoreRules';
   const DEDUPE_KEY='mytool.cards.smartDedupe';
   const DEFAULT_IGNORE=['DATE','TIME','IP','URL','EMAIL'];
+  const INVISIBLE=/[\u200B-\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]/g;
+  const NBSP=/[\u00A0\u202F]/g;
   const text=document.getElementById('text'),result=document.getElementById('result'),status=document.getElementById('status'),hint=document.getElementById('hint'),tabs=document.getElementById('tabs'),subtitle=document.getElementById('subtitle'),processBtn=document.getElementById('process');
   if(!text||!result)return;
 
@@ -9,6 +11,7 @@
   const pad=n=>String(n).padStart(2,'0');
   function stamp(){const d=new Date();return `${pad(d.getDate())}${pad(d.getMonth()+1)}${String(d.getFullYear()).slice(-2)}_${pad(d.getHours())}${pad(d.getMinutes())}`}
   function readBool(key,def=true){try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}}
+  function normalizeCopiedValue(value){return String(value??'').replace(INVISIBLE,'').replace(NBSP,' ').trim()}
 
   function readIgnoreRules(){
     try{
@@ -20,8 +23,8 @@
 
   function isBuiltinIgnored(value,token){
     const t=token.toUpperCase();
-    if(t==='DATE')return /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})$/.test(value);
-    if(t==='TIME')return /^(?:[01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:\s*[APap][Mm])?$/.test(value);
+    if(t==='DATE')return /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)$/i.test(value);
+    if(t==='TIME')return /^(?:[01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:\.\d+)?(?:\s*[APap][Mm])?$/.test(value);
     if(t==='IP')return /^(?:\d{1,3}\.){3}\d{1,3}$/.test(value);
     if(t==='URL')return /^(?:https?:\/\/|www\.)\S+$/i.test(value);
     if(t==='EMAIL')return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -46,29 +49,45 @@
     return{kind:'mixed',label:'أحرف/أرقام مع فواصل'};
   }
 
+  function cellsFromLine(original){
+    const line=normalizeCopiedValue(original),out=[],seen=new Set();
+    const add=value=>{const v=normalizeCopiedValue(value);if(v&&!seen.has(v)){seen.add(v);out.push(v)}};
+    add(line);
+    if(/[\t|;]/.test(line))line.split(/\t+|\s*\|\s*|;+\s*/).forEach(add);
+    return out;
+  }
+
   function analyze(raw){
     const cleaned=typeof window.cleanWhatsAppEnvelope==='function'?window.cleanWhatsAppEnvelope(raw):String(raw||'');
     const rules=readIgnoreRules(),groups=new Map(),dedupe=readBool(DEDUPE_KEY,true),seen=new Set();
-    let ignored=0,rejected=0,duplicates=0;
+    let ignored=0,rejected=0,duplicates=0,normalized=0,cells=0;
     cleaned.replace(/\r\n?/g,'\n').split('\n').forEach((original,index)=>{
-      const value=original.trim();
-      if(!value)return;
-      if(rules.some(rule=>matchesIgnore(value,rule))){ignored++;return}
-      const info=classify(value);
-      if(!info){rejected++;return}
-      if(dedupe){
-        if(seen.has(value)){duplicates++;return}
-        seen.add(value);
-      }
-      const key=`${info.kind}:${value.length}`;
-      if(!groups.has(key))groups.set(key,{key,kind:info.kind,label:info.label,length:value.length,codes:[],firstLine:index+1});
-      groups.get(key).codes.push(value);
+      const base=normalizeCopiedValue(original);
+      if(!base)return;
+      if(base!==String(original??'').trim())normalized++;
+      const candidates=cellsFromLine(original);
+      if(candidates.length>1)cells+=candidates.length-1;
+      let accepted=false,lineIgnored=false;
+      candidates.forEach(value=>{
+        if(rules.some(rule=>matchesIgnore(value,rule))){lineIgnored=true;return}
+        const info=classify(value);
+        if(!info)return;
+        accepted=true;
+        if(dedupe){
+          if(seen.has(value)){duplicates++;return}
+          seen.add(value);
+        }
+        const key=`${info.kind}:${value.length}`;
+        if(!groups.has(key))groups.set(key,{key,kind:info.kind,label:info.label,length:value.length,codes:[],firstLine:index+1});
+        groups.get(key).codes.push(value);
+      });
+      if(!accepted){if(lineIgnored)ignored++;else rejected++}
     });
-    return{groups:[...groups.values()].sort((a,b)=>a.firstLine-b.firstLine),ignored,rejected,rules,dedupe,duplicates};
+    return{groups:[...groups.values()].sort((a,b)=>a.firstLine-b.firstLine),ignored,rejected,rules,dedupe,duplicates,normalized,cells};
   }
 
   function summary(a){
-    if(!a.groups.length)return'لم يتم العثور على أسطر تشبه أكوادًا بعد تطبيق قواعد التجاهل.';
+    if(!a.groups.length)return'لم يتم العثور على أسطر أو خلايا تشبه أكوادًا بعد تطبيق قواعد التجاهل.';
     return a.groups.map(g=>`${g.codes.length} ${g.label} بطول ${g.length} خانة`).join(' • ');
   }
 
@@ -88,7 +107,7 @@
   function renderSmart(){
     const a=analyze(text.value);
     if(!a.groups.length){
-      result.innerHTML='<div class="group validationBox"><div class="error">⚠️ لم يتم اكتشاف أكواد واضحة</div><div class="hint">راجع قواعد التجاهل أو اختر تنسيقًا معروفًا إذا كان المصدر خاصًا به.</div></div>';
+      result.innerHTML='<div class="group validationBox"><div class="error">⚠️ لم يتم اكتشاف أكواد واضحة</div><div class="hint">تم فحص الأسطر وخلايا الجداول والنصوص المنسوخة من المواقع. راجع قواعد التجاهل أو اختر تنسيقًا معروفًا إذا كان المصدر خاصًا به.</div></div>';
       if(status)status.textContent=summary(a);
       return a;
     }
@@ -99,7 +118,7 @@
       if(copy)copy.onclick=()=>copyCodes(g.codes);
       if(down)down.onclick=()=>downloadCodes(g.codes,filename(g));
     });
-    if(status)status.textContent=`استخراج ذكي: ${summary(a)}${a.ignored?` • تم تجاهل ${a.ignored} سطر حسب الإعدادات.`:''}${a.dedupe&&a.duplicates?` • تم استبعاد ${a.duplicates} تكرار من النتيجة.`:''}`;
+    if(status)status.textContent=`استخراج ذكي: ${summary(a)}${a.normalized?` • تم تنظيف علامات مخفية في ${a.normalized} سطر.`:''}${a.cells?` • تم فحص ${a.cells} خلية إضافية من جدول منسوخ.`:''}${a.ignored?` • تم تجاهل ${a.ignored} سطر حسب الإعدادات.`:''}${a.dedupe&&a.duplicates?` • تم استبعاد ${a.duplicates} تكرار من النتيجة.`:''}`;
     return a;
   }
 
@@ -113,7 +132,7 @@
   if(originalSelectType)window.selectType=function(next){
     const out=originalSelectType(next);
     if(next==='plain'){
-      if(hint)hint.textContent='استخراج الأسطر التي تبدو أكوادًا تلقائيًا وتجميعها حسب النوع والطول، مع تطبيق قواعد التجاهل ومنع التكرار حسب الإعدادات.';
+      if(hint)hint.textContent='استخراج الأكواد من الأسطر وخلايا الجداول والنصوص المنسوخة من المواقع، مع تنظيف العلامات المخفية وتجميع النتائج حسب النوع والطول.';
       text.placeholder='ألصق أي نص يحتوي على أكواد هنا...';
     }
     relabel();
@@ -155,9 +174,9 @@
   },0);
 })();
 (()=>{
-  if(document.querySelector('script[data-helper="./custom-sources.js?v=20260910-0543"]'))return;
+  if(document.querySelector('script[data-helper="./custom-sources.js?v=20260910-0926"]'))return;
   const s=document.createElement('script');
-  s.src='./custom-sources.js?v=20260910-0543';
-  s.dataset.helper='./custom-sources.js?v=20260910-0543';
+  s.src='./custom-sources.js?v=20260910-0926';
+  s.dataset.helper='./custom-sources.js?v=20260910-0926';
   document.body.appendChild(s);
 })();
