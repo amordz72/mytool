@@ -220,8 +220,3 @@
   window.addEventListener('mytool:custom-sources-changed',()=>refreshTabs());
   setTimeout(()=>{refreshTabs();addManagerLink()},250);
 })();
-(()=>{
-  const src='./backup.js?v=20260910-0821';
-  if(document.querySelector(`script[data-helper="${src}"]`))return;
-  const s=document.createElement('script');s.src=src;s.dataset.helper=src;document.body.appendChild(s);
-})();

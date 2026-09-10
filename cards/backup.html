@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2ea8e6">
+<title>النسخ الاحتياطي - MyTool</title>
+<style>
+:root{--o:#f47700;--b:#2ea8e6;--t:#163047;--m:#61778a;--l:#d7e5ee;--g:#0f9f6e;--r:#d84c4c}*{box-sizing:border-box}body{margin:0;padding:8px;font-family:Arial,Tahoma,sans-serif;color:var(--t);background:linear-gradient(135deg,#fff7ef,#eef9ff)}.wrap{max-width:780px;margin:auto}.back{display:block;text-decoration:none;color:var(--t);font-weight:bold;background:#fff;border:1px solid var(--l);border-radius:10px;padding:10px 12px;margin-bottom:8px}.app{background:#fff;border:1px solid var(--l);border-radius:20px;overflow:hidden;box-shadow:0 8px 24px #16304718}.head{padding:14px 16px;color:#fff;background:linear-gradient(135deg,var(--o),#7fd3ff)}.head h1{font-size:20px;margin:0}.head p{margin:4px 0 0;font-size:12px}.body{padding:12px}.note{font-size:12px;color:var(--m);background:#f7fbfe;border:1px solid var(--l);border-radius:11px;padding:10px;margin-bottom:10px;line-height:1.7}.good{background:#f2fff9;color:#0f7f59}.warn{background:#fffaf0;color:#8a5a13}.sectionTitle{font-size:16px;margin:18px 0 9px;padding-top:12px;border-top:1px solid var(--l)}.btn{border:0;border-radius:11px;padding:12px;font-weight:bold;color:#fff;background:linear-gradient(135deg,var(--o),var(--b));cursor:pointer;width:100%}.green{background:var(--g)}.gray{background:#6b7c89}.red{background:var(--r)}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fileBox{border:1px dashed #bad5e5;border-radius:10px;padding:10px;color:var(--m);font-size:12px;margin-top:8px;overflow-wrap:anywhere}.field textarea{width:100%;min-height:180px;border:1px solid var(--l);border-radius:10px;padding:10px;font-family:monospace;direction:ltr;text-align:left;resize:vertical}.preview{margin-top:10px;border:1px solid var(--l);border-radius:12px;padding:11px;background:#fbfdff;line-height:1.8;font-size:13px}.status{min-height:24px;margin-top:9px;font-size:13px;font-weight:bold}.danger{color:var(--r)}.ok{color:var(--g)}code{direction:ltr;display:inline-block}@media(max-width:560px){.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body><main class="wrap">
+<a class="back" href="./">← الرجوع إلى معالج البطاقات</a>
+<section class="app"><header class="head"><h1>💾 النسخ الاحتياطي</h1><p>حفظ صيغ المصادر وإعدادات المعالج في ملف واحد.</p></header><div class="body">
+<div id="backupState" class="note"></div>
+<div class="note">النسخة الاحتياطية تحتوي فقط على إعدادات MyTool وصيغ المصادر المحفوظة. لا نضيف نصوص البطاقات أو أكواد البطاقات أو محتوى الجلسة.</div>
+
+<h2 class="sectionTitle">تصدير</h2>
+<p class="note">سيتم تنزيل ملف <code>.json</code> واحد. يمكنك الاحتفاظ به في الهاتف أو الكمبيوتر وفتحه كنص عادي عند الحاجة.</p>
+<button id="exportBtn" class="btn green" type="button">⬇️ تصدير نسخة احتياطية الآن</button>
+<div id="exportStatus" class="status"></div>
+
+<h2 class="sectionTitle">استيراد من ملف</h2>
+<div class="actions"><button id="pickBtn" class="btn" type="button">📂 اختيار ملف Backup</button><button id="clearBtn" class="btn gray" type="button">مسح الاختيار</button></div>
+<div id="fileName" class="fileBox">لم يتم اختيار ملف.</div>
+<input id="fileInput" type="file" accept=".json,.txt,application/json,text/plain" hidden>
+
+<h2 class="sectionTitle">أو ألصق محتوى النسخة</h2>
+<label class="field"><textarea id="backupText" placeholder="ألصق هنا محتوى ملف MyTool_Backup_....json"></textarea></label>
+<button id="readTextBtn" class="btn" type="button" style="margin-top:8px">🔎 قراءة وفحص النسخة</button>
+
+<div id="preview" class="preview" hidden></div>
+<button id="restoreBtn" class="btn red" type="button" style="margin-top:10px" hidden>↩️ استيراد واستبدال الإعدادات الحالية</button>
+<div id="importStatus" class="status"></div>
+</div></section></main>
+<script src="./backup.js?v=20260910-0821"></script>
+<script>
+const api=window.mytoolBackup,$=id=>document.getElementById(id);
+const state=$('backupState'),exportStatus=$('exportStatus'),fileInput=$('fileInput'),fileName=$('fileName'),text=$('backupText'),previewBox=$('preview'),restoreBtn=$('restoreBtn'),importStatus=$('importStatus');
+let pending=null;
+function renderState(){const i=api.info();state.textContent=i.text;state.className='note '+(i.state==='ok'?'good':'warn')}
+function clearPending(){pending=null;previewBox.hidden=true;previewBox.innerHTML='';restoreBtn.hidden=true;importStatus.textContent=''}
+function showParsed(parsed){
+  pending=parsed;const p=api.preview(parsed),names=p.sources.length?p.sources.join('، '):'لا توجد صيغ مخصصة';
+  previewBox.hidden=false;restoreBtn.hidden=false;
+  previewBox.innerHTML=`<b>النسخة صالحة للاستيراد.</b><br>تاريخ النسخة: ${escapeHtml(api.formatDate(p.createdAt))}<br>صيغ المصادر: ${p.sourceCount} — ${escapeHtml(names)}<br>إعدادات عامة: ${p.settingsCount}<br>إعدادات تقسيم: ${p.splitCount}<br>إجمالي المفاتيح المسترجعة: ${p.totalKeys}${p.ignoredCount?`<br>تم تجاهل ${p.ignoredCount} مفاتيح غير معروفة للحماية.`:''}`;
+  importStatus.textContent='راجع الملخص ثم اضغط استيراد.';importStatus.className='status ok';
+}
+function parseValue(value){clearPending();try{showParsed(api.parse(value))}catch(e){importStatus.textContent=e.message||'تعذر قراءة النسخة.';importStatus.className='status danger'}}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('exportBtn').onclick=()=>{api.download();exportStatus.textContent='تم تنزيل النسخة الاحتياطية. احتفظ بالملف في مكان معروف.';exportStatus.className='status ok';renderState()};
+$('pickBtn').onclick=()=>fileInput.click();
+fileInput.onchange=async()=>{const f=fileInput.files&&fileInput.files[0];if(!f)return;fileName.textContent='الملف: '+f.name;try{const value=await f.text();text.value=value;parseValue(value)}catch(e){importStatus.textContent='تعذر قراءة الملف.';importStatus.className='status danger'}};
+$('readTextBtn').onclick=()=>parseValue(text.value);
+$('clearBtn').onclick=()=>{try{fileInput.value=''}catch(e){}fileName.textContent='لم يتم اختيار ملف.';text.value='';clearPending()};
+restoreBtn.onclick=()=>{if(!pending)return;if(!confirm('سيتم استبدال صيغ المصادر وإعدادات MyTool الحالية بما يوجد في النسخة. هل تريد المتابعة؟'))return;try{api.restore(pending);importStatus.textContent='تم الاسترجاع بنجاح. ارجع إلى معالج البطاقات وستظهر الصيغ والإعدادات المسترجعة.';importStatus.className='status ok';renderState()}catch(e){importStatus.textContent='تعذر الاسترجاع: '+(e.message||e);importStatus.className='status danger'}};
+renderState();
+</script>
+</body></html>
