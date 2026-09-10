@@ -1,5 +1,6 @@
 (()=>{
   const IGNORE_KEY='mytool.cards.smartIgnoreRules';
+  const DEDUPE_KEY='mytool.cards.smartDedupe';
   const DEFAULT_IGNORE=['DATE','TIME','IP','URL','EMAIL'];
   const text=document.getElementById('text'),result=document.getElementById('result'),status=document.getElementById('status'),hint=document.getElementById('hint'),tabs=document.getElementById('tabs'),subtitle=document.getElementById('subtitle'),processBtn=document.getElementById('process');
   if(!text||!result)return;
@@ -7,6 +8,7 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const pad=n=>String(n).padStart(2,'0');
   function stamp(){const d=new Date();return `${pad(d.getDate())}${pad(d.getMonth()+1)}${String(d.getFullYear()).slice(-2)}_${pad(d.getHours())}${pad(d.getMinutes())}`}
+  function readBool(key,def=true){try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}}
 
   function readIgnoreRules(){
     try{
@@ -46,19 +48,23 @@
 
   function analyze(raw){
     const cleaned=typeof window.cleanWhatsAppEnvelope==='function'?window.cleanWhatsAppEnvelope(raw):String(raw||'');
-    const rules=readIgnoreRules(),groups=new Map();
-    let ignored=0,rejected=0;
+    const rules=readIgnoreRules(),groups=new Map(),dedupe=readBool(DEDUPE_KEY,true),seen=new Set();
+    let ignored=0,rejected=0,duplicates=0;
     cleaned.replace(/\r\n?/g,'\n').split('\n').forEach((original,index)=>{
       const value=original.trim();
       if(!value)return;
       if(rules.some(rule=>matchesIgnore(value,rule))){ignored++;return}
       const info=classify(value);
       if(!info){rejected++;return}
+      if(dedupe){
+        if(seen.has(value)){duplicates++;return}
+        seen.add(value);
+      }
       const key=`${info.kind}:${value.length}`;
       if(!groups.has(key))groups.set(key,{key,kind:info.kind,label:info.label,length:value.length,codes:[],firstLine:index+1});
       groups.get(key).codes.push(value);
     });
-    return{groups:[...groups.values()].sort((a,b)=>a.firstLine-b.firstLine),ignored,rejected,rules};
+    return{groups:[...groups.values()].sort((a,b)=>a.firstLine-b.firstLine),ignored,rejected,rules,dedupe,duplicates};
   }
 
   function summary(a){
@@ -93,7 +99,7 @@
       if(copy)copy.onclick=()=>copyCodes(g.codes);
       if(down)down.onclick=()=>downloadCodes(g.codes,filename(g));
     });
-    if(status)status.textContent=`استخراج ذكي: ${summary(a)}${a.ignored?` • تم تجاهل ${a.ignored} سطر حسب الإعدادات.`:''}`;
+    if(status)status.textContent=`استخراج ذكي: ${summary(a)}${a.ignored?` • تم تجاهل ${a.ignored} سطر حسب الإعدادات.`:''}${a.dedupe&&a.duplicates?` • تم استبعاد ${a.duplicates} تكرار من النتيجة.`:''}`;
     return a;
   }
 
@@ -107,7 +113,7 @@
   if(originalSelectType)window.selectType=function(next){
     const out=originalSelectType(next);
     if(next==='plain'){
-      if(hint)hint.textContent='استخراج الأسطر التي تبدو أكوادًا تلقائيًا وتجميعها حسب النوع والطول، مع تطبيق قواعد التجاهل من الإعدادات.';
+      if(hint)hint.textContent='استخراج الأسطر التي تبدو أكوادًا تلقائيًا وتجميعها حسب النوع والطول، مع تطبيق قواعد التجاهل ومنع التكرار حسب الإعدادات.';
       text.placeholder='ألصق أي نص يحتوي على أكواد هنا...';
     }
     relabel();
@@ -120,13 +126,10 @@
     if(subtitle&&subtitle.textContent.includes('TXT'))subtitle.textContent=subtitle.textContent.replace('TXT','استخراج ذكي');
   }
 
-  if(tabs){
-    new MutationObserver(relabel).observe(tabs,{childList:true,subtree:true});
-  }
+  if(tabs)new MutationObserver(relabel).observe(tabs,{childList:true,subtree:true});
   relabel();
 
-  const originalApply=typeof window.applyAutoDetection==='function'?window.applyAutoDetection:null;
-  if(originalApply)window.applyAutoDetection=function(raw){
+  window.applyAutoDetection=function(raw){
     const state=window.cardOptionState;
     if(state&&state.autoDetect&&!state.autoDetect.checked)return;
     const detected=typeof window.detectContentType==='function'?window.detectContentType(raw):null;
