@@ -19,6 +19,9 @@
 <label class="setting"><span><b>المعالجة التلقائية</b><small>عند اللصق أو رفع ملف، يتم تجهيز النتيجة مباشرة بدون الضغط على زر معالجة.</small></span><input id="process" class="switch" type="checkbox"></label>
 <label class="setting"><span><b>إظهار الخيارات السريعة في الصفحة الرئيسية</b><small>مغلق افتراضيًا لتبقى الواجهة نظيفة. عند تفعيله تظهر خيارات مثل إزالة الفراغات والتعرف التلقائي داخل المعالج نفسه.</small></span><input id="showMainOptions" class="switch" type="checkbox"></label>
 
+<h2 class="sectionTitle">إعدادات الاستخراج الذكي</h2>
+<label class="setting"><span><b>إزالة الأكواد المكررة تلقائيًا</b><small>مفعّل افتراضيًا. إذا ظهر نفس الكود حرفيًا أكثر من مرة، يظهر ويُنسخ ويُحفظ مرة واحدة فقط. النص الأصلي لا يتغير.</small></span><input id="smartDedupe" class="switch" type="checkbox"></label>
+
 <h2 class="sectionTitle">قواعد تجاهل الاستخراج الذكي</h2>
 <div class="note">هذه القواعد تطبق فقط عندما لا يتطابق النص مع مصدر معروف. كل سطر هنا قاعدة تجاهل مستقلة.</div>
 <label class="field">
@@ -37,8 +40,8 @@
 </div></section></main>
 <script>
 const DEFAULT_SMART_IGNORE='DATE\nTIME\nIP\nURL\nEMAIL';
-const KEYS={trim:'mytool.cards.trim',detect:'mytool.cards.autoDetect',process:'mytool.cards.autoProcess',showMainOptions:'mytool.cards.showMainOptions',smartIgnore:'mytool.cards.smartIgnoreRules',splitPrefix:'mytool.cards.split.'};
-const trim=document.getElementById('trim'),detect=document.getElementById('detect'),process=document.getElementById('process'),showMainOptions=document.getElementById('showMainOptions'),smartIgnoreRules=document.getElementById('smartIgnoreRules'),status=document.getElementById('status'),splitSettings=document.getElementById('splitSettings');
+const KEYS={trim:'mytool.cards.trim',detect:'mytool.cards.autoDetect',process:'mytool.cards.autoProcess',showMainOptions:'mytool.cards.showMainOptions',smartDedupe:'mytool.cards.smartDedupe',smartIgnore:'mytool.cards.smartIgnoreRules',splitPrefix:'mytool.cards.split.'};
+const trim=document.getElementById('trim'),detect=document.getElementById('detect'),process=document.getElementById('process'),showMainOptions=document.getElementById('showMainOptions'),smartDedupe=document.getElementById('smartDedupe'),smartIgnoreRules=document.getElementById('smartIgnoreRules'),status=document.getElementById('status'),splitSettings=document.getElementById('splitSettings');
 const fallbackTypes=[{id:'mobilis',name:'Mobilis'},{id:'idoom',name:'Idoom'},{id:'waffarly',name:'وفرلي / OneClick'},{id:'token',name:'Token Store'},{id:'plain',name:'استخراج ذكي'}];
 let splitTypes=[];
 function read(key,def=true){try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}}
@@ -60,20 +63,21 @@ function renderSplits(){
   document.querySelectorAll('.split-toggle').forEach(el=>{el.checked=read(KEYS.splitPrefix+el.dataset.type,splitDefault(el.dataset.type));el.addEventListener('change',save)});
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function load(){trim.checked=read(KEYS.trim,true);detect.checked=read(KEYS.detect,true);process.checked=read(KEYS.process,true);showMainOptions.checked=read(KEYS.showMainOptions,false);smartIgnoreRules.value=readText(KEYS.smartIgnore,DEFAULT_SMART_IGNORE)}
+function load(){trim.checked=read(KEYS.trim,true);detect.checked=read(KEYS.detect,true);process.checked=read(KEYS.process,true);showMainOptions.checked=read(KEYS.showMainOptions,false);smartDedupe.checked=read(KEYS.smartDedupe,true);smartIgnoreRules.value=readText(KEYS.smartIgnore,DEFAULT_SMART_IGNORE)}
 function save(){try{
   localStorage.setItem(KEYS.trim,trim.checked?'1':'0');
   localStorage.setItem(KEYS.detect,detect.checked?'1':'0');
   localStorage.setItem(KEYS.process,process.checked?'1':'0');
   localStorage.setItem(KEYS.showMainOptions,showMainOptions.checked?'1':'0');
+  localStorage.setItem(KEYS.smartDedupe,smartDedupe.checked?'1':'0');
   localStorage.setItem(KEYS.smartIgnore,smartIgnoreRules.value);
   document.querySelectorAll('.split-toggle').forEach(el=>localStorage.setItem(KEYS.splitPrefix+el.dataset.type,el.checked?'1':'0'));
   status.textContent='تم حفظ الإعدادات تلقائيًا.';
 }catch(e){status.textContent='تعذر حفظ الإعدادات على هذا المتصفح.'}}
-[trim,detect,process,showMainOptions].forEach(el=>el.addEventListener('change',save));
+[trim,detect,process,showMainOptions,smartDedupe].forEach(el=>el.addEventListener('change',save));
 smartIgnoreRules.addEventListener('input',save);
 document.getElementById('save').onclick=()=>{save();status.textContent='تم حفظ الإعدادات.'};
-document.getElementById('defaults').onclick=()=>{trim.checked=true;detect.checked=true;process.checked=true;showMainOptions.checked=false;smartIgnoreRules.value=DEFAULT_SMART_IGNORE;document.querySelectorAll('.split-toggle').forEach(el=>el.checked=splitDefault(el.dataset.type));save();status.textContent='تم إرجاع الإعدادات الافتراضية وحفظها.'};
+document.getElementById('defaults').onclick=()=>{trim.checked=true;detect.checked=true;process.checked=true;showMainOptions.checked=false;smartDedupe.checked=true;smartIgnoreRules.value=DEFAULT_SMART_IGNORE;document.querySelectorAll('.split-toggle').forEach(el=>el.checked=splitDefault(el.dataset.type));save();status.textContent='تم إرجاع الإعدادات الافتراضية وحفظها.'};
 load();loadTypes();
 </script>
 </body></html>
