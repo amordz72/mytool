@@ -68,5 +68,5 @@ function processToken(){const checked=validateTokenSource(text.value);if(!checke
 $('process').onclick=()=>{result.innerHTML='';statusEl.textContent='';if(!text.value.trim()){result.innerHTML='<div class="error">ألصق النص أو ارفع ملفًا أولًا.</div>';return}if(autoDetect.checked){const detected=detectContentType(text.value);if(detected){selectType(detected);if(detected==='plain'){processPlain();statusEl.textContent='لم يتطابق المحتوى مع أي تنسيق معروف — تم تحويله إلى نص عادي وتجهيزه.';return}if(detected==='waffarly'){processWaffarly();return}if(detected==='token'){processToken();return}const detectedRule=cardRules.find(r=>r.id===detected);if(detectedRule){processCard(detectedRule);return}}}const rule=currentRule();if(rule)processCard(rule);else if(type==='waffarly')processWaffarly();else if(type==='token')processToken();else processPlain()};
 loadRules();
 </script>
-<script src="./auto-settings.js?v=20260909-2326"></script>
+<script src="./auto-settings.js?v=20260910-0931"></script>
 </body></html>
