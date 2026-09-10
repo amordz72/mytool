@@ -16,7 +16,7 @@
     .quick-link{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.18);color:#fff;text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.35)}
     .badge{display:inline-block;margin-top:8px;padding:3px 7px;border-radius:99px;background:#edf8ff;color:#14729f;font-size:10px;font-weight:700}.sessionbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:14px}.sessionbar button{width:auto}
     button,input{font:inherit;border-radius:12px;border:1px solid var(--line);padding:12px;background:#fff}.btn{border:0;background:linear-gradient(135deg,#147fb2,#2ea8e6);color:#fff;font-weight:800;cursor:pointer}.btn.secondary{background:#fff;color:#14729f;border:1px solid #bfe3f6}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}
-    .login-wrap{max-width:460px;margin:7vh auto}.login-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 10px 35px rgba(22,48,71,.12)}.login-card h1{margin:0 0 5px;font-size:28px}.login-card p{color:var(--muted);font-size:13px;line-height:1.6}.field{margin:12px 0}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:6px}.field input{width:100%}.login-card .btn{width:100%}.switch{display:flex;gap:8px;margin-top:10px}.switch button{flex:1}.msg{margin-top:11px;padding:10px;border-radius:12px;font-size:13px}.msg.error{background:#fff1f2;color:var(--danger)}.msg.ok{background:#ecfdf5;color:var(--ok)}.small{font-size:11px;color:var(--muted);margin-top:10px}.mode{font-weight:800}.offline-note{margin-top:8px;font-size:11px;color:var(--muted)}
+    .login-wrap{max-width:460px;margin:7vh auto}.login-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 10px 35px rgba(22,48,71,.12)}.login-card h1{margin:0 0 5px;font-size:28px}.login-card p{color:var(--muted);font-size:13px;line-height:1.6}.field{margin:12px 0}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:6px}.field input{width:100%}.login-card .btn{width:100%}.msg{margin-top:11px;padding:10px;border-radius:12px;font-size:13px}.msg.error{background:#fff1f2;color:var(--danger)}.msg.ok{background:#ecfdf5;color:var(--ok)}.small{font-size:11px;color:var(--muted);margin-top:10px}.mode{font-weight:800}.offline-note{margin-top:8px;font-size:11px;color:var(--muted)}.recovery-title{font-size:18px;margin:0 0 4px}.recovery-actions{display:grid;gap:8px;margin-top:10px}
     @media(max-width:600px){body{padding:10px}.grid{grid-template-columns:1fr}.hero{padding:20px 16px}.hero h1{font-size:24px}.sessionbar{align-items:flex-start;flex-direction:column}.sessionbar button{width:100%}}
   </style>
 </head>
@@ -24,20 +24,27 @@
   <div id="loginView" class="login-wrap" hidden>
     <section class="login-card">
       <h1>MyTool</h1>
-      <p>سجّل الدخول للوصول إلى الأدوات المسموح بها.</p>
+      <p id="loginIntro">سجّل الدخول للوصول إلى الأدوات المسموح بها.</p>
+
       <form id="loginForm">
         <div class="field"><label for="identity">اسم المستخدم أو البريد الإلكتروني</label><input id="identity" autocomplete="username" required></div>
         <div class="field"><label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required></div>
         <button id="loginBtn" class="btn" type="submit">دخول</button>
       </form>
-      <div class="switch"><button id="emergencyBtn" class="btn secondary" type="button">دخول اضطراري</button></div>
+
       <div id="emergencyBox" hidden>
-        <div class="field"><label for="recoveryCode">مفتاح الاسترجاع</label><input id="recoveryCode" type="password" autocomplete="off"></div>
-        <button id="recoveryBtn" class="btn" type="button">فتح وضع الإدارة المحلي</button>
-        <div class="offline-note">يعمل للدخول إلى أدوات MyTool المحلية عند تعذر Supabase. بيانات Supabase نفسها تحتاج عودة الخدمة.</div>
+        <h2 class="recovery-title">دخول الاسترجاع</h2>
+        <p>تعذر الوصول إلى خدمة دخول الإدارة. أدخل رمز الاسترجاع الخاص بك.</p>
+        <div class="field"><label for="recoveryCode">رمز الاسترجاع</label><input id="recoveryCode" type="password" autocomplete="off"></div>
+        <div class="recovery-actions">
+          <button id="recoveryBtn" class="btn" type="button">دخول</button>
+          <button id="backToLoginBtn" class="btn secondary" type="button">الرجوع للدخول العادي</button>
+        </div>
+        <div class="offline-note">هذا الوضع يفتح أدوات MyTool المحلية فقط أثناء تعذر Supabase. بيانات Supabase تحتاج عودة الخدمة.</div>
       </div>
+
       <div id="loginMessage" class="msg" hidden></div>
-      <div class="small">مدة جلسة الإدارة تُقرأ من إعدادات الأدمن: من 1 إلى 96 ساعة. جلسة العامل: 10 أيام.</div>
+      <div class="small">مدة جلسة الإدارة: من 1 إلى 96 ساعة حسب إعدادات الأدمن. جلسة العامل: 10 أيام.</div>
     </section>
   </div>
 
@@ -97,6 +104,29 @@
   function showMessage(text,type='error'){const el=$('loginMessage');el.textContent=text;el.className='msg '+type;el.hidden=false;}
   function hideMessage(){$('loginMessage').hidden=true;}
 
+  function isServiceUnavailable(err){
+    const status=Number(err?.status||0);
+    const name=String(err?.name||'').toLowerCase();
+    const msg=String(err?.message||'').toLowerCase();
+    return status>=500 || name==='typeerror' || msg.includes('failed to fetch') || msg.includes('network') || msg.includes('fetch') || msg.includes('timeout') || msg.includes('load failed') || msg.includes('dynamically imported module');
+  }
+
+  function showRecovery(){
+    hideMessage();
+    $('loginForm').hidden=true;
+    $('emergencyBox').hidden=false;
+    $('loginIntro').textContent='تعذر الاتصال بخدمة دخول الإدارة.';
+    setTimeout(()=>$('recoveryCode').focus(),50);
+  }
+
+  function hideRecovery(){
+    $('emergencyBox').hidden=true;
+    $('loginForm').hidden=false;
+    $('loginIntro').textContent='سجّل الدخول للوصول إلى الأدوات المسموح بها.';
+    $('recoveryCode').value='';
+    hideMessage();
+  }
+
   async function getSupabase(){
     if(supabase)return supabase;
     const mod=await import(SUPABASE_MODULE);
@@ -116,13 +146,24 @@
     const worker=newMode==='worker';
     $('adminTools').hidden=worker;$('workerTools').hidden=!worker;$('githubLink').hidden=worker;
     if(newMode==='admin')$('sessionMode').textContent='دخول الإدارة';
-    if(newMode==='emergency')$('sessionMode').textContent='دخول اضطراري — Admin محلي';
+    if(newMode==='emergency')$('sessionMode').textContent='دخول استرجاع — Admin محلي';
     if(newMode==='worker')$('sessionMode').textContent='عامل: '+(localStorage.getItem(WORKER_NICKNAME_KEY)||'مستخدم');
     updateExpiryText();
   }
 
-  function showLogin(){mode='none';expiry=0;$('dashboard').hidden=true;$('loginView').hidden=false;$('password').value='';$('recoveryCode').value='';}
-  function updateExpiryText(){if(!expiry){$('sessionExpiry').textContent='';return;}const ms=Math.max(0,expiry-Date.now());const hours=Math.floor(ms/3600000),mins=Math.floor((ms%3600000)/60000);$('sessionExpiry').textContent='تنتهي الجلسة بعد '+hours+'س '+mins+'د';}
+  function showLogin(){
+    mode='none';expiry=0;
+    $('dashboard').hidden=true;$('loginView').hidden=false;
+    $('password').value='';
+    hideRecovery();
+  }
+
+  function updateExpiryText(){
+    if(!expiry){$('sessionExpiry').textContent='';return;}
+    const ms=Math.max(0,expiry-Date.now());
+    const hours=Math.floor(ms/3600000),mins=Math.floor((ms%3600000)/60000);
+    $('sessionExpiry').textContent='تنتهي الجلسة بعد '+hours+'س '+mins+'د';
+  }
 
   async function normalLogin(identity,password){
     const client=await getSupabase();
@@ -130,14 +171,20 @@
       const {data,error}=await client.auth.signInWithPassword({email:identity,password});
       if(error)throw error;
       clearWorker();clearEmergency();
-      const exp=Date.now()+adminDurationMs();localStorage.setItem(ADMIN_EXPIRES_KEY,String(exp));
-      setView('admin',exp);return;
+      const exp=Date.now()+adminDurationMs();
+      localStorage.setItem(ADMIN_EXPIRES_KEY,String(exp));
+      setView('admin',exp);
+      return;
     }
+
     const {data,error}=await client.rpc('worker_login',{p_username:identity,p_password:password});
     if(error||!data?.length)throw new Error('INVALID_LOGIN');
-    await client.auth.signOut().catch(()=>{});clearEmergency();localStorage.removeItem(ADMIN_EXPIRES_KEY);
+    await client.auth.signOut().catch(()=>{});
+    clearEmergency();localStorage.removeItem(ADMIN_EXPIRES_KEY);
     const row=data[0],exp=Date.now()+WORKER_MS;
-    localStorage.setItem(WORKER_TOKEN_KEY,row.session_token);localStorage.setItem(WORKER_NICKNAME_KEY,row.nickname||identity);localStorage.setItem(WORKER_EXPIRES_KEY,String(exp));
+    localStorage.setItem(WORKER_TOKEN_KEY,row.session_token);
+    localStorage.setItem(WORKER_NICKNAME_KEY,row.nickname||identity);
+    localStorage.setItem(WORKER_EXPIRES_KEY,String(exp));
     setView('worker',exp);
   }
 
@@ -159,28 +206,54 @@
 
     const adminExp=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0);
     if(adminExp>now){
-      try{const c=await getSupabase();const {data}=await c.auth.getSession();if(data.session){setView('admin',adminExp);return;}}catch(_e){/* emergency login remains available */}
+      try{const c=await getSupabase();const {data}=await c.auth.getSession();if(data.session){setView('admin',adminExp);return;}}catch(_e){}
     }
     if(adminExp){localStorage.removeItem(ADMIN_EXPIRES_KEY);try{(await getSupabase()).auth.signOut();}catch(_e){}}
     showLogin();
   }
 
   $('loginForm').addEventListener('submit',async e=>{
-    e.preventDefault();hideMessage();const btn=$('loginBtn');btn.disabled=true;btn.textContent='جاري الدخول…';
-    try{await normalLogin($('identity').value.trim(),$('password').value);}catch(err){showMessage(err?.message==='INVALID_LOGIN'?'اسم المستخدم أو كلمة المرور غير صحيحة.':'تعذر تسجيل الدخول. تحقق من البيانات أو جرّب الدخول الاضطراري إذا كانت Supabase متوقفة.');}
-    finally{btn.disabled=false;btn.textContent='دخول';}
+    e.preventDefault();hideMessage();
+    const identity=$('identity').value.trim();
+    const btn=$('loginBtn');btn.disabled=true;btn.textContent='جاري الدخول…';
+    try{
+      await normalLogin(identity,$('password').value);
+    }catch(err){
+      if(identity.includes('@')&&isServiceUnavailable(err)){
+        showRecovery();
+      }else if(err?.message==='INVALID_LOGIN'){
+        showMessage('اسم المستخدم أو كلمة المرور غير صحيحة.');
+      }else if(identity.includes('@')){
+        showMessage('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+      }else{
+        showMessage('تعذر تسجيل الدخول.');
+      }
+    }finally{
+      btn.disabled=false;btn.textContent='دخول';
+    }
   });
 
-  $('emergencyBtn').addEventListener('click',()=>{$('emergencyBox').hidden=!$('emergencyBox').hidden;hideMessage();});
+  $('backToLoginBtn').addEventListener('click',hideRecovery);
+
   $('recoveryBtn').addEventListener('click',async()=>{
-    hideMessage();const btn=$('recoveryBtn');btn.disabled=true;btn.textContent='جاري التحقق…';
+    hideMessage();
+    const btn=$('recoveryBtn');btn.disabled=true;btn.textContent='جاري التحقق…';
     try{
       if(await verifyRecovery($('recoveryCode').value)){
-        clearWorker();const exp=Date.now()+adminDurationMs();localStorage.setItem(EMERGENCY_EXPIRES_KEY,String(exp));setView('emergency',exp);
-      }else showMessage('مفتاح الاسترجاع غير صحيح.');
-    }catch(_e){showMessage('تعذر التحقق من مفتاح الاسترجاع على هذا المتصفح.');}
-    finally{btn.disabled=false;btn.textContent='فتح وضع الإدارة المحلي';$('recoveryCode').value='';}
+        clearWorker();
+        const exp=Date.now()+adminDurationMs();
+        localStorage.setItem(EMERGENCY_EXPIRES_KEY,String(exp));
+        setView('emergency',exp);
+      }else{
+        showMessage('رمز الاسترجاع غير صحيح.');
+      }
+    }catch(_e){
+      showMessage('تعذر التحقق من رمز الاسترجاع على هذا المتصفح.');
+    }finally{
+      btn.disabled=false;btn.textContent='دخول';$('recoveryCode').value='';
+    }
   });
+
   $('logoutBtn').addEventListener('click',logout);
 
   setInterval(()=>{if(mode!=='none'){if(Date.now()>=expiry)logout();else updateExpiryText();}},30000);
