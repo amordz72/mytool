@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0f766e">
+  <title>الأموال — MyTool</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--main2:#14b8a6;--danger:#b91c1c;--ok:#047857;--warn:#b45309}
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
+    .shell{max-width:980px;margin:auto;padding:14px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.brand{display:flex;align-items:center;gap:10px}.logo{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,var(--main2),var(--main));color:#fff;font-weight:900}.links{display:flex;gap:7px;flex-wrap:wrap}.links a{font-size:12px;font-weight:800;text-decoration:none;color:var(--main);background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:12px;box-shadow:0 5px 18px rgba(15,23,42,.05)}h1,h2{margin:0}.muted{color:var(--muted);font-size:12px;line-height:1.6}.message{padding:10px 12px;border-radius:12px;margin-bottom:12px;font-size:13px;font-weight:800}.message.info{background:#eff6ff;color:#1d4ed8}.message.ok{background:#ecfdf5;color:var(--ok)}.message.error{background:#fff1f2;color:var(--danger)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.field{margin-top:10px}label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}input,select,textarea,button{width:100%;font:inherit;border-radius:11px;border:1px solid var(--line);padding:11px;background:#fff}textarea{min-height:65px;resize:vertical}.btn{border:0;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;font-weight:900;cursor:pointer;margin-top:11px}.btn:disabled{opacity:.55;cursor:not-allowed}.hidden{display:none!important}.accounts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:11px}.account{border:1px solid var(--line);background:#fafafa;border-radius:13px;padding:11px}.account-name{font-size:12px;font-weight:800}.account-balance{font-size:20px;font-weight:900;margin-top:5px}.operation{border:1px solid var(--line);border-radius:13px;padding:11px;margin-top:8px;background:#fafafa}.op-head{display:flex;justify-content:space-between;gap:8px}.op-title{font-weight:900;font-size:13px}.op-amount{font-weight:900;color:var(--main);white-space:nowrap}.op-meta{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.55}.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900;background:#ecfeff;color:#0f766e}.empty{text-align:center;color:var(--muted);padding:13px;border:1px dashed var(--line);border-radius:12px;margin-top:8px}.notice{font-size:11px;line-height:1.7;background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:12px;padding:10px;margin-top:10px}.loading{opacity:.6;pointer-events:none}
+    @media(max-width:700px){.shell{padding:8px}.top{align-items:flex-start}.links{justify-content:flex-end}.grid,.accounts{grid-template-columns:1fr}.card{padding:13px}.account-balance{font-size:18px}}
+  </style>
+</head>
+<body>
+<div id="app" class="shell">
+  <div class="top">
+    <div class="brand"><div class="logo">دج</div><div><strong>MyTool — الأموال</strong><div id="identity" class="muted">جاري التحقق…</div></div></div>
+    <div class="links"><a href="daily.html">التشغيل اليومي</a><a href="./">حساب المحل</a><a id="mytoolLink" class="hidden" href="../">MyTool</a></div>
+  </div>
+
+  <div id="message" class="message info">جاري تحميل الحسابات…</div>
+
+  <section class="card">
+    <h2>حسابات الفرع</h2>
+    <div class="muted">الخزنة والصندوق والتحصيلات ومال المشتريات ومال الفليكسي كلها حسابات مستقلة لكنها تابعة لنفس الفرع.</div>
+    <div class="field" id="branchWrap"><label>الفرع</label><select id="branch"></select></div>
+    <div id="accounts" class="accounts"></div>
+  </section>
+
+  <section class="card" id="formCard">
+    <h2>تسجيل حركة مالية</h2>
+    <div class="muted">فورم واحدة. اختر نوع العملية، والنظام يسجل من قام بها والوقت والفرع تلقائيًا.</div>
+    <form id="moneyForm">
+      <div class="field"><label>نوع العملية</label><select id="operationType">
+        <option value="external_receipt">استلام مال من عميل / جهة</option>
+        <option value="internal_transfer">نقل بين حسابات الفرع</option>
+        <option id="openingOption" class="hidden" value="opening_balance">رصيد افتتاحي — إدارة فقط</option>
+      </select></div>
+
+      <div id="fromWrap" class="field hidden"><label>من حساب</label><select id="fromAccount"></select></div>
+      <div class="field"><label id="toLabel">يدخل إلى حساب</label><select id="toAccount"></select></div>
+      <div class="field"><label>المبلغ بالدينار</label><input id="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></div>
+      <div class="field"><label>العميل / الجهة / المرجع</label><input id="party" placeholder="اختياري"></div>
+      <div class="field"><label>ملاحظة</label><textarea id="notes" placeholder="اختياري"></textarea></div>
+      <button class="btn" type="submit">حفظ الحركة</button>
+    </form>
+    <div class="notice">استلام المال من الناس يذهب افتراضيًا إلى «تحصيلات العملاء». بعد ذلك يمكن نقله داخل نفس الفرع إلى الخزنة أو مال المشتريات أو مال الفليكسي. التحويل بين الفروع ما زال وثيقة مستقلة ولم نربطه بالمحاسبة في هذه الخطوة.</div>
+  </section>
+
+  <section class="card">
+    <h2>آخر الحركات</h2>
+    <div class="muted">تظهر العملية، المبلغ، الحسابات، من سجلها، والوقت.</div>
+    <div id="operations"></div>
+  </section>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+  const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co'
+  const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj'
+  const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY)
+  const WORKER_TOKEN_KEY='mytool_shop_worker_token'
+  const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
+  const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
+  const $=id=>document.getElementById(id)
+  const state={mode:'none',token:'',workerName:'',branches:[],defaultBranchId:null,accounts:[],operations:[],canRecord:false,busy:false}
+
+  function setBusy(v){state.busy=v;$('app').classList.toggle('loading',v)}
+  function notify(text,type='info'){$('message').textContent=text;$('message').className='message '+type}
+  function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+  function money(v){return new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(Number(v||0))}
+  function clearWorker(){localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY);localStorage.removeItem(WORKER_EXPIRES_KEY);state.token='';state.mode='none'}
+  function invalidSession(err){return state.mode==='worker'&&String(err?.message||err||'').includes('INVALID_SESSION')}
+  function expire(err){if(!invalidSession(err))return false;clearWorker();window.location.replace('../');return true}
+
+  async function detect(){
+    const exp=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)
+    if(exp&&exp<=Date.now())clearWorker()
+    const token=(exp>Date.now())?(localStorage.getItem(WORKER_TOKEN_KEY)||''):''
+    if(token){state.mode='worker';state.token=token;state.workerName=localStorage.getItem(WORKER_NICKNAME_KEY)||'العامل';return}
+    const {data}=await supabase.auth.getSession();if(data?.session){state.mode='admin';return}
+    state.mode='none'
+  }
+
+  async function loadIdentity(){
+    if(state.mode==='worker'){
+      const [ctx,br]=await Promise.all([
+        supabase.rpc('worker_get_context',{p_session_token:state.token}),
+        supabase.rpc('worker_get_branch_context',{p_session_token:state.token})
+      ])
+      if(ctx.error||br.error)throw(ctx.error||br.error)
+      const c=(ctx.data||[])[0]||{},b=br.data||{}
+      state.canRecord=!!c.can_record_money
+      if(!state.canRecord)throw new Error('PERMISSION_DENIED')
+      state.branches=b.branches||[];state.defaultBranchId=b.default_branch_id||state.branches[0]?.id||null
+      $('identity').textContent=(state.workerName||c.nickname||'العامل')+' — '+(state.branches.find(x=>Number(x.id)===Number(state.defaultBranchId))?.name||'الفرع')
+      if(state.branches.length===1)$('branchWrap').classList.add('hidden')
+    }else{
+      const {data,error}=await supabase.from('branches').select('id,name,code').eq('active',true).order('id')
+      if(error)throw error
+      state.branches=data||[];state.defaultBranchId=state.branches.find(x=>x.code==='HOME_SHOP')?.id||state.branches[0]?.id||null;state.canRecord=true
+      $('identity').textContent='الإدارة — جميع الفروع';$('mytoolLink').classList.remove('hidden');$('openingOption').classList.remove('hidden')
+    }
+    $('branch').innerHTML=state.branches.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('')
+    if(state.defaultBranchId)$('branch').value=String(state.defaultBranchId)
+  }
+
+  async function loadMoney(){
+    const branchId=Number($('branch').value||state.defaultBranchId);if(!branchId)return
+    setBusy(true)
+    const r=state.mode==='worker'
+      ?await supabase.rpc('worker_get_money_context',{p_session_token:state.token,p_branch_id:branchId})
+      :await supabase.rpc('admin_get_money_context',{p_branch_id:branchId})
+    setBusy(false)
+    if(r.error){if(expire(r.error))return;throw r.error}
+    state.accounts=r.data?.accounts||[];state.operations=r.data?.operations||[]
+    renderAccounts();renderOperationForm();renderOperations()
+  }
+
+  function renderAccounts(){
+    $('accounts').innerHTML=state.accounts.length?state.accounts.map(a=>'<div class="account"><div class="account-name">'+esc(a.name)+'</div><div class="account-balance">'+money(a.balance)+' دج</div></div>').join(''):'<div class="empty">لا توجد حسابات.</div>'
+  }
+
+  function options(excludeId=null){return state.accounts.filter(a=>Number(a.id)!==Number(excludeId)).map(a=>'<option value="'+a.id+'">'+esc(a.name)+' — '+money(a.balance)+' دج</option>').join('')}
+
+  function renderOperationForm(){
+    const oldFrom=$('fromAccount').value,oldTo=$('toAccount').value
+    $('fromAccount').innerHTML=options();$('toAccount').innerHTML=options()
+    if(oldFrom&&state.accounts.some(a=>String(a.id)===oldFrom))$('fromAccount').value=oldFrom
+    const receipt=state.accounts.find(a=>a.subtype==='customer_receipts')
+    const vault=state.accounts.find(a=>a.subtype==='cash_vault')
+    if(oldTo&&state.accounts.some(a=>String(a.id)===oldTo))$('toAccount').value=oldTo
+    else if(receipt)$('toAccount').value=String(receipt.id)
+    else if(vault)$('toAccount').value=String(vault.id)
+    syncType()
+  }
+
+  function syncType(){
+    const type=$('operationType').value,isTransfer=type==='internal_transfer'
+    $('fromWrap').classList.toggle('hidden',!isTransfer)
+    $('toLabel').textContent=isTransfer?'إلى حساب':type==='opening_balance'?'الحساب الذي يبدأ بهذا الرصيد':'يدخل إلى حساب'
+    if(type==='external_receipt'){
+      const receipt=state.accounts.find(a=>a.subtype==='customer_receipts');if(receipt)$('toAccount').value=String(receipt.id)
+    }
+    if(isTransfer)syncDestination()
+  }
+
+  function syncDestination(){
+    const source=Number($('fromAccount').value)||null,current=$('toAccount').value
+    $('toAccount').innerHTML=options(source)
+    const allowed=state.accounts.filter(a=>Number(a.id)!==source)
+    if(current&&allowed.some(a=>String(a.id)===current))$('toAccount').value=current
+    else if(allowed.length)$('toAccount').value=String(allowed[0].id)
+  }
+
+  function typeLabel(t){return ({external_receipt:'استلام من عميل/جهة',internal_transfer:'نقل داخل الفرع',opening_balance:'رصيد افتتاحي'})[t]||t}
+  function renderOperations(){
+    const root=$('operations');if(!state.operations.length){root.innerHTML='<div class="empty">لا توجد حركات مالية بعد.</div>';return}
+    root.innerHTML=state.operations.map(o=>{
+      const route=o.operation_type==='internal_transfer'?(esc(o.from_account_name||'')+' ← '+esc(o.to_account_name||'')):esc(o.to_account_name||'')
+      const when=o.operation_at?new Date(o.operation_at).toLocaleString('ar-DZ'):''
+      return '<div class="operation"><div class="op-head"><div><span class="badge">'+esc(typeLabel(o.operation_type))+'</span><div class="op-title" style="margin-top:5px">'+route+'</div></div><div class="op-amount">'+money(o.amount)+' دج</div></div><div class="op-meta">'+(o.party_reference?'المرجع: '+esc(o.party_reference)+' · ':'')+'سجلها: '+esc(o.actor_name||'—')+' · '+esc(when)+(o.notes?' · '+esc(o.notes):'')+'</div></div>'
+    }).join('')
+  }
+
+  async function save(e){
+    e.preventDefault();const type=$('operationType').value,branchId=Number($('branch').value),amount=Number($('amount').value),from=type==='internal_transfer'?Number($('fromAccount').value):null,to=Number($('toAccount').value),party=$('party').value.trim()||null,notes=$('notes').value.trim()||null
+    if(!branchId||!Number.isFinite(amount)||amount<=0||!to)return notify('راجع الفرع والحساب والمبلغ.','error')
+    if(type==='internal_transfer'&&(!from||from===to))return notify('اختر حساب مصدر ووجهة مختلفين.','error')
+    const text=type==='internal_transfer'?'تأكيد نقل '+money(amount)+' دج بين الحسابين؟':type==='opening_balance'?'تأكيد الرصيد الافتتاحي '+money(amount)+' دج؟':'تأكيد استلام '+money(amount)+' دج؟'
+    if(!confirm(text))return
+    setBusy(true)
+    const args={p_branch_id:branchId,p_operation_type:type,p_amount:amount,p_from_account_id:from,p_to_account_id:to,p_party_reference:party,p_notes:notes}
+    const r=state.mode==='worker'?await supabase.rpc('worker_record_money_operation',{p_session_token:state.token,...args}):await supabase.rpc('admin_record_money_operation',args)
+    setBusy(false)
+    if(r.error){const m=r.error.message||'';if(expire(r.error))return;if(m.includes('INSUFFICIENT_ACCOUNT_BALANCE'))return notify('رصيد الحساب المصدر غير كافٍ.','error');if(m.includes('OPENING_BALANCE_ALREADY_LOCKED'))return notify('هذا الحساب لديه حركات بالفعل، لذلك لا يمكن إضافة رصيد افتتاحي له.','error');return notify('لم يتم الحفظ: '+m,'error')}
+    $('amount').value='';$('party').value='';$('notes').value='';await loadMoney();notify('تم حفظ الحركة المالية رقم '+r.data+'.','ok')
+  }
+
+  $('operationType').addEventListener('change',syncType)
+  $('fromAccount').addEventListener('change',syncDestination)
+  $('branch').addEventListener('change',loadMoney)
+  $('moneyForm').addEventListener('submit',save)
+  window.addEventListener('unhandledrejection',e=>{if(expire(e.reason))e.preventDefault()})
+
+  async function init(){
+    try{await detect();if(state.mode==='none'){window.location.replace('../');return}await loadIdentity();await loadMoney();notify('الحسابات المالية جاهزة.','ok')}catch(err){if(expire(err))return;notify(err.message==='PERMISSION_DENIED'?'ليس لديك صلاحية تسجيل الأموال.':'تعذر تشغيل صفحة الأموال: '+err.message,'error')}
+  }
+  init()
+</script>
+</body>
+</html>
