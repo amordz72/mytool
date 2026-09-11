@@ -135,8 +135,11 @@
   const state={mode:'none',workerToken:'',workerName:'',branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
 
-  function notify(text,type='info'){$('message').textContent=text;$('message').className='message '+type}
   function setBusy(v){state.busy=v;$('app').classList.toggle('loading',v)}
+  function clearWorkerSession(){localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY);localStorage.removeItem(WORKER_EXPIRES_KEY);state.workerToken='';state.workerName='';state.mode='none'}
+  function invalidWorkerSession(value){return state.mode==='worker'&&String(value?.message||value||'').includes('INVALID_SESSION')}
+  function expireInvalidWorkerSession(value){if(!invalidWorkerSession(value))return false;setBusy(false);clearWorkerSession();window.location.replace('../');return true}
+  function notify(text,type='info'){if(expireInvalidWorkerSession(text))return;$('message').textContent=text;$('message').className='message '+type}
   function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
   function branchName(id){return state.branches.find(b=>Number(b.id)===Number(id))?.name||('فرع #'+id)}
   function isOperating(id){return state.mode==='admin'||state.operatingBranches.some(b=>Number(b.id)===Number(id))}
@@ -145,8 +148,11 @@
   function fillSelect(el,rows,placeholder='اختر'){el.innerHTML='<option value="">'+esc(placeholder)+'</option>'+rows.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('')}
   function inventoryItem(productId,branchId){return state.inventory.find(x=>Number(x.product_id)===Number(productId)&&Number(x.branch_id)===Number(branchId))||null}
 
+  window.addEventListener('unhandledrejection',event=>{if(expireInvalidWorkerSession(event.reason))event.preventDefault()})
+
   async function detectSession(){
     const exp=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)
+    if(exp&&exp<=Date.now())clearWorkerSession()
     const token=(exp>Date.now())?(localStorage.getItem(WORKER_TOKEN_KEY)||''):''
     if(token){state.mode='worker';state.workerToken=token;state.workerName=localStorage.getItem(WORKER_NICKNAME_KEY)||'العامل';return}
     const {data}=await supabase.auth.getSession();if(data?.session){state.mode='admin';return}state.mode='none'
@@ -211,7 +217,7 @@
     let r
     if(state.mode==='worker')r=await supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId})
     else r=await supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId})
-    if(r.error)throw r.error
+    if(r.error){if(expireInvalidWorkerSession(r.error))return;throw r.error}
     const other=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId));state.inventory=other.concat(r.data||[])
     if(Number($('stockBranch').value)===Number(branchId))renderStock()
     syncSaleStatus();syncInventoryStatus()
@@ -318,7 +324,7 @@
   $('saleForm').addEventListener('submit',saveSale);$('inventoryForm').addEventListener('submit',saveInventory);$('purchaseForm').addEventListener('submit',savePurchase);$('transferForm').addEventListener('submit',createTransfer);$('refreshTransfers').addEventListener('click',loadTransfers)
 
   async function init(){
-    try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();await loadInventory(state.defaultBranchId);if(state.permissions.can_transfer)await loadTransfers();notify('التشغيل اليومي جاهز: البيع والجرد والمشتريات والتحويلات حسب الفرع.','ok')}catch(err){notify('تعذر تشغيل الصفحة: '+err.message,'error')}
+    try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();await loadInventory(state.defaultBranchId);if(state.permissions.can_transfer)await loadTransfers();notify('التشغيل اليومي جاهز: البيع والجرد والمشتريات والتحويلات حسب الفرع.','ok')}catch(err){if(expireInvalidWorkerSession(err))return;notify('تعذر تشغيل الصفحة: '+err.message,'error')}
   }
   init()
 </script>
