@@ -140,12 +140,27 @@
   function invalidWorkerSession(value){return state.mode==='worker'&&String(value?.message||value||'').includes('INVALID_SESSION')}
   function expireInvalidWorkerSession(value){if(!invalidWorkerSession(value))return false;setBusy(false);clearWorkerSession();window.location.replace('../');return true}
   function notify(text,type='info'){if(expireInvalidWorkerSession(text))return;$('message').textContent=text;$('message').className='message '+type}
-  function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':c.charCodeAt(0)===39?'&#39;':'&quot;')}
+  function esc(v){return String(v??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]))}
   function branchName(id){return state.branches.find(b=>Number(b.id)===Number(id))?.name||('فرع #'+id)}
   function isOperating(id){return state.mode==='admin'||state.operatingBranches.some(b=>Number(b.id)===Number(id))}
   function kindLabel(k){return ({stock:'سلعة / مخزون',cash:'نقد',cash_change:'صرف',flexy_shop:'فليكسي المحل',flexy_customer:'فليكسي العملاء'})[k]||k}
   function statusLabel(s){return ({requested:'طلب',sent:'تم الإرسال',received:'تم الاستلام',cancelled:'ملغى'})[s]||s}
   function fillSelect(el,rows,placeholder='اختر'){el.innerHTML='<option value="">'+esc(placeholder)+'</option>'+rows.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('')}
+  function syncTransferBranches(changed='source'){
+    const sourceEl=$('transferSource'),destEl=$('transferDestination')
+    const source=Number(sourceEl.value)||null,dest=Number(destEl.value)||null
+    if(changed==='destination'){
+      const options=state.branches.filter(b=>Number(b.id)!==dest)
+      fillSelect(sourceEl,options,'اختر المصدر')
+      if(source&&options.some(b=>Number(b.id)===source))sourceEl.value=String(source)
+      else if(options.length===1)sourceEl.value=String(options[0].id)
+      return
+    }
+    const options=state.branches.filter(b=>Number(b.id)!==source)
+    fillSelect(destEl,options,'اختر الوجهة')
+    if(dest&&options.some(b=>Number(b.id)===dest))destEl.value=String(dest)
+    else if(options.length===1)destEl.value=String(options[0].id)
+  }
   function inventoryItem(productId,branchId){return state.inventory.find(x=>Number(x.product_id)===Number(productId)&&Number(x.branch_id)===Number(branchId))||null}
 
   window.addEventListener('unhandledrejection',event=>{if(expireInvalidWorkerSession(event.reason))event.preventDefault()})
@@ -200,6 +215,7 @@
     fillSelect($('purchaseSupplier'),state.suppliers,'مورد نقد / اختر المورد')
     fillSelect($('transferSource'),state.branches,'اختر المصدر');fillSelect($('transferDestination'),state.branches,'اختر الوجهة')
     for(const id of ['saleBranch','purchaseBranch','inventoryBranch','stockBranch'])if(state.defaultBranchId)$(id).value=String(state.defaultBranchId)
+    if(state.defaultBranchId&&state.branches.some(b=>Number(b.id)===Number(state.defaultBranchId))){$('transferSource').value=String(state.defaultBranchId);syncTransferBranches('source')}
     if(state.mode==='worker'&&state.operatingBranches.length===1){
       for(const id of ['saleBranchWrap','purchaseBranchWrap','inventoryBranchWrap'])$(id).classList.add('hidden')
       const own=String(state.operatingBranches[0].id);$('saleBranch').value=own;$('purchaseBranch').value=own;$('inventoryBranch').value=own;$('stockBranch').value=own
@@ -324,6 +340,8 @@
   $('inventoryProduct').addEventListener('change',syncInventoryStatus);$('inventoryBranch').addEventListener('change',async()=>{await loadInventory(Number($('inventoryBranch').value));syncInventoryStatus()})
   $('stockBranch').addEventListener('change',()=>loadInventory(Number($('stockBranch').value)))
   $('refreshStock').addEventListener('click',()=>loadInventory(Number($('stockBranch').value)))
+  $('transferSource').addEventListener('change',()=>syncTransferBranches('source'))
+  $('transferDestination').addEventListener('change',()=>syncTransferBranches('destination'))
   $('transferKind').addEventListener('change',()=>{const stock=$('transferKind').value==='stock';$('stockFields').classList.toggle('hidden',!stock);$('amountFields').classList.toggle('hidden',stock)})
   $('saleForm').addEventListener('submit',saveSale);$('inventoryForm').addEventListener('submit',saveInventory);$('purchaseForm').addEventListener('submit',savePurchase);$('transferForm').addEventListener('submit',createTransfer);$('refreshTransfers').addEventListener('click',loadTransfers)
 
