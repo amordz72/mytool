@@ -16,6 +16,13 @@ create table if not exists public.worker_accounts (
     updated_at timestamptz not null default now()
 );
 
+alter table public.worker_accounts
+    add column if not exists can_sell boolean not null default true,
+    add column if not exists can_view_stock boolean not null default true,
+    add column if not exists can_inventory boolean not null default false,
+    add column if not exists can_manage_products boolean not null default false,
+    add column if not exists can_view_sales boolean not null default false;
+
 create unique index if not exists worker_accounts_username_unique
 on public.worker_accounts (lower(username));
 
@@ -116,6 +123,51 @@ begin
 end;
 $$;
 
+
+
+create or replace function public.worker_get_context(p_session_token text)
+returns table (
+    worker_id bigint,
+    staff_id bigint,
+    nickname text,
+    can_sell boolean,
+    can_view_stock boolean,
+    can_inventory boolean,
+    can_manage_products boolean,
+    can_view_sales boolean
+)
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+    v_session_id bigint;
+begin
+    return query
+    select wa.id, wa.staff_id,
+           coalesce(nullif(wa.nickname, ''), wa.username),
+           wa.can_sell, wa.can_view_stock, wa.can_inventory,
+           wa.can_manage_products, wa.can_view_sales
+    from public.worker_sessions ws
+    join public.worker_accounts wa on wa.id = ws.worker_id
+    where ws.token_hash = encode(digest(p_session_token, 'sha256'), 'hex')
+      and ws.expires_at > now()
+      and wa.active = true
+    limit 1;
+
+    if not found then
+        raise exception 'INVALID_SESSION';
+    end if;
+
+    select ws.id into v_session_id
+    from public.worker_sessions ws
+    where ws.token_hash = encode(digest(p_session_token, 'sha256'), 'hex')
+    limit 1;
+
+    update public.worker_sessions set last_used_at = now() where id = v_session_id;
+end;
+$$;
+
 create or replace function public.worker_get_catalog(p_session_token text)
 returns table (
     product_id bigint,
@@ -128,8 +180,12 @@ set search_path = public, extensions
 as $$
 declare
     v_session_id bigint;
+    v_can_view_stock boolean;
+    v_can_use_catalog boolean;
 begin
-    select ws.id into v_session_id
+    select ws.id, wa.can_view_stock,
+           (wa.can_view_stock or wa.can_sell or wa.can_inventory or wa.can_manage_products)
+    into v_session_id, v_can_view_stock, v_can_use_catalog
     from public.worker_sessions ws
     join public.worker_accounts wa on wa.id = ws.worker_id
     where ws.token_hash = encode(digest(p_session_token, 'sha256'), 'hex')
@@ -140,13 +196,15 @@ begin
     if v_session_id is null then
         raise exception 'INVALID_SESSION';
     end if;
+    if not v_can_use_catalog then
+        raise exception 'PERMISSION_DENIED';
+    end if;
 
-    update public.worker_sessions
-    set last_used_at = now()
-    where id = v_session_id;
+    update public.worker_sessions set last_used_at = now() where id = v_session_id;
 
     return query
-    select i.product_id, i.name, i.stock_quantity::bigint
+    select i.product_id, i.name,
+           case when v_can_view_stock then i.stock_quantity::bigint else null::bigint end
     from public.inventory_summary i
     order by i.product_id;
 end;
@@ -167,10 +225,11 @@ as $$
 declare
     v_session_id bigint;
     v_staff_id bigint;
+    v_can_sell boolean;
     v_sale_id bigint;
 begin
-    select ws.id, wa.staff_id
-    into v_session_id, v_staff_id
+    select ws.id, wa.staff_id, wa.can_sell
+    into v_session_id, v_staff_id, v_can_sell
     from public.worker_sessions ws
     join public.worker_accounts wa on wa.id = ws.worker_id
     where ws.token_hash = encode(digest(p_session_token, 'sha256'), 'hex')
@@ -178,31 +237,160 @@ begin
       and wa.active = true
     limit 1;
 
-    if v_session_id is null then
-        raise exception 'INVALID_SESSION';
-    end if;
-
-    if p_quantity is null or p_quantity < 1 then
-        raise exception 'INVALID_QUANTITY';
-    end if;
-
-    if p_unit_price is null or p_unit_price < 0 then
-        raise exception 'INVALID_PRICE';
-    end if;
-
-    if not exists (select 1 from public.products where id = p_product_id) then
-        raise exception 'INVALID_PRODUCT';
-    end if;
+    if v_session_id is null then raise exception 'INVALID_SESSION'; end if;
+    if not v_can_sell then raise exception 'PERMISSION_DENIED'; end if;
+    if p_quantity is null or p_quantity < 1 then raise exception 'INVALID_QUANTITY'; end if;
+    if p_unit_price is null or p_unit_price < 0 then raise exception 'INVALID_PRICE'; end if;
+    if not exists (select 1 from public.products where id = p_product_id) then raise exception 'INVALID_PRODUCT'; end if;
 
     insert into public.sales (product_id, quantity, unit_price, sold_by, notes)
     values (p_product_id, p_quantity, p_unit_price, v_staff_id, nullif(trim(p_notes), ''))
     returning id into v_sale_id;
 
-    update public.worker_sessions
-    set last_used_at = now()
-    where id = v_session_id;
-
+    update public.worker_sessions set last_used_at = now() where id = v_session_id;
     return v_sale_id;
+end;
+$$;
+
+create or replace function public.worker_get_today_summary(p_session_token text)
+returns table (sales_count bigint, revenue numeric)
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+    v_session_id bigint;
+    v_staff_id bigint;
+    v_allowed boolean;
+begin
+    select ws.id, wa.staff_id, wa.can_view_sales
+    into v_session_id, v_staff_id, v_allowed
+    from public.worker_sessions ws
+    join public.worker_accounts wa on wa.id = ws.worker_id
+    where ws.token_hash = encode(digest(p_session_token, 'sha256'), 'hex')
+      and ws.expires_at > now() and wa.active = true
+    limit 1;
+    if v_session_id is null then raise exception 'INVALID_SESSION'; end if;
+    if not v_allowed then raise exception 'PERMISSION_DENIED'; end if;
+
+    update public.worker_sessions set last_used_at = now() where id = v_session_id;
+    return query
+    select count(*)::bigint,
+           coalesce(sum(s.quantity * s.unit_price), 0)::numeric
+    from public.sales s
+    where s.operation_at >= date_trunc('day', now())
+      and s.operation_at < date_trunc('day', now()) + interval '1 day';
+end;
+$$;
+
+create or replace function public.worker_add_product(p_session_token text, p_name text)
+returns bigint
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+    v_session_id bigint;
+    v_allowed boolean;
+    v_product_id bigint;
+begin
+    select ws.id, wa.can_manage_products into v_session_id, v_allowed
+    from public.worker_sessions ws join public.worker_accounts wa on wa.id = ws.worker_id
+    where ws.token_hash = encode(digest(p_session_token, 'sha256'), 'hex')
+      and ws.expires_at > now() and wa.active = true limit 1;
+    if v_session_id is null then raise exception 'INVALID_SESSION'; end if;
+    if not v_allowed then raise exception 'PERMISSION_DENIED'; end if;
+    if nullif(trim(p_name), '') is null then raise exception 'INVALID_PRODUCT_NAME'; end if;
+
+    insert into public.products(name) values (trim(p_name)) returning id into v_product_id;
+    update public.worker_sessions set last_used_at = now() where id = v_session_id;
+    return v_product_id;
+end;
+$$;
+
+create or replace function public.worker_rename_product(p_session_token text, p_product_id bigint, p_name text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+    v_session_id bigint;
+    v_allowed boolean;
+begin
+    select ws.id, wa.can_manage_products into v_session_id, v_allowed
+    from public.worker_sessions ws join public.worker_accounts wa on wa.id = ws.worker_id
+    where ws.token_hash = encode(digest(p_session_token, 'sha256'), 'hex')
+      and ws.expires_at > now() and wa.active = true limit 1;
+    if v_session_id is null then raise exception 'INVALID_SESSION'; end if;
+    if not v_allowed then raise exception 'PERMISSION_DENIED'; end if;
+    if nullif(trim(p_name), '') is null then raise exception 'INVALID_PRODUCT_NAME'; end if;
+
+    update public.products set name = trim(p_name) where id = p_product_id;
+    if not found then raise exception 'INVALID_PRODUCT'; end if;
+    update public.worker_sessions set last_used_at = now() where id = v_session_id;
+    return true;
+end;
+$$;
+
+create or replace function public.worker_apply_stock_adjustments(
+    p_session_token text,
+    p_adjustments jsonb,
+    p_reason text
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+    v_session_id bigint;
+    v_allowed boolean;
+    v_qty_col text;
+    v_reason_col text;
+    v_row jsonb;
+    v_product_id bigint;
+    v_quantity_change integer;
+    v_count integer := 0;
+begin
+    select ws.id, wa.can_inventory into v_session_id, v_allowed
+    from public.worker_sessions ws join public.worker_accounts wa on wa.id = ws.worker_id
+    where ws.token_hash = encode(digest(p_session_token, 'sha256'), 'hex')
+      and ws.expires_at > now() and wa.active = true limit 1;
+    if v_session_id is null then raise exception 'INVALID_SESSION'; end if;
+    if not v_allowed then raise exception 'PERMISSION_DENIED'; end if;
+    if jsonb_typeof(p_adjustments) <> 'array' or jsonb_array_length(p_adjustments) = 0 then raise exception 'INVALID_ADJUSTMENTS'; end if;
+    if nullif(trim(p_reason), '') is null then raise exception 'INVALID_REASON'; end if;
+
+    select c.column_name into v_qty_col
+    from information_schema.columns c
+    where c.table_schema='public' and c.table_name='stock_adjustments'
+      and c.column_name = any(array['quantity','quantity_change','quantity_delta','adjustment_quantity','adjustment','delta','change_quantity'])
+    order by array_position(array['quantity','quantity_change','quantity_delta','adjustment_quantity','adjustment','delta','change_quantity'], c.column_name)
+    limit 1;
+
+    select c.column_name into v_reason_col
+    from information_schema.columns c
+    where c.table_schema='public' and c.table_name='stock_adjustments'
+      and c.column_name = any(array['reason','notes','note','description'])
+    order by array_position(array['reason','notes','note','description'], c.column_name)
+    limit 1;
+
+    if v_qty_col is null or v_reason_col is null then raise exception 'UNSUPPORTED_STOCK_ADJUSTMENTS_SCHEMA'; end if;
+
+    for v_row in select value from jsonb_array_elements(p_adjustments)
+    loop
+        v_product_id := (v_row->>'product_id')::bigint;
+        v_quantity_change := (v_row->>'quantity_change')::integer;
+        if v_quantity_change = 0 then continue; end if;
+        if not exists (select 1 from public.products where id=v_product_id) then raise exception 'INVALID_PRODUCT'; end if;
+        execute format('insert into public.stock_adjustments (product_id, %I, %I) values ($1,$2,$3)', v_qty_col, v_reason_col)
+        using v_product_id, v_quantity_change, trim(p_reason);
+        v_count := v_count + 1;
+    end loop;
+
+    update public.worker_sessions set last_used_at = now() where id = v_session_id;
+    return v_count;
 end;
 $$;
 
@@ -223,10 +411,22 @@ $$;
 revoke all on table public.worker_accounts from anon;
 revoke all on table public.worker_sessions from anon;
 
+revoke all on function public.worker_get_context(text) from public;
+revoke all on function public.worker_get_today_summary(text) from public;
+revoke all on function public.worker_add_product(text, text) from public;
+revoke all on function public.worker_rename_product(text, bigint, text) from public;
+revoke all on function public.worker_apply_stock_adjustments(text, jsonb, text) from public;
+
 revoke all on function public.worker_login(text, text) from public;
 revoke all on function public.worker_get_catalog(text) from public;
 revoke all on function public.worker_create_sale(text, bigint, integer, numeric, text) from public;
 revoke all on function public.worker_logout(text) from public;
+
+grant execute on function public.worker_get_context(text) to anon, authenticated;
+grant execute on function public.worker_get_today_summary(text) to anon, authenticated;
+grant execute on function public.worker_add_product(text, text) to anon, authenticated;
+grant execute on function public.worker_rename_product(text, bigint, text) to anon, authenticated;
+grant execute on function public.worker_apply_stock_adjustments(text, jsonb, text) to anon, authenticated;
 
 grant execute on function public.worker_login(text, text) to anon, authenticated;
 grant execute on function public.worker_get_catalog(text) to anon, authenticated;
