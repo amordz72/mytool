@@ -209,8 +209,16 @@
     if(emergencyExp)clearEmergency();
 
     const workerToken=localStorage.getItem(WORKER_TOKEN_KEY),workerExp=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0);
-    if(workerToken&&workerExp>now){setView('worker',workerExp);return;}
-    if(workerToken||workerExp)clearWorker();
+    if(workerToken&&workerExp>now){
+      try{
+        const c=await getSupabase();
+        const {data,error}=await c.rpc('worker_get_context',{p_session_token:workerToken});
+        if(!error&&data?.length){setView('worker',workerExp);return;}
+      }catch(_e){}
+      clearWorker();
+    }else if(workerToken||workerExp){
+      clearWorker();
+    }
 
     const adminExp=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0);
     if(adminExp>now){
