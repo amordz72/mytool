@@ -69,13 +69,13 @@
 
     <section class="card" id="inventoryCard">
       <h2>جرد / تصحيح مخزون</h2>
-      <div class="muted">بعد الجرد الأولي، أي كمية مختلفة أو تالف تسجل هنا بسبب واضح وتظهر باسم من قام بالجرد.</div>
+      <div class="muted">بعد الجرد الأولي، أي كمية مختلفة تسجل هنا، ويمكن إضافة سبب توضيحي عند الحاجة.</div>
       <form id="inventoryForm">
         <div class="field"><label>المنتج</label><select id="inventoryProduct" required></select></div>
         <div class="field" id="inventoryBranchWrap"><label>الفرع</label><select id="inventoryBranch" required></select></div>
         <div id="inventoryCurrent" class="hint">اختر المنتج لمعرفة كمية النظام.</div>
         <div class="field"><label>الكمية الموجودة فعليًا الآن</label><input id="inventoryActual" type="number" min="0" step="1" inputmode="numeric" required></div>
-        <div class="field"><label>السبب</label><input id="inventoryReason" required placeholder="مثال: جرد فعلي / تالف / مفقود"></div>
+        <div class="field"><label>السبب (اختياري)</label><input id="inventoryReason" placeholder="اختياري: تالف / مفقود / سبب آخر"></div>
         <button class="btn" type="submit">حفظ الجرد</button>
       </form>
     </section>
@@ -118,7 +118,7 @@
   </section>
 
   <section class="notice">
-    <strong>طريقة التشغيل الجديدة:</strong> لا ننتظر جردًا كاملاً. كل منتج/فرع يبدأ من 0 وغير مجرود. عند أول بيع فقط يمكن تسجيل الكمية الفعلية قبل البيع، وبعدها يصبح مخزونه مؤكدًا. أي فرق لاحق أو تالف يسجل من شاشة الجرد مع السبب.
+    <strong>طريقة التشغيل الجديدة:</strong> لا ننتظر جردًا كاملاً. كل منتج/فرع يبدأ من 0 وغير مجرود. عند أول بيع فقط يمكن تسجيل الكمية الفعلية قبل البيع، وبعدها يصبح مخزونه مؤكدًا. أي فرق لاحق يسجل من شاشة الجرد، والسبب اختياري ويُملأ تلقائيًا «زيادة» أو «نقص» عند تركه فارغًا.
   </section>
 </div>
 
@@ -140,7 +140,7 @@
   function invalidWorkerSession(value){return state.mode==='worker'&&String(value?.message||value||'').includes('INVALID_SESSION')}
   function expireInvalidWorkerSession(value){if(!invalidWorkerSession(value))return false;setBusy(false);clearWorkerSession();window.location.replace('../');return true}
   function notify(text,type='info'){if(expireInvalidWorkerSession(text))return;$('message').textContent=text;$('message').className='message '+type}
-  function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+  function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':c.charCodeAt(0)===39?'&#39;':'&quot;')}
   function branchName(id){return state.branches.find(b=>Number(b.id)===Number(id))?.name||('فرع #'+id)}
   function isOperating(id){return state.mode==='admin'||state.operatingBranches.some(b=>Number(b.id)===Number(id))}
   function kindLabel(k){return ({stock:'سلعة / مخزون',cash:'نقد',cash_change:'صرف',flexy_shop:'فليكسي المحل',flexy_customer:'فليكسي العملاء'})[k]||k}
@@ -259,14 +259,18 @@
 
   async function saveInventory(e){
     e.preventDefault()
-    const product=Number($('inventoryProduct').value),branch=Number($('inventoryBranch').value),actual=Number($('inventoryActual').value),reason=$('inventoryReason').value.trim()
-    if(!product||!branch||!Number.isInteger(actual)||actual<0||!reason)return notify('راجع المنتج والفرع والكمية الفعلية والسبب.','error')
+    const product=Number($('inventoryProduct').value),branch=Number($('inventoryBranch').value),actual=Number($('inventoryActual').value),typedReason=$('inventoryReason').value.trim(),item=inventoryItem(product,branch)
+    if(!product||!branch||!Number.isInteger(actual)||actual<0)return notify('راجع المنتج والفرع والكمية الفعلية.','error')
+    if(!item)return notify('تعذر معرفة كمية النظام لهذا المنتج في الفرع.','error')
+    const difference=actual-Number(item.stock_quantity||0)
+    if(item.is_verified&&difference===0)return notify('الكمية مطابقة لكمية النظام، لا يوجد فرق للتسجيل.','info')
+    const reason=typedReason||(difference>0?'زيادة':difference<0?'نقص':'جرد أولي')
     if(!confirm('تأكيد الجرد: الكمية الفعلية '+actual+'؟'))return
     setBusy(true)
     const r=state.mode==='worker'?await supabase.rpc('worker_record_branch_inventory_count',{p_session_token:state.workerToken,p_product_id:product,p_actual_quantity:actual,p_reason:reason,p_branch_id:branch}):await supabase.rpc('admin_record_branch_inventory_count',{p_branch_id:branch,p_product_id:product,p_actual_quantity:actual,p_reason:reason})
     setBusy(false)
     if(r.error)return notify('لم يتم حفظ الجرد: '+r.error.message,'error')
-    $('inventoryActual').value='';$('inventoryReason').value='';await loadInventory(branch);notify('تم تسجيل الجرد والسبب في سجل التدقيق.','ok')
+    $('inventoryActual').value='';$('inventoryReason').value='';await loadInventory(branch);notify('تم تسجيل الجرد. السبب: '+reason+'.','ok')
   }
 
   async function savePurchase(e){
