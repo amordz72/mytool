@@ -18,7 +18,7 @@
 <div class="shell" id="app">
   <div class="topbar">
     <div class="brand"><div class="logo">M</div><div><strong>MyTool — التشغيل اليومي</strong><div class="muted" id="identityText">جاري التحقق من الجلسة…</div></div></div>
-    <div class="top-actions"><a href="./">حساب المحل</a><a href="../">MyTool</a></div>
+    <div class="top-actions"><a href="./">حساب المحل</a><a id="myToolLink" class="hidden" href="../">MyTool</a></div>
   </div>
 
   <div id="message" class="message info">جاري تحميل بيانات التشغيل…</div>
@@ -112,7 +112,7 @@
   <section class="card" id="transferListCard">
     <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
       <div><h2>عمليات التحويل</h2><div class="muted">الإرسال يعتمد على صلاحية الفرع المصدر، والاستلام على صلاحية الفرع الوجهة.</div></div>
-      <button class="btn secondary" style="width:auto" id="refreshTransfers" type="button">تحديث</button>
+      <button class="btn secondary" style="width:auto" id="refreshTransfers">تحديث</button>
     </div>
     <div id="transferList"></div>
   </section>
@@ -124,12 +124,17 @@
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
   const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co'
   const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj'
   const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY)
-  const WORKER_TOKEN_KEY='mytool_shop_worker_token',WORKER_NICKNAME_KEY='mytool_shop_worker_nickname',WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
+
+  const WORKER_TOKEN_KEY='mytool_shop_worker_token'
+  const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
+  const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
   const state={mode:'none',workerToken:'',workerName:'',branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
+
   function notify(text,type='info'){$('message').textContent=text;$('message').className='message '+type}
   function setBusy(v){state.busy=v;$('app').classList.toggle('loading',v)}
   function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -139,24 +144,182 @@
   function statusLabel(s){return ({requested:'طلب',sent:'تم الإرسال',received:'تم الاستلام',cancelled:'ملغى'})[s]||s}
   function fillSelect(el,rows,placeholder='اختر'){el.innerHTML='<option value="">'+esc(placeholder)+'</option>'+rows.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('')}
   function inventoryItem(productId,branchId){return state.inventory.find(x=>Number(x.product_id)===Number(productId)&&Number(x.branch_id)===Number(branchId))||null}
-  async function detectSession(){const exp=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0),token=(exp>Date.now())?(localStorage.getItem(WORKER_TOKEN_KEY)||''):'';if(token){state.mode='worker';state.workerToken=token;state.workerName=localStorage.getItem(WORKER_NICKNAME_KEY)||'العامل';return}const {data}=await supabase.auth.getSession();if(data?.session){state.mode='admin';return}state.mode='none'}
-  async function loadWorker(){const [ctxRes,branchRes]=await Promise.all([supabase.rpc('worker_get_context',{p_session_token:state.workerToken}),supabase.rpc('worker_get_branch_context',{p_session_token:state.workerToken})]);if(ctxRes.error||branchRes.error)throw(ctxRes.error||branchRes.error);const ctx=(ctxRes.data||[])[0]||{},branch=branchRes.data||{};state.permissions={can_sell:!!ctx.can_sell,can_inventory:!!ctx.can_inventory,can_purchase:!!ctx.can_purchase,can_transfer:!!branch.can_transfer};state.defaultBranchId=branch.default_branch_id||null;state.operatingBranches=branch.branches||[];const [catalogRes,purchaseRes,transferOptionsRes]=await Promise.all([supabase.rpc('worker_get_catalog',{p_session_token:state.workerToken}),state.permissions.can_purchase?supabase.rpc('worker_get_purchase_options',{p_session_token:state.workerToken}):Promise.resolve({data:{suppliers:[]}}),state.permissions.can_transfer?supabase.rpc('worker_get_transfer_options',{p_session_token:state.workerToken}):Promise.resolve({data:{counterpart_branches:state.operatingBranches}})]);const err=catalogRes.error||purchaseRes.error||transferOptionsRes.error;if(err)throw err;state.products=(catalogRes.data||[]).map(x=>({id:x.product_id,name:x.name}));state.suppliers=(purchaseRes.data||{}).suppliers||[];state.branches=(transferOptionsRes.data||{}).counterpart_branches||state.operatingBranches;$('identityText').textContent=(state.workerName||'العامل')+' — '+(state.operatingBranches.find(b=>Number(b.id)===Number(state.defaultBranchId))?.name||'فرع العامل')}
-  async function loadAdmin(){const [b,s,p]=await Promise.all([supabase.from('branches').select('id,name,code,active').eq('active',true).order('id'),supabase.from('suppliers').select('id,name,system_code,active').eq('active',true).order('id'),supabase.from('products').select('id,name').order('id')]);const err=b.error||s.error||p.error;if(err)throw err;state.branches=b.data||[];state.operatingBranches=state.branches;state.suppliers=s.data||[];state.products=p.data||[];state.defaultBranchId=state.branches.find(x=>x.code==='HOME_SHOP')?.id||state.branches[0]?.id||null;state.permissions={can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true};$('identityText').textContent='الإدارة — جميع الفروع'}
-  function renderBase(){$('branchList').innerHTML=state.operatingBranches.length?state.operatingBranches.map(b=>'<span class="branch-pill '+(Number(b.id)===Number(state.defaultBranchId)?'default':'')+'">'+esc(b.name)+(Number(b.id)===Number(state.defaultBranchId)?' · افتراضي':'')+'</span>').join(''):'<span class="muted">لا توجد فروع تشغيل متاحة.</span>';for(const id of ['saleProduct','purchaseProduct','inventoryProduct','transferProduct'])fillSelect($(id),state.products,'اختر المنتج');for(const id of ['saleBranch','purchaseBranch','inventoryBranch','stockBranch'])fillSelect($(id),state.operatingBranches,'اختر الفرع');fillSelect($('purchaseSupplier'),state.suppliers,'مورد نقد / اختر المورد');fillSelect($('transferSource'),state.branches,'اختر المصدر');fillSelect($('transferDestination'),state.branches,'اختر الوجهة');for(const id of ['saleBranch','purchaseBranch','inventoryBranch','stockBranch'])if(state.defaultBranchId)$(id).value=String(state.defaultBranchId);if(state.mode==='worker'&&state.operatingBranches.length===1){for(const id of ['saleBranchWrap','purchaseBranchWrap','inventoryBranchWrap'])$(id).classList.add('hidden');const own=String(state.operatingBranches[0].id);$('saleBranch').value=own;$('purchaseBranch').value=own;$('inventoryBranch').value=own;$('stockBranch').value=own}const cashSupplier=state.suppliers.find(s=>s.system_code==='CASH_SUPPLIER');if(cashSupplier)$('purchaseSupplier').value=String(cashSupplier.id);$('saleCard').classList.toggle('hidden',!state.permissions.can_sell);$('purchaseCard').classList.toggle('hidden',!state.permissions.can_purchase);$('inventoryCard').classList.toggle('hidden',!state.permissions.can_inventory);$('transferCard').classList.toggle('hidden',!state.permissions.can_transfer);$('transferListCard').classList.toggle('hidden',!state.permissions.can_transfer)}
-  async function loadInventory(branchId=Number($('stockBranch')?.value||state.defaultBranchId)){if(!branchId)return;let r;if(state.mode==='worker')r=await supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId});else r=await supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId});if(r.error)throw r.error;state.inventory=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId)).concat(r.data||[]);if(Number($('stockBranch').value)===Number(branchId))renderStock();syncSaleStatus();syncInventoryStatus()}
-  function renderStock(){const branch=Number($('stockBranch').value),rows=state.inventory.filter(x=>Number(x.branch_id)===branch),root=$('stockList');if(!rows.length){root.innerHTML='<div class="empty">لا توجد بيانات.</div>';return}root.innerHTML=rows.map(x=>'<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+'</div><span class="badge '+(x.is_verified?'ok':'warn')+'">'+(x.is_verified?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div><div class="muted">'+esc(branchName(x.branch_id))+'</div></div>').join('')}
-  function syncSaleStatus(){const product=Number($('saleProduct').value),branch=Number($('saleBranch').value),item=inventoryItem(product,branch);if(!product||!branch||!item){$('saleStockInfo').textContent='اختر المنتج والفرع لمعرفة حالة المخزون.';$('firstCountWrap').classList.add('hidden');return}if(item.is_verified){$('saleStockInfo').className='hint';$('saleStockInfo').textContent='المخزون المؤكد: '+item.stock_quantity+'. لا يمكن إعادة ضبط الكمية من البيع.';$('firstCountWrap').classList.add('hidden');$('saleInitialCount').value=''}else{$('saleStockInfo').className='hint warn';$('saleStockInfo').textContent='هذا المنتج غير مجرود في هذا الفرع. الكمية التشغيلية الحالية '+item.stock_quantity+'. عند أول بيع اكتب الموجود فعليًا قبل البيع.';$('firstCountWrap').classList.remove('hidden')}}
-  function syncInventoryStatus(){const product=Number($('inventoryProduct').value),branch=Number($('inventoryBranch').value),item=inventoryItem(product,branch);if(!product||!branch||!item){$('inventoryCurrent').textContent='اختر المنتج والفرع لمعرفة كمية النظام.';return}$('inventoryCurrent').className='hint '+(item.is_verified?'':'warn');$('inventoryCurrent').textContent='كمية النظام: '+item.stock_quantity+' — '+(item.is_verified?'مجرود':'غير مجرود؛ هذا الجرد سيصبح خط الأساس الأول')}
-  async function saveSale(e){e.preventDefault();const product=Number($('saleProduct').value),branch=Number($('saleBranch').value),qty=Number($('saleQty').value),price=Number($('salePrice').value),notes=$('saleNotes').value.trim()||null,item=inventoryItem(product,branch);if(!product||!branch||!Number.isInteger(qty)||qty<1||!Number.isFinite(price)||price<0)return notify('راجع المنتج والفرع والكمية والسعر.','error');let initial=null;if(item&&!item.is_verified){initial=Number($('saleInitialCount').value);if(!Number.isInteger(initial)||initial<qty)return notify('في أول بيع اكتب الكمية الموجودة فعليًا قبل البيع، ويجب ألا تقل عن كمية البيع.','error')}setBusy(true);const args={p_product_id:product,p_quantity:qty,p_unit_price:price,p_branch_id:branch,p_initial_count:initial,p_notes:notes};const r=state.mode==='worker'?await supabase.rpc('worker_create_branch_sale',{p_session_token:state.workerToken,...args}):await supabase.rpc('admin_create_branch_sale',args);setBusy(false);if(r.error){const m=r.error.message||'';if(m.includes('INSUFFICIENT_BRANCH_STOCK'))return notify('لا توجد كمية كافية في هذا الفرع. إذا الواقع مختلف سجّل جردًا أولًا.','error');if(m.includes('INITIAL_COUNT_REQUIRED'))return notify('هذا أول بيع للمنتج في الفرع؛ يجب تسجيل الكمية الموجودة قبل البيع.','error');return notify('لم يتم حفظ البيع: '+m,'error')}$('saleQty').value='1';$('salePrice').value='';$('saleNotes').value='';$('saleInitialCount').value='';await loadInventory(branch);notify('تم تسجيل البيع. رقم العملية: '+r.data,'ok')}
-  async function saveInventory(e){e.preventDefault();const product=Number($('inventoryProduct').value),branch=Number($('inventoryBranch').value),actual=Number($('inventoryActual').value),reason=$('inventoryReason').value.trim();if(!product||!branch||!Number.isInteger(actual)||actual<0||!reason)return notify('راجع المنتج والفرع والكمية الفعلية والسبب.','error');if(!confirm('تأكيد الجرد: الكمية الفعلية '+actual+'؟'))return;setBusy(true);const r=state.mode==='worker'?await supabase.rpc('worker_record_branch_inventory_count',{p_session_token:state.workerToken,p_product_id:product,p_actual_quantity:actual,p_reason:reason,p_branch_id:branch}):await supabase.rpc('admin_record_branch_inventory_count',{p_branch_id:branch,p_product_id:product,p_actual_quantity:actual,p_reason:reason});setBusy(false);if(r.error)return notify('لم يتم حفظ الجرد: '+r.error.message,'error');$('inventoryActual').value='';$('inventoryReason').value='';await loadInventory(branch);notify('تم تسجيل الجرد والسبب في سجل التدقيق.','ok')}
-  async function savePurchase(e){e.preventDefault();const product=Number($('purchaseProduct').value),qty=Number($('purchaseQty').value),cost=Number($('purchaseCost').value),branch=Number($('purchaseBranch').value),supplier=$('purchaseSupplier').value?Number($('purchaseSupplier').value):null,notes=$('purchaseNotes').value.trim()||null;if(!product||!Number.isInteger(qty)||qty<1||Number.isNaN(cost)||cost<0||!branch)return notify('راجع المنتج والكمية والتكلفة والفرع.','error');setBusy(true);let res;if(state.mode==='worker')res=await supabase.rpc('worker_create_purchase',{p_session_token:state.workerToken,p_product_id:product,p_quantity:qty,p_unit_cost:cost,p_branch_id:branch,p_supplier_id:supplier,p_notes:notes,p_operation_at:null});else res=await supabase.rpc('admin_create_purchase',{p_product_id:product,p_quantity:qty,p_unit_cost:cost,p_branch_id:branch,p_supplier_id:supplier,p_notes:notes,p_operation_at:null});setBusy(false);if(res.error)return notify('لم يتم حفظ المشتريات: '+res.error.message,'error');$('purchaseQty').value='1';$('purchaseCost').value='';$('purchaseNotes').value='';await loadInventory(branch);notify('تم تسجيل المشتريات ودفعة المصدر. رقم العملية: '+res.data,'ok')}
-  function transferPayload(){const source=Number($('transferSource').value),dest=Number($('transferDestination').value),kind=$('transferKind').value,party=$('transferParty').value.trim()||null,notes=$('transferNotes').value.trim()||null;if(!source||!dest||source===dest)throw new Error('اختر فرعين مختلفين.');if(state.mode==='worker'&&!isOperating(source)&&!isOperating(dest))throw new Error('يجب أن يكون أحد طرفي التحويل من فرعك المسموح.');if(kind==='stock'){const product=Number($('transferProduct').value),qty=Number($('transferQty').value);if(!product||!Number.isInteger(qty)||qty<1)throw new Error('اختر المنتج والكمية الصحيحة.');return {source,dest,kind,amount:null,party,notes,lines:[{product_id:product,quantity:qty}]}}const amount=Number($('transferAmount').value);if(!Number.isFinite(amount)||amount<=0)throw new Error('أدخل مبلغًا صحيحًا.');return {source,dest,kind,amount,party,notes,lines:null}}
-  async function createTransfer(e){e.preventDefault();let p;try{p=transferPayload()}catch(err){return notify(err.message,'error')}setBusy(true);let res;if(state.mode==='worker')res=await supabase.rpc('worker_create_transfer',{p_session_token:state.workerToken,p_source_branch_id:p.source,p_destination_branch_id:p.dest,p_transfer_kind:p.kind,p_amount:p.amount,p_party_reference:p.party,p_notes:p.notes,p_lines:p.lines});else res=await supabase.rpc('admin_create_transfer',{p_source_branch_id:p.source,p_destination_branch_id:p.dest,p_transfer_kind:p.kind,p_amount:p.amount,p_party_reference:p.party,p_notes:p.notes,p_lines:p.lines});setBusy(false);if(res.error)return notify('تعذر إنشاء طلب التحويل: '+res.error.message,'error');const row=Array.isArray(res.data)?res.data[0]:res.data;notify('تم إنشاء طلب التحويل '+(row?.document_no||'')+'.','ok');$('transferNotes').value='';$('transferParty').value='';$('transferAmount').value='';$('transferQty').value='1';await loadTransfers()}
-  async function loadTransfers(){if(!state.permissions.can_transfer)return;setBusy(true);try{if(state.mode==='worker'){const r=await supabase.rpc('worker_get_transfers',{p_session_token:state.workerToken});if(r.error)throw r.error;state.transfers=r.data||[]}else{const [d,l]=await Promise.all([supabase.from('transfer_documents').select('id,document_no,source_branch_id,destination_branch_id,transfer_kind,amount,party_reference,status,requested_at,sent_at,received_at,notes').order('id',{ascending:false}).limit(100),supabase.from('transfer_stock_lines').select('id,transfer_id,product_id,quantity,notes')]);if(d.error||l.error)throw(d.error||l.error);const names=Object.fromEntries(state.products.map(p=>[p.id,p.name]));state.transfers=(d.data||[]).map(x=>({...x,source_branch_name:branchName(x.source_branch_id),destination_branch_name:branchName(x.destination_branch_id),lines:(l.data||[]).filter(y=>Number(y.transfer_id)===Number(x.id)).map(y=>({...y,product_name:names[y.product_id]||('منتج #'+y.product_id)}))}))}renderTransfers()}catch(err){notify('تعذر قراءة التحويلات: '+err.message,'error')}setBusy(false)}
-  function renderTransfers(){const root=$('transferList');if(!state.transfers.length){root.innerHTML='<div class="empty">لا توجد عمليات تحويل بعد.</div>';return}root.innerHTML=state.transfers.map(t=>{const lines=(t.lines||[]).map(l=>'<div>• '+esc(l.product_name||('منتج #'+l.product_id))+' × '+esc(l.quantity)+'</div>').join('');let buttons='';if(t.status==='requested'&&(state.mode==='admin'||isOperating(t.source_branch_id)))buttons+='<button class="btn warn" data-act="send" data-id="'+t.id+'">تأكيد الإرسال</button>';if(t.status==='sent'&&(state.mode==='admin'||isOperating(t.destination_branch_id)))buttons+='<button class="btn" data-act="receive" data-id="'+t.id+'">تأكيد الاستلام</button>';if(t.status==='requested'&&state.mode==='admin')buttons+='<button class="btn danger" data-act="cancel" data-id="'+t.id+'">إلغاء</button>';return '<div class="transfer"><div class="transfer-head"><div><div class="transfer-no">'+esc(t.document_no)+'</div><div class="muted">'+esc(t.source_branch_name||branchName(t.source_branch_id))+' ← '+esc(t.destination_branch_name||branchName(t.destination_branch_id))+' · '+esc(kindLabel(t.transfer_kind))+'</div></div><span class="status '+esc(t.status)+'">'+esc(statusLabel(t.status))+'</span></div>'+(t.amount!=null?'<div class="lines"><strong>المبلغ:</strong> '+esc(t.amount)+' دج</div>':'')+(t.party_reference?'<div class="lines"><strong>المرجع:</strong> '+esc(t.party_reference)+'</div>':'')+(lines?'<div class="lines">'+lines+'</div>':'')+(t.notes?'<div class="lines">'+esc(t.notes)+'</div>':'')+(buttons?'<div class="actions">'+buttons+'</div>':'')+'</div>'}).join('');root.querySelectorAll('button[data-act]').forEach(b=>b.addEventListener('click',()=>transferAction(b.dataset.act,Number(b.dataset.id))))}
-  async function transferAction(action,id){const label={send:'تأكيد إرسال العملية؟',receive:'تأكيد استلام العملية؟',cancel:'إلغاء طلب التحويل؟'}[action];if(!confirm(label))return;setBusy(true);const fn=(state.mode==='worker'?'worker_':'admin_')+({send:'send_transfer',receive:'receive_transfer',cancel:'cancel_transfer'}[action]);const args=state.mode==='worker'?{p_session_token:state.workerToken,p_transfer_id:id}:{p_transfer_id:id};const r=await supabase.rpc(fn,args);setBusy(false);if(r.error){const m=r.error.message||'';if(m.includes('SOURCE_STOCK_NOT_VERIFIED'))return notify('لا يمكن إرسال السلعة قبل جردها في الفرع المصدر.','error');if(m.includes('INSUFFICIENT_BRANCH_STOCK'))return notify('كمية الفرع المصدر غير كافية للتحويل.','error');return notify('لم تتم العملية: '+m,'error')}notify(action==='send'?'تم تأكيد الإرسال.':action==='receive'?'تم تأكيد الاستلام.':'تم إلغاء الطلب.','ok');await Promise.all([loadTransfers(),loadInventory(Number($('stockBranch').value))])}
-  $('saleProduct').addEventListener('change',syncSaleStatus);$('saleBranch').addEventListener('change',async()=>{await loadInventory(Number($('saleBranch').value));syncSaleStatus()});$('inventoryProduct').addEventListener('change',syncInventoryStatus);$('inventoryBranch').addEventListener('change',async()=>{await loadInventory(Number($('inventoryBranch').value));syncInventoryStatus()});$('stockBranch').addEventListener('change',()=>loadInventory(Number($('stockBranch').value)));$('refreshStock').addEventListener('click',()=>loadInventory(Number($('stockBranch').value)));$('transferKind').addEventListener('change',()=>{const stock=$('transferKind').value==='stock';$('stockFields').classList.toggle('hidden',!stock);$('amountFields').classList.toggle('hidden',stock)});$('saleForm').addEventListener('submit',saveSale);$('inventoryForm').addEventListener('submit',saveInventory);$('purchaseForm').addEventListener('submit',savePurchase);$('transferForm').addEventListener('submit',createTransfer);$('refreshTransfers').addEventListener('click',loadTransfers)
-  async function init(){try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();await loadInventory(state.defaultBranchId);if(state.permissions.can_transfer)await loadTransfers();notify('التشغيل اليومي جاهز: البيع والجرد والمشتريات والتحويلات حسب الفرع.','ok')}catch(err){notify('تعذر تشغيل الصفحة: '+err.message,'error')}}
+
+  async function detectSession(){
+    const exp=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)
+    const token=(exp>Date.now())?(localStorage.getItem(WORKER_TOKEN_KEY)||''):''
+    if(token){state.mode='worker';state.workerToken=token;state.workerName=localStorage.getItem(WORKER_NICKNAME_KEY)||'العامل';return}
+    const {data}=await supabase.auth.getSession();if(data?.session){state.mode='admin';return}state.mode='none'
+  }
+
+  async function loadWorker(){
+    const [ctxRes,branchRes]=await Promise.all([
+      supabase.rpc('worker_get_context',{p_session_token:state.workerToken}),
+      supabase.rpc('worker_get_branch_context',{p_session_token:state.workerToken})
+    ])
+    if(ctxRes.error||branchRes.error)throw(ctxRes.error||branchRes.error)
+    const ctx=(ctxRes.data||[])[0]||{},branch=branchRes.data||{}
+    state.permissions={can_sell:!!ctx.can_sell,can_inventory:!!ctx.can_inventory,can_purchase:!!ctx.can_purchase,can_transfer:!!branch.can_transfer}
+    state.defaultBranchId=branch.default_branch_id||null;state.operatingBranches=branch.branches||[]
+    const jobs=[]
+    jobs.push(supabase.rpc('worker_get_catalog',{p_session_token:state.workerToken}))
+    jobs.push(state.permissions.can_purchase?supabase.rpc('worker_get_purchase_options',{p_session_token:state.workerToken}):Promise.resolve({data:{suppliers:[]}}))
+    jobs.push(state.permissions.can_transfer?supabase.rpc('worker_get_transfer_options',{p_session_token:state.workerToken}):Promise.resolve({data:{counterpart_branches:state.operatingBranches}}))
+    const [catalogRes,purchaseRes,transferOptionsRes]=await Promise.all(jobs)
+    const err=catalogRes.error||purchaseRes.error||transferOptionsRes.error;if(err)throw err
+    state.products=(catalogRes.data||[]).map(x=>({id:x.product_id,name:x.name}))
+    state.suppliers=(purchaseRes.data||{}).suppliers||[]
+    state.branches=(transferOptionsRes.data||{}).counterpart_branches||state.operatingBranches
+    $('identityText').textContent=(state.workerName||'العامل')+' — '+(state.operatingBranches.find(b=>Number(b.id)===Number(state.defaultBranchId))?.name||'فرع العامل')
+  }
+
+  async function loadAdmin(){
+    const [b,s,p]=await Promise.all([
+      supabase.from('branches').select('id,name,code,active').eq('active',true).order('id'),
+      supabase.from('suppliers').select('id,name,system_code,active').eq('active',true).order('id'),
+      supabase.from('products').select('id,name').order('id')
+    ])
+    const err=b.error||s.error||p.error;if(err)throw err
+    state.branches=b.data||[];state.operatingBranches=state.branches;state.suppliers=s.data||[];state.products=p.data||[]
+    state.defaultBranchId=state.branches.find(x=>x.code==='HOME_SHOP')?.id||state.branches[0]?.id||null
+    state.permissions={can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true}
+    $('identityText').textContent='الإدارة — جميع الفروع'
+  }
+
+  function renderBase(){
+    $('myToolLink').classList.toggle('hidden',state.mode!=='admin')
+    $('branchList').innerHTML=state.operatingBranches.length?state.operatingBranches.map(b=>'<span class="branch-pill '+(Number(b.id)===Number(state.defaultBranchId)?'default':'')+'">'+esc(b.name)+(Number(b.id)===Number(state.defaultBranchId)?' · افتراضي':'')+'</span>').join(''):'<span class="muted">لا توجد فروع تشغيل متاحة.</span>'
+    for(const id of ['saleProduct','purchaseProduct','inventoryProduct','transferProduct'])fillSelect($(id),state.products,'اختر المنتج')
+    for(const id of ['saleBranch','purchaseBranch','inventoryBranch','stockBranch'])fillSelect($(id),state.operatingBranches,'اختر الفرع')
+    fillSelect($('purchaseSupplier'),state.suppliers,'مورد نقد / اختر المورد')
+    fillSelect($('transferSource'),state.branches,'اختر المصدر');fillSelect($('transferDestination'),state.branches,'اختر الوجهة')
+    for(const id of ['saleBranch','purchaseBranch','inventoryBranch','stockBranch'])if(state.defaultBranchId)$(id).value=String(state.defaultBranchId)
+    if(state.mode==='worker'&&state.operatingBranches.length===1){
+      for(const id of ['saleBranchWrap','purchaseBranchWrap','inventoryBranchWrap'])$(id).classList.add('hidden')
+      const own=String(state.operatingBranches[0].id);$('saleBranch').value=own;$('purchaseBranch').value=own;$('inventoryBranch').value=own;$('stockBranch').value=own
+    }
+    const cashSupplier=state.suppliers.find(s=>s.system_code==='CASH_SUPPLIER');if(cashSupplier)$('purchaseSupplier').value=String(cashSupplier.id)
+    $('saleCard').classList.toggle('hidden',!state.permissions.can_sell)
+    $('purchaseCard').classList.toggle('hidden',!state.permissions.can_purchase)
+    $('inventoryCard').classList.toggle('hidden',!state.permissions.can_inventory)
+    $('transferCard').classList.toggle('hidden',!state.permissions.can_transfer)
+    $('transferListCard').classList.toggle('hidden',!state.permissions.can_transfer)
+  }
+
+  async function loadInventory(branchId=Number($('stockBranch')?.value||state.defaultBranchId)){
+    if(!branchId)return
+    let r
+    if(state.mode==='worker')r=await supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId})
+    else r=await supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId})
+    if(r.error)throw r.error
+    const other=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId));state.inventory=other.concat(r.data||[])
+    if(Number($('stockBranch').value)===Number(branchId))renderStock()
+    syncSaleStatus();syncInventoryStatus()
+  }
+
+  function renderStock(){
+    const branch=Number($('stockBranch').value),rows=state.inventory.filter(x=>Number(x.branch_id)===branch),root=$('stockList')
+    if(!rows.length){root.innerHTML='<div class="empty">لا توجد بيانات.</div>';return}
+    root.innerHTML=rows.map(x=>'<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+'</div><span class="badge '+(x.is_verified?'ok':'warn')+'">'+(x.is_verified?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div><div class="muted">'+esc(branchName(x.branch_id))+'</div></div>').join('')
+  }
+
+  function syncSaleStatus(){
+    const product=Number($('saleProduct').value),branch=Number($('saleBranch').value),item=inventoryItem(product,branch)
+    if(!product||!branch||!item){$('saleStockInfo').textContent='اختر المنتج والفرع لمعرفة حالة المخزون.';$('firstCountWrap').classList.add('hidden');return}
+    if(item.is_verified){$('saleStockInfo').className='hint';$('saleStockInfo').textContent='المخزون المؤكد: '+item.stock_quantity+'. لا يمكن إعادة ضبط الكمية من البيع.';$('firstCountWrap').classList.add('hidden');$('saleInitialCount').value=''}
+    else{$('saleStockInfo').className='hint warn';$('saleStockInfo').textContent='هذا المنتج غير مجرود في هذا الفرع. الكمية التشغيلية الحالية '+item.stock_quantity+'. عند أول بيع اكتب الموجود فعليًا قبل البيع.';$('firstCountWrap').classList.remove('hidden')}
+  }
+
+  function syncInventoryStatus(){
+    const product=Number($('inventoryProduct').value),branch=Number($('inventoryBranch').value),item=inventoryItem(product,branch)
+    if(!product||!branch||!item){$('inventoryCurrent').textContent='اختر المنتج والفرع لمعرفة كمية النظام.';return}
+    $('inventoryCurrent').className='hint '+(item.is_verified?'':'warn');$('inventoryCurrent').textContent='كمية النظام: '+item.stock_quantity+' — '+(item.is_verified?'مجرود':'غير مجرود؛ هذا الجرد سيصبح خط الأساس الأول')
+  }
+
+  async function saveSale(e){
+    e.preventDefault()
+    const product=Number($('saleProduct').value),branch=Number($('saleBranch').value),qty=Number($('saleQty').value),price=Number($('salePrice').value),notes=$('saleNotes').value.trim()||null,item=inventoryItem(product,branch)
+    if(!product||!branch||!Number.isInteger(qty)||qty<1||!Number.isFinite(price)||price<0)return notify('راجع المنتج والفرع والكمية والسعر.','error')
+    let initial=null
+    if(item&&!item.is_verified){initial=Number($('saleInitialCount').value);if(!Number.isInteger(initial)||initial<qty)return notify('في أول بيع اكتب الكمية الموجودة فعليًا قبل البيع، ويجب ألا تقل عن كمية البيع.','error')}
+    setBusy(true)
+    const args={p_product_id:product,p_quantity:qty,p_unit_price:price,p_branch_id:branch,p_initial_count:initial,p_notes:notes}
+    const r=state.mode==='worker'?await supabase.rpc('worker_create_branch_sale',{p_session_token:state.workerToken,...args}):await supabase.rpc('admin_create_branch_sale',args)
+    setBusy(false)
+    if(r.error){const m=r.error.message||'';if(m.includes('INSUFFICIENT_BRANCH_STOCK'))return notify('لا توجد كمية كافية في هذا الفرع. إذا الواقع مختلف سجّل جردًا أولًا.','error');if(m.includes('INITIAL_COUNT_REQUIRED'))return notify('هذا أول بيع للمنتج في الفرع؛ يجب تسجيل الكمية الموجودة قبل البيع.','error');return notify('لم يتم حفظ البيع: '+m,'error')}
+    $('saleQty').value='1';$('salePrice').value='';$('saleNotes').value='';$('saleInitialCount').value=''
+    await loadInventory(branch);notify('تم تسجيل البيع. رقم العملية: '+r.data,'ok')
+  }
+
+  async function saveInventory(e){
+    e.preventDefault()
+    const product=Number($('inventoryProduct').value),branch=Number($('inventoryBranch').value),actual=Number($('inventoryActual').value),reason=$('inventoryReason').value.trim()
+    if(!product||!branch||!Number.isInteger(actual)||actual<0||!reason)return notify('راجع المنتج والفرع والكمية الفعلية والسبب.','error')
+    if(!confirm('تأكيد الجرد: الكمية الفعلية '+actual+'؟'))return
+    setBusy(true)
+    const r=state.mode==='worker'?await supabase.rpc('worker_record_branch_inventory_count',{p_session_token:state.workerToken,p_product_id:product,p_actual_quantity:actual,p_reason:reason,p_branch_id:branch}):await supabase.rpc('admin_record_branch_inventory_count',{p_branch_id:branch,p_product_id:product,p_actual_quantity:actual,p_reason:reason})
+    setBusy(false)
+    if(r.error)return notify('لم يتم حفظ الجرد: '+r.error.message,'error')
+    $('inventoryActual').value='';$('inventoryReason').value='';await loadInventory(branch);notify('تم تسجيل الجرد والسبب في سجل التدقيق.','ok')
+  }
+
+  async function savePurchase(e){
+    e.preventDefault();const product=Number($('purchaseProduct').value),qty=Number($('purchaseQty').value),cost=Number($('purchaseCost').value),branch=Number($('purchaseBranch').value),supplier=$('purchaseSupplier').value?Number($('purchaseSupplier').value):null,notes=$('purchaseNotes').value.trim()||null
+    if(!product||!Number.isInteger(qty)||qty<1||Number.isNaN(cost)||cost<0||!branch)return notify('راجع المنتج والكمية والتكلفة والفرع.','error')
+    setBusy(true);let res
+    if(state.mode==='worker')res=await supabase.rpc('worker_create_purchase',{p_session_token:state.workerToken,p_product_id:product,p_quantity:qty,p_unit_cost:cost,p_branch_id:branch,p_supplier_id:supplier,p_notes:notes,p_operation_at:null})
+    else res=await supabase.rpc('admin_create_purchase',{p_product_id:product,p_quantity:qty,p_unit_cost:cost,p_branch_id:branch,p_supplier_id:supplier,p_notes:notes,p_operation_at:null})
+    setBusy(false);if(res.error)return notify('لم يتم حفظ المشتريات: '+res.error.message,'error')
+    $('purchaseQty').value='1';$('purchaseCost').value='';$('purchaseNotes').value='';await loadInventory(branch);notify('تم تسجيل المشتريات ودفعة المصدر. رقم العملية: '+res.data,'ok')
+  }
+
+  function transferPayload(){
+    const source=Number($('transferSource').value),dest=Number($('transferDestination').value),kind=$('transferKind').value,party=$('transferParty').value.trim()||null,notes=$('transferNotes').value.trim()||null
+    if(!source||!dest||source===dest)throw new Error('اختر فرعين مختلفين.');if(state.mode==='worker'&&!isOperating(source)&&!isOperating(dest))throw new Error('يجب أن يكون أحد طرفي التحويل من فرعك المسموح.')
+    if(kind==='stock'){const product=Number($('transferProduct').value),qty=Number($('transferQty').value);if(!product||!Number.isInteger(qty)||qty<1)throw new Error('اختر المنتج والكمية الصحيحة.');return {source,dest,kind,amount:null,party,notes,lines:[{product_id:product,quantity:qty}]}}
+    const amount=Number($('transferAmount').value);if(!Number.isFinite(amount)||amount<=0)throw new Error('أدخل مبلغًا صحيحًا.');return {source,dest,kind,amount,party,notes,lines:null}
+  }
+
+  async function createTransfer(e){
+    e.preventDefault();let p;try{p=transferPayload()}catch(err){return notify(err.message,'error')}setBusy(true);let res
+    if(state.mode==='worker')res=await supabase.rpc('worker_create_transfer',{p_session_token:state.workerToken,p_source_branch_id:p.source,p_destination_branch_id:p.dest,p_transfer_kind:p.kind,p_amount:p.amount,p_party_reference:p.party,p_notes:p.notes,p_lines:p.lines})
+    else res=await supabase.rpc('admin_create_transfer',{p_source_branch_id:p.source,p_destination_branch_id:p.dest,p_transfer_kind:p.kind,p_amount:p.amount,p_party_reference:p.party,p_notes:p.notes,p_lines:p.lines})
+    setBusy(false);if(res.error)return notify('تعذر إنشاء طلب التحويل: '+res.error.message,'error');const row=Array.isArray(res.data)?res.data[0]:res.data
+    notify('تم إنشاء طلب التحويل '+(row?.document_no||'')+'.','ok');$('transferNotes').value='';$('transferParty').value='';$('transferAmount').value='';$('transferQty').value='1';await loadTransfers()
+  }
+
+  async function loadTransfers(){
+    if(!state.permissions.can_transfer)return
+    setBusy(true);try{
+      if(state.mode==='worker'){const r=await supabase.rpc('worker_get_transfers',{p_session_token:state.workerToken});if(r.error)throw r.error;state.transfers=r.data||[]}
+      else{const [d,l]=await Promise.all([supabase.from('transfer_documents').select('id,document_no,source_branch_id,destination_branch_id,transfer_kind,amount,party_reference,status,requested_at,sent_at,received_at,notes').order('id',{ascending:false}).limit(100),supabase.from('transfer_stock_lines').select('id,transfer_id,product_id,quantity,notes')]);if(d.error||l.error)throw(d.error||l.error);const names=Object.fromEntries(state.products.map(p=>[p.id,p.name]));state.transfers=(d.data||[]).map(x=>({...x,source_branch_name:branchName(x.source_branch_id),destination_branch_name:branchName(x.destination_branch_id),lines:(l.data||[]).filter(y=>Number(y.transfer_id)===Number(x.id)).map(y=>({...y,product_name:names[y.product_id]||('منتج #'+y.product_id)}))}))}
+      renderTransfers()
+    }catch(err){notify('تعذر قراءة التحويلات: '+err.message,'error')}setBusy(false)
+  }
+
+  function renderTransfers(){
+    const root=$('transferList');if(!state.transfers.length){root.innerHTML='<div class="empty">لا توجد عمليات تحويل بعد.</div>';return}
+    root.innerHTML=state.transfers.map(t=>{const lines=(t.lines||[]).map(l=>'<div>• '+esc(l.product_name||('منتج #'+l.product_id))+' × '+esc(l.quantity)+'</div>').join('');let buttons='';if(t.status==='requested'&&(state.mode==='admin'||isOperating(t.source_branch_id)))buttons+='<button class="btn warn" data-act="send" data-id="'+t.id+'">تأكيد الإرسال</button>';if(t.status==='sent'&&(state.mode==='admin'||isOperating(t.destination_branch_id)))buttons+='<button class="btn" data-act="receive" data-id="'+t.id+'">تأكيد الاستلام</button>';if(t.status==='requested'&&state.mode==='admin')buttons+='<button class="btn danger" data-act="cancel" data-id="'+t.id+'">إلغاء</button>';return '<div class="transfer"><div class="transfer-head"><div><div class="transfer-no">'+esc(t.document_no)+'</div><div class="muted">'+esc(t.source_branch_name||branchName(t.source_branch_id))+' ← '+esc(t.destination_branch_name||branchName(t.destination_branch_id))+' · '+esc(kindLabel(t.transfer_kind))+'</div></div><span class="status '+esc(t.status)+'">'+esc(statusLabel(t.status))+'</span></div>'+(t.amount!=null?'<div class="lines"><strong>المبلغ:</strong> '+esc(t.amount)+' دج</div>':'')+(t.party_reference?'<div class="lines"><strong>المرجع:</strong> '+esc(t.party_reference)+'</div>':'')+(lines?'<div class="lines">'+lines+'</div>':'')+(t.notes?'<div class="lines">'+esc(t.notes)+'</div>':'')+(buttons?'<div class="actions">'+buttons+'</div>':'')+'</div>'}).join('')
+    root.querySelectorAll('button[data-act]').forEach(b=>b.addEventListener('click',()=>transferAction(b.dataset.act,Number(b.dataset.id))))
+  }
+
+  async function transferAction(action,id){
+    const label={send:'تأكيد إرسال العملية؟',receive:'تأكيد استلام العملية؟',cancel:'إلغاء طلب التحويل؟'}[action];if(!confirm(label))return;setBusy(true)
+    const fn=(state.mode==='worker'?'worker_':'admin_')+({send:'send_transfer',receive:'receive_transfer',cancel:'cancel_transfer'}[action]);const args=state.mode==='worker'?{p_session_token:state.workerToken,p_transfer_id:id}:{p_transfer_id:id};const r=await supabase.rpc(fn,args);setBusy(false)
+    if(r.error){const m=r.error.message||'';if(m.includes('SOURCE_STOCK_NOT_VERIFIED'))return notify('لا يمكن إرسال السلعة قبل جردها في الفرع المصدر.','error');if(m.includes('INSUFFICIENT_BRANCH_STOCK'))return notify('كمية الفرع المصدر غير كافية للتحويل.','error');return notify('لم تتم العملية: '+m,'error')}
+    notify(action==='send'?'تم تأكيد الإرسال.':action==='receive'?'تم تأكيد الاستلام.':'تم إلغاء الطلب.','ok');await Promise.all([loadTransfers(),loadInventory(Number($('stockBranch').value))])
+  }
+
+  $('saleProduct').addEventListener('change',syncSaleStatus);$('saleBranch').addEventListener('change',async()=>{await loadInventory(Number($('saleBranch').value));syncSaleStatus()})
+  $('inventoryProduct').addEventListener('change',syncInventoryStatus);$('inventoryBranch').addEventListener('change',async()=>{await loadInventory(Number($('inventoryBranch').value));syncInventoryStatus()})
+  $('stockBranch').addEventListener('change',()=>loadInventory(Number($('stockBranch').value)))
+  $('refreshStock').addEventListener('click',()=>loadInventory(Number($('stockBranch').value)))
+  $('transferKind').addEventListener('change',()=>{const stock=$('transferKind').value==='stock';$('stockFields').classList.toggle('hidden',!stock);$('amountFields').classList.toggle('hidden',stock)})
+  $('saleForm').addEventListener('submit',saveSale);$('inventoryForm').addEventListener('submit',saveInventory);$('purchaseForm').addEventListener('submit',savePurchase);$('transferForm').addEventListener('submit',createTransfer);$('refreshTransfers').addEventListener('click',loadTransfers)
+
+  async function init(){
+    try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();await loadInventory(state.defaultBranchId);if(state.permissions.can_transfer)await loadTransfers();notify('التشغيل اليومي جاهز: البيع والجرد والمشتريات والتحويلات حسب الفرع.','ok')}catch(err){notify('تعذر تشغيل الصفحة: '+err.message,'error')}
+  }
   init()
 </script>
 </body>
