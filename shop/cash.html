@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0f766e">
+  <title>أماكن الأموال — MyTool</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--main2:#14b8a6;--danger:#b91c1c;--ok:#047857;--warn:#b45309}
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
+    .shell{max-width:900px;margin:auto;padding:12px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.brand{display:flex;align-items:center;gap:10px}.logo{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,var(--main2),var(--main));color:#fff;font-weight:900}.links{display:flex;gap:7px;flex-wrap:wrap}.links a{font-size:12px;font-weight:800;text-decoration:none;color:var(--main);background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:14px;margin-bottom:12px;box-shadow:0 5px 18px rgba(15,23,42,.05)}h1,h2{margin:0}.muted{color:var(--muted);font-size:12px;line-height:1.65}.message{padding:10px 12px;border-radius:12px;margin-bottom:12px;font-size:13px;font-weight:800}.message.info{background:#eff6ff;color:#1d4ed8}.message.ok{background:#ecfdf5;color:var(--ok)}.message.error{background:#fff1f2;color:var(--danger)}.total{font-size:34px;font-weight:900;margin-top:7px}.places{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}.place{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fafafa}.place-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.place-name{font-size:14px;font-weight:900}.place-type{font-size:10px;color:var(--muted);margin-top:3px}.place-balance{font-size:22px;font-weight:900;margin-top:9px}.mini{display:flex;gap:7px;margin-top:9px}.mini button{padding:8px 9px;font-size:11px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.field{margin-top:9px}label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}input,select,textarea,button{width:100%;font:inherit;border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff}textarea{min-height:58px;resize:vertical}.btn{border:0;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;font-weight:900;cursor:pointer}.btn.secondary{background:#fff;color:var(--main);border:1px solid var(--main)}.btn:disabled{opacity:.55;cursor:not-allowed}.hidden{display:none!important}.operation{border-top:1px solid var(--line);padding:10px 0}.operation:first-child{border-top:0}.op-head{display:flex;justify-content:space-between;gap:8px}.op-title{font-weight:900;font-size:13px}.op-amount{font-weight:900;color:var(--main);white-space:nowrap}.op-meta{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.55}.empty{text-align:center;color:var(--muted);padding:14px;border:1px dashed var(--line);border-radius:12px;margin-top:10px}.notice{font-size:11px;line-height:1.7;background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:12px;padding:10px;margin-top:10px}.loading{opacity:.6;pointer-events:none}
+    @media(max-width:700px){.shell{padding:8px}.top{align-items:flex-start}.places,.grid{grid-template-columns:1fr}.total{font-size:29px}.card{padding:12px}}
+  </style>
+</head>
+<body>
+<div id="app" class="shell">
+  <div class="top">
+    <div class="brand"><div class="logo">دج</div><div><strong>أماكن الأموال</strong><div class="muted">كم عندي نقد وأين موجود؟</div></div></div>
+    <div class="links"><a href="money.html">الأموال</a><a href="daily.html">التشغيل اليومي</a><a href="./">حساب المحل</a></div>
+  </div>
+
+  <div id="message" class="message info">جاري تحميل الأموال…</div>
+
+  <section class="card">
+    <div class="muted">إجمالي السيولة المسجلة الآن</div>
+    <div id="totalCash" class="total">0 دج</div>
+    <div class="notice">نسجل الآن <strong>المبلغ الإجمالي فقط</strong>. عدّ الأوراق والفئات نضيفه لاحقًا في «إغلاق الكيس». هذا أسرع للاستعمال اليومي.</div>
+    <div id="places" class="places"></div>
+  </section>
+
+  <section class="card">
+    <h2>نقل مبلغ</h2>
+    <div class="muted">مثال: من «يوسف - السوق» إلى «الكيس - محل الدار»، أو من الكيس إلى البنك. النقل لا يعتبر مصروفًا ولا ربحًا.</div>
+    <form id="transferForm">
+      <div class="grid">
+        <div class="field"><label>من</label><select id="fromPlace"></select></div>
+        <div class="field"><label>إلى</label><select id="toPlace"></select></div>
+      </div>
+      <div class="field"><label>المبلغ</label><input id="transferAmount" type="number" min="0.01" step="0.01" inputmode="decimal" required></div>
+      <div class="field"><label>ملاحظة</label><input id="transferNotes" placeholder="اختياري"></div>
+      <button class="btn" type="submit" style="margin-top:9px">نقل المبلغ</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>إضافة مكان مال</h2>
+    <div class="muted">أضف المكان مرة واحدة فقط، وبعدها يبقى ظاهرًا دائمًا.</div>
+    <form id="placeForm">
+      <div class="grid">
+        <div class="field"><label>الاسم</label><input id="placeName" placeholder="مثال: يوسف - السوق" required></div>
+        <div class="field"><label>النوع</label><select id="placeType">
+          <option value="person">عند شخص</option>
+          <option value="collection_point">نقطة تحصيل</option>
+          <option value="shop_bag">كيس / صندوق يومي</option>
+          <option value="reserve">خزنة / احتياطي</option>
+          <option value="bank">بنك</option>
+          <option value="transit">قيد التحويل</option>
+          <option value="other">مكان آخر</option>
+        </select></div>
+      </div>
+      <div class="field"><label>الفرع — اختياري</label><select id="placeBranch"><option value="">بدون فرع</option></select></div>
+      <div class="field"><label>ملاحظة</label><input id="placeNotes" placeholder="اختياري"></div>
+      <button class="btn secondary" type="submit" style="margin-top:9px">إضافة المكان</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>آخر الحركات</h2>
+    <div id="operations"></div>
+  </section>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+  const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co'
+  const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj'
+  const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY)
+  const $=id=>document.getElementById(id)
+  const state={places:[],operations:[],branches:[],busy:false}
+
+  const money=v=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(Number(v||0))
+  const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))
+  function notify(text,type='info'){$('message').textContent=text;$('message').className='message '+type}
+  function setBusy(v){state.busy=v;$('app').classList.toggle('loading',v)}
+  function typeLabel(t){return ({shop_bag:'كيس / صندوق',reserve:'خزنة / احتياطي',person:'عند شخص',collection_point:'نقطة تحصيل',bank:'بنك',transit:'قيد التحويل',other:'مكان آخر'})[t]||t}
+
+  async function requireAdmin(){
+    const {data}=await supabase.auth.getSession()
+    if(!data?.session){window.location.replace('../');return false}
+    return true
+  }
+
+  async function loadBranches(){
+    const {data,error}=await supabase.from('branches').select('id,name').eq('active',true).order('id')
+    if(error)throw error
+    state.branches=data||[]
+    $('placeBranch').innerHTML='<option value="">بدون فرع</option>'+state.branches.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('')
+  }
+
+  async function load(){
+    setBusy(true)
+    const {data,error}=await supabase.rpc('admin_get_cash_places_context')
+    setBusy(false)
+    if(error)throw error
+    state.places=data?.places||[];state.operations=data?.operations||[]
+    $('totalCash').textContent=money(data?.total_cash)+' دج'
+    renderPlaces();renderTransfer();renderOperations()
+  }
+
+  function renderPlaces(){
+    const root=$('places')
+    if(!state.places.length){root.innerHTML='<div class="empty">لا توجد أماكن أموال.</div>';return}
+    root.innerHTML=state.places.map(p=>'<div class="place"><div class="place-head"><div><div class="place-name">'+esc(p.name)+'</div><div class="place-type">'+esc(typeLabel(p.place_type))+(p.branch_name?' · '+esc(p.branch_name):'')+'</div></div></div><div class="place-balance">'+money(p.balance)+' دج</div><div class="mini"><button class="btn secondary" data-reconcile="'+p.id+'">تحديث الموجود فعليًا</button></div></div>').join('')
+    root.querySelectorAll('[data-reconcile]').forEach(btn=>btn.addEventListener('click',()=>reconcile(Number(btn.dataset.reconcile))))
+  }
+
+  function renderTransfer(){
+    const opts=state.places.map(p=>'<option value="'+p.id+'">'+esc(p.name)+' — '+money(p.balance)+' دج</option>').join('')
+    const oldFrom=$('fromPlace').value,oldTo=$('toPlace').value
+    $('fromPlace').innerHTML=opts;$('toPlace').innerHTML=opts
+    if(oldFrom&&state.places.some(p=>String(p.id)===oldFrom))$('fromPlace').value=oldFrom
+    if(oldTo&&state.places.some(p=>String(p.id)===oldTo))$('toPlace').value=oldTo
+    if(state.places.length>1&&$('fromPlace').value===$('toPlace').value)$('toPlace').selectedIndex=1
+  }
+
+  function renderOperations(){
+    const root=$('operations')
+    if(!state.operations.length){root.innerHTML='<div class="empty">لا توجد حركات بعد.</div>';return}
+    root.innerHTML=state.operations.map(o=>{
+      const when=o.operation_at?new Date(o.operation_at).toLocaleString('ar-DZ'):''
+      if(o.operation_type==='transfer')return '<div class="operation"><div class="op-head"><div class="op-title">'+esc(o.from_place_name)+' ← '+esc(o.to_place_name)+'</div><div class="op-amount">'+money(o.amount)+' دج</div></div><div class="op-meta">نقل مبلغ · '+esc(when)+(o.notes?' · '+esc(o.notes):'')+'</div></div>'
+      const d=Number(o.difference_amount||0),sign=d>0?'+':''
+      return '<div class="operation"><div class="op-head"><div class="op-title">مطابقة '+esc(o.to_place_name)+'</div><div class="op-amount">'+money(o.to_balance_after)+' دج</div></div><div class="op-meta">الفرق '+sign+money(d)+' دج · '+esc(when)+(o.notes?' · '+esc(o.notes):'')+'</div></div>'
+    }).join('')
+  }
+
+  async function reconcile(id){
+    const p=state.places.find(x=>Number(x.id)===Number(id));if(!p)return
+    const raw=prompt('كم موجود فعليًا الآن في «'+p.name+'»؟\nأدخل المبلغ بالدينار فقط.',String(Number(p.balance||0)))
+    if(raw===null)return
+    const amount=Number(String(raw).replace(',','.'))
+    if(!Number.isFinite(amount)||amount<0)return notify('المبلغ غير صحيح.','error')
+    if(!confirm('تأكيد الموجود الفعلي في «'+p.name+'»: '+money(amount)+' دج؟'))return
+    setBusy(true)
+    const {data,error}=await supabase.rpc('admin_reconcile_cash_place',{p_place_id:id,p_actual_balance:amount,p_notes:'مطابقة يدوية من واجهة أماكن الأموال'})
+    setBusy(false)
+    if(error)return notify('لم يتم الحفظ: '+error.message,'error')
+    await load();notify(Number(data)===0?'الرصيد كان مطابقًا، لا يوجد فرق.':'تم تحديث الموجود الفعلي وحفظ فرق المطابقة.','ok')
+  }
+
+  async function addPlace(e){
+    e.preventDefault()
+    const name=$('placeName').value.trim(),type=$('placeType').value,branch=$('placeBranch').value?Number($('placeBranch').value):null,notes=$('placeNotes').value.trim()||null
+    if(name.length<2)return notify('اكتب اسم المكان.','error')
+    setBusy(true)
+    const {error}=await supabase.rpc('admin_create_cash_place',{p_name:name,p_place_type:type,p_branch_id:branch,p_notes:notes})
+    setBusy(false)
+    if(error){if((error.message||'').includes('PLACE_NAME_ALREADY_EXISTS'))return notify('هذا المكان موجود من قبل.','error');return notify('تعذر إضافة المكان: '+error.message,'error')}
+    $('placeName').value='';$('placeNotes').value='';await load();notify('تمت إضافة مكان المال. الآن اضغط «تحديث الموجود فعليًا» وأدخل المبلغ.','ok')
+  }
+
+  async function transfer(e){
+    e.preventDefault()
+    const from=Number($('fromPlace').value),to=Number($('toPlace').value),amount=Number($('transferAmount').value),notes=$('transferNotes').value.trim()||null
+    if(!from||!to||from===to)return notify('اختر مكانين مختلفين.','error')
+    if(!Number.isFinite(amount)||amount<=0)return notify('أدخل مبلغًا صحيحًا.','error')
+    const fp=state.places.find(p=>Number(p.id)===from),tp=state.places.find(p=>Number(p.id)===to)
+    if(!confirm('نقل '+money(amount)+' دج من «'+fp?.name+'» إلى «'+tp?.name+'»؟'))return
+    setBusy(true)
+    const {error}=await supabase.rpc('admin_transfer_cash_place',{p_from_place_id:from,p_to_place_id:to,p_amount:amount,p_notes:notes})
+    setBusy(false)
+    if(error){if((error.message||'').includes('INSUFFICIENT_CASH_PLACE_BALANCE'))return notify('الرصيد في المكان المصدر غير كافٍ.','error');return notify('تعذر النقل: '+error.message,'error')}
+    $('transferAmount').value='';$('transferNotes').value='';await load();notify('تم نقل المبلغ وتحديث المكانين.','ok')
+  }
+
+  $('placeForm').addEventListener('submit',addPlace)
+  $('transferForm').addEventListener('submit',transfer)
+
+  async function init(){
+    try{if(!await requireAdmin())return;await loadBranches();await load();notify('جاهز. سجل فقط أين يوجد النقد والمبلغ الحالي.','ok')}
+    catch(err){notify('تعذر تشغيل الصفحة: '+err.message,'error')}
+  }
+  init()
+</script>
+</body>
+</html>
