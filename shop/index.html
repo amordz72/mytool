@@ -483,7 +483,7 @@
       busy.value=false
       if(error)return notify('لم يتم حفظ الجرد: '+error.message,'error')
       notify('تم تسجيل فروق الجرد بنجاح.')
-      resetPhysicalCount();await loadAll();inventoryTab.value='stock'
+      resetPhysicalCount();await loadAll();inventoryTab.value=can('view_stock')?'stock':'count'
     }
 
     async function createWorker(){

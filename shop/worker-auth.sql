@@ -183,7 +183,7 @@ declare
     v_can_view_stock boolean;
     v_can_use_catalog boolean;
 begin
-    select ws.id, wa.can_view_stock,
+    select ws.id, (wa.can_view_stock or wa.can_inventory),
            (wa.can_view_stock or wa.can_sell or wa.can_inventory or wa.can_manage_products)
     into v_session_id, v_can_view_stock, v_can_use_catalog
     from public.worker_sessions ws
