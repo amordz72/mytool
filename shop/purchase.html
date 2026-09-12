@@ -183,7 +183,7 @@
     ])
     if(ctxRes.error||branchRes.error)throw(ctxRes.error||branchRes.error)
     const ctx=(ctxRes.data||[])[0]||{},branch=branchRes.data||{}
-    state.permissions={can_sell:!!ctx.can_sell,can_inventory:!!ctx.can_inventory,can_purchase:!!ctx.can_purchase,can_transfer:!!branch.can_transfer}
+    state.permissions={can_sell:!!ctx.can_sell,can_view_stock:!!ctx.can_view_stock,can_inventory:!!ctx.can_inventory,can_purchase:!!ctx.can_purchase,can_transfer:!!branch.can_transfer}
     state.defaultBranchId=branch.default_branch_id||null;state.operatingBranches=branch.branches||[]
     const jobs=[]
     jobs.push(supabase.rpc('worker_get_catalog',{p_session_token:state.workerToken}))
@@ -387,11 +387,13 @@
   }
   function applyScreenMode(){
     const screen=document.body.dataset.screen
+    const required={sale:'can_sell',purchase:'can_purchase',inventory:'can_inventory',stock:'can_view_stock',transfers:'can_transfer'}[screen]
+    if(state.mode==='worker'&&required&&!state.permissions[required]){notify('ليس لديك صلاحية لهذه الشاشة.','error');setTimeout(()=>location.replace('daily.html'),900);return}
     const visible={sale:['branchCard','saleCard'],purchase:['branchCard','purchaseCard'],inventory:['branchCard','inventoryCard'],stock:['branchCard','stockCard'],transfers:['transferCard','transferListCard']}[screen]||[]
     for(const id of ['branchCard','saleCard','purchaseCard','inventoryCard','transferCard','stockCard','transferListCard'])$(id).classList.toggle('hidden',!visible.includes(id))
     const links=[
       ['sale','sale.html','بيع','can_sell'],['purchase','purchase.html','مشتريات','can_purchase'],
-      ['inventory','inventory-count.html','جرد','can_inventory'],['stock','stock.html','المخزون',null],
+      ['inventory','inventory-count.html','جرد','can_inventory'],['stock','stock.html','المخزون','can_view_stock'],
       ['transfers','transfers.html','تحويلات','can_transfer']
     ].filter(x=>!x[3]||state.permissions[x[3]])
     $('screenNav').innerHTML='<a href="daily.html">الرئيسية</a>'+links.map(x=>'<a class="'+(x[0]===screen?'active':'')+'" href="'+x[1]+'">'+x[2]+'</a>').join('')
