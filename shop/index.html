@@ -51,6 +51,7 @@
           <a v-if="can('manage_products')" class="side-link" href="#inventory" @click="inventoryTab='products';sidebarOpen=false"><span class="ico">◇</span><span>المنتجات</span></a>
           <a v-if="can('inventory')" class="side-link" href="#inventory" @click="openPhysicalCount();sidebarOpen=false"><span class="ico">✓</span><span>الجرد الفعلي</span></a>
           <a v-if="userMode==='admin'" class="side-link" href="opening-stock.html" @click="sidebarOpen=false"><span class="ico">◉</span><span>الجرد الافتتاحي</span></a>
+          <a v-if="userMode==='admin'" class="side-link" href="../notes/" @click="sidebarOpen=false"><span class="ico">📝</span><span>صندوق الملاحظات</span></a>
           <a v-if="userMode==='admin'" class="side-link" href="#users" @click="sidebarOpen=false"><span class="ico">♙</span><span>المستخدمون</span></a>
           <a v-if="userMode==='admin'" class="side-link" href="#settings" @click="sidebarOpen=false"><span class="ico">⚙</span><span>الإعدادات</span></a>
           <button class="side-link" @click="loadAll();sidebarOpen=false" :disabled="busy"><span class="ico">↻</span><span>تحديث البيانات</span></button>
