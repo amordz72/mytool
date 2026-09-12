@@ -14,7 +14,7 @@ label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}input,selec
 .filters{display:grid;grid-template-columns:2fr 1fr;gap:9px}.items{display:grid;gap:10px}.item{display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;gap:9px;border:1px solid var(--line);border-radius:14px;padding:9px;background:#fff}.thumb{width:58px;height:58px;border:1px solid var(--line);border-radius:11px;overflow:hidden;display:grid;place-items:center;color:var(--muted);font-size:10px;background:#f8fafc}.thumb img{width:100%;height:100%;object-fit:cover;cursor:pointer}.name{font-weight:900;line-height:1.3}.meta{font-size:10px;color:var(--muted);margin-top:2px}.count-grid{display:grid;grid-template-columns:repeat(3,minmax(74px,1fr));gap:6px;margin-top:7px}.box{background:#f8fafc;border-radius:10px;padding:6px}.box label{color:var(--muted);margin-bottom:3px}.box strong{font-size:17px}.box input{padding:8px}.diff.plus{color:#047857}.diff.minus{color:var(--danger)}
 .actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}button{border:0;border-radius:12px;padding:10px 13px;font-weight:800;cursor:pointer}.primary{background:linear-gradient(135deg,var(--main),var(--main2));color:#fff}.secondary{background:#fff;color:var(--main);border:1px solid var(--main)}.warn{background:#fff7ed;color:var(--warn);border:1px solid #fed7aa}button:disabled{opacity:.5;cursor:not-allowed}
 .message{display:none;padding:11px;border-radius:12px;margin-bottom:12px}.message.ok{display:block;background:#ecfdf5;color:#047857}.message.error{display:block;background:#fff1f2;color:var(--danger)}.message.info{display:block;background:#eff6ff;color:#1d4ed8}
-.pager{position:sticky;bottom:8px;z-index:9;display:flex;align-items:center;justify-content:center;gap:10px;margin:12px auto 0;padding:8px;width:max-content;max-width:100%;background:#ffffffee;border:1px solid var(--line);border-radius:15px;box-shadow:0 8px 24px #0f172a22;backdrop-filter:blur(8px)}.pager button{width:104px}.admin-note{margin-top:6px;font-size:11px;color:var(--muted)}.empty{text-align:center;color:var(--muted);padding:28px}.summary{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px;font-size:13px;line-height:1.7}
+.pager{position:sticky;bottom:8px;z-index:9;display:flex;align-items:center;justify-content:center;gap:10px;margin:12px auto 0;padding:8px;width:max-content;max-width:100%;background:#ffffffee;border:1px solid var(--line);border-radius:15px;box-shadow:0 8px 24px #0f172a22;backdrop-filter:blur(8px)}.pager button{width:104px}.admin-note{margin-top:6px;font-size:11px;color:var(--muted)}.empty{text-align:center;color:var(--muted);padding:28px}.summary{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px;font-size:13px;line-height:1.7}.history-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.history-list{display:grid;gap:7px;margin-top:10px}.history-row{width:100%;display:grid;grid-template-columns:1fr auto;gap:5px;text-align:right;background:#f8fafc;border:1px solid var(--line);color:var(--text);padding:10px}.history-row small{color:var(--muted);font-weight:400}.history-row .bad{color:var(--danger)}.history-nav{display:flex;gap:7px;margin-top:9px}.history-details{margin-top:10px}.detail-row{display:grid;grid-template-columns:1fr repeat(3,70px);gap:5px;padding:7px;border-bottom:1px solid var(--line);font-size:12px}.detail-row.head{font-weight:800;background:#f8fafc}
 #viewer{position:fixed;inset:0;display:none;z-index:30;background:#000d;align-items:center;justify-content:center;padding:16px}#viewer.open{display:flex}#viewer img{max-width:100%;max-height:92vh;border-radius:12px}
 @media(max-width:640px){main{padding:8px}.card{padding:11px;margin-bottom:8px;border-radius:14px}.grid,.filters{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(4,1fr);gap:4px}.metric{padding:7px 3px}.metric strong{font-size:18px}.item{grid-template-columns:50px minmax(0,1fr);padding:8px}.thumb{width:50px;height:50px}.count-grid{grid-column:1/-1;grid-template-columns:repeat(3,1fr)}.item .actions{grid-column:1/-1;margin-top:0}.item .actions button{flex:1;padding:8px}.head h1{font-size:17px}.pager{bottom:6px}.pager button{width:92px}}
 </style>
@@ -47,13 +47,19 @@ label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}input,selec
 <div id="saveSummary" class="summary">أدخل العدد الحقيقي لكل المنتجات. لا تُرسل أي حركة إلى المخزون قبل الضغط على «تأكيد الجرد».</div>
 <div class="actions"><button id="save" class="primary">مراجعة وتأكيد الجرد</button><button id="clearDraft" class="secondary">مسح المسودة</button></div>
 </section>
+<section class="card">
+ <div class="history-head"><div><strong>آخر عمليات الجرد</strong><div class="admin-note">للإدارة فقط — اضغط على العملية لرؤية المنتجات والفروقات.</div></div></div>
+ <div id="historyList" class="history-list"><div class="empty">جاري تحميل السجل…</div></div>
+ <div class="history-nav"><button id="historyNewer" class="secondary">الأحدث</button><button id="historyOlder" class="secondary">الأقدم</button></div>
+ <div id="historyDetails" class="history-details"></div>
+</section>
 </main>
 <div id="viewer"><img alt="معاينة صورة المنتج"></div>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj')
 const $=id=>document.getElementById(id)
-const state={user:null,branches:[],items:[],images:{},counts:{},review:new Set(),page:1,pageSize:5,busy:false}
+const state={user:null,branches:[],items:[],images:{},counts:{},review:new Set(),page:1,pageSize:5,busy:false,historyOffset:0,historyHasMore:false,history:[]}
 function notify(text,type='ok'){const m=$('message');m.textContent=text;m.className='message '+type;m.scrollIntoView({behavior:'smooth',block:'nearest'})}
 function draftKey(){return 'mytool-physical-inventory-draft-v1-'+$('branch').value}
 function saveDraft(){localStorage.setItem(draftKey(),JSON.stringify({counts:state.counts,review:[...state.review],reason:$('reason').value,updatedAt:new Date().toISOString()}))}
@@ -86,6 +92,22 @@ function render(){
  document.querySelectorAll('.thumb img').forEach(x=>x.onclick=()=>{$('#viewer img').src=x.dataset.full;$('viewer').classList.add('open')})
 }
 function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function formatDate(v){return v?new Intl.DateTimeFormat('ar-DZ',{dateStyle:'short',timeStyle:'short'}).format(new Date(v)):'—'}
+async function loadHistory(){
+ const {data,error}=await supabase.rpc('admin_list_inventory_runs',{p_offset:state.historyOffset,p_limit:6})
+ if(error){$('historyList').innerHTML='<div class="message error" style="display:block">تعذر تحميل سجل الجرد: '+escapeHtml(error.message)+'</div>';return}
+ state.historyHasMore=(data||[]).length>5;state.history=(data||[]).slice(0,5)
+ $('historyNewer').disabled=state.historyOffset===0;$('historyOlder').disabled=!state.historyHasMore
+ $('historyList').innerHTML=state.history.length?state.history.map(x=>'<button class="history-row" data-run="'+x.run_id+'"><span><strong>'+escapeHtml(x.branch_name)+'</strong> — '+escapeHtml(x.actor_name)+'<br><small>'+formatDate(x.completed_at)+' • '+escapeHtml(x.reason)+'</small></span><span>'+x.item_count+' منتج<br><small class="'+(Number(x.difference_count)?'bad':'')+'">'+x.difference_count+' فروقات</small></span></button>').join(''):'<div class="empty">لا توجد عمليات جرد مسجلة بعد.</div>'
+ $('historyDetails').innerHTML=''
+}
+async function openHistory(runId){
+ $('historyDetails').innerHTML='<div class="empty">جاري تحميل التفاصيل…</div>'
+ const {data,error}=await supabase.rpc('admin_get_inventory_run_items',{p_run_id:Number(runId)})
+ if(error){$('historyDetails').innerHTML='<div class="message error" style="display:block">'+escapeHtml(error.message)+'</div>';return}
+ $('historyDetails').innerHTML='<div class="detail-row head"><span>المنتج</span><span>قبل</span><span>الفعلي</span><span>الفرق</span></div>'+((data||[]).map(x=>'<div class="detail-row"><span>'+escapeHtml(x.product_name)+' <small>#'+x.product_id+'</small></span><span>'+x.system_quantity_before+'</span><span>'+x.observed_quantity+'</span><span class="'+(Number(x.difference)?'bad':'')+'">'+(Number(x.difference)>0?'+':'')+x.difference+'</span></div>').join('')||'<div class="empty">لا توجد تفاصيل.</div>')
+ $('historyDetails').scrollIntoView({behavior:'smooth',block:'nearest'})
+}
 async function loadBranches(){
  const {data,error}=await supabase.from('branches').select('id,name').eq('active',true).order('id')
  if(error)throw error;state.branches=data||[];$('branch').innerHTML=state.branches.map(x=>'<option value="'+x.id+'">'+escapeHtml(x.name)+'</option>').join('')
@@ -139,8 +161,11 @@ $('save').onclick=async()=>{
  const {data,error}=await supabase.rpc('admin_record_branch_inventory_batch',{p_branch_id:Number($('branch').value),p_counts:counts,p_reason:reason})
  state.busy=false;render()
  if(error)return notify('لم يُحفظ الجرد: '+error.message+'. لم تُحفظ دفعة جزئية.','error')
- localStorage.removeItem(draftKey());state.counts={};state.review=new Set();await loadBranch();notify('تم حفظ الجرد كاملًا بنجاح ('+(data?.saved_count||total)+' منتج).','ok')
+ localStorage.removeItem(draftKey());state.counts={};state.review=new Set();state.historyOffset=0;await Promise.all([loadBranch(),loadHistory()]);notify('تم حفظ الجرد كاملًا بنجاح ('+(data?.saved_count||total)+' منتج).','ok')
 }
+$('historyList').onclick=e=>{const row=e.target.closest('[data-run]');if(row)openHistory(row.dataset.run)}
+$('historyNewer').onclick=()=>{state.historyOffset=Math.max(0,state.historyOffset-5);loadHistory()}
+$('historyOlder').onclick=()=>{if(state.historyHasMore){state.historyOffset+=5;loadHistory()}}
 $('viewer').onclick=()=>$('viewer').classList.remove('open')
 async function init(){
  try{
@@ -148,7 +173,7 @@ async function init(){
   state.user=session.user
   const {data:isAdmin,error}=await supabase.rpc('admin_can_upload_product_image')
   if(error||!isAdmin){location.replace('./');return}
-  await loadBranches();$('branch').disabled=false;await loadBranch()
+  await loadBranches();$('branch').disabled=false;await Promise.all([loadBranch(),loadHistory()])
  }catch(e){notify('تعذر فتح الجرد: '+e.message,'error')}
 }
 init()
