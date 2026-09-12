@@ -113,7 +113,7 @@
         <a v-if="userMode==='admin'" href="users.html">♙ المستخدمون</a>
         <a v-if="userMode==='admin'" href="settings.html">⚙ الإعدادات</a>
       </div>
-      <a v-if="userMode==='admin' && lowStockCount>0" class="alert-card" href="stock.html?filter=low" style="text-decoration:none;color:inherit"><span><strong>تنبيه مخزون:</strong> {{ lowStockCount }} منتجات كميتها 2 أو أقل.</span><span>منها {{ outOfStockCount }} نافد — عرض التفاصيل ←</span></a>
+      <a v-if="userMode==='admin' && lowStockCount>0" class="alert-card" href="stock.html?filter=low" style="text-decoration:none;color:#7c2d12"><span><strong>تنبيه مخزون:</strong> {{ lowStockCount }} منتجات كميتها 2 أو أقل.</span><span>منها {{ outOfStockCount }} نافد — عرض التفاصيل ←</span></a>
     </section>
 
     <section v-if="can('sell')" id="sale" class="card content-card">
@@ -295,8 +295,8 @@
     const userMode=computed(()=>session.value?'admin':(workerToken.value?'worker':'none'))
     const isLoggedIn=computed(()=>userMode.value!=='none')
     const stockUnits=computed(()=>(inventory.value||[]).reduce((sum,x)=>sum+Number(x.stock_quantity||0),0))
-    const lowStockCount=computed(()=>(inventory.value||[]).filter(x=>Number(x.stock_quantity||0)<=2).length)
-    const outOfStockCount=computed(()=>(inventory.value||[]).filter(x=>Number(x.stock_quantity||0)<=0).length)
+    const lowStockCount=computed(()=>(inventory.value||[]).filter(x=>x.is_verified&&Number(x.stock_quantity||0)<=2).length)
+    const outOfStockCount=computed(()=>(inventory.value||[]).filter(x=>x.is_verified&&Number(x.stock_quantity||0)<=0).length)
     const todaySalesCount=computed(()=>userMode.value==='worker'?Number(workerSalesSummary.value.sales_count||0):todaySales.value.length)
     const todayRevenue=computed(()=>userMode.value==='worker'?Number(workerSalesSummary.value.revenue||0):(todaySales.value||[]).reduce((sum,x)=>sum+(Number(x.quantity||0)*Number(x.unit_price||0)),0))
     const countedItems=computed(()=>(inventory.value||[]).filter(x=>physicalCounts.value[x.product_id] !== '' && physicalCounts.value[x.product_id] != null))
