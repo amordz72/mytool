@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>صندوق الملاحظات — MyTool</title>
+<style>
+:root{--teal:#117f78;--mint:#18bca9;--ink:#111827;--muted:#6b7280;--line:#d9e1e7;--bg:#f4f7fb;--red:#b42318;--amber:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:20px;margin:0}.back{color:var(--teal);text-decoration:none;font-weight:700}
+main{max-width:900px;margin:auto;padding:16px}.panel,.note{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 6px 20px #102a4310}
+textarea,input,select,button{font:inherit}textarea,input,select{width:100%;border:1px solid #cfd8df;border-radius:14px;padding:12px;background:#fff}
+textarea{min-height:118px;resize:vertical}.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}.full{grid-column:1/-1}
+button{border:0;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer}.primary{background:linear-gradient(135deg,var(--teal),var(--mint));color:#fff}.outline{background:#fff;color:var(--teal);border:1px solid var(--teal)}.danger{color:var(--red);border-color:#f1b4ae}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.msg{display:none;margin:10px 0;padding:12px;border-radius:12px}.msg.ok{display:block;background:#e9fbf6;color:#06715f}.msg.err{display:block;background:#fff0ef;color:var(--red)}
+.toolbar{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}.note-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.badges{display:flex;gap:6px;flex-wrap:wrap}.badge{font-size:12px;background:#eef4f7;border-radius:999px;padding:6px 9px}.urgent{background:#fee4e2;color:var(--red)}.high{background:#fff3dc;color:var(--amber)}
+.note-body{white-space:pre-wrap;line-height:1.7;margin:12px 0}.ai{background:#f0fdfa;border-right:4px solid var(--mint);padding:10px;border-radius:10px;margin:8px 0}.meta{font-size:12px;color:var(--muted)}
+.images{display:flex;gap:8px;overflow:auto;margin-top:10px}.images img{width:92px;height:92px;object-fit:cover;border-radius:12px;border:1px solid var(--line);cursor:pointer}
+.empty{text-align:center;color:var(--muted);padding:30px}.selectline{display:flex;align-items:center;gap:8px}.selectline input{width:auto}
+#viewer{position:fixed;inset:0;background:#000d;display:none;z-index:20;align-items:center;justify-content:center;padding:18px}#viewer.open{display:flex}#viewer img{max-width:100%;max-height:90vh;border-radius:12px}
+small{color:var(--muted)}@media(max-width:640px){.row,.toolbar{grid-template-columns:1fr}.note-head{align-items:flex-start}.panel,.note{border-radius:16px}}
+</style>
+</head>
+<body>
+<header><h1>📝 صندوق الملاحظات</h1><a class="back" href="../">الرئيسية ←</a></header>
+<main>
+<section class="panel">
+<h2 style="margin-top:0">ملاحظة سريعة</h2>
+<textarea id="body" maxlength="10000" placeholder="اكتب الملاحظة بدل إرسالها في واتساب…"></textarea>
+<div class="row">
+<label>النوع<select id="type"><option value="UNCATEGORIZED">بدون تصنيف</option><option value="BUG">خطأ</option><option value="NEEDS_CONFIRMATION">يحتاج تأكيد عمر</option><option value="AI_REQUEST">طلب للذكاء الاصطناعي</option><option value="TASK">مهمة</option><option value="IDEA">فكرة</option><option value="PRODUCT_INVENTORY">منتج أو مخزون</option><option value="REFERENCE">مرجع</option></select></label>
+<label>الأولوية<select id="priority"><option value="NORMAL">عادي</option><option value="URGENT">عاجل</option><option value="HIGH">مرتفع</option><option value="LOW">منخفض</option></select></label>
+<label>القسم<select id="area"><option value="MYTOOL">MyTool</option><option value="TEHNA_CONNECT">Tehna Connect</option><option value="SHOP">المحل</option><option value="PRODUCT">منتج</option><option value="GENERAL">عام</option></select></label>
+<label>صور اختيارية<input id="files" type="file" accept="image/jpeg,image/png,image/webp" multiple><small>حتى 6 صور، 10MB للصورة. لا يتم تغيير أبعادها الآن.</small></label>
+<label class="full">ماذا تريد من الذكاء الاصطناعي؟ (اختياري)<input id="ai" maxlength="2000" placeholder="مثال: شخّص الخطأ واقترح الخطوة التالية"></label>
+</div>
+<div class="actions"><button id="save" class="primary">حفظ الملاحظة</button><button id="clear" class="outline">تفريغ</button></div>
+<div id="message" class="msg"></div>
+</section>
+
+<section class="panel">
+<div class="toolbar"><input id="search" placeholder="بحث في الملاحظات"><select id="statusFilter"><option value="">كل الحالات</option><option value="NEW">جديدة</option><option value="NEEDS_OMAR">تحتاج عمر</option><option value="READY">جاهزة</option><option value="IN_PROGRESS">قيد العمل</option><option value="DONE">منتهية</option><option value="ARCHIVED">الأرشيف</option></select><select id="typeFilter"><option value="">كل الأنواع</option></select></div>
+<div class="actions"><button id="copy" class="outline">نسخ المحدد للذكاء الاصطناعي</button><button id="txt" class="outline">تحميل TXT</button><button id="json" class="outline">نسخة JSON</button></div>
+</section>
+<div id="list"></div>
+</main>
+<div id="viewer"><img alt="معاينة الصورة"></div>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj')
+const TYPES={BUG:'خطأ',NEEDS_CONFIRMATION:'يحتاج تأكيد عمر',AI_REQUEST:'طلب للذكاء الاصطناعي',TASK:'مهمة',IDEA:'فكرة',PRODUCT_INVENTORY:'منتج أو مخزون',REFERENCE:'مرجع',UNCATEGORIZED:'بدون تصنيف'}
+const PRIORITIES={URGENT:'عاجل',HIGH:'مرتفع',NORMAL:'عادي',LOW:'منخفض'}
+const STATUSES={NEW:'جديدة',TRIAGED:'صُنفت',NEEDS_OMAR:'تحتاج عمر',READY:'جاهزة',IN_PROGRESS:'قيد العمل',DONE:'منتهية',ARCHIVED:'مؤرشفة'}
+const AREAS={MYTOOL:'MyTool',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'منتج',GENERAL:'عام'}
+const $=id=>document.getElementById(id);let notes=[],images=[],user=null
+$('typeFilter').innerHTML='<option value="">كل الأنواع</option>'+Object.entries(TYPES).map(([v,l])=>'<option value="'+v+'">'+l+'</option>').join('')
+function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function notify(text,error=false){const m=$('message');m.textContent=text;m.className='msg '+(error?'err':'ok');m.scrollIntoView({behavior:'smooth',block:'nearest'})}
+function ext(file){return file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg'}
+async function init(){
+ const {data:{session}}=await supabase.auth.getSession()
+ if(!session){location.replace('../');return}
+ user=session.user
+ await load()
+}
+async function load(){
+ const [n,i]=await Promise.all([
+  supabase.from('mytool_notes').select('*').order('created_at',{ascending:false}),
+  supabase.from('mytool_note_images').select('*').order('created_at')
+ ])
+ if(n.error||i.error){notify('تعذر فتح الصندوق: '+(n.error||i.error).message,true);return}
+ notes=n.data||[];images=i.data||[]
+ const paths=images.map(x=>x.object_path)
+ if(paths.length){
+  const {data}=await supabase.storage.from('mytool-note-images').createSignedUrls(paths,3600)
+  const urls=Object.fromEntries((data||[]).map((x,k)=>[paths[k],x.signedUrl]))
+  images=images.map(x=>({...x,url:urls[x.object_path]||''}))
+ }
+ render()
+}
+function filtered(){
+ const q=$('search').value.trim().toLowerCase(),s=$('statusFilter').value,t=$('typeFilter').value
+ return notes.filter(n=>(!q||(n.body+' '+(n.ai_request||'')).toLowerCase().includes(q))&&(!s||n.status===s)&&(!t||n.note_type===t))
+}
+function statusOptions(current){return Object.entries(STATUSES).map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('')}
+function render(){
+ const rows=filtered();$('list').innerHTML=rows.length?rows.map(n=>{
+  const pics=images.filter(x=>x.note_id===n.id)
+  return '<article class="note"><div class="note-head"><div class="selectline"><input class="pick" type="checkbox" value="'+n.id+'"><strong>#'+n.id+'</strong></div><div class="badges"><span class="badge">'+TYPES[n.note_type]+'</span><span class="badge '+n.priority.toLowerCase()+'">'+PRIORITIES[n.priority]+'</span><span class="badge">'+AREAS[n.project_area]+'</span></div></div><div class="note-body">'+esc(n.body)+'</div>'+(n.ai_request?'<div class="ai"><b>المطلوب من الذكاء الاصطناعي:</b><br>'+esc(n.ai_request)+'</div>':'')+(pics.length?'<div class="images">'+pics.map(p=>'<img src="'+p.url+'" data-url="'+p.url+'" alt="'+esc(p.original_name||'صورة ملاحظة')+'">').join('')+'</div>':'')+'<div class="actions"><select class="status" data-id="'+n.id+'">'+statusOptions(n.status)+'</select><button class="outline archive" data-id="'+n.id+'">أرشفة</button></div><div class="meta">'+new Date(n.created_at).toLocaleString('ar-DZ')+(pics.length?' • '+pics.length+' صور':'')+'</div></article>'
+ }).join(''):'<div class="empty">لا توجد ملاحظات مطابقة.</div>'
+ document.querySelectorAll('.status').forEach(x=>x.onchange=()=>updateStatus(Number(x.dataset.id),x.value))
+ document.querySelectorAll('.archive').forEach(x=>x.onclick=()=>updateStatus(Number(x.dataset.id),'ARCHIVED'))
+ document.querySelectorAll('.images img').forEach(x=>x.onclick=()=>{$('#viewer img').src=x.dataset.url;$('viewer').classList.add('open')})
+}
+async function save(){
+ const body=$('body').value.trim(),files=[...$('files').files]
+ if(!body)return notify('اكتب الملاحظة أولًا.',true)
+ if(files.length>6)return notify('الحد الأقصى 6 صور للملاحظة.',true)
+ for(const f of files)if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>10485760)return notify('الصورة '+f.name+' غير مدعومة أو أكبر من 10MB.',true)
+ $('save').disabled=true;notify('جاري الحفظ…')
+ const payload={body,note_type:$('type').value,priority:$('priority').value,project_area:$('area').value,ai_request:$('ai').value.trim()||null,created_by:user.id}
+ const {data:note,error}=await supabase.from('mytool_notes').insert(payload).select().single()
+ if(error){$('save').disabled=false;return notify('لم تُحفظ الملاحظة: '+error.message,true)}
+ let failed=0
+ for(const f of files){
+  const path=user.id+'/'+note.id+'/'+crypto.randomUUID()+'.'+ext(f)
+  const up=await supabase.storage.from('mytool-note-images').upload(path,f,{contentType:f.type,upsert:false})
+  if(up.error){failed++;continue}
+  const meta=await supabase.from('mytool_note_images').insert({note_id:note.id,object_path:path,original_name:f.name,mime_type:f.type,byte_size:f.size,created_by:user.id})
+  if(meta.error){failed++;await supabase.storage.from('mytool-note-images').remove([path])}
+ }
+ clearForm();$('save').disabled=false;await load()
+ notify(failed?'تم حفظ الملاحظة، لكن تعذر حفظ '+failed+' صورة.':'تم حفظ الملاحظة'+(files.length?' وصورها.':'.'),failed>0)
+}
+function clearForm(){$('body').value='';$('ai').value='';$('files').value='';$('type').value='UNCATEGORIZED';$('priority').value='NORMAL';$('area').value='MYTOOL'}
+async function updateStatus(id,status){
+ const {error}=await supabase.from('mytool_notes').update({status,updated_at:new Date().toISOString()}).eq('id',id)
+ if(error)return notify('تعذر تحديث الحالة: '+error.message,true)
+ notes=notes.map(n=>n.id===id?{...n,status}:n);render();notify(status==='ARCHIVED'?'تمت الأرشفة.':'تم تحديث الحالة.')
+}
+function selected(){const ids=[...document.querySelectorAll('.pick:checked')].map(x=>Number(x.value));return notes.filter(n=>ids.includes(n.id))}
+function exportText(rows){return rows.map(n=>'#'+n.id+' | '+TYPES[n.note_type]+' | '+PRIORITIES[n.priority]+' | '+STATUSES[n.status]+'\nالقسم: '+AREAS[n.project_area]+'\n'+n.body+(n.ai_request?'\nالمطلوب من الذكاء الاصطناعي: '+n.ai_request:'')).join('\n\n---\n\n')}
+async function copySelected(){const rows=selected();if(!rows.length)return notify('حدد ملاحظة واحدة على الأقل.',true);await navigator.clipboard.writeText(exportText(rows));notify('تم نسخ الملاحظات المحددة.')}
+function download(name,type,content){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+$('save').onclick=save;$('clear').onclick=clearForm;$('copy').onclick=copySelected
+$('txt').onclick=()=>{const r=selected();if(!r.length)return notify('حدد ملاحظة واحدة على الأقل.',true);download('mytool-notes.txt','text/plain;charset=utf-8','\ufeff'+exportText(r))}
+$('json').onclick=()=>{const r=selected();if(!r.length)return notify('حدد ملاحظة واحدة على الأقل.',true);download('mytool-notes.json','application/json',JSON.stringify(r.map(n=>({...n,images:images.filter(i=>i.note_id===n.id).map(i=>({object_path:i.object_path,original_name:i.original_name,mime_type:i.mime_type,byte_size:i.byte_size}))})),null,2))}
+;['search','statusFilter','typeFilter'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',render))
+$('viewer').onclick=()=>$('viewer').classList.remove('open')
+init()
+</script>
+</body></html>
