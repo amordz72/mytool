@@ -155,7 +155,12 @@
       <template v-if="can('manage_products') && inventoryTab==='products'">
         <form @submit.prevent="addProduct" class="grid" style="margin-bottom:12px">
           <div><label>اسم المنتج الجديد</label><input v-model.trim="newProductName" required placeholder="مثال: كابل Type-C"></div>
-          <div style="align-self:end"><button class="btn" :disabled="busy">إضافة منتج</button></div>
+          <div v-if="userMode==='admin'">
+            <label>صورة المنتج (اختيارية)</label>
+            <input :key="newProductImageKey" type="file" accept="image/jpeg,image/png,image/webp" @change="selectNewProductImage">
+            <div v-if="newProductImageName" class="muted" style="margin-top:5px">تم اختيار: {{ newProductImageName }}</div>
+          </div>
+          <div style="align-self:end"><button class="btn" :disabled="busy">{{ busy ? 'جاري الحفظ…' : 'إضافة منتج' }}</button></div>
         </form>
         <div class="product-list">
           <div class="product-row" v-for="p in products" :key="p.id">
@@ -291,7 +296,7 @@
     const loading=ref(true),busy=ref(false),loginMode=ref('worker'),email=ref(''),password=ref(''),workerUsername=ref(''),workerPassword=ref('')
     const message=ref(''),messageType=ref('ok'),staff=ref([]),products=ref([]),inventory=ref([]),adminWorkers=ref([]),todaySales=ref([])
     const sale=ref({sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''})
-    const inventoryTab=ref('stock'),sidebarOpen=ref(false),newProductName=ref(''),productNames=ref({}),imageUploading=ref({}),imageHistory=ref({}),physicalCounts=ref({}),physicalReason=ref('جرد فعلي')
+    const inventoryTab=ref('stock'),sidebarOpen=ref(false),newProductName=ref(''),newProductImage=ref(null),newProductImageName=ref(''),newProductImageKey=ref(0),productNames=ref({}),imageUploading=ref({}),imageHistory=ref({}),physicalCounts=ref({}),physicalReason=ref('جرد فعلي')
     const workerForm=ref({username:'',nickname:'',phone:'',password:'',staff_id:'',can_sell:true,can_view_stock:true,can_inventory:false,can_manage_products:false,can_view_sales:false})
     const adminSessionHours=ref(clampHours(localStorage.getItem(ADMIN_SESSION_HOURS_KEY)||24))
 
@@ -435,19 +440,34 @@
     function openPhysicalCount(){inventoryTab.value='count'}
     function resetPhysicalCount(){physicalCounts.value={};physicalReason.value='جرد فعلي'}
 
+    function selectNewProductImage(event){
+      const file=event.target.files?.[0]||null
+      newProductImage.value=file
+      newProductImageName.value=file?.name||''
+    }
+
     async function addProduct(){
       if(!can('manage_products'))return
       const name=(newProductName.value||'').trim()
       if(!name)return notify('اكتب اسم المنتج.','error')
+      const selectedImage=userMode.value==='admin'?newProductImage.value:null
       busy.value=true;message.value=''
-      const result=userMode.value==='worker'?await supabase.rpc('worker_add_product',{p_session_token:workerToken.value,p_name:name}):await supabase.from('products').insert({name})
-      const error=result.error
-      busy.value=false
-      if(error)return notify('لم تتم إضافة المنتج: '+error.message,'error')
-      newProductName.value='';notify('تمت إضافة المنتج.')
-      await loadAll();inventoryTab.value='products'
-    }
+      const result=userMode.value==='worker'
+        ?await supabase.rpc('worker_add_product',{p_session_token:workerToken.value,p_name:name})
+        :await supabase.from('products').insert({name}).select('id,name,image_url').single()
+      if(result.error){busy.value=false;return notify('لم تتم إضافة المنتج: '+result.error.message,'error')}
 
+      let imageError=null
+      if(selectedImage&&result.data?.id){
+        try{await sendProductImage(selectedImage,result.data)}
+        catch(error){imageError=error}
+      }
+
+      newProductName.value='';newProductImage.value=null;newProductImageName.value='';newProductImageKey.value++
+      await loadAll();inventoryTab.value='products';busy.value=false
+      if(imageError)return notify('تمت إضافة المنتج، لكن تعذر رفع صورته: '+(imageError?.message||'خطأ غير معروف'),'error')
+      notify(selectedImage?'تمت إضافة المنتج وصورته.':'تمت إضافة المنتج.')
+    }
     async function renameProduct(product){
       if(!can('manage_products'))return
       const name=(productNames.value[product.id]||'').trim()
@@ -491,15 +511,20 @@
       })
     }
 
+    async function sendProductImage(file,product){
+      const prepared=await compressProductImage(file)
+      const {data,error}=await supabase.functions.invoke('upload-product-image',{body:{productId:Number(product.id),...prepared}})
+      if(error)throw error
+      if(!data?.imageUrl)throw new Error('لم يرجع الخادم رابط الصورة.')
+      return data
+    }
+
     async function uploadProductImage(event,product){
       const input=event.target,file=input.files?.[0];input.value=''
       if(userMode.value!=='admin'||!file)return
       imageUploading.value={...imageUploading.value,[product.id]:true};message.value=''
       try{
-        const prepared=await compressProductImage(file)
-        const {data,error}=await supabase.functions.invoke('upload-product-image',{body:{productId:Number(product.id),...prepared}})
-        if(error)throw error
-        if(!data?.imageUrl)throw new Error('لم يرجع الخادم رابط الصورة.')
+        const data=await sendProductImage(file,product)
         products.value=products.value.map(p=>p.id===product.id?{...p,image_url:data.imageUrl}:p)
         await loadAll();inventoryTab.value='products'
         notify('تم رفع صورة المنتج وحفظ رابطها.')
@@ -509,7 +534,6 @@
         const next={...imageUploading.value};delete next[product.id];imageUploading.value=next
       }
     }
-
     async function restoreProductImage(image){
       if(userMode.value!=='admin'||image.is_current)return
       busy.value=true;message.value=''
@@ -636,7 +660,7 @@
       setInterval(enforceTimeout,30000)
     })
 
-    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,workerPermissions,message,messageType,staff,products,inventory,adminWorkers,todaySales,sale,workerForm,adminSessionHours,inventoryTab,sidebarOpen,newProductName,productNames,imageUploading,imageHistory,physicalCounts,physicalReason,userMode,isLoggedIn,stockUnits,lowStockCount,outOfStockCount,todaySalesCount,todayRevenue,countedItems,totalCountDifference,money,signed,difference,can,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale,openPhysicalCount,resetPhysicalCount,addProduct,renameProduct,uploadProductImage,restoreProductImage,applyPhysicalCount,createWorker,saveWorkerPermissions,toggleWorker,deleteWorker,saveAdminSessionHours}
+    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,workerPermissions,message,messageType,staff,products,inventory,adminWorkers,todaySales,sale,workerForm,adminSessionHours,inventoryTab,sidebarOpen,newProductName,newProductImage,newProductImageName,newProductImageKey,productNames,imageUploading,imageHistory,physicalCounts,physicalReason,userMode,isLoggedIn,stockUnits,lowStockCount,outOfStockCount,todaySalesCount,todayRevenue,countedItems,totalCountDifference,money,signed,difference,can,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale,openPhysicalCount,resetPhysicalCount,selectNewProductImage,addProduct,renameProduct,uploadProductImage,restoreProductImage,applyPhysicalCount,createWorker,saveWorkerPermissions,toggleWorker,deleteWorker,saveAdminSessionHours}
   }}).mount('#app')
 </script>
 </body>
