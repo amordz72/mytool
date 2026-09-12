@@ -47,7 +47,7 @@
         </div>
         <div class="row">
           <div class="field"><label>كمية البيع</label><input id="saleQty" type="number" min="1" step="1" value="1" required></div>
-          <div class="field"><label>سعر بيع الوحدة (دج)</label><input id="salePrice" type="number" min="0" step="0.01" inputmode="decimal" required></div>
+          <div class="field"><label>سعر بيع الوحدة (دج)</label><input id="salePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="يُملأ من آخر بيع" required><div id="salePriceHint" class="hint">اختر المنتج لعرض آخر سعر بيع.</div></div>
         </div>
         <div class="field"><label>ملاحظة</label><textarea id="saleNotes" placeholder="اختياري"></textarea></div>
         <button class="btn" type="submit">تسجيل البيع</button>
@@ -248,8 +248,32 @@
     root.innerHTML=rows.map(x=>{const soldOut=x.is_verified&&Number(x.stock_quantity)<=0;return '<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+'</div><span class="badge '+(soldOut?'danger':x.is_verified?'ok':'warn')+'">'+(soldOut?'نافد':x.is_verified?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div><div class="muted">'+esc(branchName(x.branch_id))+'</div></div>'}).join('')
   }
 
-  function syncSaleStatus(){
+  let salePriceRequest=0
+  async function fillLastSalePrice(product,branch){
+    const request=++salePriceRequest
+    $('salePrice').value=''
+    $('salePriceHint').className='hint'
+    if(!product||!branch){$('salePriceHint').textContent='اختر المنتج لعرض آخر سعر بيع.';return}
+    $('salePriceHint').textContent='جارٍ البحث عن آخر سعر بيع...'
+    let data,error
+    if(state.mode==='worker'){
+      const r=await supabase.rpc('worker_get_last_sale_price',{p_session_token:state.workerToken,p_product_id:product,p_branch_id:branch})
+      data=r.data;error=r.error
+    }else{
+      const r=await supabase.from('sales').select('unit_price').eq('product_id',product).eq('branch_id',branch).order('operation_at',{ascending:false}).order('id',{ascending:false}).limit(1).maybeSingle()
+      data=r.data?.unit_price??null;error=r.error
+    }
+    if(request!==salePriceRequest)return
+    if(error){$('salePriceHint').className='hint error';$('salePriceHint').textContent='تعذر جلب آخر سعر. أدخله يدويًا.';return}
+    if(data===null||data===undefined){$('salePriceHint').textContent='لا يوجد بيع سابق لهذا المنتج في هذا الفرع؛ أدخل السعر يدويًا.';return}
+    $('salePrice').value=String(data)
+    $('salePriceHint').className='hint ok'
+    $('salePriceHint').textContent='تم اقتراح آخر سعر بيع: '+data+' دج. يمكنك تغييره.'
+  }
+
+  async function syncSaleStatus(){
     const product=Number($('saleProduct').value),branch=Number($('saleBranch').value),item=inventoryItem(product,branch)
+    await fillLastSalePrice(product,branch)
     if(!product||!branch||!item){$('saleStockInfo').textContent='اختر المنتج والفرع لمعرفة حالة المخزون.';$('firstCountWrap').classList.add('hidden');return}
     if(item.is_verified){const soldOut=Number(item.stock_quantity)<=0;$('saleStockInfo').className='hint '+(soldOut?'error':'');$('saleStockInfo').textContent=soldOut?'هذا المنتج نافد في هذا المخزن. سجّل جردًا أو مشتريات قبل البيع.':'المخزون المؤكد: '+item.stock_quantity+'. لا يمكن إعادة ضبط الكمية من البيع.';$('firstCountWrap').classList.add('hidden');$('saleInitialCount').value=''}
     else{$('saleStockInfo').className='hint warn';$('saleStockInfo').textContent='هذا المنتج غير مجرود في هذا الفرع. الكمية التشغيلية الحالية '+item.stock_quantity+'. عند أول بيع اكتب الموجود فعليًا قبل البيع.';$('firstCountWrap').classList.remove('hidden')}
@@ -278,7 +302,7 @@
     const r=state.mode==='worker'?await supabase.rpc('worker_create_branch_sale',{p_session_token:state.workerToken,...args}):await supabase.rpc('admin_create_branch_sale',args)
     setBusy(false)
     if(r.error){const m=r.error.message||'';if(m.includes('INSUFFICIENT_BRANCH_STOCK'))return notify('لا توجد كمية كافية في هذا الفرع. إذا الواقع مختلف سجّل جردًا أولًا.','error');if(m.includes('INITIAL_COUNT_REQUIRED'))return notify('هذا أول بيع للمنتج في الفرع؛ يجب تسجيل الكمية الموجودة قبل البيع.','error');return notify('لم يتم حفظ البيع: '+m,'error')}
-    $('saleQty').value='1';$('salePrice').value='';$('saleNotes').value='';$('saleInitialCount').value=''
+    $('saleQty').value='1';$('salePrice').value=String(price);$('salePriceHint').className='hint ok';$('salePriceHint').textContent='آخر سعر بيع الآن: '+price+' دج. يمكنك تغييره.';$('saleNotes').value='';$('saleInitialCount').value=''
     await loadInventory(branch);notify('تم تسجيل البيع. رقم العملية: '+r.data,'ok')
   }
 
