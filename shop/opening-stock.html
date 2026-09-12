@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0f766e">
+  <title>الرصيد الافتتاحي للمخزون — MyTool</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--main2:#14b8a6;--danger:#b91c1c;--warn:#b45309;--ok:#047857}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Tahoma,sans-serif}.shell{max-width:900px;margin:auto;padding:14px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.top a{text-decoration:none;border:1px solid var(--line);background:#fff;padding:9px 11px;border-radius:10px;font-size:12px;font-weight:800;color:var(--text)}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 5px 18px rgba(15,23,42,.05)}h1{font-size:22px;margin:0}h2{font-size:17px;margin:0 0 7px}.muted{font-size:13px;color:var(--muted);line-height:1.6}.message{padding:11px;border-radius:12px;margin-bottom:12px;font-size:13px;font-weight:700}.message.info{background:#eff6ff;color:#1d4ed8}.message.ok{background:#ecfdf5;color:var(--ok)}.message.error{background:#fff1f2;color:var(--danger)}label{font-size:12px;font-weight:800;display:block;margin-bottom:5px}select,input,textarea,button{width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.items{display:grid;gap:8px;margin-top:12px}.item{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(100px,.5fr) minmax(120px,.7fr);gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#f8fafc}.name{font-weight:800}.small{font-size:11px;color:var(--muted)}.btn{border:0;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;font-weight:800;cursor:pointer}.btn.secondary{background:#fff;color:var(--main);border:1px solid var(--main)}.btn.warn{background:#fff;color:var(--warn);border:1px solid #fed7aa}.btn:disabled{opacity:.55;cursor:not-allowed}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{width:auto}.status{display:inline-block;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:900}.status.not_started{background:#f3f4f6;color:#6b7280}.status.draft{background:#fff7ed;color:#9a3412}.status.confirmed{background:#ecfdf5;color:#047857}.notice{background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:11px;border-radius:12px;font-size:12px;line-height:1.7}.loading{opacity:.65;pointer-events:none}.progress-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.metric{padding:10px;border:1px solid var(--line);border-radius:12px;background:#f8fafc;text-align:center}.metric strong{display:block;font-size:20px}.filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-top:12px}.item-actions{display:flex;gap:6px}.item-actions button{padding:8px;font-size:12px}.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px}.pagination button{width:auto}.empty{text-align:center;padding:18px;color:var(--muted);border:1px dashed var(--line);border-radius:12px}.status-counted{color:var(--ok)}.status-review{color:var(--warn)}@media(max-width:650px){.row{grid-template-columns:1fr}.item{grid-template-columns:1fr 1fr}.name{grid-column:1/-1}.shell{padding:8px}.actions button{flex:1}}
+  </style>
+</head>
+<body>
+<div class="shell" id="app">
+  <div class="top"><div><h1>الرصيد الافتتاحي للمخزون</h1><div class="muted">اعتماد الكمية الحقيقية لكل فرع قبل تشغيل مخزون الفروع.</div></div><a href="daily.html">التشغيل اليومي</a></div>
+  <div id="message" class="message info">جاري التحقق من حساب الإدارة…</div>
+
+  <section class="card">
+    <div class="row">
+      <div><label>الفرع</label><select id="branchSelect"></select></div>
+      <div><label>الحالة</label><div id="statusWrap" style="padding-top:8px"></div></div>
+    </div>
+    <div class="notice" style="margin-top:12px"><strong>قاعدة مهمة:</strong> لا نعيد بناء الماضي. نكتب ما يوجد فعليًا الآن في هذا الفرع. بعد التأكيد، أي تصحيح لاحق يكون بحركة جرد/تعديل موثقة، وليس بتغيير الرصيد الافتتاحي.</div>
+  </section>
+
+  <section class="card">
+    <h2>الجرد الافتتاحي السريع</h2>
+    <div class="muted">أدخل العدد الحقيقي ثم اضغط «تأكيد الكمية». تظهر 5 منتجات فقط، وتدخل المنتجات التالية تلقائيًا.</div>
+
+    <div class="progress-grid">
+      <div class="metric"><strong id="totalMetric">0</strong><span class="small">الإجمالي</span></div>
+      <div class="metric"><strong id="countedMetric">0</strong><span class="small">تم جردها</span></div>
+      <div class="metric"><strong id="remainingMetric">0</strong><span class="small">باقي</span></div>
+      <div class="metric"><strong id="reviewMetric">0</strong><span class="small">للمراجعة</span></div>
+    </div>
+
+    <div class="filters">
+      <div><label>بحث بالاسم أو ID</label><input id="searchInput" placeholder="مثال: سماعات أو 1001"></div>
+      <div><label>النوع</label><select id="categorySelect"><option value="">كل الأنواع</option></select></div>
+      <div><label>حالة الجرد</label><select id="countFilter"><option value="uncounted">غير مجرودة</option><option value="counted">مجرودة</option><option value="review">للمراجعة</option><option value="all">الكل</option></select></div>
+    </div>
+
+    <div id="items" class="items"></div>
+    <div id="emptyState" class="empty" hidden>لا توجد منتجات مطابقة لهذا الاختيار.</div>
+    <div class="pagination">
+      <button id="prevBtn" class="btn secondary">السابق</button>
+      <span id="pageInfo" class="small"></span>
+      <button id="nextBtn" class="btn secondary">التالي</button>
+    </div>
+
+    <div style="margin-top:12px"><label>ملاحظة عامة</label><textarea id="notes" placeholder="مثال: جرد افتتاحي بتاريخ اليوم"></textarea></div>
+    <div class="actions">
+      <button id="saveBtn" class="btn secondary">حفظ المسودة</button>
+      <button id="undoBtn" class="btn warn" disabled>تراجع عن آخر عملية</button>
+      <button id="confirmBtn" class="btn">تأكيد الرصيد الافتتاحي</button>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+  import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+  const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj')
+  const state={branches:[],products:[],statuses:[],lines:{},review:new Set(),undo:null,busy:false,page:1,pageSize:5}
+  const $=id=>document.getElementById(id)
+  const hasOwn=(obj,key)=>Object.prototype.hasOwnProperty.call(obj,key)
+  function notify(t,type='info'){$('message').textContent=t;$('message').className='message '+type}
+  function setBusy(v){state.busy=v;$('app').classList.toggle('loading',v)}
+  function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+  function currentBranch(){return Number($('branchSelect').value)}
+  function currentStatus(){return state.statuses.find(x=>Number(x.branch_id)===currentBranch())||{status:'not_started',line_count:0}}
+  function reviewKey(){return 'mytool-opening-review-'+currentBranch()}
+  function loadReview(){try{state.review=new Set(JSON.parse(localStorage.getItem(reviewKey())||'[]').map(Number))}catch(_e){state.review=new Set()}}
+  function saveReview(){localStorage.setItem(reviewKey(),JSON.stringify([...state.review]))}
+  function isCounted(id){return hasOwn(state.lines,id)}
+  function normalized(v){return String(v||'').toLocaleLowerCase('ar').trim()}
+  function renderStatus(){
+    const s=currentStatus()
+    $('statusWrap').innerHTML='<span class="status '+esc(s.status)+'">'+({not_started:'لم يبدأ',draft:'مسودة',confirmed:'مؤكد'})[s.status]+'</span>'+(s.confirmed_at?'<div class="small" style="margin-top:5px">تم التأكيد: '+new Date(s.confirmed_at).toLocaleString('ar-DZ')+'</div>':'')
+    const confirmed=s.status==='confirmed'
+    $('saveBtn').disabled=confirmed
+    $('confirmBtn').disabled=confirmed
+    $('undoBtn').disabled=confirmed||!state.undo
+    $('notes').disabled=confirmed
+  }
+  function filteredProducts(){
+    const q=normalized($('searchInput').value)
+    const category=$('categorySelect').value
+    const filter=$('countFilter').value
+    return state.products.filter(p=>{
+      const counted=isCounted(p.id),review=state.review.has(Number(p.id))
+      const matchesSearch=!q||normalized(p.name).includes(q)||String(p.id).includes(q)
+      const matchesCategory=!category||(category==='__none__'?!p.category:p.category===category)
+      const matchesState=filter==='all'||(filter==='counted'&&counted)||(filter==='review'&&review&&!counted)||(filter==='uncounted'&&!counted&&!review)
+      return matchesSearch&&matchesCategory&&matchesState
+    })
+  }
+  function renderProgress(){
+    const counted=state.products.filter(p=>isCounted(p.id)).length
+    const review=state.products.filter(p=>state.review.has(Number(p.id))&&!isCounted(p.id)).length
+    $('totalMetric').textContent=state.products.length
+    $('countedMetric').textContent=counted
+    $('remainingMetric').textContent=Math.max(0,state.products.length-counted)
+    $('reviewMetric').textContent=review
+  }
+  function renderItems(){
+    const confirmed=currentStatus().status==='confirmed'
+    const filtered=filteredProducts()
+    const pages=Math.max(1,Math.ceil(filtered.length/state.pageSize))
+    state.page=Math.min(Math.max(1,state.page),pages)
+    const start=(state.page-1)*state.pageSize
+    const rows=filtered.slice(start,start+state.pageSize)
+    $('items').innerHTML=rows.map(p=>{
+      const line=state.lines[p.id]
+      const counted=isCounted(p.id)
+      const review=state.review.has(Number(p.id))&&!counted
+      const badge=counted?'<span class="small status-counted">✓ مجرودة</span>':(review?'<span class="small status-review">⌛ للمراجعة</span>':'<span class="small">غير مجرودة</span>')
+      return '<div class="item" data-product="'+p.id+'"><div class="name">'+esc(p.name)+'<div class="small">ID: '+p.id+' · '+esc(p.category||'غير مصنف')+'</div>'+badge+'</div><div><label>الكمية</label><input class="qty" type="number" min="0" step="1" inputmode="numeric" value="'+esc(counted?line.quantity:'')+'" placeholder="العدد" '+(confirmed?'disabled':'')+'></div><div><label>ملاحظة</label><input class="line-note" value="'+esc(counted?(line.notes||''):'')+'" placeholder="اختياري" '+(confirmed?'disabled':'')+'><div class="item-actions" style="margin-top:6px"><button class="btn confirm-line" '+(confirmed?'disabled':'')+'>تأكيد الكمية</button><button class="btn warn review-line" '+(confirmed?'disabled':'')+'>راجع لاحقًا</button></div></div></div>'
+    }).join('')
+    $('emptyState').hidden=rows.length>0
+    $('pageInfo').textContent=filtered.length?'صفحة '+state.page+' من '+pages+' · '+filtered.length+' نتيجة':'0 نتيجة'
+    $('prevBtn').disabled=state.page<=1
+    $('nextBtn').disabled=state.page>=pages
+    renderProgress()
+    renderStatus()
+  }
+  function populateCategories(){
+    const categories=[...new Set(state.products.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'))
+    $('categorySelect').innerHTML='<option value="">كل الأنواع</option>'+categories.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('')+'<option value="__none__">غير مصنف</option>'
+    const saved=localStorage.getItem('mytool-opening-category')||''
+    if([...$('categorySelect').options].some(o=>o.value===saved))$('categorySelect').value=saved
+    const filter=localStorage.getItem('mytool-opening-filter')||'uncounted'
+    if([...$('countFilter').options].some(o=>o.value===filter))$('countFilter').value=filter
+  }
+  async function loadBase(){
+    const {data:sess}=await supabase.auth.getSession()
+    if(!sess?.session)throw new Error('هذه الصفحة للأدمن فقط. ادخل بحساب الإدارة أولًا.')
+    const [b,p,s]=await Promise.all([
+      supabase.from('branches').select('id,name,code').eq('active',true).order('id'),
+      supabase.from('products').select('id,name,category').order('id'),
+      supabase.from('branch_opening_status').select('*').order('branch_id')
+    ])
+    const err=b.error||p.error||s.error
+    if(err)throw err
+    state.branches=b.data||[]
+    state.products=p.data||[]
+    state.statuses=s.data||[]
+    $('branchSelect').innerHTML=state.branches.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('')
+    populateCategories()
+  }
+  async function loadBranch(){
+    const id=currentBranch()
+    state.lines={}
+    state.undo=null
+    $('notes').value=''
+    const status=currentStatus()
+    if(status.status!=='not_started'){
+      const o=await supabase.from('branch_stock_openings').select('id,notes,status').eq('branch_id',id).maybeSingle()
+      if(o.error)throw o.error
+      if(o.data){
+        $('notes').value=o.data.notes||''
+        const l=await supabase.from('branch_stock_opening_lines').select('product_id,quantity,notes').eq('opening_id',o.data.id)
+        if(l.error)throw l.error
+        ;(l.data||[]).forEach(x=>state.lines[x.product_id]=x)
+      }
+    }
+    loadReview()
+    state.page=1
+    renderItems()
+  }
+  function draftLines(){return Object.values(state.lines).map(x=>({product_id:Number(x.product_id),quantity:Number(x.quantity),notes:x.notes||null}))}
+  async function persistDraft(){
+    const r=await supabase.rpc('admin_save_branch_opening_draft',{p_branch_id:currentBranch(),p_lines:draftLines(),p_notes:$('notes').value.trim()||null})
+    if(r.error)throw r.error
+  }
+  async function confirmLine(card){
+    const id=Number(card.dataset.product)
+    const input=card.querySelector('.qty')
+    const value=Number(input.value)
+    if(input.value===''||!Number.isInteger(value)||value<0)return notify('اكتب كمية صحيحة للمنتج #'+id+'.','error')
+    const previous=isCounted(id)?{...state.lines[id]}:null
+    const wasReview=state.review.has(id)
+    state.undo={type:'count',id,previous,wasReview}
+    state.lines[id]={product_id:id,quantity:value,notes:card.querySelector('.line-note').value.trim()||null}
+    state.review.delete(id)
+    saveReview()
+    setBusy(true)
+    try{await persistDraft();notify('تم حفظ كمية المنتج #'+id+'، وظهر المنتج التالي.','ok')}
+    catch(e){
+      if(previous)state.lines[id]=previous
+      else delete state.lines[id]
+      if(wasReview)state.review.add(id)
+      saveReview()
+      state.undo=null
+      notify('لم يتم حفظ الكمية: '+e.message,'error')
+    }
+    setBusy(false)
+    renderItems()
+  }
+  function markReview(card){
+    const id=Number(card.dataset.product)
+    const wasReview=state.review.has(id)
+    state.undo={type:'review',id,wasReview}
+    state.review.add(id)
+    saveReview()
+    notify('تم نقل المنتج #'+id+' إلى قائمة «للمراجعة».','ok')
+    renderItems()
+  }
+  async function undoLast(){
+    const action=state.undo
+    if(!action)return
+    state.undo=null
+    if(action.type==='count'){
+      if(action.previous)state.lines[action.id]=action.previous
+      else delete state.lines[action.id]
+      if(action.wasReview)state.review.add(action.id)
+      else state.review.delete(action.id)
+      setBusy(true)
+      try{await persistDraft();notify('تم التراجع عن آخر كمية.','ok')}
+      catch(e){notify('تعذر حفظ التراجع: '+e.message,'error')}
+      setBusy(false)
+    }else{
+      if(action.wasReview)state.review.add(action.id)
+      else state.review.delete(action.id)
+      notify('تم التراجع عن التأجيل.','ok')
+    }
+    saveReview()
+    renderItems()
+  }
+  function captureVisible(){
+    document.querySelectorAll('.item').forEach(card=>{
+      const input=card.querySelector('.qty')
+      if(input.value==='')return
+      const id=Number(card.dataset.product),value=Number(input.value)
+      if(!Number.isInteger(value)||value<0)throw new Error('الكمية غير صحيحة للمنتج #'+id)
+      state.lines[id]={product_id:id,quantity:value,notes:card.querySelector('.line-note').value.trim()||null}
+      state.review.delete(id)
+    })
+    saveReview()
+  }
+  async function saveDraft(){
+    if(currentStatus().status==='confirmed')return
+    try{captureVisible()}catch(e){return notify(e.message,'error')}
+    setBusy(true)
+    try{await persistDraft();notify('تم حفظ المسودة. يمكنك متابعة الجرد لاحقًا.','ok');await refreshStatus()}
+    catch(e){notify('لم يتم حفظ المسودة: '+e.message,'error')}
+    setBusy(false)
+    renderItems()
+  }
+  async function confirmOpening(){
+    if(currentStatus().status==='confirmed')return
+    try{captureVisible()}catch(e){return notify(e.message,'error')}
+    const remaining=state.products.filter(p=>!isCounted(p.id)).length
+    if(remaining>0)return notify('لا يمكن التأكيد النهائي: بقي '+remaining+' منتجًا غير مجرود، منها '+state.review.size+' للمراجعة.','error')
+    setBusy(true)
+    try{await persistDraft();await refreshStatus(false)}
+    catch(e){setBusy(false);return notify('تعذر حفظ المسودة قبل التأكيد: '+e.message,'error')}
+    if(!confirm('تم جرد جميع المنتجات. بعد التأكيد، أي تصحيح لاحق سيكون بحركة مخزون موثقة. تأكيد؟')){setBusy(false);return}
+    const r=await supabase.rpc('admin_confirm_branch_opening',{p_branch_id:currentBranch()})
+    setBusy(false)
+    if(r.error)return notify('تعذر التأكيد: '+r.error.message,'error')
+    state.review.clear();saveReview()
+    notify('تم اعتماد الرصيد الافتتاحي لهذا الفرع.','ok')
+    await refreshStatus()
+  }
+  async function refreshStatus(render=true){
+    const s=await supabase.from('branch_opening_status').select('*').order('branch_id')
+    if(s.error)throw s.error
+    state.statuses=s.data||[]
+    if(render)renderItems()
+  }
+  $('items').addEventListener('click',e=>{
+    const card=e.target.closest('.item')
+    if(!card)return
+    if(e.target.closest('.confirm-line'))confirmLine(card)
+    if(e.target.closest('.review-line'))markReview(card)
+  })
+  $('branchSelect').addEventListener('change',()=>loadBranch().catch(e=>notify(e.message,'error')))
+  $('searchInput').addEventListener('input',()=>{state.page=1;renderItems()})
+  $('categorySelect').addEventListener('change',()=>{localStorage.setItem('mytool-opening-category',$('categorySelect').value);state.page=1;renderItems()})
+  $('countFilter').addEventListener('change',()=>{localStorage.setItem('mytool-opening-filter',$('countFilter').value);state.page=1;renderItems()})
+  $('prevBtn').addEventListener('click',()=>{if(state.page>1){state.page--;renderItems()}})
+  $('nextBtn').addEventListener('click',()=>{state.page++;renderItems()})
+  $('saveBtn').addEventListener('click',saveDraft)
+  $('undoBtn').addEventListener('click',undoLast)
+  $('confirmBtn').addEventListener('click',confirmOpening)
+  async function init(){
+    try{setBusy(true);await loadBase();await loadBranch();setBusy(false);notify('جاهز. ابدأ من قائمة المنتجات غير المجرودة.','ok')}
+    catch(e){setBusy(false);notify(e.message,'error')}
+  }
+  init()
+</script>
+</body>
+</html>
