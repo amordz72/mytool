@@ -69,11 +69,11 @@
 
     <section class="card" id="inventoryCard">
       <h2>جرد / تصحيح مخزون</h2>
-      <div class="muted">بعد الجرد الأولي، أي كمية مختلفة تسجل هنا، ويمكن إضافة سبب توضيحي عند الحاجة.</div>
+      <div class="muted">اكتب العدد الفعلي دون الاعتماد على كمية النظام. الزيادة تُطبق مباشرة، والنقص يحتاج موافقة الإدارة.</div>
       <form id="inventoryForm">
         <div class="field"><label>المنتج</label><select id="inventoryProduct" required></select></div>
         <div class="field" id="inventoryBranchWrap"><label>الفرع</label><select id="inventoryBranch" required></select></div>
-        <div id="inventoryCurrent" class="hint">اختر المنتج لمعرفة كمية النظام.</div>
+        <div id="inventoryCurrent" class="hint">اختر المنتج ثم اكتب العدد الفعلي. جرد العامل لا يعرض كمية النظام قبل الحفظ.</div>
         <div class="field"><label>الكمية الموجودة فعليًا الآن</label><input id="inventoryActual" type="number" min="0" step="1" inputmode="numeric" required></div>
         <div class="field"><label>السبب (اختياري)</label><input id="inventoryReason" placeholder="اختياري: تالف / مفقود / سبب آخر"></div>
         <button class="btn" type="submit">حفظ الجرد</button>
@@ -254,7 +254,12 @@
 
   function syncInventoryStatus(){
     const product=Number($('inventoryProduct').value),branch=Number($('inventoryBranch').value),item=inventoryItem(product,branch)
-    if(!product||!branch||!item){$('inventoryCurrent').textContent='اختر المنتج والفرع لمعرفة كمية النظام.';return}
+    if(!product||!branch||!item){$('inventoryCurrent').textContent=state.mode==='worker'?'اختر المنتج ثم اكتب العدد الفعلي.':'اختر المنتج والفرع لمعرفة كمية النظام.';return}
+    if(state.mode==='worker'){
+      $('inventoryCurrent').className='hint warn'
+      $('inventoryCurrent').textContent=item.is_verified?'جرد أعمى: اكتب الموجود فعليًا. الزيادة تُطبق، والنقص يذهب للإدارة.':'هذا أول جرد للمنتج؛ اكتب الموجود فعليًا ليصبح خط الأساس.'
+      return
+    }
     $('inventoryCurrent').className='hint '+(item.is_verified?'':'warn');$('inventoryCurrent').textContent='كمية النظام: '+item.stock_quantity+' — '+(item.is_verified?'مجرود':'غير مجرود؛ هذا الجرد سيصبح خط الأساس الأول')
   }
 
@@ -277,17 +282,22 @@
   async function saveInventory(e){
     e.preventDefault()
     const product=Number($('inventoryProduct').value),branch=Number($('inventoryBranch').value),actual=Number($('inventoryActual').value),typedReason=$('inventoryReason').value.trim(),item=inventoryItem(product,branch)
-    if(!product||!branch||!Number.isInteger(actual)||actual<0)return notify('راجع المنتج والفرع والكمية الفعلية.','error')
-    if(!item)return notify('تعذر معرفة كمية النظام لهذا المنتج في الفرع.','error')
-    const difference=actual-Number(item.stock_quantity||0)
-    if(item.is_verified&&difference===0)return notify('الكمية مطابقة لكمية النظام، لا يوجد فرق للتسجيل.','info')
-    const reason=typedReason||(difference>0?'زيادة':difference<0?'نقص':'جرد أولي')
-    if(!confirm('تأكيد الجرد: الكمية الفعلية '+actual+'؟'))return
+    if(!product||!branch||!Number.isInteger(actual)||actual<0)return notify('راجع المنتج والفرع والكمية الفعلية. لا تُقبل كمية سالبة.','error')
+    if(!item)return notify('تعذر تحميل بيانات هذا المنتج في الفرع.','error')
+    let reason=typedReason||'جرد فعلي'
+    if(state.mode==='admin'){
+      const difference=actual-Number(item.stock_quantity||0)
+      if(item.is_verified&&difference===0)return notify('الكمية مطابقة لكمية النظام، لا يوجد فرق للتسجيل.','info')
+      reason=typedReason||(difference>0?'زيادة':difference<0?'نقص':'جرد أولي')
+    }
+    if(!confirm(state.mode==='worker'?'تأكيد العدد الفعلي '+actual+'؟ لا يمكن تعديله بعد الإرسال.':'تأكيد الجرد: الكمية الفعلية '+actual+'؟'))return
     setBusy(true)
     const r=state.mode==='worker'?await supabase.rpc('worker_record_branch_inventory_count',{p_session_token:state.workerToken,p_product_id:product,p_actual_quantity:actual,p_reason:reason,p_branch_id:branch}):await supabase.rpc('admin_record_branch_inventory_count',{p_branch_id:branch,p_product_id:product,p_actual_quantity:actual,p_reason:reason})
     setBusy(false)
-    if(r.error)return notify('لم يتم حفظ الجرد: '+r.error.message,'error')
-    $('inventoryActual').value='';$('inventoryReason').value='';await loadInventory(branch);notify('تم تسجيل الجرد. السبب: '+reason+'.','ok')
+    if(r.error){const m=r.error.message||'';if(m.includes('NEGATIVE_REVIEW_ALREADY_PENDING'))return notify('يوجد طلب نقص معلّق لهذا المنتج لدى الإدارة.','error');return notify('لم يتم حفظ الجرد: '+m,'error')}
+    $('inventoryActual').value='';$('inventoryReason').value='';await loadInventory(branch)
+    if(state.mode==='worker'&&Number(r.data)<0)return notify('تم إرسال فرق النقص للإدارة. لم تتغير كمية المخزون حتى توافق الإدارة.','info')
+    notify('تم تسجيل الجرد بنجاح.','ok')
   }
 
   async function savePurchase(e){
