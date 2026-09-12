@@ -45,7 +45,6 @@
         </div>
         <nav class="side-nav">
           <a class="side-link active" href="index.html" @click="sidebarOpen=false"><span class="ico">⌂</span><span>لوحة التحكم</span></a>
-          <a class="side-link" href="daily.html" @click="sidebarOpen=false"><span class="ico">☀</span><span>التشغيل اليومي</span></a>
           <a v-if="can('sell')" class="side-link" href="sale.html" @click="sidebarOpen=false"><span class="ico">＋</span><span>تسجيل بيع</span></a>
           <a v-if="can('view_stock')" class="side-link" href="stock.html" @click="sidebarOpen=false"><span class="ico">▦</span><span>المخزون</span></a>
           <a v-if="can('manage_products')" class="side-link" href="products.html" @click="sidebarOpen=false"><span class="ico">◇</span><span>المنتجات</span></a>
@@ -83,7 +82,6 @@
     </header>
 <nav class="unified-nav" aria-label="التنقل الرئيسي">
 <a class="" href="index.html">الرئيسية</a>
-<a href="daily.html">التشغيل</a>
 <a v-if="can('sell')" href="sale.html">بيع</a>
 <a v-if="userMode==='admin' || can('view_stock')" href="stock.html">المخزون</a>
 <a v-if="userMode==='admin'" class="" href="products.html">المنتجات</a>
