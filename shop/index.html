@@ -46,7 +46,7 @@
         <nav class="side-nav">
           <a class="side-link active" href="#dashboard" @click="sidebarOpen=false"><span class="ico">⌂</span><span>لوحة التحكم</span></a>
           <a class="side-link" href="daily.html" @click="sidebarOpen=false"><span class="ico">☀</span><span>التشغيل اليومي</span></a>
-          <a v-if="can('sell')" class="side-link" href="#sale" @click="sidebarOpen=false"><span class="ico">＋</span><span>تسجيل بيع</span></a>
+          <a v-if="can('sell')" class="side-link" href="daily.html#sale" @click="sidebarOpen=false"><span class="ico">＋</span><span>تسجيل بيع</span></a>
           <a v-if="can('view_stock')" class="side-link" href="#inventory" @click="inventoryTab='stock';sidebarOpen=false"><span class="ico">▦</span><span>المخزون</span></a>
           <a v-if="can('manage_products')" class="side-link" href="#inventory" @click="inventoryTab='products';sidebarOpen=false"><span class="ico">◇</span><span>المنتجات</span></a>
           <a v-if="userMode==='admin'" class="side-link" href="physical-inventory.html" @click="sidebarOpen=false"><span class="ico">✓</span><span>الجرد الفعلي</span></a>
@@ -99,7 +99,7 @@
       </div>
       <div class="quick-actions">
         <a href="daily.html">☀ التشغيل اليومي</a>
-        <a v-if="can('sell')" href="#sale">＋ بيع جديد</a>
+        <a v-if="can('sell')" href="daily.html#sale">＋ بيع جديد</a>
         <a v-if="can('view_stock')" class="mobile-hide" href="#inventory" @click="inventoryTab='stock'">▦ عرض المخزون</a>
         <a v-if="can('inventory')" href="#inventory" @click="openPhysicalCount">✓ جرد فعلي</a>
         <button class="mobile-hide" @click="loadAll" :disabled="busy">↻ تحديث البيانات</button>
@@ -108,30 +108,9 @@
     </section>
 
     <section v-if="can('sell')" id="sale" class="card content-card">
-      <div class="section-title"><div><div class="section-kicker">المبيعات</div><h2>تسجيل بيع</h2></div><span class="pill">عملية جديدة</span></div>
-      <form @submit.prevent="saveSale">
-        <div class="grid">
-          <div v-if="userMode==='admin'">
-            <label>الخدام / المسجل</label>
-            <select v-model.number="sale.sold_by" required>
-              <option disabled value="">اختر</option>
-              <option v-for="s in staff" :key="s.id" :value="s.id">{{ s.name }}</option>
-            </select>
-          </div>
-          <div>
-            <label>السلعة</label>
-            <select v-model.number="sale.product_id" required>
-              <option disabled value="">اختر</option>
-              <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
-            </select>
-          </div>
-          <div><label>الكمية</label><input v-model.number="sale.quantity" type="number" min="1" step="1" required></div>
-          <div><label>سعر الوحدة بالدينار</label><input v-model.number="sale.unit_price" type="number" min="0" step="0.01" inputmode="decimal" required></div>
-        </div>
-        <div style="margin-top:10px"><label>ملاحظة (اختياري)</label><textarea v-model.trim="sale.notes"></textarea></div>
-        <button class="btn" style="margin-top:10px" :disabled="busy">{{ busy ? 'جاري الحفظ…' : 'حفظ البيع' }}</button>
-      </form>
-      <div v-if="message" :class="messageType">{{ message }}</div>
+      <div class="section-title"><div><div class="section-kicker">المبيعات</div><h2>بيع جديد آمن</h2></div><span class="pill">حسب المخزن</span></div>
+      <p class="muted">البيع يعمل من شاشة التشغيل اليومية حتى تُفحص كمية مخزن العامل قبل الحفظ. المنتج غير المجرود يطلب كميته الحالية أول مرة، والمنتج النافد يبقى ظاهرًا بعلامة نافد ولا يُسمح ببيعه.</p>
+      <a class="btn" href="daily.html#sale" style="display:inline-block;text-decoration:none">فتح شاشة البيع</a>
     </section>
 
     <section v-if="can('view_stock') || can('manage_products') || can('inventory')" id="inventory" class="card content-card">
