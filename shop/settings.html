@@ -30,7 +30,7 @@
   <template v-else-if="!isLoggedIn">
     <section class="card login">
       <a class="back" href="../">← MyTool</a>
-      <h1>الإعدادات</h1>
+      <h1>حساب المحل</h1>
       <p class="muted">يتم تسجيل الدخول من الصفحة الرئيسية لـ MyTool.</p>
     </section>
   </template>
@@ -70,7 +70,7 @@
         <button class="btn secondary menu-toggle mobile-only" @click="sidebarOpen=true" aria-label="فتح القائمة">☰</button>
         <div class="topbar-logo">MT</div>
         <div class="topbar-copy">
-          <h1>حساب المحل</h1>
+          <h1>الإعدادات</h1>
           <div class="muted">{{ userMode==='admin' ? 'لوحة الإدارة' : ('مرحبًا '+workerNickname) }}</div>
         </div>
         <span class="pill">{{ userMode==='admin' ? 'إدارة' : 'خدام' }}</span>
