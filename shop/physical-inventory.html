@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0f766e">
+<title>الجرد الفعلي حسب الفرع — MyTool</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--main2:#14b8a6;--danger:#b91c1c;--warn:#b45309}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);padding:12px 16px}.head{max-width:980px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px}.head h1{font-size:21px;margin:0}.back{color:var(--main);text-decoration:none;font-weight:800}
+main{max-width:980px;margin:auto;padding:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 5px 18px rgba(15,23,42,.05)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.metric{background:#f0fdfa;border:1px solid #ccfbf1;border-radius:14px;padding:11px;text-align:center}.metric strong{display:block;font-size:22px}.metric span{font-size:11px;color:var(--muted)}
+label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;border:1px solid #d1d9e0;border-radius:12px;padding:11px;background:#fff}textarea{min-height:70px}
+.filters{display:grid;grid-template-columns:2fr 1fr;gap:9px}.items{display:grid;gap:10px}.item{display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;gap:9px;border:1px solid var(--line);border-radius:14px;padding:9px;background:#fff}.thumb{width:58px;height:58px;border:1px solid var(--line);border-radius:11px;overflow:hidden;display:grid;place-items:center;color:var(--muted);font-size:10px;background:#f8fafc}.thumb img{width:100%;height:100%;object-fit:cover;cursor:pointer}.name{font-weight:900;line-height:1.3}.meta{font-size:10px;color:var(--muted);margin-top:2px}.count-grid{display:grid;grid-template-columns:repeat(3,minmax(74px,1fr));gap:6px;margin-top:7px}.box{background:#f8fafc;border-radius:10px;padding:6px}.box label{color:var(--muted);margin-bottom:3px}.box strong{font-size:17px}.box input{padding:8px}.diff.plus{color:#047857}.diff.minus{color:var(--danger)}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}button{border:0;border-radius:12px;padding:10px 13px;font-weight:800;cursor:pointer}.primary{background:linear-gradient(135deg,var(--main),var(--main2));color:#fff}.secondary{background:#fff;color:var(--main);border:1px solid var(--main)}.warn{background:#fff7ed;color:var(--warn);border:1px solid #fed7aa}button:disabled{opacity:.5;cursor:not-allowed}
+.message{display:none;padding:11px;border-radius:12px;margin-bottom:12px}.message.ok{display:block;background:#ecfdf5;color:#047857}.message.error{display:block;background:#fff1f2;color:var(--danger)}.message.info{display:block;background:#eff6ff;color:#1d4ed8}
+.pager{position:sticky;bottom:8px;z-index:9;display:flex;align-items:center;justify-content:center;gap:10px;margin:12px auto 0;padding:8px;width:max-content;max-width:100%;background:#ffffffee;border:1px solid var(--line);border-radius:15px;box-shadow:0 8px 24px #0f172a22;backdrop-filter:blur(8px)}.pager button{width:104px}.admin-note{margin-top:6px;font-size:11px;color:var(--muted)}.empty{text-align:center;color:var(--muted);padding:28px}.summary{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px;font-size:13px;line-height:1.7}
+#viewer{position:fixed;inset:0;display:none;z-index:30;background:#000d;align-items:center;justify-content:center;padding:16px}#viewer.open{display:flex}#viewer img{max-width:100%;max-height:92vh;border-radius:12px}
+@media(max-width:640px){main{padding:8px}.card{padding:11px;margin-bottom:8px;border-radius:14px}.grid,.filters{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(4,1fr);gap:4px}.metric{padding:7px 3px}.metric strong{font-size:18px}.item{grid-template-columns:50px minmax(0,1fr);padding:8px}.thumb{width:50px;height:50px}.count-grid{grid-column:1/-1;grid-template-columns:repeat(3,1fr)}.item .actions{grid-column:1/-1;margin-top:0}.item .actions button{flex:1;padding:8px}.head h1{font-size:17px}.pager{bottom:6px}.pager button{width:92px}}
+</style>
+</head>
+<body>
+<header><div class="head"><h1>✓ الجرد الفعلي حسب الفرع</h1><a class="back" href="./">حساب المحل ←</a></div></header>
+<main>
+<div id="message" class="message info">جاري التحقق من حساب الإدارة…</div>
+<section class="card">
+<div class="grid">
+<div><label>المخزن / الفرع</label><select id="branch" aria-label="اختيار المخزن أو الفرع"></select><div class="admin-note">تغيير المخزن متاح للإدارة فقط. العامل يُثبّت على مخزنه المعيّن.</div></div>
+<div id="reasonWrap" hidden><label>سبب فرق الجرد</label><input id="reason" maxlength="500" value="جرد فعلي" placeholder="مثال: جرد نهاية اليوم"></div>
+</div>
+<div class="metrics">
+<div class="metric"><strong id="total">0</strong><span>الإجمالي</span></div>
+<div class="metric"><strong id="counted">0</strong><span>تم جردها</span></div>
+<div class="metric"><strong id="remaining">0</strong><span>باقي</span></div>
+<div class="metric"><strong id="reviewCount">0</strong><span>للمراجعة</span></div>
+</div>
+</section>
+<section class="card">
+<div class="filters">
+<div><label>بحث بالاسم أو Product ID</label><input id="search" placeholder="مثال: كابل أو 17"></div>
+<div><label>الحالة</label><select id="filter"><option value="uncounted">غير مجرودة</option><option value="counted">مجرودة</option><option value="review">للمراجعة</option><option value="all">الكل</option></select></div>
+</div>
+</section>
+<div id="items" class="items"></div>
+<div class="pager"><button id="prev" class="secondary">السابق</button><span id="pageInfo"></span><button id="next" class="secondary">التالي</button></div>
+<section class="card" style="margin-top:12px">
+<div id="saveSummary" class="summary">أدخل العدد الحقيقي لكل المنتجات. لا تُرسل أي حركة إلى المخزون قبل الضغط على «تأكيد الجرد».</div>
+<div class="actions"><button id="save" class="primary">مراجعة وتأكيد الجرد</button><button id="clearDraft" class="secondary">مسح المسودة</button></div>
+</section>
+</main>
+<div id="viewer"><img alt="معاينة صورة المنتج"></div>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj')
+const $=id=>document.getElementById(id)
+const state={user:null,branches:[],items:[],images:{},counts:{},review:new Set(),page:1,pageSize:5,busy:false}
+function notify(text,type='ok'){const m=$('message');m.textContent=text;m.className='message '+type;m.scrollIntoView({behavior:'smooth',block:'nearest'})}
+function draftKey(){return 'mytool-physical-inventory-draft-v1-'+$('branch').value}
+function saveDraft(){localStorage.setItem(draftKey(),JSON.stringify({counts:state.counts,review:[...state.review],reason:$('reason').value,updatedAt:new Date().toISOString()}))}
+function restoreDraft(){try{const d=JSON.parse(localStorage.getItem(draftKey())||'{}');state.counts=d.counts||{};state.review=new Set(d.review||[]);if(d.reason)$('reason').value=d.reason}catch(_e){state.counts={};state.review=new Set()}}
+function isCounted(id){return Object.prototype.hasOwnProperty.call(state.counts,String(id))}
+function diff(item){return isCounted(item.product_id)?Number(state.counts[item.product_id])-Number(item.stock_quantity||0):null}
+function filtered(){
+ const q=$('search').value.trim().toLowerCase(),f=$('filter').value
+ return state.items.filter(x=>{
+  const match=!q||x.product_name.toLowerCase().includes(q)||String(x.product_id).includes(q)
+  const counted=isCounted(x.product_id),review=state.review.has(Number(x.product_id))
+  return match&&(f==='all'||(f==='counted'&&counted)||(f==='review'&&review)||(f==='uncounted'&&!counted&&!review))
+ })
+}
+function render(){
+ $('total').textContent=state.items.length;$('counted').textContent=Object.keys(state.counts).length
+ $('remaining').textContent=Math.max(0,state.items.length-Object.keys(state.counts).length)
+ $('reviewCount').textContent=state.review.size
+ const rows=filtered(),pages=Math.max(1,Math.ceil(rows.length/state.pageSize));state.page=Math.min(state.page,pages)
+ const shown=rows.slice((state.page-1)*state.pageSize,state.page*state.pageSize)
+ $('pageInfo').textContent=state.page+' / '+pages;$('prev').disabled=state.page<=1;$('next').disabled=state.page>=pages
+ $('items').innerHTML=shown.length?shown.map(item=>{
+  const id=item.product_id,counted=isCounted(id),review=state.review.has(Number(id)),d=diff(item),image=state.images[id]
+  return '<article class="item" data-id="'+id+'"><div class="thumb">'+(image?'<img src="'+image+'" data-full="'+image+'" alt="صورة المنتج">':'بدون صورة')+'</div><div><div class="name">'+escapeHtml(item.product_name)+'</div><div class="meta">Product ID: '+id+' • '+(item.is_verified?'مخزون مؤكد':'غير مؤكد بعد')+'</div><div class="count-grid"><div class="box"><label>كمية النظام</label><strong>'+Number(item.stock_quantity||0)+'</strong></div><div class="box"><label>العدد الحقيقي</label><input class="actual" type="number" min="0" step="1" inputmode="numeric" value="'+(counted?state.counts[id]:'')+'" placeholder="—"></div><div class="box"><label>الفرق</label><strong class="diff '+(d>0?'plus':d<0?'minus':'')+'">'+(d===null?'—':(d>0?'+':'')+d)+'</strong></div></div></div><div class="actions"><button class="primary confirmLine">'+(counted?'تعديل الكمية':'تأكيد الكمية')+'</button><button class="warn reviewLine">'+(review?'إلغاء المراجعة':'راجع لاحقًا')+'</button></div></article>'
+ }).join(''):'<div class="card empty">لا توجد منتجات مطابقة.</div>'
+ const differences=state.items.filter(x=>{const d=diff(x);return d!==null&&d!==0})
+ $('reasonWrap').hidden=differences.length===0
+ $('saveSummary').textContent='تم جرد '+Object.keys(state.counts).length+' من '+state.items.length+'. الفروقات الحالية: '+differences.length+'. لا يحفظ شيء في المخزون قبل التأكيد النهائي.'
+ $('save').disabled=state.busy||state.review.size>0||Object.keys(state.counts).length<state.items.length
+ document.querySelectorAll('.thumb img').forEach(x=>x.onclick=()=>{$('#viewer img').src=x.dataset.full;$('viewer').classList.add('open')})
+}
+function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function loadBranches(){
+ const {data,error}=await supabase.from('branches').select('id,name').eq('active',true).order('id')
+ if(error)throw error;state.branches=data||[];$('branch').innerHTML=state.branches.map(x=>'<option value="'+x.id+'">'+escapeHtml(x.name)+'</option>').join('')
+ if(!state.branches.length)throw new Error('لا يوجد فرع فعال.')
+}
+async function loadBranch(){
+ state.page=1
+ const branchId=Number($('branch').value)
+ const [inv,products]=await Promise.all([
+  supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId}),
+  supabase.from('products').select('id,image_url')
+ ])
+ if(inv.error||products.error)throw inv.error||products.error
+ state.items=(inv.data||[]).sort((a,b)=>Number(a.product_id)-Number(b.product_id))
+ state.images=Object.fromEntries((products.data||[]).map(x=>[x.id,x.image_url]))
+ restoreDraft();render();notify('جاهز. تظهر خمسة منتجات فقط في كل مرة.','ok')
+}
+$('items').onclick=e=>{
+ const card=e.target.closest('.item');if(!card)return
+ const id=Number(card.dataset.id)
+ if(e.target.closest('.confirmLine')){
+  const input=card.querySelector('.actual'),value=Number(input.value)
+  if(input.value===''||!Number.isInteger(value)||value<0)return notify('اكتب عددًا صحيحًا للمنتج #'+id+'.','error')
+  state.counts[id]=value;state.review.delete(id);saveDraft();state.page=1;render();notify('تمت إضافة المنتج #'+id+' إلى مسودة الجرد.','ok')
+ }
+ if(e.target.closest('.reviewLine')){
+  if(state.review.has(id))state.review.delete(id);else{state.review.add(id);delete state.counts[id]}
+  saveDraft();state.page=1;render()
+ }
+}
+$('branch').onchange=()=>loadBranch().catch(e=>notify('تعذر تحميل الفرع: '+e.message,'error'))
+$('search').oninput=()=>{state.page=1;render()};$('filter').onchange=()=>{state.page=1;render()}
+$('prev').onclick=()=>{if(state.page>1){state.page--;render()}};$('next').onclick=()=>{state.page++;render()}
+$('reason').oninput=saveDraft
+$('clearDraft').onclick=()=>{
+ if(!confirm('مسح مسودة الجرد لهذا الفرع؟ لن تتغير كميات المخزون.'))return
+ localStorage.removeItem(draftKey());state.counts={};state.review=new Set();$('reason').value='جرد فعلي';state.page=1;render();notify('تم مسح المسودة فقط.','ok')
+}
+$('save').onclick=async()=>{
+ if(state.busy)return
+ const total=state.items.length,counted=Object.keys(state.counts).length
+ if(!total)return notify('لا توجد منتجات في الفرع.','error')
+ if(state.review.size)return notify('يوجد '+state.review.size+' منتجًا للمراجعة. أكملها أولًا.','error')
+ if(counted<total)return notify('بقي '+(total-counted)+' منتجًا غير مجرود.','error')
+ const reason=$('reason').value.trim();if(!reason)return notify('اكتب سبب الجرد.','error')
+ const differences=state.items.filter(x=>diff(x)!==0)
+ const absolute=differences.reduce((s,x)=>s+Math.abs(diff(x)),0)
+ if(!confirm('سيتم تثبيت جرد '+total+' منتجًا في هذا الفرع. عدد المنتجات المختلفة: '+differences.length+'، ومجموع الفروق المطلقة: '+absolute+'. متابعة؟'))return
+ state.busy=true;$('save').disabled=true;notify('جاري حفظ دفعة الجرد كاملة…','info')
+ const counts=state.items.map(x=>({product_id:Number(x.product_id),actual_quantity:Number(state.counts[x.product_id])}))
+ const {data,error}=await supabase.rpc('admin_record_branch_inventory_batch',{p_branch_id:Number($('branch').value),p_counts:counts,p_reason:reason})
+ state.busy=false;render()
+ if(error)return notify('لم يُحفظ الجرد: '+error.message+'. لم تُحفظ دفعة جزئية.','error')
+ localStorage.removeItem(draftKey());state.counts={};state.review=new Set();await loadBranch();notify('تم حفظ الجرد كاملًا بنجاح ('+(data?.saved_count||total)+' منتج).','ok')
+}
+$('viewer').onclick=()=>$('viewer').classList.remove('open')
+async function init(){
+ try{
+  const {data:{session}}=await supabase.auth.getSession();if(!session){location.replace('../');return}
+  state.user=session.user
+  const {data:isAdmin,error}=await supabase.rpc('admin_can_upload_product_image')
+  if(error||!isAdmin){location.replace('./');return}
+  await loadBranches();$('branch').disabled=false;await loadBranch()
+ }catch(e){notify('تعذر فتح الجرد: '+e.message,'error')}
+}
+init()
+</script>
+</body></html>
