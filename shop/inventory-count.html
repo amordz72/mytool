@@ -395,7 +395,7 @@
       ['sale','sale.html','بيع','can_sell'],['purchase','purchase.html','مشتريات','can_purchase'],
       ['inventory','inventory-count.html','جرد','can_inventory'],['stock','stock.html','المخزون','can_view_stock'],
       ['transfers','transfers.html','تحويلات','can_transfer']
-    ].filter(x=>!x[3]||state.permissions[x[3]])
+    ].filter(x=>state.mode==='admin'||!x[3]||state.permissions[x[3]])
     $('screenNav').innerHTML='<a href="daily.html">الرئيسية</a>'+links.map(x=>'<a class="'+(x[0]===screen?'active':'')+'" href="'+x[1]+'">'+x[2]+'</a>').join('')
     const picker={sale:'saleProduct',purchase:'purchaseProduct',inventory:'inventoryProduct',transfers:'transferProduct'}[screen]
     if(picker)setupProductPicker(picker)
