@@ -115,6 +115,7 @@
       <select id="stockFilter">
         <option value="all">كل الحالات</option>
         <option value="available">متوفر</option>
+        <option value="low">منخفض (2 أو أقل)</option>
         <option value="out">نافد</option>
         <option value="unverified">غير مجرود</option>
       </select>
@@ -151,8 +152,9 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false,stockPage:1,stockPageSize:10,stockQuery:'',stockFilter:'all',stockAllBranches:false}
+  const state={mode:'none',workerToken:'',workerName:'',branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false,stockPage:1,stockPageSize:10,stockQuery:'',stockFilter:(['low','out','available','unverified'].includes(new URLSearchParams(location.search).get('filter'))?new URLSearchParams(location.search).get('filter'):'all'),stockAllBranches:false}
   const $=id=>document.getElementById(id)
+  $('stockFilter').value=state.stockFilter
 
   function setBusy(v){state.busy=v;$('app').classList.toggle('loading',v)}
   function clearWorkerSession(){localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY);localStorage.removeItem(WORKER_EXPIRES_KEY);state.workerToken='';state.workerName='';state.mode='none'}
@@ -260,7 +262,8 @@
 
   function stockStatus(row){
     if(!row.is_verified)return 'unverified'
-    return Number(row.stock_quantity)<=0?'out':'available'
+    const qty=Number(row.stock_quantity)
+    return qty<=0?'out':qty<=2?'low':'available'
   }
   function filteredStockRows(){
     const branch=Number($('stockBranch').value)
@@ -276,7 +279,8 @@
     const q=state.stockQuery.trim().toLowerCase()
     return rows.filter(x=>{
       const matchesQuery=!q||String(x.product_name||'').toLowerCase().includes(q)||String(x.product_id).includes(q)
-      const matchesFilter=state.stockFilter==='all'||stockStatus(x)===state.stockFilter
+      const status=stockStatus(x)
+      const matchesFilter=state.stockFilter==='all'||status===state.stockFilter||(state.stockFilter==='available'&&status==='low')
       return matchesQuery&&matchesFilter
     })
   }
@@ -290,7 +294,7 @@
     if(!pageRows.length){root.innerHTML='<div class="empty">لا توجد بيانات مطابقة.</div>';return}
     root.innerHTML=pageRows.map(x=>{
       const status=stockStatus(x),soldOut=status==='out',details=state.stockAllBranches?'<details class="stock-details"><summary>تفاصيل المخازن</summary>'+(x.branches||[]).map(b=>'<div class="branch-pill">'+esc(branchName(b.branch_id))+': <strong>'+esc(b.stock_quantity)+'</strong></div>').join('')+'</details>':'<div class="muted">'+esc(branchName(x.branch_id))+'</div>'
-      return '<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+' <small>#'+esc(x.product_id)+'</small></div><span class="badge '+(soldOut?'danger':status==='available'?'ok':'warn')+'">'+(soldOut?'نافد':status==='available'?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div>'+details+'</div>'
+      return '<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+' <small>#'+esc(x.product_id)+'</small></div><span class="badge '+(soldOut?'danger':status==='available'?'ok':'warn')+'">'+(soldOut?'نافد':status==='low'?'منخفض':status==='available'?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div>'+details+'</div>'
     }).join('')
   }
 
