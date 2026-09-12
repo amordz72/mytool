@@ -45,7 +45,6 @@
         </div>
         <nav class="side-nav">
           <a class="side-link active" href="index.html" @click="sidebarOpen=false"><span class="ico">⌂</span><span>لوحة التحكم</span></a>
-          <a class="side-link" href="daily.html" @click="sidebarOpen=false"><span class="ico">☀</span><span>التشغيل اليومي</span></a>
           <a v-if="can('sell')" class="side-link" href="sale.html" @click="sidebarOpen=false"><span class="ico">＋</span><span>تسجيل بيع</span></a>
           <a v-if="can('view_stock')" class="side-link" href="stock.html" @click="sidebarOpen=false"><span class="ico">▦</span><span>المخزون</span></a>
           <a v-if="can('manage_products')" class="side-link" href="products.html" @click="sidebarOpen=false"><span class="ico">◇</span><span>المنتجات</span></a>
@@ -83,7 +82,6 @@
     </header>
 <nav class="unified-nav" aria-label="التنقل الرئيسي">
 <a class="active" href="index.html">الرئيسية</a>
-<a href="daily.html">التشغيل</a>
 <a v-if="can('sell')" href="sale.html">بيع</a>
 <a v-if="userMode==='admin' || can('view_stock')" href="stock.html">المخزون</a>
 <a v-if="userMode==='admin'" class="" href="products.html">المنتجات</a>
@@ -106,11 +104,14 @@
         <div v-if="can('view_sales')" class="metric-pro"><div class="mhead"><span>مبيعات اليوم</span><span class="mico">دج</span></div><div class="mvalue">{{ money(todayRevenue) }}</div><div class="msub">دينار جزائري</div></div>
       </div>
       <div class="quick-actions">
-        <a href="daily.html">☀ التشغيل اليومي</a>
-        <a v-if="can('sell')" href="sale.html">＋ بيع جديد</a>
-        <a v-if="can('view_stock')" class="mobile-hide" href="#inventory" @click="inventoryTab='stock'">▦ عرض المخزون</a>
-        <a v-if="can('inventory')" href="inventory-count.html">✓ جرد فعلي</a>
-        <a v-if="userMode==='admin'" href="products.html">◇ المنتجات</a><a v-if="userMode==='admin'" href="users.html">♙ المستخدمون</a><a v-if="userMode==='admin'" href="settings.html">⚙ الإعدادات</a><button class="mobile-hide" @click="loadAll" :disabled="busy">↻ تحديث البيانات</button>
+        <a v-if="can('sell')" href="sale.html">＋ بيع</a>
+        <a v-if="userMode==='admin' || can('purchase')" href="purchase.html">⇩ مشتريات</a>
+        <a v-if="userMode==='admin' || can('view_stock')" href="stock.html">▦ المخزون</a>
+        <a v-if="userMode==='admin' || can('inventory')" href="inventory-count.html">✓ جرد</a>
+        <a v-if="userMode==='admin' || can('transfer')" href="transfers.html">⇄ تحويلات</a>
+        <a v-if="userMode==='admin'" href="products.html">◇ المنتجات</a>
+        <a v-if="userMode==='admin'" href="users.html">♙ المستخدمون</a>
+        <a v-if="userMode==='admin'" href="settings.html">⚙ الإعدادات</a>
       </div>
       <div v-if="userMode==='admin' && lowStockCount>0" class="alert-card"><span><strong>تنبيه مخزون:</strong> {{ lowStockCount }} منتجات كميتها 2 أو أقل.</span><span>منها {{ outOfStockCount }} نافد</span></div>
     </section>
