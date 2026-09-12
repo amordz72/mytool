@@ -113,7 +113,7 @@
         <a v-if="userMode==='admin'" href="users.html">♙ المستخدمون</a>
         <a v-if="userMode==='admin'" href="settings.html">⚙ الإعدادات</a>
       </div>
-      <div v-if="userMode==='admin' && lowStockCount>0" class="alert-card"><span><strong>تنبيه مخزون:</strong> {{ lowStockCount }} منتجات كميتها 2 أو أقل.</span><span>منها {{ outOfStockCount }} نافد</span></div>
+      <a v-if="userMode==='admin' && lowStockCount>0" class="alert-card" href="stock.html?filter=low" style="text-decoration:none;color:inherit"><span><strong>تنبيه مخزون:</strong> {{ lowStockCount }} منتجات كميتها 2 أو أقل.</span><span>منها {{ outOfStockCount }} نافد — عرض التفاصيل ←</span></a>
     </section>
 
     <section v-if="can('sell')" id="sale" class="card content-card">
