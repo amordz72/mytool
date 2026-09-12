@@ -269,12 +269,17 @@
     const branch=Number($('stockBranch').value)
     let rows
     if(state.stockAllBranches){
-      rows=state.products.map(p=>{
-        const branches=state.operatingBranches.map(b=>state.inventory.find(x=>Number(x.product_id)===Number(p.id)&&Number(x.branch_id)===Number(b.id))).filter(Boolean)
-        const verified=branches.length>0&&branches.every(x=>x.is_verified)
-        const total=branches.reduce((sum,x)=>sum+Number(x.stock_quantity||0),0)
-        return {product_id:p.id,product_name:p.name,is_verified:verified,stock_quantity:total,branches}
-      })
+      if(state.stockFilter==='low'||state.stockFilter==='out'){
+        const allowed=new Set(state.operatingBranches.map(b=>Number(b.id)))
+        rows=state.inventory.filter(x=>allowed.has(Number(x.branch_id))&&x.is_verified)
+      }else{
+        rows=state.products.map(p=>{
+          const branches=state.operatingBranches.map(b=>state.inventory.find(x=>Number(x.product_id)===Number(p.id)&&Number(x.branch_id)===Number(b.id))).filter(Boolean)
+          const verified=branches.length>0&&branches.every(x=>x.is_verified)
+          const total=branches.reduce((sum,x)=>sum+Number(x.stock_quantity||0),0)
+          return {product_id:p.id,product_name:p.name,is_verified:verified,stock_quantity:total,branches}
+        })
+      }
     }else rows=state.inventory.filter(x=>Number(x.branch_id)===branch)
     const q=state.stockQuery.trim().toLowerCase()
     return rows.filter(x=>{
@@ -293,7 +298,7 @@
     $('stockPrev').disabled=state.stockPage<=1;$('stockNext').disabled=state.stockPage>=pages
     if(!pageRows.length){root.innerHTML='<div class="empty">لا توجد بيانات مطابقة.</div>';return}
     root.innerHTML=pageRows.map(x=>{
-      const status=stockStatus(x),soldOut=status==='out',details=state.stockAllBranches?'<details class="stock-details"><summary>تفاصيل المخازن</summary>'+(x.branches||[]).map(b=>'<div class="branch-pill">'+esc(branchName(b.branch_id))+': <strong>'+esc(b.stock_quantity)+'</strong></div>').join('')+'</details>':'<div class="muted">'+esc(branchName(x.branch_id))+'</div>'
+      const status=stockStatus(x),soldOut=status==='out',details=state.stockAllBranches?(Array.isArray(x.branches)?'<details class="stock-details"><summary>تفاصيل المخازن</summary>'+(x.branches||[]).map(b=>'<div class="branch-pill">'+esc(branchName(b.branch_id))+': <strong>'+esc(b.stock_quantity)+'</strong></div>').join('')+'</details>':'<div class="muted">'+esc(branchName(x.branch_id))+'</div>'):'<div class="muted">'+esc(branchName(x.branch_id))+'</div>'
       return '<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+' <small>#'+esc(x.product_id)+'</small></div><span class="badge '+(soldOut?'danger':status==='available'?'ok':'warn')+'">'+(soldOut?'نافد':status==='low'?'منخفض':status==='available'?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div>'+details+'</div>'
     }).join('')
   }
@@ -458,7 +463,7 @@
   }
 
   async function init(){
-    try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();applyScreenMode();await loadInventory(state.defaultBranchId);if(state.permissions.can_transfer)await loadTransfers();notify('العمليات جاهزة حسب الفرع.','ok')}catch(err){if(expireInvalidWorkerSession(err))return;notify('تعذر تشغيل الصفحة: '+err.message,'error')}
+    try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();applyScreenMode();await loadInventory(state.defaultBranchId);if(document.body.dataset.screen==='stock'&&state.mode==='admin'&&(state.stockFilter==='low'||state.stockFilter==='out')){await renderAllStock();document.querySelectorAll('[data-branch]').forEach(x=>x.classList.toggle('active',x.dataset.branch==='all'))}if(state.permissions.can_transfer)await loadTransfers();notify('العمليات جاهزة حسب الفرع.','ok')}catch(err){if(expireInvalidWorkerSession(err))return;notify('تعذر تشغيل الصفحة: '+err.message,'error')}
   }
   init()
 </script>
