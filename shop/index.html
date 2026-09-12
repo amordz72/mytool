@@ -169,7 +169,7 @@
                 <button class="btn secondary" @click="renameProduct(p)" :disabled="busy || !productNames[p.id]">حفظ الاسم</button>
                 <label v-if="userMode==='admin'" class="image-picker" :aria-busy="!!imageUploading[p.id]">
                   {{ imageUploading[p.id] ? 'جاري الرفع…' : (p.image_url ? 'تغيير الصورة' : 'إضافة صورة') }}
-                  <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" :disabled="!!imageUploading[p.id]" @change="uploadProductImage($event,p)">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" :disabled="!!imageUploading[p.id]" @change="uploadProductImage($event,p)">
                 </label>
               </div>
             </div>
