@@ -35,12 +35,12 @@ async function init(){
   const [ctx,branch]=await Promise.all([supabase.rpc('worker_get_context',{p_session_token:token}),supabase.rpc('worker_get_branch_context',{p_session_token:token})])
   if(ctx.error||branch.error){location.replace('../');return}
   const p=(ctx.data||[])[0]||{},b=branch.data||{}
-  document.getElementById('identity').textContent=(localStorage.getItem(NICK)||'العامل')+' — '+((b.branches||[]).find(x=>Number(x.id)===Number(b.default_branch_id))?.name||'مخزن العامل')
+  document.getElementById('identity').textContent=(localStorage.getItem(NICK)||'العامل')+' · '+(b.is_test?'تجريبي':'حقيقي')+' — '+((b.branches||[]).find(x=>Number(x.id)===Number(b.default_branch_id))?.name||'مخزن العامل')
   render({can_sell:!!p.can_sell,can_view_stock:!!p.can_view_stock,can_purchase:!!p.can_purchase,can_inventory:!!p.can_inventory,can_transfer:!!b.can_transfer},'worker');return
  }
  const {data}=await supabase.auth.getSession()
  if(!data?.session){location.replace('../');return}
- document.getElementById('identity').textContent='الإدارة — جميع المخازن';render({},'admin')
+ document.getElementById('identity').textContent='الإدارة — اختر الحقيقي أو التجريبي من حساب المحل';render({},'admin')
 }
 init().catch(e=>{const m=document.getElementById('message');m.textContent='تعذر فتح التشغيل: '+e.message;m.className='message error'})
 </script></body></html>
