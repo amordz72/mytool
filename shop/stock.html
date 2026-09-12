@@ -14,6 +14,7 @@
     @media(max-width:760px){.shell{padding:9px}.grid,.row,.stock-grid{grid-template-columns:1fr}.topbar{align-items:flex-start}.top-actions{flex-direction:column}.card{border-radius:15px;padding:13px}.actions button{flex:1;min-width:120px}.transfer-head{align-items:flex-start;flex-direction:column}}
   .screen-nav{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;margin-bottom:10px}.screen-nav a{flex:0 0 auto;text-decoration:none;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--main);font-weight:800;font-size:12px}.screen-nav a.active{background:var(--main);color:#fff}.product-search-results{display:grid;gap:6px;margin-top:7px;max-height:260px;overflow:auto}.product-result{display:flex;justify-content:space-between;gap:8px;text-align:right;background:#f8fafc;border:1px solid var(--line);color:var(--text);font-weight:800}.product-result small{color:var(--muted)}.product-selected{margin-top:7px;padding:9px;border-radius:10px;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px}.native-product-select{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important}
 .branch-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.branch-button{width:auto;background:#fff;color:var(--main);border:1px solid var(--main);font-weight:800}.branch-button.active{background:var(--main);color:#fff}
+.stock-tools{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:8px;margin:12px 0 7px}.stock-summary{margin-bottom:8px}.stock-pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px}.stock-pager .btn{width:auto;min-width:82px}.stock-item{padding:10px}.stock-qty{font-size:24px}.stock-details summary{cursor:pointer;color:var(--main);font-weight:800;font-size:12px;margin-top:7px}.stock-details .branch-pill{font-size:12px}@media(max-width:760px){.stock-tools{grid-template-columns:1fr 125px}.stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stock-item{padding:9px}.stock-name{font-size:12px}.stock-qty{font-size:21px}}
 </style>
 </head>
 <body data-screen="stock">
@@ -109,7 +110,22 @@
       <div><h2>مخزون الفرع</h2><div class="muted">الكمية تبدأ من 0. كلمة «غير مجرود» تعني أن العد الفعلي الأول لم يثبت بعد.</div></div>
       <div class="row" style="min-width:min(100%,360px)"><select id="stockBranch"></select><button class="btn secondary" id="refreshStock" type="button">تحديث</button></div>
     </div>
+    <div class="stock-tools">
+      <input id="stockSearch" type="search" inputmode="search" placeholder="ابحث بالاسم أو Product ID">
+      <select id="stockFilter">
+        <option value="all">كل الحالات</option>
+        <option value="available">متوفر</option>
+        <option value="out">نافد</option>
+        <option value="unverified">غير مجرود</option>
+      </select>
+    </div>
+    <div id="stockSummary" class="muted stock-summary"></div>
     <div class="stock-grid" id="stockList"></div>
+    <div class="stock-pager">
+      <button id="stockPrev" class="btn secondary" type="button">السابق</button>
+      <span id="stockPageInfo" class="muted"></span>
+      <button id="stockNext" class="btn secondary" type="button">التالي</button>
+    </div>
   </section>
 
   <section class="card" id="transferListCard">
@@ -135,7 +151,7 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
+  const state={mode:'none',workerToken:'',workerName:'',branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false,stockPage:1,stockPageSize:10,stockQuery:'',stockFilter:'all',stockAllBranches:false}
   const $=id=>document.getElementById(id)
 
   function setBusy(v){state.busy=v;$('app').classList.toggle('loading',v)}
@@ -242,10 +258,40 @@
     syncSaleStatus();syncInventoryStatus()
   }
 
+  function stockStatus(row){
+    if(!row.is_verified)return 'unverified'
+    return Number(row.stock_quantity)<=0?'out':'available'
+  }
+  function filteredStockRows(){
+    const branch=Number($('stockBranch').value)
+    let rows
+    if(state.stockAllBranches){
+      rows=state.products.map(p=>{
+        const branches=state.operatingBranches.map(b=>state.inventory.find(x=>Number(x.product_id)===Number(p.id)&&Number(x.branch_id)===Number(b.id))).filter(Boolean)
+        const verified=branches.length>0&&branches.every(x=>x.is_verified)
+        const total=branches.reduce((sum,x)=>sum+Number(x.stock_quantity||0),0)
+        return {product_id:p.id,product_name:p.name,is_verified:verified,stock_quantity:total,branches}
+      })
+    }else rows=state.inventory.filter(x=>Number(x.branch_id)===branch)
+    const q=state.stockQuery.trim().toLowerCase()
+    return rows.filter(x=>{
+      const matchesQuery=!q||String(x.product_name||'').toLowerCase().includes(q)||String(x.product_id).includes(q)
+      const matchesFilter=state.stockFilter==='all'||stockStatus(x)===state.stockFilter
+      return matchesQuery&&matchesFilter
+    })
+  }
   function renderStock(){
-    const branch=Number($('stockBranch').value),rows=state.inventory.filter(x=>Number(x.branch_id)===branch),root=$('stockList')
-    if(!rows.length){root.innerHTML='<div class="empty">لا توجد بيانات.</div>';return}
-    root.innerHTML=rows.map(x=>{const soldOut=x.is_verified&&Number(x.stock_quantity)<=0;return '<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+'</div><span class="badge '+(soldOut?'danger':x.is_verified?'ok':'warn')+'">'+(soldOut?'نافد':x.is_verified?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div><div class="muted">'+esc(branchName(x.branch_id))+'</div></div>'}).join('')
+    const rows=filteredStockRows(),root=$('stockList'),pages=Math.max(1,Math.ceil(rows.length/state.stockPageSize))
+    state.stockPage=Math.min(Math.max(1,state.stockPage),pages)
+    const start=(state.stockPage-1)*state.stockPageSize,pageRows=rows.slice(start,start+state.stockPageSize)
+    $('stockSummary').textContent=rows.length?'عرض '+(start+1)+'–'+Math.min(start+state.stockPageSize,rows.length)+' من '+rows.length+' منتج':'لا توجد منتجات تطابق البحث.'
+    $('stockPageInfo').textContent='صفحة '+state.stockPage+' من '+pages
+    $('stockPrev').disabled=state.stockPage<=1;$('stockNext').disabled=state.stockPage>=pages
+    if(!pageRows.length){root.innerHTML='<div class="empty">لا توجد بيانات مطابقة.</div>';return}
+    root.innerHTML=pageRows.map(x=>{
+      const status=stockStatus(x),soldOut=status==='out',details=state.stockAllBranches?'<details class="stock-details"><summary>تفاصيل المخازن</summary>'+(x.branches||[]).map(b=>'<div class="branch-pill">'+esc(branchName(b.branch_id))+': <strong>'+esc(b.stock_quantity)+'</strong></div>').join('')+'</details>':'<div class="muted">'+esc(branchName(x.branch_id))+'</div>'
+      return '<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+' <small>#'+esc(x.product_id)+'</small></div><span class="badge '+(soldOut?'danger':status==='available'?'ok':'warn')+'">'+(soldOut?'نافد':status==='available'?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div>'+details+'</div>'
+    }).join('')
   }
 
   function syncSaleStatus(){
@@ -352,8 +398,12 @@
 
   $('saleProduct').addEventListener('change',syncSaleStatus);$('saleBranch').addEventListener('change',async()=>{await loadInventory(Number($('saleBranch').value));syncSaleStatus()})
   $('inventoryProduct').addEventListener('change',syncInventoryStatus);$('inventoryBranch').addEventListener('change',async()=>{await loadInventory(Number($('inventoryBranch').value));syncInventoryStatus()})
-  $('stockBranch').addEventListener('change',()=>loadInventory(Number($('stockBranch').value)))
-  $('refreshStock').addEventListener('click',()=>loadInventory(Number($('stockBranch').value)))
+  $('stockBranch').addEventListener('change',()=>{state.stockAllBranches=false;state.stockPage=1;loadInventory(Number($('stockBranch').value))})
+  $('refreshStock').addEventListener('click',()=>state.stockAllBranches?renderAllStock():loadInventory(Number($('stockBranch').value)))
+  $('stockSearch').addEventListener('input',e=>{state.stockQuery=e.target.value;state.stockPage=1;renderStock()})
+  $('stockFilter').addEventListener('change',e=>{state.stockFilter=e.target.value;state.stockPage=1;renderStock()})
+  $('stockPrev').addEventListener('click',()=>{if(state.stockPage>1){state.stockPage--;renderStock()}})
+  $('stockNext').addEventListener('click',()=>{state.stockPage++;renderStock()})
   $('transferSource').addEventListener('change',()=>syncTransferBranches('source'))
   $('transferDestination').addEventListener('change',()=>syncTransferBranches('destination'))
   $('transferKind').addEventListener('change',()=>{const stock=$('transferKind').value==='stock';$('stockFields').classList.toggle('hidden',!stock);$('amountFields').classList.toggle('hidden',stock)})
@@ -371,9 +421,9 @@
     results.addEventListener('click',e=>{const b=e.target.closest('[data-product]');if(!b)return;select.value=b.dataset.product;select.dispatchEvent(new Event('change'));const p=state.products.find(x=>Number(x.id)===Number(b.dataset.product));selected.textContent='المحدد: '+p.name+' (#'+p.id+')';selected.classList.remove('hidden');input.value='';results.innerHTML=''})
   }
   async function renderAllStock(){
+    state.stockAllBranches=true;state.stockPage=1
     await Promise.all(state.operatingBranches.map(b=>loadInventory(Number(b.id))))
-    const root=$('stockList')
-    root.innerHTML=state.products.map(p=>{const rows=state.operatingBranches.map(b=>state.inventory.find(x=>Number(x.product_id)===Number(p.id)&&Number(x.branch_id)===Number(b.id))).filter(Boolean);return '<div class="stock-item"><div class="stock-name">'+esc(p.name)+'</div>'+rows.map(x=>'<div class="branch-pill" style="margin-top:7px">'+esc(branchName(x.branch_id))+': <strong>'+esc(x.stock_quantity)+'</strong></div>').join('')+'</div>'}).join('')
+    renderStock()
   }
   function setupBranchButtons(selectId,allowAll=false){
     if(state.mode!=='admin')return
