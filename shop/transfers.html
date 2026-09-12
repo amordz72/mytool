@@ -14,7 +14,7 @@
     @media(max-width:760px){.shell{padding:9px}.grid,.row,.stock-grid{grid-template-columns:1fr}.topbar{align-items:flex-start}.top-actions{flex-direction:column}.card{border-radius:15px;padding:13px}.actions button{flex:1;min-width:120px}.transfer-head{align-items:flex-start;flex-direction:column}}
   .screen-nav{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;margin-bottom:10px}.screen-nav a{flex:0 0 auto;text-decoration:none;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--main);font-weight:800;font-size:12px}.screen-nav a.active{background:var(--main);color:#fff}.product-search-results{display:grid;gap:6px;margin-top:7px;max-height:260px;overflow:auto}.product-result{display:flex;justify-content:space-between;gap:8px;text-align:right;background:#f8fafc;border:1px solid var(--line);color:var(--text);font-weight:800}.product-result small{color:var(--muted)}.product-selected{margin-top:7px;padding:9px;border-radius:10px;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px}.native-product-select{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important}
 .branch-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.branch-button{width:auto;background:#fff;color:var(--main);border:1px solid var(--main);font-weight:800}.branch-button.active{background:var(--main);color:#fff}
-</style>
+.mode-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;margin-bottom:12px}.mode-bar strong{margin-left:auto}.mode-choice{width:auto;padding:9px 14px;background:#fff;color:var(--main);border:1px solid var(--main);border-radius:12px;font-weight:800}.mode-choice.active{background:var(--main);color:#fff}.mode-test-note{color:#b45309;font-weight:800}</style>
 </head>
 <body data-screen="transfers">
 <div class="shell" id="app">
@@ -24,6 +24,7 @@
   </div>
 
   <div id="message" class="message info">جاري تحميل بيانات التشغيل…</div>
+  <div id="adminModeBar" class="mode-bar hidden"><strong>نوع البيانات</strong><button id="modeReal" class="mode-choice" type="button">حقيقي</button><button id="modeTest" class="mode-choice" type="button">تجريبي</button><span id="modeTestNote" class="mode-test-note hidden">وضع تجريبي</span></div>
 
   <nav id="screenNav" class="screen-nav"></nav>
   <section class="card" id="branchCard">
@@ -135,8 +136,10 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
+  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
+  $('modeReal').addEventListener('click',()=>{localStorage.setItem('mytool_admin_data_mode','real');location.reload()})
+  $('modeTest').addEventListener('click',()=>{localStorage.setItem('mytool_admin_data_mode','test');location.reload()})
 
   function setBusy(v){state.busy=v;$('app').classList.toggle('loading',v)}
   function clearWorkerSession(){localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY);localStorage.removeItem(WORKER_EXPIRES_KEY);state.workerToken='';state.workerName='';state.mode='none'}
@@ -184,7 +187,7 @@
     if(ctxRes.error||branchRes.error)throw(ctxRes.error||branchRes.error)
     const ctx=(ctxRes.data||[])[0]||{},branch=branchRes.data||{}
     state.permissions={can_sell:!!ctx.can_sell,can_view_stock:!!ctx.can_view_stock,can_inventory:!!ctx.can_inventory,can_purchase:!!ctx.can_purchase,can_transfer:!!branch.can_transfer}
-    state.defaultBranchId=branch.default_branch_id||null;state.operatingBranches=branch.branches||[]
+    state.defaultBranchId=branch.default_branch_id||null;state.operatingBranches=branch.branches||[];state.workerIsTest=!!branch.is_test
     const jobs=[]
     jobs.push(supabase.rpc('worker_get_catalog',{p_session_token:state.workerToken}))
     jobs.push(state.permissions.can_purchase?supabase.rpc('worker_get_purchase_options',{p_session_token:state.workerToken}):Promise.resolve({data:{suppliers:[]}}))
@@ -194,23 +197,24 @@
     state.products=(catalogRes.data||[]).map(x=>({id:x.product_id,name:x.name}))
     state.suppliers=(purchaseRes.data||{}).suppliers||[]
     state.branches=(transferOptionsRes.data||{}).counterpart_branches||state.operatingBranches
-    $('identityText').textContent=(state.workerName||'العامل')+' — '+(state.operatingBranches.find(b=>Number(b.id)===Number(state.defaultBranchId))?.name||'فرع العامل')
+    $('identityText').textContent=(state.workerName||'العامل')+' · '+(state.workerIsTest?'تجريبي':'حقيقي')+' — '+(state.operatingBranches.find(b=>Number(b.id)===Number(state.defaultBranchId))?.name||'فرع العامل')
   }
 
   async function loadAdmin(){
     const [b,s,p]=await Promise.all([
       supabase.from('branches').select('id,name,code,active').eq('active',true).order('id'),
       supabase.from('suppliers').select('id,name,system_code,active').eq('active',true).order('id'),
-      supabase.from('products').select('id,name').order('id')
+      supabase.from('products').select('id,name,is_test').eq('is_test',state.adminDataMode==='test').order('id')
     ])
     const err=b.error||s.error||p.error;if(err)throw err
     state.branches=b.data||[];state.operatingBranches=state.branches;state.suppliers=s.data||[];state.products=p.data||[]
     state.defaultBranchId=state.branches.find(x=>x.code==='HOME_SHOP')?.id||state.branches[0]?.id||null
     state.permissions={can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true}
-    $('identityText').textContent='الإدارة — جميع الفروع'
+    $('identityText').textContent='الإدارة · '+(state.adminDataMode==='test'?'تجريبي':'حقيقي')+' — جميع الفروع'
   }
 
   function renderBase(){
+    $('adminModeBar').classList.toggle('hidden',state.mode!=='admin');$('modeReal').classList.toggle('active',state.adminDataMode==='real');$('modeTest').classList.toggle('active',state.adminDataMode==='test');$('modeTestNote').classList.toggle('hidden',state.adminDataMode!=='test')
     $('myToolLink').classList.toggle('hidden',state.mode!=='admin')
     $('branchList').innerHTML=state.operatingBranches.length?state.operatingBranches.map(b=>'<span class="branch-pill '+(Number(b.id)===Number(state.defaultBranchId)?'default':'')+'">'+esc(b.name)+(Number(b.id)===Number(state.defaultBranchId)?' · افتراضي':'')+'</span>').join(''):'<span class="muted">لا توجد فروع تشغيل متاحة.</span>'
     for(const id of ['saleProduct','purchaseProduct','inventoryProduct','transferProduct'])fillSelect($(id),state.products,'اختر المنتج')
@@ -237,7 +241,7 @@
     if(state.mode==='worker')r=await supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId})
     else r=await supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId})
     if(r.error){if(expireInvalidWorkerSession(r.error))return;throw r.error}
-    const other=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId));state.inventory=other.concat(r.data||[])
+    const allowedProducts=new Set(state.products.map(x=>Number(x.id)));const incoming=state.mode==='admin'?(r.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))):(r.data||[]);const other=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId));state.inventory=other.concat(incoming)
     if(Number($('stockBranch').value)===Number(branchId))renderStock()
     syncSaleStatus();syncInventoryStatus()
   }
