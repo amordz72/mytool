@@ -22,11 +22,11 @@ const actions=[
  ['sale.html','＋','بيع','تسجيل بيع سريع','can_sell'],
  ['purchase.html','⇩','مشتريات','إدخال سلعة للمخزون','can_purchase'],
  ['inventory-count.html','✓','جرد','عد فعلي وتصحيح موثق','can_inventory'],
- ['stock.html','▦','المخزون','عرض كميات المخازن','stock'],
+ ['stock.html','▦','المخزون','عرض كميات المخازن','can_view_stock'],
  ['transfers.html','⇄','تحويلات','سلع ونقد بين الفروع','can_transfer']
 ]
 function render(perms,mode){
- document.getElementById('actions').innerHTML=actions.filter(a=>mode==='admin'||a[4]==='stock'||perms[a[4]]).map(a=>'<a class="action" href="'+a[0]+'"><div class="ico">'+a[1]+'</div><strong>'+a[2]+'</strong><span>'+a[3]+'</span></a>').join('')
+ document.getElementById('actions').innerHTML=actions.filter(a=>mode==='admin'||perms[a[4]]).map(a=>'<a class="action" href="'+a[0]+'"><div class="ico">'+a[1]+'</div><strong>'+a[2]+'</strong><span>'+a[3]+'</span></a>').join('')
  document.getElementById('message').classList.add('hidden')
 }
 async function init(){
@@ -36,7 +36,7 @@ async function init(){
   if(ctx.error||branch.error){location.replace('../');return}
   const p=(ctx.data||[])[0]||{},b=branch.data||{}
   document.getElementById('identity').textContent=(localStorage.getItem(NICK)||'العامل')+' — '+((b.branches||[]).find(x=>Number(x.id)===Number(b.default_branch_id))?.name||'مخزن العامل')
-  render({can_sell:!!p.can_sell,can_purchase:!!p.can_purchase,can_inventory:!!p.can_inventory,can_transfer:!!b.can_transfer},'worker');return
+  render({can_sell:!!p.can_sell,can_view_stock:!!p.can_view_stock,can_purchase:!!p.can_purchase,can_inventory:!!p.can_inventory,can_transfer:!!b.can_transfer},'worker');return
  }
  const {data}=await supabase.auth.getSession()
  if(!data?.session){location.replace('../');return}
