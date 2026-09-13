@@ -27,3 +27,5 @@
 .shared-admin-drawer .side-link.active,.shared-admin-drawer .side-link:hover{background:rgba(255,255,255,.12)}
 .shared-admin-drawer .side-spacer{flex:1}
 @media(min-width:861px){.shared-admin-overlay,.shared-admin-drawer{display:none!important}}
+
+.drawer-logout{width:100%;margin-top:14px;padding:12px;border:1px solid #475569;border-radius:11px;background:#ffffff12;color:#fff;font:inherit;font-weight:800;cursor:pointer}
