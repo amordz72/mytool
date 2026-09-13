@@ -2,6 +2,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 const shopDir=path.resolve(process.argv[2]||path.join(process.cwd(),'projects/mytool/source/shop'));
+const ownership={
+  'sale.html':['branchCard','saleCard'],
+  'purchase.html':['branchCard','purchaseCard'],
+  'inventory-count.html':['branchCard','inventoryCard'],
+  'stock.html':['branchCard','stockCard'],
+  'transfers.html':['transferCard','transferListCard'],
+};
+for(const [file,allowed] of Object.entries(ownership)){
+  const html=fs.readFileSync(path.join(shopDir,file),'utf8');
+  for(const id of ['branchCard','saleCard','purchaseCard','inventoryCard','transferCard','stockCard','transferListCard']){
+    if(!allowed.includes(id)&&html.includes(`id="${id}"`))throw new Error(`${file} contains foreign section ${id}`);
+  }
+}
 const files=fs.readdirSync(shopDir).filter(name=>name.endsWith('.html')).sort();
 const errors=[];
 for(const name of files){
