@@ -34,8 +34,17 @@
 
   const ADMIN_BRANCH_KEY='mytool_admin_branch_id';
   const BRANCH_SELECT_IDS=['saleBranch','purchaseBranch','stockBranch','inventoryBranch','transferSource','branchSelect'];
+  const LEGACY_BRANCH_CARD_SCREENS=new Set(['sale','purchase','stock','inventory']);
   function workerOwnsBranchContext(){
     return !!localStorage.getItem('mytool_shop_worker_token')&&!localStorage.getItem('mytool_admin_expires_at');
+  }
+  function removeLegacyBranchCard(){
+    const screen=document.body?.dataset?.screen||'';
+    if(!LEGACY_BRANCH_CARD_SCREENS.has(screen))return false;
+    const card=document.getElementById('branchCard');
+    if(!card)return false;
+    card.remove();
+    return true;
   }
   function isAdminBranchSelect(target){
     if(!target||target.tagName!=='SELECT')return false;
@@ -89,8 +98,9 @@
       attempts+=1;applySavedAdminBranch();
       if(attempts<40)setTimeout(tick,150);
     };
-    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tick,{once:true});
-    else tick();
+    const start=()=>{removeLegacyBranchCard();tick();};
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+    else start();
   }
   watchAdminBranchContext();
 
