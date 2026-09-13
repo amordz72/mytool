@@ -40,6 +40,7 @@
 .shell-canonical-header .shell-identity{margin-top:3px;color:#6b7280;font-size:13px}
 .shell-canonical-header .shell-identity{min-height:16px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shell-canonical-header .shell-role-badge{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#ecfeff;color:#0f766e;font-size:12px;font-weight:800}
+.shell-template-mark{width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 3px #fef3c7;flex:0 0 auto}
 .shell-canonical-header .topbar-actions{display:flex;align-items:center;gap:8px}
 .shell-canonical-header .topbar-actions .btn{width:auto;white-space:nowrap}
 .mobile-only{display:none!important}.desktop-only{display:inline-flex!important}

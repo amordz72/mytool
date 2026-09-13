@@ -26,6 +26,7 @@ const files=fs.readdirSync(shopDir).filter(name=>name.endsWith('.html')).sort();
 const errors=[];
 const shellSource=fs.readFileSync(path.join(shopDir,'shop-shell.js'),'utf8');
 if(!/function canonicalTop\(options\)/.test(shellSource))errors.push('shop-shell.js: missing single canonical top template');
+if(!/shell-template-mark/.test(shellSource))errors.push('shop-shell.js: missing visible canonical template marker');
 if(!/mountAdminTop[\s\S]*canonicalTop/.test(shellSource))errors.push('shop-shell.js: admin top bypasses canonical template');
 if(!/mountOperationTop[\s\S]*canonicalTop/.test(shellSource))errors.push('shop-shell.js: operation top bypasses canonical template');
 for(const name of files){
