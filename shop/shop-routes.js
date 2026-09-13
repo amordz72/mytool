@@ -18,6 +18,8 @@
     {id:'opening',group:'inventory',label:'الجرد الافتتاحي',shortLabel:'جرد افتتاحي',path:'opening-stock.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'◉'},
     {id:'transfers',group:'operations',label:'التحويلات',shortLabel:'تحويلات',path:'transfers.html',type:'worker',roles:['admin','worker'],permission:'transfer',placement:['drawer'],icon:'⇄'},
     {id:'money',group:'money',label:'أماكن الأموال',shortLabel:'الأموال',path:'money.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'دج'},
+    {id:'cash-receipts',group:'money',label:'استلام أموال',shortLabel:'استلام مال',path:'cash-receipts.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'⇩'},
+    {id:'expected-money',group:'money',label:'الفيرسمون المتوقع',shortLabel:'فيرسمون',path:'expected-money.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'◷'},
     {id:'cash',group:'money',label:'الصندوق',shortLabel:'الصندوق',path:'cash.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'▣'},
     {id:'users',group:'admin',label:'المستخدمون',shortLabel:'المستخدمون',path:'users.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'♙'},
     {id:'settings',group:'admin',label:'الإعدادات',shortLabel:'الإعدادات',path:'settings.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'⚙'},
@@ -27,6 +29,7 @@
   function allowed(route,context){const role=context?.role||'admin';if(!route.roles.includes(role))return false;if(role==='admin'||!route.permission)return true;const permissions=context?.permissions||{};return permissions[route.permission]===true||permissions['can_'+route.permission]===true;}
   function list(context,placement){return routes.filter(route=>(!placement||route.placement.includes(placement))&&allowed(route,context));}
   function get(id){return routes.find(route=>route.id===id)||null}
+
   const ADMIN_BRANCH_KEY='mytool_admin_branch_id';
   const BRANCH_SELECT_IDS=['saleBranch','purchaseBranch','stockBranch','inventoryBranch','transferSource','branchSelect'];
   const LEGACY_BRANCH_CARD_SCREENS=new Set(['sale','purchase','stock','inventory']);
@@ -40,8 +43,9 @@
   function watchAdminBranchContext(){if(workerOwnsBranchContext())return;document.addEventListener('change',event=>{saveAdminBranch(event.target);if(isAdminBranchSelect(event.target))syncBranchButtonState(event.target)},true);let attempts=0;const tick=()=>{attempts+=1;applySavedAdminBranch();if(attempts<40)setTimeout(tick,150);};const start=()=>{removeLegacyBranchCard();tick();};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();}
   function loadPricingAccess(){const screen=document.body?.dataset?.screen||'';if(!['sale','stock'].includes(screen)||document.querySelector('script[data-pricing-access]'))return;const script=document.createElement('script');script.src='pricing-access.js?v=20260913-1735';script.defer=true;script.dataset.pricingAccess='1';document.head.appendChild(script);}
   function loadInventoryPricingButton(){if(document.body?.dataset?.screen!=='inventory'||document.querySelector('script[data-inventory-pricing-button]'))return;const script=document.createElement('script');script.src='inventory-quick-pricing-button.js?v=20260913-2022';script.defer=true;script.dataset.inventoryPricingButton='1';document.head.appendChild(script);}
+  function loadWorkerMoneyShortcut(){if(document.body?.dataset?.screen!=='index'||document.querySelector('script[data-worker-money-shortcut]'))return;const script=document.createElement('script');script.src='worker-money-shortcut.js?v=20260914-001';script.defer=true;script.dataset.workerMoneyShortcut='1';document.head.appendChild(script);}
   watchAdminBranchContext();
-  const loadExtras=()=>{loadPricingAccess();loadInventoryPricingButton();};
+  const loadExtras=()=>{loadPricingAccess();loadInventoryPricingButton();loadWorkerMoneyShortcut();};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadExtras,{once:true});else loadExtras();
   window.ShopRoutes=Object.freeze({groups,all:Object.freeze(routes.map(Object.freeze)),list,get,allowed,applySavedAdminBranch});
 })();
