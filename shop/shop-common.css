@@ -16,3 +16,14 @@
 .shared-standalone{margin-bottom:12px}.shared-standalone-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.shared-brand{display:flex;align-items:center;gap:10px;min-width:0}.shared-logo{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,var(--main2,var(--shell-main2)),var(--main,var(--shell-main)));color:#fff;font-weight:900}.shared-standalone h1{margin:0;font-size:22px}.shared-subtitle{color:#6b7280;font-size:13px;margin-top:4px}.shared-screen-nav{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px}.shared-screen-nav a{flex:0 0 auto;text-decoration:none;padding:9px 12px;border:1px solid var(--line,var(--shell-line));border-radius:11px;background:#fff;color:var(--main,var(--shell-main));font-weight:800}.shared-screen-nav a.active{background:var(--main,var(--shell-main));color:#fff}.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.drawer-close{width:42px;height:42px;border:1px solid #475569;border-radius:12px;background:transparent;color:#fff;font-size:24px}.drawer-links{display:grid;gap:8px}.drawer-links a{display:flex;align-items:center;gap:9px;padding:12px;border-radius:11px;background:#ffffff12;color:#fff;text-decoration:none;font-weight:800}.drawer-links a.active{background:var(--main,var(--shell-main))}
 
 #sharedAdminSidebar .mobile-overlay{display:none}#sharedAdminSidebar .mobile-overlay.open{display:block}
+
+/* Isolated admin drawer: never reuse legacy page sidebar classes. */
+.shared-admin-overlay{display:none;position:fixed;z-index:100;inset:0;background:rgba(15,23,42,.48)}
+.shared-admin-overlay.open{display:block}
+.shared-admin-drawer{position:fixed;z-index:101;top:0;right:0;height:100vh;width:min(82vw,310px);background:#0f172a;color:#e5e7eb;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:-15px 0 35px rgba(15,23,42,.3);transform:translateX(110%);transition:transform .2s ease}
+.shared-admin-drawer.open{transform:translateX(0)}
+.shared-admin-drawer .side-nav{display:grid;gap:7px;overflow-y:auto}
+.shared-admin-drawer .side-link{display:flex;align-items:center;gap:9px;width:100%;padding:11px;border:0;border-radius:11px;background:transparent;color:#e5e7eb;text-decoration:none;text-align:right;font-weight:800}
+.shared-admin-drawer .side-link.active,.shared-admin-drawer .side-link:hover{background:rgba(255,255,255,.12)}
+.shared-admin-drawer .side-spacer{flex:1}
+@media(min-width:861px){.shared-admin-overlay,.shared-admin-drawer{display:none!important}}
