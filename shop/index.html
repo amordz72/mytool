@@ -240,11 +240,18 @@
     async function loadDashboardInventory(){
       if(userMode.value!=='admin'||!currentBranchId.value)return
       busy.value=true
-      const result=await supabase.rpc('admin_get_branch_inventory',{p_branch_id:Number(currentBranchId.value)})
+      const dayStart=new Date();dayStart.setHours(0,0,0,0)
+      const dayEnd=new Date(dayStart);dayEnd.setDate(dayEnd.getDate()+1)
+      const [inventoryResult,salesResult]=await Promise.all([
+        supabase.rpc('admin_get_branch_inventory',{p_branch_id:Number(currentBranchId.value)}),
+        supabase.from('sales').select('product_id,quantity,unit_price,operation_at,branch_id').eq('branch_id',Number(currentBranchId.value)).gte('operation_at',dayStart.toISOString()).lt('operation_at',dayEnd.toISOString()).order('operation_at',{ascending:false})
+      ])
       busy.value=false
-      if(result.error)return notify('تعذر قراءة مخزون الفرع: '+result.error.message,'error')
+      const error=inventoryResult.error||salesResult.error
+      if(error){todaySales.value=[];return notify('تعذر قراءة بيانات الفرع: '+error.message,'error')}
       const allowedProducts=new Set(products.value.map(x=>Number(x.id)))
-      inventory.value=(result.data||[]).filter(x=>allowedProducts.has(Number(x.product_id)))
+      inventory.value=(inventoryResult.data||[]).filter(x=>allowedProducts.has(Number(x.product_id)))
+      todaySales.value=(salesResult.data||[]).filter(x=>allowedProducts.has(Number(x.product_id)))
       localStorage.setItem('mytool_admin_branch_id',String(currentBranchId.value))
     }
 
