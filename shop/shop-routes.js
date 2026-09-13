@@ -10,6 +10,7 @@
     {id:'corrections',group:'operations',label:'تصحيح العمليات',shortLabel:'تصحيح',path:'corrections.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'↶'},
     {id:'stock',group:'inventory',label:'المخزون',shortLabel:'المخزون',path:'stock.html',type:'worker',roles:['admin','worker'],permission:'view_stock',placement:['drawer','top'],icon:'▦'},
     {id:'products',group:'inventory',label:'المنتجات',shortLabel:'المنتجات',path:'products.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'◇'},
+    {id:'catalog',group:'inventory',label:'تصنيفات المنتجات',shortLabel:'التصنيفات',path:'catalog.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'▤'},
     {id:'pricing',group:'inventory',label:'سياسة الأسعار',shortLabel:'الأسعار',path:'pricing-policy.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'دج'},
     {id:'inventory',group:'inventory',label:'الجرد',shortLabel:'الجرد',path:'inventory-count.html',type:'worker',roles:['admin','worker'],permission:'inventory',placement:['drawer'],icon:'✓'},
     {id:'physical',group:'inventory',label:'الجرد الفعلي',shortLabel:'جرد فعلي',path:'physical-inventory.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'✓'},
