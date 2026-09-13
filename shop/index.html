@@ -74,7 +74,7 @@
         <a v-if="userMode==='admin'" href="users.html">♙ المستخدمون</a>
         <a v-if="userMode==='admin'" href="settings.html">⚙ الإعدادات</a>
       </div>
-      <a v-if="userMode==='admin' && lowStockCount>0" class="alert-card" href="stock.html?filter=low" style="text-decoration:none;color:#7c2d12"><span><strong>تنبيه مخزون:</strong> {{ lowStockCount }} منتجات كميتها 2 أو أقل.</span><span>منها {{ outOfStockCount }} نافد — عرض التفاصيل ←</span></a>
+      <a v-if="userMode==='admin' && outOfStockCount>0" class="alert-card" :href="'stock.html?filter=out&branch='+currentBranchId" style="text-decoration:none;color:#7c2d12"><span><strong>تقرير النافد:</strong> {{ outOfStockCount }} منتجات نافدة في {{ currentBranchName }}.</span><span>عرض آخر شراء وآخر بيع ←</span></a>
     </section>
 
     <section v-if="can('sell')" id="sale" class="card content-card">
