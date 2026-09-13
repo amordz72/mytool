@@ -55,6 +55,7 @@
     <section class="card" id="purchaseCard">
       <h2>إدخال مشتريات</h2>
       <div class="muted">كل شراء يسجل المورد والفرع ودفعة المصدر تلقائيًا.</div>
+      <div id="purchaseMessage" class="message info hidden" role="status" aria-live="polite"></div>
       <form id="purchaseForm">
         <div class="field"><label>المنتج</label><select id="purchaseProduct" required></select></div>
         <div class="row">
@@ -144,6 +145,7 @@
   function invalidWorkerSession(value){return state.mode==='worker'&&String(value?.message||value||'').includes('INVALID_SESSION')}
   function expireInvalidWorkerSession(value){if(!invalidWorkerSession(value))return false;setBusy(false);clearWorkerSession();window.location.replace('../');return true}
   function notify(text,type='info'){if(expireInvalidWorkerSession(text))return;$('message').textContent=text;$('message').className='message '+type}
+  function notifyPurchase(text,type='info'){if(expireInvalidWorkerSession(text))return;const box=$('purchaseMessage');box.textContent=text;box.className='message '+type;box.scrollIntoView({behavior:'smooth',block:'center'})}
   function esc(v){return String(v??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]))}
   function branchName(id){return state.branches.find(b=>Number(b.id)===Number(id))?.name||('فرع #'+id)}
   function isOperating(id){return state.mode==='admin'||state.operatingBranches.some(b=>Number(b.id)===Number(id))}
@@ -307,13 +309,16 @@
   }
 
   async function savePurchase(e){
-    e.preventDefault();const product=Number($('purchaseProduct').value),qty=Number($('purchaseQty').value),cost=Number($('purchaseCost').value),branch=Number($('purchaseBranch').value),supplier=$('purchaseSupplier').value?Number($('purchaseSupplier').value):null,notes=$('purchaseNotes').value.trim()||null
-    if(!product||!Number.isInteger(qty)||qty<1||Number.isNaN(cost)||cost<0||!branch)return notify('راجع المنتج والكمية والتكلفة والفرع.','error')
+    e.preventDefault();const product=Number($('purchaseProduct').value),qtyRaw=$('purchaseQty').value.trim(),costRaw=$('purchaseCost').value.trim(),qty=Number(qtyRaw),cost=Number(costRaw),branch=Number($('purchaseBranch').value),supplier=$('purchaseSupplier').value?Number($('purchaseSupplier').value):null,notes=$('purchaseNotes').value.trim()||null
+    if(!product)return notifyPurchase('اختر المنتج.','error')
+    if(qtyRaw===''||!Number.isInteger(qty)||qty<1)return notifyPurchase('أدخل كمية صحيحة أكبر من صفر.','error')
+    if(costRaw===''||!Number.isFinite(cost)||cost<=0)return notifyPurchase('أدخل سعر شراء أكبر من صفر.','error')
+    if(!branch)return notifyPurchase('اختر الفرع الذي ستضاف إليه المشتريات.','error')
     setBusy(true);let res
     if(state.mode==='worker')res=await supabase.rpc('worker_create_purchase',{p_session_token:state.workerToken,p_product_id:product,p_quantity:qty,p_unit_cost:cost,p_branch_id:branch,p_supplier_id:supplier,p_notes:notes,p_operation_at:null})
     else res=await supabase.rpc('admin_create_purchase',{p_product_id:product,p_quantity:qty,p_unit_cost:cost,p_branch_id:branch,p_supplier_id:supplier,p_notes:notes,p_operation_at:null})
-    setBusy(false);if(res.error)return notify('لم يتم حفظ المشتريات: '+res.error.message,'error')
-    $('purchaseQty').value='1';$('purchaseCost').value='';$('purchaseNotes').value='';await loadInventory(branch);notify('تم تسجيل المشتريات ودفعة المصدر. رقم العملية: '+res.data,'ok')
+    setBusy(false);if(res.error)return notifyPurchase('لم يتم حفظ المشتريات: '+res.error.message,'error')
+    $('purchaseQty').value='1';$('purchaseCost').value='';$('purchaseNotes').value='';await loadInventory(branch);notifyPurchase('تم تسجيل المشتريات ودفعة المصدر. رقم العملية: '+res.data,'ok')
   }
 
   function transferPayload(){
