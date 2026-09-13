@@ -1,0 +1,23 @@
+name: Shop shell quality gate
+on:
+  push:
+    paths:
+      - 'shop/**'
+      - 'scripts/check-shop-shell.mjs'
+      - '.github/workflows/shop-shell-check.yml'
+  pull_request:
+    paths:
+      - 'shop/**'
+      - 'scripts/check-shop-shell.mjs'
+      - '.github/workflows/shop-shell-check.yml'
+permissions:
+  contents: read
+jobs:
+  check-shop-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/check-shop-shell.mjs shop

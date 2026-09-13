@@ -16,8 +16,9 @@
 .branch-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.branch-button{width:auto;background:#fff;color:var(--main);border:1px solid var(--main);font-weight:800}.branch-button.active{background:var(--main);color:#fff}
 .stock-tools{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:8px;margin:12px 0 7px}.stock-summary{margin-bottom:8px}.stock-pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px}.stock-pager .btn{width:auto;min-width:82px}.stock-item{padding:10px}.stock-qty{font-size:24px}.stock-details summary{cursor:pointer;color:var(--main);font-weight:800;font-size:12px;margin-top:7px}.stock-details .branch-pill{font-size:12px}@media(max-width:760px){.stock-tools{grid-template-columns:1fr 125px}.stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stock-item{padding:9px}.stock-name{font-size:12px}.stock-qty{font-size:21px}}
 .mode-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;margin-bottom:12px}.mode-bar strong{margin-left:auto}.mode-choice{width:auto;padding:9px 14px;background:#fff;color:var(--main);border:1px solid var(--main);border-radius:12px;font-weight:800}.mode-choice.active{background:var(--main);color:#fff}.mode-test-note{color:#b45309;font-weight:800}.drawer-btn{width:50px;height:50px;border:1px solid var(--main);border-radius:15px;background:#fff;color:var(--main);font-size:27px;font-weight:900}.drawer-overlay{position:fixed;inset:0;background:#0f172a73;z-index:80}.drawer{position:fixed;top:0;right:0;width:min(82vw,310px);height:100vh;background:#0f172a;color:#fff;z-index:81;padding:18px;box-shadow:-15px 0 35px #0f172a40}.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.drawer-close{width:42px;height:42px;border:1px solid #475569;border-radius:12px;background:transparent;color:#fff;font-size:24px}.drawer-links{display:grid;gap:8px}.drawer-links a{display:block;padding:13px;border-radius:12px;background:#ffffff12;color:#fff;text-decoration:none;font-weight:800}.drawer-links a.active{background:var(--main)}.drawer-hidden{display:none!important}</style>
-<link rel="stylesheet" href="shop-common.css?v=20260913-0215">
-<script src="shop-shell.js?v=20260913-0215"></script>
+<link rel="stylesheet" href="shop-common.css?v=20260913-0345">
+<script src="shop-routes.js?v=20260913-0345"></script>
+<script src="shop-shell.js?v=20260913-0345"></script>
 </head>
 <body data-screen="stock">
 <div class="shell" id="app">
@@ -452,12 +453,7 @@
     if(state.mode==='worker'&&required&&!state.permissions[required]){notify('ليس لديك صلاحية لهذه الشاشة.','error');setTimeout(()=>location.replace('daily.html'),900);return}
     const visible={sale:['branchCard','saleCard'],purchase:['branchCard','purchaseCard'],inventory:['branchCard','inventoryCard'],stock:['branchCard','stockCard'],transfers:['transferCard','transferListCard']}[screen]||[]
     for(const id of ['branchCard','saleCard','purchaseCard','inventoryCard','transferCard','stockCard','transferListCard'])$(id).classList.toggle('hidden',!visible.includes(id))
-    const links=[
-      ['sale','sale.html','بيع','can_sell'],['purchase','purchase.html','مشتريات','can_purchase'],
-      ['inventory','inventory-count.html','جرد','can_inventory'],['stock','stock.html','المخزون','can_view_stock'],
-      ['transfers','transfers.html','تحويلات','can_transfer']
-    ].filter(x=>state.mode==='admin'||!x[3]||state.permissions[x[3]])
-    const navHtml='<a href="'+(state.mode==='admin'?'index.html':'daily.html')+'">الرئيسية</a>'+links.map(x=>'<a class="'+(x[0]===screen?'active':'')+'" href="'+x[1]+'">'+x[2]+'</a>').join('');$('screenNav').innerHTML=navHtml;$('drawerLinks').innerHTML=navHtml
+    ShopShell.mountRoleNavigation({role:state.mode,permissions:state.permissions},screen)
     const picker={sale:'saleProduct',purchase:'purchaseProduct',inventory:'inventoryProduct',transfers:'transferProduct'}[screen]
     if(picker)setupProductPicker(picker)
     setupBranchButtons('stockBranch',true)

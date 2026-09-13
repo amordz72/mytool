@@ -21,28 +21,28 @@
     location.replace('../');
   }
   function bindLogout(target){target?.querySelectorAll('.shell-logout').forEach(button=>button.addEventListener('click',requestLogout))}
+  function bindDrawer(target){
+    const drawer=target?.querySelector('#drawer'),overlay=target?.querySelector('#drawerOverlay'),open=target?.querySelector('#drawerOpen'),close=target?.querySelector('#drawerClose');
+    if(!drawer||!overlay||!open||!close)return;
+    const hide=()=>{drawer.classList.add('drawer-hidden');overlay.classList.add('drawer-hidden')};
+    open.onclick=()=>{drawer.classList.remove('drawer-hidden');overlay.classList.remove('drawer-hidden')};
+    close.onclick=hide;overlay.onclick=hide;
+  }
 
 
-  const adminItems=[
-    ['index','index.html','⌂','لوحة التحكم'],
-    ['sale','sale.html','＋','تسجيل بيع'],
-    ['stock','stock.html','▦','المخزون'],
-    ['products','products.html','◇','المنتجات'],
-    ['physical','physical-inventory.html','✓','الجرد الفعلي'],
-    ['opening','opening-stock.html','◉','الجرد الافتتاحي'],
-    ['notes','../notes/','📝','صندوق الملاحظات'],
-    ['users','users.html','♙','المستخدمون'],
-    ['settings','settings.html','⚙','الإعدادات']
-  ];
-  const topItems=[
-    ['index','index.html','الرئيسية'],
-    ['sale','sale.html','بيع'],
-    ['stock','stock.html','المخزون'],
-    ['products','products.html','المنتجات'],
-    ['users','users.html','المستخدمون'],
-    ['settings','settings.html','الإعدادات']
-  ];
+  function routeItems(options,placement){
+    if(!window.ShopRoutes)throw new Error('ShopRoutes must load before ShopShell');
+    return window.ShopRoutes.list({role:options?.role||'admin',permissions:options?.permissions||{}},placement);
+  }
   const active=(key,current)=>key===current?' active':'';
+  function routeLinks(options,placement,variant){
+    const current=options?.active||'';
+    return routeItems(options,placement).map(route=>{
+      const label=variant==='top'?(route.shortLabel||route.label):route.label;
+      const icon=variant==='drawer'?'<span class="ico">'+route.icon+'</span>':'';
+      return '<a class="'+(variant==='drawer'?'side-link':'')+active(route.id,current)+'" href="'+route.path+'">'+icon+'<span>'+label+'</span></a>';
+    }).join('');
+  }
 
   function emit(name){window.dispatchEvent(new CustomEvent('shop-shell:'+name))}
   function bindAdminShell(){
@@ -59,9 +59,7 @@
     const target=document.getElementById(targetId);if(!target||target.dataset.mounted)return;
     target.dataset.mounted='1';
     const current=options?.active||'index';
-    const links=adminItems.map(([key,href,icon,label])=>
-      `<a class="side-link${active(key,current)}" href="${href}"><span class="ico">${icon}</span><span>${label}</span></a>`
-    ).join('');
+    const links=routeLinks({...options,active:current},'drawer','drawer');
     target.innerHTML=`
       <div class="shared-admin-overlay"></div>
       <aside class="shared-admin-drawer">
@@ -69,7 +67,6 @@
         <nav class="side-nav">${links}
           <button class="side-link" data-shell-action="refresh"><span class="ico">↻</span><span>تحديث البيانات</span></button>
           <a class="side-link" href="../"><span class="ico">↩</span><span>رئيسية MyTool</span></a>
-          <button class="side-link" type="button" data-shell-action="logout"><span class="ico">⇥</span><span>تسجيل الخروج</span></button>
         </nav>
         <div class="side-spacer"></div>
         <div class="side-footer">
@@ -83,7 +80,7 @@
     const target=document.getElementById(targetId);if(!target||target.dataset.mounted)return;
     target.dataset.mounted='1';
     const current=options?.active||'index',title=options?.title||'حساب المحل';
-    const nav=topItems.map(([key,href,label])=>`<a class="${key===current?'active':''}" href="${href}">${label}</a>`).join('');
+    const nav=routeLinks({...options,active:current},'top','top');
     target.innerHTML=`
       <header class="shop-topbar">
         <div class="topbar-title">
@@ -115,8 +112,8 @@
   function mountStandalone(targetId,options){
     const target=document.getElementById(targetId);if(!target)return;
     const current=options?.active||'',title=options?.title||'حساب المحل',subtitle=options?.subtitle||'لوحة الإدارة';
-    const links=adminItems.map(([key,href,icon,label])=>`<a class="drawer-link${active(key,current)}" href="${href}"><span>${icon}</span><span>${label}</span></a>`).join('');
-    const nav=topItems.map(([key,href,label])=>`<a class="${key===current?'active':''}" href="${href}">${label}</a>`).join('');
+    const links=routeLinks({...options,active:current},'drawer','drawer');
+    const nav=routeLinks({...options,active:current},'top','top');
     target.innerHTML=`
       <div class="shared-standalone">
         <div class="drawer-overlay drawer-hidden"></div>
@@ -143,7 +140,7 @@
         <div class="top-actions"><a id="shopHomeLink" href="daily.html">الرئيسية</a><a id="myToolLink" class="hidden" href="../">MyTool</a></div>
         <button id="drawerOpen" class="drawer-btn" type="button" aria-label="فتح القائمة">☰</button>
       </div>`;
-    bindLogout(target);
+    bindLogout(target);bindDrawer(target);
   }
 
   function mountOperationNav(targetId){
@@ -162,5 +159,16 @@
     bindLogout(target);
   }
 
-  window.ShopShell={watchAdmin,mountAdminSidebar,mountAdminTop,mountStandalone,mountOperationTop,mountOperationNav,mountDailyTop};
+  function mountRoleNavigation(context,current){
+    const options={role:context?.role||'admin',permissions:context?.permissions||{},active:current||document.body.dataset.screen||'daily'};
+    const screen=document.getElementById('screenNav');
+    const drawer=document.getElementById('drawerLinks');
+    const top=routeLinks(options,'top','top');
+    const side=routeLinks(options,'drawer','drawer');
+    if(screen)screen.innerHTML=top;
+    if(drawer)drawer.innerHTML=side;
+    return {top:routeItems(options,'top').length,drawer:routeItems(options,'drawer').length};
+  }
+
+  window.ShopShell={watchAdmin,mountAdminSidebar,mountAdminTop,mountStandalone,mountOperationTop,mountOperationNav,mountDailyTop,mountRoleNavigation,requestLogout};
 })();
