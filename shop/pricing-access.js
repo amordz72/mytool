@@ -48,7 +48,7 @@
     const branch=Number(document.getElementById('saleBranch')?.value||0);
     const info=document.getElementById('salePricingInfo');
     if(!info)return;
-    if(!product||!branch){info.textContent='اختر المنتج لعرض سعر البيع.';return;}
+    if(!product||!branch){if(info.textContent!=='اختر المنتج لعرض سعر البيع.')info.textContent='اختر المنتج لعرض سعر البيع.';return;}
     try{
       const rows=await workerPolicies(branch),policy=workerPolicy(rows,product);
       const parts=[];
@@ -58,7 +58,7 @@
       const text=parts.length?parts.join(' — '):'لا يوجد سعر بيع معتمد لهذا المنتج؛ أدخل السعر ضمن الحد المسموح.';
       if(info.textContent!==text){info.className='hint '+(policy?.sale_price!=null?'ok':'warn');info.textContent=text;}
       const hint=document.getElementById('salePriceHint');
-      if(hint)hint.textContent=policy?.minimum_sale_price!=null?'يمكن تعديل السعر بشرط ألا يقل عن الحد الأدنى المسموح.':'راجع السعر قبل الحفظ.';
+      if(hint){const hintText=policy?.minimum_sale_price!=null?'يمكن تعديل السعر بشرط ألا يقل عن الحد الأدنى المسموح.':'راجع السعر قبل الحفظ.';if(hint.textContent!==hintText)hint.textContent=hintText;}
     }catch(_e){
       if(info.textContent.includes('متوسط الشراء'))info.textContent='تعذر تحميل سياسة سعر البيع.';
     }
@@ -78,7 +78,8 @@
         if(policy.sale_price!=null)parts.push('<strong>سعر البيع:</strong> '+money(policy.sale_price));
         if(policy.minimum_sale_price!=null)parts.push('<strong>الحد الأدنى:</strong> '+money(policy.minimum_sale_price));
         if(policy.worker_reference_purchase_price!=null)parts.push('<strong>مرجع شراء تشغيلي:</strong> '+money(policy.worker_reference_purchase_price));
-        hint.innerHTML=parts.length?parts.join(' — '):'<strong>سعر البيع:</strong> غير محدد';
+        const html=parts.length?parts.join(' — '):'<strong>سعر البيع:</strong> غير محدد';
+        if(hint.innerHTML!==html)hint.innerHTML=html;
       });
     }catch(_e){}
   }
@@ -106,7 +107,8 @@
           const row=(data.pricingByBranch[branch.id]||[]).find(x=>Number(x.product_id)===product);
           let detail=pill.querySelector('[data-pricing-detail]');
           if(!detail){detail=document.createElement('small');detail.dataset.pricingDetail='1';detail.style.display='block';detail.style.marginTop='4px';detail.style.fontWeight='700';pill.appendChild(detail);}
-          detail.textContent='شراء: '+money(row?.last_purchase_price)+' — بيع: '+money(row?.last_sale_price);
+          const text='شراء: '+money(row?.last_purchase_price)+' — بيع: '+money(row?.last_sale_price);
+          if(detail.textContent!==text)detail.textContent=text;
         });
       });
     }catch(_e){}
