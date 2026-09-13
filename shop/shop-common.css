@@ -16,8 +16,6 @@
 .shared-standalone{margin-bottom:12px}.shared-standalone-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.shared-brand{display:flex;align-items:center;gap:10px;min-width:0}.shared-logo{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,var(--main2,var(--shell-main2)),var(--main,var(--shell-main)));color:#fff;font-weight:900}.shared-standalone h1{margin:0;font-size:22px}.shared-subtitle{color:#6b7280;font-size:13px;margin-top:4px}.shared-screen-nav{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px}.shared-screen-nav a{flex:0 0 auto;text-decoration:none;padding:9px 12px;border:1px solid var(--line,var(--shell-line));border-radius:11px;background:#fff;color:var(--main,var(--shell-main));font-weight:800}.shared-screen-nav a.active{background:var(--main,var(--shell-main));color:#fff}.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.drawer-close{width:42px;height:42px;border:1px solid #475569;border-radius:12px;background:transparent;color:#fff;font-size:24px}.drawer-links{display:grid;gap:8px}.drawer-links a{display:flex;align-items:center;gap:9px;padding:12px;border-radius:11px;background:#ffffff12;color:#fff;text-decoration:none;font-weight:800}.drawer-links a.active{background:var(--main,var(--shell-main))}
 
 #sharedAdminSidebar .mobile-overlay{display:none}#sharedAdminSidebar .mobile-overlay.open{display:block}
-
-/* Isolated admin drawer: never reuse legacy page sidebar classes. */
 .shared-admin-overlay{display:none;position:fixed;z-index:100;inset:0;background:rgba(15,23,42,.48)}
 .shared-admin-overlay.open{display:block}
 .shared-admin-drawer{position:fixed;z-index:101;top:0;right:0;height:100vh;height:100dvh;width:min(82vw,310px);background:#0f172a;color:#e5e7eb;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:-15px 0 35px rgba(15,23,42,.3);transform:translateX(110%);transition:transform .2s ease}
@@ -27,62 +25,24 @@
 .shared-admin-drawer .side-link.active,.shared-admin-drawer .side-link:hover{background:rgba(255,255,255,.12)}
 .shared-admin-drawer .side-spacer{flex:1}
 @media(min-width:861px){.shared-admin-overlay,.shared-admin-drawer{display:none!important}}
-
 .drawer-logout{width:100%;margin-top:14px;padding:12px;border:1px solid #475569;border-radius:11px;background:#ffffff12;color:#fff;font:inherit;font-weight:800;cursor:pointer}
 
-/* Canonical header: identical on dashboard and operation pages. */
 .shell-canonical-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:4px 2px}
 .shell-canonical-header .topbar-title{display:flex;align-items:center;gap:10px;min-width:0}
 .shell-canonical-header .topbar-logo{width:48px;height:48px;border-radius:15px;font-size:18px}
 .shell-canonical-header .topbar-copy{min-width:0}
 .shell-canonical-header .topbar-copy h1{margin:0;font-size:23px;line-height:1.15;white-space:nowrap}
-.shell-canonical-header .shell-identity{margin-top:3px;color:#6b7280;font-size:13px}
-.shell-canonical-header .shell-identity{min-height:16px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shell-canonical-header .shell-identity{margin-top:3px;color:#6b7280;font-size:13px;min-height:16px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shell-canonical-header .shell-role-badge{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#ecfeff;color:#0f766e;font-size:12px;font-weight:800}
 .shell-template-mark{display:none!important}
 .shell-canonical-header .topbar-actions{display:flex;align-items:center;gap:8px}
 .shell-canonical-header .topbar-actions .btn{width:auto;white-space:nowrap}
 .mobile-only{display:none!important}.desktop-only{display:inline-flex!important}
-
-/* The page behind the drawer never scrolls while navigation is open. */
 html.shell-drawer-open,body.shell-drawer-open{overflow:hidden!important;overscroll-behavior:none}
-
-/* Drawer layout: fixed head/footer, scrollable route groups only. */
-.drawer{display:flex;flex-direction:column;overflow:hidden}
-.drawer-head{flex:0 0 auto}
-.drawer-links{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 12px}
-.drawer-logout{flex:0 0 auto;margin-top:10px;margin-bottom:max(0px,env(safe-area-inset-bottom))}
-.shared-admin-drawer{overflow:hidden}
-.shared-admin-drawer .side-brand,.shared-admin-drawer .side-footer{flex:0 0 auto}
-.shared-admin-drawer .side-nav{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 12px}
-.shared-admin-drawer .side-spacer{display:none}
-
-.shell-nav-group{margin:0 0 9px;border:1px solid rgba(255,255,255,.10);border-radius:13px;background:rgba(255,255,255,.035);overflow:hidden}
-.shell-nav-group summary{list-style:none;cursor:pointer;padding:12px;color:#94a3b8;font-size:12px;font-weight:900;user-select:none}
-.shell-nav-group summary::-webkit-details-marker{display:none}
-.shell-nav-group summary:after{content:'⌄';float:left;font-size:16px;transition:transform .15s ease}
-.shell-nav-group[open] summary:after{transform:rotate(180deg)}
-.shell-nav-group-links{display:grid;gap:7px;padding:0 7px 8px}
-.shell-nav-group .side-link{margin:0}
-.drawer-links .shell-nav-group .drawer-link{display:flex}
-
-.screen-nav.unified-nav,.unified-nav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:8px 0 12px;margin-bottom:10px;border-bottom:4px solid #d1d5db}
-.screen-nav.unified-nav::before,.unified-nav::before{content:'●';flex:0 0 auto;align-self:center;padding:0 5px;color:#f59e0b;font-size:13px;line-height:1}
-.screen-nav.unified-nav a,.unified-nav a{flex:0 0 auto;padding:11px 15px;border:1px solid var(--line,var(--shell-line));border-radius:14px;background:#fff;color:var(--main,var(--shell-main));font-weight:800;text-decoration:none}
-.screen-nav.unified-nav a.active,.unified-nav a.active{background:var(--main,var(--shell-main));color:#fff;border-color:var(--main,var(--shell-main))}
-
-@media(max-width:860px){
-  .mobile-only{display:inline-flex!important}.desktop-only{display:none!important}
-  .shell-canonical-header{position:static;margin-bottom:12px;padding:4px 2px}
-  .shell-canonical-header .topbar-title{width:100%}
-  .shell-canonical-header .topbar-logo{width:48px;height:48px}
-  .shell-canonical-header .topbar-copy h1{font-size:20px}
-  .shell-canonical-header .menu-toggle{display:inline-flex!important;align-items:center;justify-content:center;width:50px!important;height:50px;padding:0!important;margin-right:auto;border-radius:15px!important;font-size:27px}
-}
-
-/* Shared shell ownership enforcement.
- * Legacy page CSS may still exist, but it must not change shared shell geometry.
- */
+.drawer{display:flex;flex-direction:column;overflow:hidden}.drawer-head{flex:0 0 auto}.drawer-links{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 12px}.drawer-logout{flex:0 0 auto;margin-top:10px;margin-bottom:max(0px,env(safe-area-inset-bottom))}.shared-admin-drawer{overflow:hidden}.shared-admin-drawer .side-brand,.shared-admin-drawer .side-footer{flex:0 0 auto}.shared-admin-drawer .side-nav{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 12px}.shared-admin-drawer .side-spacer{display:none}
+.shell-nav-group{margin:0 0 9px;border:1px solid rgba(255,255,255,.10);border-radius:13px;background:rgba(255,255,255,.035);overflow:hidden}.shell-nav-group summary{list-style:none;cursor:pointer;padding:12px;color:#94a3b8;font-size:12px;font-weight:900;user-select:none}.shell-nav-group summary::-webkit-details-marker{display:none}.shell-nav-group summary:after{content:'⌄';float:left;font-size:16px;transition:transform .15s ease}.shell-nav-group[open] summary:after{transform:rotate(180deg)}.shell-nav-group-links{display:grid;gap:7px;padding:0 7px 8px}.shell-nav-group .side-link{margin:0}.drawer-links .shell-nav-group .drawer-link{display:flex}
+.screen-nav.unified-nav,.unified-nav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:8px 0 12px;margin-bottom:10px;border-bottom:4px solid #d1d5db}.screen-nav.unified-nav::before,.unified-nav::before{content:'●';flex:0 0 auto;align-self:center;padding:0 5px;color:#f59e0b;font-size:13px;line-height:1}.screen-nav.unified-nav a,.unified-nav a{flex:0 0 auto;padding:11px 15px;border:1px solid var(--line,var(--shell-line));border-radius:14px;background:#fff;color:var(--main,var(--shell-main));font-weight:800;text-decoration:none}.screen-nav.unified-nav a.active,.unified-nav a.active{background:var(--main,var(--shell-main));color:#fff;border-color:var(--main,var(--shell-main))}
+@media(max-width:860px){.mobile-only{display:inline-flex!important}.desktop-only{display:none!important}.shell-canonical-header{position:static;margin-bottom:12px;padding:4px 2px}.shell-canonical-header .topbar-title{width:100%}.shell-canonical-header .topbar-logo{width:48px;height:48px}.shell-canonical-header .topbar-copy h1{font-size:20px}.shell-canonical-header .menu-toggle{display:inline-flex!important;align-items:center;justify-content:center;width:50px!important;height:50px;padding:0!important;margin-right:auto;border-radius:15px!important;font-size:27px}}
 #screenNav.shared-screen-nav.screen-nav.unified-nav{display:flex!important;flex-wrap:nowrap!important;gap:8px!important;overflow-x:auto!important;scrollbar-width:thin!important;padding:8px 0 12px!important;margin:0 0 10px!important;border-bottom:4px solid #d1d5db!important}
 #screenNav.shared-screen-nav.screen-nav.unified-nav::before{content:'●'!important;display:block!important;flex:0 0 auto!important;align-self:center!important;padding:0 5px!important;color:#f59e0b!important;font-size:13px!important;line-height:1!important}
 #screenNav.shared-screen-nav.screen-nav.unified-nav>a{display:block!important;flex:0 0 auto!important;padding:11px 15px!important;border:1px solid var(--line,var(--shell-line))!important;border-radius:14px!important;background:#fff!important;color:var(--main,var(--shell-main))!important;font-weight:800!important;font-size:16px!important;line-height:1.2!important;text-decoration:none!important;white-space:nowrap!important}
@@ -101,9 +61,8 @@ header.shell-canonical-header.shop-topbar .shell-role-badge{display:inline-flex!
 #drawer.drawer .drawer-links a{display:flex!important;align-items:center!important;gap:9px!important;padding:12px!important;border-radius:11px!important;background:#ffffff12!important;color:#fff!important;text-decoration:none!important;font-weight:800!important}
 #drawer.drawer .drawer-links a.active{background:var(--main,var(--shell-main))!important}
 #drawer.drawer .drawer-logout{flex:0 0 auto!important;width:100%!important;margin-top:10px!important;margin-bottom:max(0px,env(safe-area-inset-bottom))!important;padding:12px!important}
-@media(max-width:860px){
-  header.shell-canonical-header.shop-topbar{position:static!important;margin-bottom:12px!important;padding:4px 2px!important}
-  header.shell-canonical-header.shop-topbar .topbar-title{width:100%!important}
-  header.shell-canonical-header.shop-topbar .topbar-copy h1{font-size:20px!important}
-  header.shell-canonical-header.shop-topbar .menu-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:50px!important;height:50px!important;padding:0!important;margin-right:auto!important;border-radius:15px!important;font-size:27px!important}
-}
+@media(max-width:860px){header.shell-canonical-header.shop-topbar{position:static!important;margin-bottom:12px!important;padding:4px 2px!important}header.shell-canonical-header.shop-topbar .topbar-title{width:100%!important}header.shell-canonical-header.shop-topbar .topbar-copy h1{font-size:20px!important}header.shell-canonical-header.shop-topbar .menu-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:50px!important;height:50px!important;padding:0!important;margin-right:auto!important;border-radius:15px!important;font-size:27px!important}}
+
+/* Product picker UX: once a product is selected, hide the long result list until search gets focus again. */
+[data-catalog-picker]:has(.catalog-selected:not(.hidden)):not(:has(.catalog-search:focus)) .catalog-results,
+[data-catalog-picker]:has(.catalog-selected:not(.hidden)):not(:has(.catalog-search:focus)) .catalog-page{display:none!important}
