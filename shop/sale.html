@@ -24,7 +24,7 @@
   </div>
 
   <div id="message" class="message info">جاري تحميل بيانات التشغيل…</div>
-  <div id="adminModeBar" class="mode-bar hidden"><strong>نوع البيانات</strong><button id="modeReal" class="mode-choice" type="button">حقيقي</button><button id="modeTest" class="mode-choice" type="button">تجريبي</button><span id="modeTestNote" class="mode-test-note hidden">وضع تجريبي</span></div>
+  <div id="adminModeBar" class="mode-bar hidden"><strong>الوضع الحالي:</strong><span id="modeCurrentText" class="mode-choice active"></span><a class="mode-choice" href="settings.html" style="text-decoration:none">تغييره من الإعدادات</a></div>
 
   <nav id="screenNav" class="screen-nav"></nav>
   <section class="card" id="branchCard">
@@ -141,8 +141,6 @@
   $('drawerOpen').addEventListener('click',()=>{$('drawer').classList.remove('drawer-hidden');$('drawerOverlay').classList.remove('drawer-hidden')})
   const closeDrawer=()=>{$('drawer').classList.add('drawer-hidden');$('drawerOverlay').classList.add('drawer-hidden')}
   $('drawerClose').addEventListener('click',closeDrawer);$('drawerOverlay').addEventListener('click',closeDrawer)
-  $('modeReal').addEventListener('click',()=>{localStorage.setItem('mytool_admin_data_mode','real');location.reload()})
-  $('modeTest').addEventListener('click',()=>{localStorage.setItem('mytool_admin_data_mode','test');location.reload()})
 
   function setBusy(v){state.busy=v;$('app').classList.toggle('loading',v)}
   function clearWorkerSession(){localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY);localStorage.removeItem(WORKER_EXPIRES_KEY);state.workerToken='';state.workerName='';state.mode='none'}
@@ -218,7 +216,7 @@
 
   function renderBase(){
     $('shopHomeLink').href=state.mode==='admin'?'index.html':'daily.html'
-    $('adminModeBar').classList.toggle('hidden',state.mode!=='admin');$('modeReal').classList.toggle('active',state.adminDataMode==='real');$('modeTest').classList.toggle('active',state.adminDataMode==='test');$('modeTestNote').classList.toggle('hidden',state.adminDataMode!=='test')
+    $('adminModeBar').classList.toggle('hidden',state.mode!=='admin');$('modeCurrentText').textContent=state.adminDataMode==='test'?'تجريبي':'حقيقي'
     $('myToolLink').classList.toggle('hidden',state.mode!=='admin')
     $('branchList').innerHTML=state.operatingBranches.length?state.operatingBranches.map(b=>'<span class="branch-pill '+(Number(b.id)===Number(state.defaultBranchId)?'default':'')+'">'+esc(b.name)+(Number(b.id)===Number(state.defaultBranchId)?' · افتراضي':'')+'</span>').join(''):'<span class="muted">لا توجد فروع تشغيل متاحة.</span>'
     for(const id of ['saleProduct','purchaseProduct','inventoryProduct','transferProduct'])fillSelect($(id),state.products,'اختر المنتج')
