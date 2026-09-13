@@ -7,6 +7,7 @@
     {id:'daily',group:'general',label:'التشغيل اليومي',shortLabel:'التشغيل',path:'daily.html',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'▤'},
     {id:'sale',group:'operations',label:'تسجيل بيع',shortLabel:'بيع',path:'sale.html',type:'worker',roles:['admin','worker'],permission:'sell',placement:['drawer','top'],icon:'＋'},
     {id:'purchase',group:'operations',label:'المشتريات',shortLabel:'مشتريات',path:'purchase.html',type:'worker',roles:['admin','worker'],permission:'purchase',placement:['drawer','top'],icon:'⇩'},
+    {id:'corrections',group:'operations',label:'تصحيح العمليات',shortLabel:'تصحيح',path:'corrections.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'↶'},
     {id:'stock',group:'inventory',label:'المخزون',shortLabel:'المخزون',path:'stock.html',type:'worker',roles:['admin','worker'],permission:'view_stock',placement:['drawer','top'],icon:'▦'},
     {id:'products',group:'inventory',label:'المنتجات',shortLabel:'المنتجات',path:'products.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'◇'},
     {id:'inventory',group:'inventory',label:'الجرد',shortLabel:'الجرد',path:'inventory-count.html',type:'worker',roles:['admin','worker'],permission:'inventory',placement:['drawer'],icon:'✓'},
