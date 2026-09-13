@@ -97,13 +97,13 @@
       if(!state.canRecord)throw new Error('PERMISSION_DENIED')
       ShopShell.mountRoleNavigation({role:'worker',permissions:{can_record_money:true}},'money')
       state.branches=b.branches||[];state.defaultBranchId=b.default_branch_id||state.branches[0]?.id||null
-      $('identity').textContent=(state.workerName||c.nickname||'العامل')+' — '+(state.branches.find(x=>Number(x.id)===Number(state.defaultBranchId))?.name||'الفرع')
+      $('identityText').textContent=(state.workerName||c.nickname||'العامل')+' — '+(state.branches.find(x=>Number(x.id)===Number(state.defaultBranchId))?.name||'الفرع')
       if(state.branches.length===1)$('branchWrap').classList.add('hidden')
     }else{
       const {data,error}=await supabase.from('branches').select('id,name,code').eq('active',true).order('id')
       if(error)throw error
       state.branches=data||[];state.defaultBranchId=state.branches.find(x=>x.code==='HOME_SHOP')?.id||state.branches[0]?.id||null;state.canRecord=true
-      $('identity').textContent='الإدارة — جميع الفروع';$('mytoolLink').classList.remove('hidden');$('openingOption').classList.remove('hidden');ShopShell.mountRoleNavigation({role:'admin',permissions:{}},'money')
+      $('identityText').textContent='الإدارة — جميع الفروع';$('openingOption').classList.remove('hidden');ShopShell.mountRoleNavigation({role:'admin',permissions:{}},'money')
     }
     $('branch').innerHTML=state.branches.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('')
     if(state.defaultBranchId)$('branch').value=String(state.defaultBranchId)
