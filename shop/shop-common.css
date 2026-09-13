@@ -5,7 +5,7 @@
 .topbar-logo,.logo,.daily-logo{display:grid;place-items:center;background:linear-gradient(135deg,var(--main2,var(--shell-main2)),var(--main,var(--shell-main)));color:#fff;font-weight:900;flex:0 0 auto}
 .drawer-btn,.menu-toggle{flex:0 0 auto}
 .drawer-overlay{position:fixed;inset:0;background:#0f172a73;z-index:80}
-.drawer{position:fixed;top:0;right:0;width:min(82vw,310px);height:100vh;background:#0f172a;color:#fff;z-index:81;padding:18px;box-shadow:-15px 0 35px #0f172a40}
+.drawer{position:fixed;top:0;right:0;width:min(82vw,310px);height:100vh;height:100dvh;background:#0f172a;color:#fff;z-index:81;padding:18px;box-shadow:-15px 0 35px #0f172a40}
 .drawer-hidden{display:none!important}
 @media(max-width:760px){
   .shop-topbar .topbar-title{width:100%}
@@ -20,7 +20,7 @@
 /* Isolated admin drawer: never reuse legacy page sidebar classes. */
 .shared-admin-overlay{display:none;position:fixed;z-index:100;inset:0;background:rgba(15,23,42,.48)}
 .shared-admin-overlay.open{display:block}
-.shared-admin-drawer{position:fixed;z-index:101;top:0;right:0;height:100vh;width:min(82vw,310px);background:#0f172a;color:#e5e7eb;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:-15px 0 35px rgba(15,23,42,.3);transform:translateX(110%);transition:transform .2s ease}
+.shared-admin-drawer{position:fixed;z-index:101;top:0;right:0;height:100vh;height:100dvh;width:min(82vw,310px);background:#0f172a;color:#e5e7eb;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:-15px 0 35px rgba(15,23,42,.3);transform:translateX(110%);transition:transform .2s ease}
 .shared-admin-drawer.open{transform:translateX(0)}
 .shared-admin-drawer .side-nav{display:grid;gap:7px;overflow-y:auto}
 .shared-admin-drawer .side-link{display:flex;align-items:center;gap:9px;width:100%;padding:11px;border:0;border-radius:11px;background:transparent;color:#e5e7eb;text-decoration:none;text-align:right;font-weight:800}
@@ -50,7 +50,7 @@ html.shell-drawer-open,body.shell-drawer-open{overflow:hidden!important;overscro
 .drawer{display:flex;flex-direction:column;overflow:hidden}
 .drawer-head{flex:0 0 auto}
 .drawer-links{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 12px}
-.drawer-logout{flex:0 0 auto;margin-top:10px}
+.drawer-logout{flex:0 0 auto;margin-top:10px;margin-bottom:max(0px,env(safe-area-inset-bottom))}
 .shared-admin-drawer{overflow:hidden}
 .shared-admin-drawer .side-brand,.shared-admin-drawer .side-footer{flex:0 0 auto}
 .shared-admin-drawer .side-nav{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 12px}
