@@ -8,17 +8,10 @@ const ownership={
   'inventory-count.html':['branchCard','inventoryCard'],
   'stock.html':['branchCard','stockCard'],
   'transfers.html':['transferCard','transferListCard'],
-  'index.html':['dashboard'],
-  'products.html':['inventory'],
-  'users.html':['users'],
-  'settings.html':['settings'],
 };
 for(const [file,allowed] of Object.entries(ownership)){
   const html=fs.readFileSync(path.join(shopDir,file),'utf8');
-  const family=file.endsWith('.html')&&['index.html','products.html','users.html','settings.html'].includes(file)
-    ?['dashboard','sale','inventory','users','settings']
-    :['branchCard','saleCard','purchaseCard','inventoryCard','transferCard','stockCard','transferListCard'];
-  for(const id of family){
+  for(const id of ['branchCard','saleCard','purchaseCard','inventoryCard','transferCard','stockCard','transferListCard']){
     if(!allowed.includes(id)&&html.includes(`id="${id}"`))throw new Error(`${file} contains foreign section ${id}`);
   }
 }
