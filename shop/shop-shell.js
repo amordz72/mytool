@@ -93,6 +93,27 @@
     observer.observe(document.documentElement,{childList:true,subtree:true});
   }
 
+  function mountStandalone(targetId,options){
+    const target=document.getElementById(targetId);if(!target)return;
+    const current=options?.active||'',title=options?.title||'حساب المحل',subtitle=options?.subtitle||'لوحة الإدارة';
+    const links=adminItems.map(([key,href,icon,label])=>`<a class="drawer-link${active(key,current)}" href="${href}"><span>${icon}</span><span>${label}</span></a>`).join('');
+    const nav=topItems.map(([key,href,label])=>`<a class="${key===current?'active':''}" href="${href}">${label}</a>`).join('');
+    target.innerHTML=`
+      <div class="shared-standalone">
+        <div class="drawer-overlay drawer-hidden"></div>
+        <aside class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button class="drawer-close" type="button">×</button></div><nav class="drawer-links">${links}</nav></aside>
+        <header class="shared-standalone-top">
+          <div class="shared-brand"><div class="shared-logo">MT</div><div><h1>${title}</h1><div class="shared-subtitle">${subtitle}</div></div></div>
+          <button class="drawer-btn" type="button" aria-label="فتح القائمة">☰</button>
+        </header>
+        <nav class="shared-screen-nav" aria-label="التنقل الرئيسي">${nav}</nav>
+      </div>`;
+    const drawer=target.querySelector('.drawer'),overlay=target.querySelector('.drawer-overlay');
+    const close=()=>{drawer.classList.add('drawer-hidden');overlay.classList.add('drawer-hidden')};
+    target.querySelector('.drawer-btn').addEventListener('click',()=>{drawer.classList.remove('drawer-hidden');overlay.classList.remove('drawer-hidden')});
+    target.querySelector('.drawer-close').addEventListener('click',close);overlay.addEventListener('click',close);
+  }
+
   function mountOperationTop(targetId){
     const target=document.getElementById(targetId);if(!target)return;
     target.innerHTML=`
@@ -120,5 +141,5 @@
       <div class="top"><div class="daily-brand"><div class="daily-logo" aria-hidden="true">MT</div><div><h1>الرئيسية</h1><div id="identity" class="identity">جاري التحقق…</div></div></div><button id="drawerOpen" class="drawer-btn" type="button" aria-label="فتح القائمة">☰</button></div>`;
   }
 
-  window.ShopShell={watchAdmin,mountAdminSidebar,mountAdminTop,mountOperationTop,mountOperationNav,mountDailyTop};
+  window.ShopShell={watchAdmin,mountAdminSidebar,mountAdminTop,mountStandalone,mountOperationTop,mountOperationNav,mountDailyTop};
 })();
