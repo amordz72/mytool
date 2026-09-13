@@ -6,10 +6,10 @@
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--main2:#14b8a6}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}main{max-width:760px;margin:auto;padding:12px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.top h1{font-size:21px;margin:0}.back{color:var(--main);font-weight:800;text-decoration:none}.identity{color:var(--muted);font-size:12px;margin-top:4px}.message{padding:11px;border-radius:12px;background:#eff6ff;color:#1d4ed8;margin-bottom:12px}.message.error{background:#fff1f2;color:#b91c1c}.hero{background:linear-gradient(135deg,#0f172a,#134e4a);color:#fff;border-radius:20px;padding:18px;margin-bottom:12px}.hero h2{margin:0 0 6px}.hero p{margin:0;color:#cbd5e1;font-size:13px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.action{min-height:116px;background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;text-decoration:none;color:var(--text);box-shadow:0 5px 18px #0f172a0d;display:flex;flex-direction:column;justify-content:space-between}.action strong{font-size:19px}.action span{color:var(--muted);font-size:12px}.ico{font-size:25px;color:var(--main)}.hidden{display:none!important}@media(max-width:430px){main{padding:8px}.action{min-height:105px;padding:13px}.action strong{font-size:17px}}
-</style>
+.drawer-btn{width:50px;height:50px;border:1px solid var(--main);border-radius:15px;background:#fff;color:var(--main);font-size:27px;font-weight:900}.drawer-overlay{position:fixed;inset:0;background:#0f172a73;z-index:80}.drawer{position:fixed;top:0;right:0;width:min(82vw,310px);height:100vh;background:#0f172a;color:#fff;z-index:81;padding:18px;box-shadow:-15px 0 35px #0f172a40}.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.drawer-close{width:42px;height:42px;border:1px solid #475569;border-radius:12px;background:transparent;color:#fff;font-size:24px}.drawer-links{display:grid;gap:8px}.drawer-links a{display:block;padding:13px;border-radius:12px;background:#ffffff12;color:#fff;text-decoration:none;font-weight:800}.drawer-links a.active{background:var(--main)}.drawer-hidden{display:none!important}</style>
 </head>
-<body><main>
-<div class="top"><div><h1>الرئيسية</h1><div id="identity" class="identity">جاري التحقق…</div></div></div>
+<body><div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav></aside><main>
+<div class="top"><div><h1>الرئيسية</h1><div id="identity" class="identity">جاري التحقق…</div></div><button id="drawerOpen" class="drawer-btn" type="button" aria-label="فتح القائمة">☰</button></div>
 <div id="message" class="message">جاري تجهيز الأدوات المسموحة…</div>
 <section class="hero"><h2>عمليات المحل</h2><p>اختر العملية التي تريدها مباشرة.</p></section>
 <div id="actions" class="grid"></div>
@@ -18,6 +18,9 @@
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj')
 const TOKEN='mytool_shop_worker_token',EXPIRES='mytool_shop_worker_expires_at',NICK='mytool_shop_worker_nickname'
+const drawer=document.getElementById('drawer'),overlay=document.getElementById('drawerOverlay')
+document.getElementById('drawerOpen').onclick=()=>{drawer.classList.remove('drawer-hidden');overlay.classList.remove('drawer-hidden')}
+document.getElementById('drawerClose').onclick=overlay.onclick=()=>{drawer.classList.add('drawer-hidden');overlay.classList.add('drawer-hidden')}
 const actions=[
  ['sale.html','＋','بيع','تسجيل بيع سريع','can_sell'],
  ['purchase.html','⇩','مشتريات','إدخال سلعة للمخزون','can_purchase'],
@@ -26,7 +29,9 @@ const actions=[
  ['transfers.html','⇄','تحويلات','سلع ونقد بين الفروع','can_transfer']
 ]
 function render(perms,mode){
- document.getElementById('actions').innerHTML=actions.filter(a=>mode==='admin'||perms[a[4]]).map(a=>'<a class="action" href="'+a[0]+'"><div class="ico">'+a[1]+'</div><strong>'+a[2]+'</strong><span>'+a[3]+'</span></a>').join('')
+ const visible=actions.filter(a=>mode==='admin'||perms[a[4]])
+ document.getElementById('actions').innerHTML=visible.map(a=>'<a class="action" href="'+a[0]+'"><div class="ico">'+a[1]+'</div><strong>'+a[2]+'</strong><span>'+a[3]+'</span></a>').join('')
+ document.getElementById('drawerLinks').innerHTML=visible.map(a=>'<a href="'+a[0]+'">'+a[2]+'</a>').join('')
  document.getElementById('message').classList.add('hidden')
 }
 async function init(){
