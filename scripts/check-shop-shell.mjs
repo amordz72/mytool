@@ -24,6 +24,10 @@ for(const [file,allowed] of Object.entries(ownership)){
 }
 const files=fs.readdirSync(shopDir).filter(name=>name.endsWith('.html')).sort();
 const errors=[];
+const shellSource=fs.readFileSync(path.join(shopDir,'shop-shell.js'),'utf8');
+if(!/function canonicalTop\(options\)/.test(shellSource))errors.push('shop-shell.js: missing single canonical top template');
+if(!/mountAdminTop[\s\S]*canonicalTop/.test(shellSource))errors.push('shop-shell.js: admin top bypasses canonical template');
+if(!/mountOperationTop[\s\S]*canonicalTop/.test(shellSource))errors.push('shop-shell.js: operation top bypasses canonical template');
 for(const name of files){
   const source=fs.readFileSync(path.join(shopDir,name),'utf8');
   if(!/shop-common\.css\?v=\d+/.test(source))errors.push(name+': missing versioned shop-common.css');

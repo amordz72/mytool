@@ -54,11 +54,17 @@
     }).join('');
   }
   function canonicalHeader(options){
-    const identityId=options?.identityId||'',role=options?.role||'admin';
-    const badge=role==='worker'?'عامل':'إدارة';
-    const identity=role==='worker'?'جاري التحقق من الجلسة…':'إدارة';
+    const identityId=options?.identityId||'shellIdentity',role=options?.role||'pending';
+    const badge=role==='worker'?'عامل':role==='admin'?'إدارة':'…';
+    const identity=role==='worker'?'جاري التحقق من الجلسة…':role==='admin'?'حساب الإدارة':'جاري التحقق من الجلسة…';
     const buttonId=options?.drawerButtonId?' id="'+options.drawerButtonId+'"':'';
     return '<header class="shop-topbar shell-canonical-header"><div class="topbar-title"><div class="topbar-logo">MT</div><div class="topbar-copy"><h1>MyTool — حساب المحل</h1><div class="muted shell-identity"'+(identityId?' id="'+identityId+'"':'')+'>'+identity+'</div></div><span class="pill shell-role-badge">'+badge+'</span><button'+buttonId+' class="btn secondary menu-toggle mobile-only" type="button" aria-label="فتح القائمة">☰</button></div><div class="topbar-actions desktop-only"><a class="btn secondary" href="../" style="text-decoration:none">MyTool</a><button class="btn secondary" type="button" data-shell-action="refresh">تحديث</button><button class="btn secondary" type="button" data-shell-action="logout">خروج</button></div></header>';
+  }
+  function canonicalTop(options){
+    const current=options?.active||document.body.dataset.screen||'index';
+    const role=options?.role||'pending';
+    const nav=role==='pending'?'':routeLinks({...options,role,active:current},'top','top');
+    return canonicalHeader({...options,role})+'<nav id="screenNav" class="shared-screen-nav screen-nav unified-nav" aria-label="التنقل الرئيسي">'+nav+'</nav>';
   }
 
   function emit(name){window.dispatchEvent(new CustomEvent('shop-shell:'+name))}
@@ -96,9 +102,7 @@
   function mountAdminTop(targetId,options){
     const target=document.getElementById(targetId);if(!target||target.dataset.mounted)return;
     target.dataset.mounted='1';
-    const current=options?.active||'index';
-    const nav=routeLinks({...options,role:'admin',active:current},'top','top');
-    target.innerHTML=canonicalHeader({role:'admin'})+'<nav class="unified-nav" aria-label="التنقل الرئيسي">'+nav+'</nav>';
+    target.innerHTML=canonicalTop({...options,role:'admin',identityId:'identityText',drawerButtonId:'drawerOpen'});
   }
 
   function watchAdmin(options){
@@ -116,25 +120,24 @@
     const target=document.getElementById(targetId);if(!target)return;
     const current=options?.active||'',role=options?.role||'admin';
     const links=routeLinks({...options,role,active:current},'drawer','drawer');
-    const nav=routeLinks({...options,role,active:current},'top','top');
-    target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links">'+links+'</nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalHeader({role,identityId:'standaloneIdentity',drawerButtonId:'drawerOpen'})+'<nav class="shared-screen-nav unified-nav" aria-label="التنقل الرئيسي">'+nav+'</nav>';
+    target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links">'+links+'</nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({...options,role,active:current,identityId:'standaloneIdentity',drawerButtonId:'drawerOpen'});
     bindLogout(target);bindDrawer(target);
   }
 
   function mountOperationTop(targetId){
     const target=document.getElementById(targetId);if(!target)return;
-    target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalHeader({role:'worker',identityId:'identityText',drawerButtonId:'drawerOpen'});
+    target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identityText',drawerButtonId:'drawerOpen'});
     bindLogout(target);bindDrawer(target);
   }
 
   function mountOperationNav(targetId){
     const target=document.getElementById(targetId);if(!target)return;
-    target.innerHTML='<nav id="screenNav" class="screen-nav unified-nav"></nav>';
+    target.innerHTML='';target.hidden=true;
   }
 
   function mountDailyTop(targetId){
     const target=document.getElementById(targetId);if(!target)return;
-    target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalHeader({role:'worker',identityId:'identity',drawerButtonId:'drawerOpen'});
+    target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identity',drawerButtonId:'drawerOpen'});
     bindLogout(target);bindDrawer(target);
   }
 
@@ -147,7 +150,7 @@
     if(screen)screen.innerHTML=top;
     if(drawer)drawer.innerHTML=side;
     document.querySelectorAll('.shell-role-badge').forEach(el=>el.textContent=options.role==='worker'?'عامل':'إدارة');
-    if(options.role==='admin')document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='إدارة');
+    if(options.role==='admin')document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='حساب الإدارة');
     return {top:routeItems(options,'top').length,drawer:routeItems(options,'drawer').length};
   }
 
