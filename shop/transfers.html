@@ -14,11 +14,11 @@
     @media(max-width:760px){.shell{padding:9px}.grid,.row,.stock-grid{grid-template-columns:1fr}.topbar{align-items:flex-start}.top-actions{flex-direction:column}.card{border-radius:15px;padding:13px}.actions button{flex:1;min-width:120px}.transfer-head{align-items:flex-start;flex-direction:column}}
   .screen-nav{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;margin-bottom:10px}.screen-nav a{flex:0 0 auto;text-decoration:none;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--main);font-weight:800;font-size:12px}.screen-nav a.active{background:var(--main);color:#fff}.product-search-results{display:grid;gap:6px;margin-top:7px;max-height:260px;overflow:auto}.product-result{display:flex;justify-content:space-between;gap:8px;text-align:right;background:#f8fafc;border:1px solid var(--line);color:var(--text);font-weight:800}.product-result small{color:var(--muted)}.product-selected{margin-top:7px;padding:9px;border-radius:10px;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px}.native-product-select{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important}
 .branch-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.branch-button{width:auto;background:#fff;color:var(--main);border:1px solid var(--main);font-weight:800}.branch-button.active{background:var(--main);color:#fff}
-.mode-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;margin-bottom:12px}.mode-bar strong{margin-left:auto}.mode-choice{width:auto;padding:9px 14px;background:#fff;color:var(--main);border:1px solid var(--main);border-radius:12px;font-weight:800}.mode-choice.active{background:var(--main);color:#fff}.mode-test-note{color:#b45309;font-weight:800}</style>
+.mode-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;margin-bottom:12px}.mode-bar strong{margin-left:auto}.mode-choice{width:auto;padding:9px 14px;background:#fff;color:var(--main);border:1px solid var(--main);border-radius:12px;font-weight:800}.mode-choice.active{background:var(--main);color:#fff}.mode-test-note{color:#b45309;font-weight:800}.drawer-btn{width:50px;height:50px;border:1px solid var(--main);border-radius:15px;background:#fff;color:var(--main);font-size:27px;font-weight:900}.drawer-overlay{position:fixed;inset:0;background:#0f172a73;z-index:80}.drawer{position:fixed;top:0;right:0;width:min(82vw,310px);height:100vh;background:#0f172a;color:#fff;z-index:81;padding:18px;box-shadow:-15px 0 35px #0f172a40}.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.drawer-close{width:42px;height:42px;border:1px solid #475569;border-radius:12px;background:transparent;color:#fff;font-size:24px}.drawer-links{display:grid;gap:8px}.drawer-links a{display:block;padding:13px;border-radius:12px;background:#ffffff12;color:#fff;text-decoration:none;font-weight:800}.drawer-links a.active{background:var(--main)}.drawer-hidden{display:none!important}</style>
 </head>
-<body data-screen="transfers">
+<body data-screen="transfers"><div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav></aside>
 <div class="shell" id="app">
-  <div class="topbar">
+  <div class="topbar"><button id="drawerOpen" class="drawer-btn" type="button" aria-label="فتح القائمة">☰</button>
     <div class="brand"><div class="logo">M</div><div><strong>MyTool — حساب المحل</strong><div class="muted" id="identityText">جاري التحقق من الجلسة…</div></div></div>
     <div class="top-actions"><a id="shopHomeLink" href="daily.html">الرئيسية</a><a id="myToolLink" class="hidden" href="../">MyTool</a></div>
   </div>
@@ -138,6 +138,9 @@
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
   const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
+  $('drawerOpen').addEventListener('click',()=>{$('drawer').classList.remove('drawer-hidden');$('drawerOverlay').classList.remove('drawer-hidden')})
+  const closeDrawer=()=>{$('drawer').classList.add('drawer-hidden');$('drawerOverlay').classList.add('drawer-hidden')}
+  $('drawerClose').addEventListener('click',closeDrawer);$('drawerOverlay').addEventListener('click',closeDrawer)
   $('modeReal').addEventListener('click',()=>{localStorage.setItem('mytool_admin_data_mode','real');location.reload()})
   $('modeTest').addEventListener('click',()=>{localStorage.setItem('mytool_admin_data_mode','test');location.reload()})
 
@@ -401,7 +404,7 @@
       ['inventory','inventory-count.html','جرد','can_inventory'],['stock','stock.html','المخزون','can_view_stock'],
       ['transfers','transfers.html','تحويلات','can_transfer']
     ].filter(x=>state.mode==='admin'||!x[3]||state.permissions[x[3]])
-    $('screenNav').innerHTML='<a href="'+(state.mode==='admin'?'index.html':'daily.html')+'">الرئيسية</a>'+links.map(x=>'<a class="'+(x[0]===screen?'active':'')+'" href="'+x[1]+'">'+x[2]+'</a>').join('')
+    const navHtml='<a href="'+(state.mode==='admin'?'index.html':'daily.html')+'">الرئيسية</a>'+links.map(x=>'<a class="'+(x[0]===screen?'active':'')+'" href="'+x[1]+'">'+x[2]+'</a>').join('');$('screenNav').innerHTML=navHtml;$('drawerLinks').innerHTML=navHtml
     const picker={sale:'saleProduct',purchase:'purchaseProduct',inventory:'inventoryProduct',transfers:'transferProduct'}[screen]
     if(picker)setupProductPicker(picker)
     document.title=({sale:'البيع',purchase:'المشتريات',inventory:'الجرد',stock:'المخزون',transfers:'التحويلات'})[screen]+' — MyTool'
