@@ -60,7 +60,7 @@
         <div class="field"><label>المنتج</label><select id="purchaseProduct" required></select></div>
         <div class="row">
           <div class="field"><label>الكمية</label><input id="purchaseQty" type="number" min="1" step="1" value="1" required></div>
-          <div class="field"><label>سعر شراء الوحدة (دج)</label><input id="purchaseCost" type="number" min="0" step="0.01" inputmode="decimal" required></div>
+          <div class="field"><label>سعر شراء الوحدة (دج)</label><input id="purchaseCost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="اتركه فارغًا لاستخدام آخر سعر"><div id="purchaseCostHint" class="hint">إذا تركته فارغًا سنستخدم آخر سعر شراء لنفس المنتج في هذا الفرع.</div></div>
         </div>
         <div class="field" id="purchaseBranchWrap"><label>الفرع</label><select id="purchaseBranch" required></select></div>
         <div class="field"><label>المورد</label><select id="purchaseSupplier"></select></div>
@@ -134,7 +134,7 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
+  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
   $('drawerOpen').addEventListener('click',()=>{$('drawer').classList.remove('drawer-hidden');$('drawerOverlay').classList.remove('drawer-hidden')})
   const closeDrawer=()=>{$('drawer').classList.add('drawer-hidden');$('drawerOverlay').classList.add('drawer-hidden')}
@@ -238,13 +238,22 @@
 
   async function loadInventory(branchId=Number($('stockBranch')?.value||state.defaultBranchId)){
     if(!branchId)return
-    let r
-    if(state.mode==='worker')r=await supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId})
-    else r=await supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId})
-    if(r.error){if(expireInvalidWorkerSession(r.error))return;throw r.error}
-    const allowedProducts=new Set(state.products.map(x=>Number(x.id)));const incoming=state.mode==='admin'?(r.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))):(r.data||[]);const other=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId));state.inventory=other.concat(incoming)
+    const inventoryCall=state.mode==='worker'
+      ?supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId})
+      :supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId})
+    const pricingCall=state.mode==='worker'
+      ?supabase.rpc('worker_get_branch_product_prices',{p_session_token:state.workerToken,p_branch_id:branchId})
+      :supabase.rpc('admin_get_branch_product_prices',{p_branch_id:branchId})
+    const [r,prices]=await Promise.all([inventoryCall,pricingCall])
+    const error=r.error||prices.error
+    if(error){if(expireInvalidWorkerSession(error))return;throw error}
+    const allowedProducts=new Set(state.products.map(x=>Number(x.id)))
+    const incoming=state.mode==='admin'?(r.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))):(r.data||[])
+    state.inventory=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId)).concat(incoming)
+    const incomingPrices=(prices.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))).map(x=>({...x,branch_id:branchId}))
+    state.pricing=state.pricing.filter(x=>Number(x.branch_id)!==Number(branchId)).concat(incomingPrices)
     if(Number($('stockBranch').value)===Number(branchId))renderStock()
-    syncSaleStatus();syncInventoryStatus()
+    syncSaleStatus();syncInventoryStatus();syncPurchaseCostHint()
   }
 
   function renderStock(){
@@ -308,17 +317,32 @@
     notify('تم تسجيل الجرد بنجاح.','ok')
   }
 
+  function pricingItem(productId,branchId){return state.pricing.find(x=>Number(x.product_id)===Number(productId)&&Number(x.branch_id)===Number(branchId))||null}
+  function syncPurchaseCostHint(){
+    const product=Number($('purchaseProduct').value),branch=Number($('purchaseBranch').value),last=pricingItem(product,branch)?.last_purchase_price
+    $('purchaseCostHint').className='hint '+(last!==null&&last!==undefined?'ok':'warn')
+    $('purchaseCostHint').textContent=last!==null&&last!==undefined?'آخر سعر شراء في هذا الفرع: '+Number(last).toLocaleString('ar-DZ',{maximumFractionDigits:2})+' دج. سيُستخدم إذا تركت الحقل فارغًا.':'لا يوجد سعر شراء سابق لهذا المنتج في هذا الفرع؛ يجب إدخال السعر.'
+  }
+
   async function savePurchase(e){
-    e.preventDefault();const product=Number($('purchaseProduct').value),qtyRaw=$('purchaseQty').value.trim(),costRaw=$('purchaseCost').value.trim(),qty=Number(qtyRaw),cost=Number(costRaw),branch=Number($('purchaseBranch').value),supplier=$('purchaseSupplier').value?Number($('purchaseSupplier').value):null,notes=$('purchaseNotes').value.trim()||null
+    e.preventDefault()
+    const product=Number($('purchaseProduct').value),qtyRaw=$('purchaseQty').value.trim(),costRaw=$('purchaseCost').value.trim(),qty=Number(qtyRaw),branch=Number($('purchaseBranch').value),supplier=$('purchaseSupplier').value?Number($('purchaseSupplier').value):null,notes=$('purchaseNotes').value.trim()||null
     if(!product)return notifyPurchase('اختر المنتج.','error')
     if(qtyRaw===''||!Number.isInteger(qty)||qty<1)return notifyPurchase('أدخل كمية صحيحة أكبر من صفر.','error')
-    if(costRaw===''||!Number.isFinite(cost)||cost<=0)return notifyPurchase('أدخل سعر شراء أكبر من صفر.','error')
     if(!branch)return notifyPurchase('اختر الفرع الذي ستضاف إليه المشتريات.','error')
+    const fallback=pricingItem(product,branch)?.last_purchase_price
+    const cost=costRaw===''?Number(fallback):Number(costRaw)
+    if(costRaw!==''&&(!Number.isFinite(cost)||cost<=0))return notifyPurchase('سعر الشراء يجب أن يكون أكبر من صفر.','error')
+    if(costRaw===''&&(!Number.isFinite(cost)||cost<=0))return notifyPurchase('لا يوجد سعر شراء سابق لهذا المنتج في هذا الفرع؛ أدخل سعرًا أكبر من صفر.','error')
+    if(costRaw===''&&!confirm('سيُستخدم آخر سعر شراء: '+cost.toLocaleString('ar-DZ',{maximumFractionDigits:2})+' دج. متابعة؟'))return
     setBusy(true);let res
     if(state.mode==='worker')res=await supabase.rpc('worker_create_purchase',{p_session_token:state.workerToken,p_product_id:product,p_quantity:qty,p_unit_cost:cost,p_branch_id:branch,p_supplier_id:supplier,p_notes:notes,p_operation_at:null})
     else res=await supabase.rpc('admin_create_purchase',{p_product_id:product,p_quantity:qty,p_unit_cost:cost,p_branch_id:branch,p_supplier_id:supplier,p_notes:notes,p_operation_at:null})
-    setBusy(false);if(res.error)return notifyPurchase('لم يتم حفظ المشتريات: '+res.error.message,'error')
-    $('purchaseQty').value='1';$('purchaseCost').value='';$('purchaseNotes').value='';await loadInventory(branch);notifyPurchase('تم تسجيل المشتريات ودفعة المصدر. رقم العملية: '+res.data,'ok')
+    setBusy(false)
+    if(res.error)return notifyPurchase('لم يتم حفظ المشتريات: '+res.error.message,'error')
+    $('purchaseQty').value='1';$('purchaseCost').value='';$('purchaseNotes').value=''
+    await loadInventory(branch)
+    notifyPurchase('تم تسجيل المشتريات بسعر '+cost.toLocaleString('ar-DZ',{maximumFractionDigits:2})+' دج. رقم العملية: '+res.data,'ok')
   }
 
   function transferPayload(){
@@ -358,6 +382,7 @@
     notify(action==='send'?'تم تأكيد الإرسال.':action==='receive'?'تم تأكيد الاستلام.':'تم إلغاء الطلب.','ok');await Promise.all([loadTransfers(),loadInventory(Number($('stockBranch').value))])
   }
 
+  $('purchaseProduct').addEventListener('change',syncPurchaseCostHint);$('purchaseBranch').addEventListener('change',async()=>{await loadInventory(Number($('purchaseBranch').value));syncPurchaseCostHint()})
   $('saleProduct').addEventListener('change',syncSaleStatus);$('saleBranch').addEventListener('change',async()=>{await loadInventory(Number($('saleBranch').value));syncSaleStatus()})
   $('inventoryProduct').addEventListener('change',syncInventoryStatus);$('inventoryBranch').addEventListener('change',async()=>{await loadInventory(Number($('inventoryBranch').value));syncInventoryStatus()})
   $('stockBranch').addEventListener('change',()=>loadInventory(Number($('stockBranch').value)))
