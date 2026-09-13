@@ -88,7 +88,7 @@
 <a v-if="userMode==='admin'" class="" href="users.html">المستخدمون</a>
 <a v-if="userMode==='admin'" class="" href="settings.html">الإعدادات</a>
 </nav>
-<div v-if="userMode==='admin'" class="data-mode-bar"><strong>نوع البيانات</strong><button class="mode-btn" :class="{active:adminDataMode==='real'}" @click="setAdminDataMode('real')">حقيقي</button><button class="mode-btn" :class="{active:adminDataMode==='test'}" @click="setAdminDataMode('test')">تجريبي</button><span v-if="adminDataMode==='test'" class="test-warning">وضع تجريبي</span></div>
+
     <section id="dashboard" class="dash-hero content-card">
       <div class="hero-top">
         <div>
