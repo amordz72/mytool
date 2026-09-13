@@ -1,0 +1,14 @@
+/* MyTool shared shell: visual invariants for every shop page */
+:root{--shell-main:#0f766e;--shell-main2:#14b8a6;--shell-line:#e5e7eb;--shell-text:#172033}
+.shop-topbar,.topbar,.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar-title,.brand,.daily-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.topbar-logo,.logo,.daily-logo{display:grid;place-items:center;background:linear-gradient(135deg,var(--main2,var(--shell-main2)),var(--main,var(--shell-main)));color:#fff;font-weight:900;flex:0 0 auto}
+.drawer-btn,.menu-toggle{flex:0 0 auto}
+.drawer-overlay{position:fixed;inset:0;background:#0f172a73;z-index:80}
+.drawer{position:fixed;top:0;right:0;width:min(82vw,310px);height:100vh;background:#0f172a;color:#fff;z-index:81;padding:18px;box-shadow:-15px 0 35px #0f172a40}
+.drawer-hidden{display:none!important}
+@media(max-width:760px){
+  .shop-topbar .topbar-title{width:100%}
+  .shop-topbar .menu-toggle{margin-right:auto}
+  .topbar .top-actions{display:none!important}
+}
