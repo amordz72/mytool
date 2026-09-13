@@ -10,7 +10,7 @@
   <script src="shop-shell.js?v=20260913-1501"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <style>
-    body{margin:0;background:#f4f7fb;color:#172033;font-family:Arial,Tahoma,sans-serif}.shell{max-width:900px;margin:auto;padding:12px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:10px}.field{margin-top:10px}label{display:block;font-weight:800;font-size:13px;margin-bottom:5px}select,input,button{width:100%;font:inherit;padding:11px;border:1px solid #e5e7eb;border-radius:11px;background:#fff}.btn{background:#0f766e;color:#fff;border:0;font-weight:800}.btn.secondary{background:#fff;color:#0f766e;border:1px solid #0f766e}.message{padding:10px;border-radius:10px;background:#eff6ff;color:#1d4ed8;margin-bottom:10px}.message.error{background:#fff1f2;color:#b91c1c}.message.ok{background:#ecfdf5;color:#047857}.muted{color:#6b7280;font-size:12px;line-height:1.7}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:14px;padding:4px;background:#f1f5f9;border-radius:13px}.tab-btn{padding:10px 6px;border:0;background:transparent;color:#475569;font-weight:900;border-radius:10px}.tab-btn.active{background:#fff;color:#0f766e;box-shadow:0 1px 5px #00000012}.tab-panel{margin-top:12px}.tab-panel.hidden{display:none!important}.inline-result{margin-top:10px;padding:10px;border-radius:11px;background:#f8fafc;border:1px solid #e5e7eb;line-height:1.7;font-size:13px}.inline-result.ok{background:#ecfdf5;border-color:#a7f3d0;color:#047857}.inline-result.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}.camera-launch{margin-top:10px}.camera-live{margin-top:10px;padding:10px;border:1px solid #d1fae5;border-radius:13px;background:#f0fdfa}.camera-reader{margin-top:8px;border-radius:11px;overflow:hidden;background:#0f172a}.camera-code{direction:ltr;text-align:center;font-family:monospace;font-size:20px;font-weight:900;margin-top:8px}.camera-status{margin-top:8px;font-size:12px;line-height:1.7;color:#475569}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button{width:auto}.label-preview{margin-top:10px;border:1px dashed #cbd5e1;border-radius:14px;padding:14px;text-align:center;background:#fff}.label-preview svg{max-width:100%;height:auto}.scan-result{margin-top:8px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e5e7eb}.hidden{display:none!important}@media(max-width:650px){.shell{padding:8px}.tabs{position:sticky;top:0;z-index:3}.tab-btn{font-size:12px;padding:9px 4px}.actions{display:grid;grid-template-columns:1fr}.actions button{width:100%}}@media print{body *{visibility:hidden!important}#printLabel,#printLabel *{visibility:visible!important}#printLabel{position:absolute;inset:0;margin:0 auto;border:0;width:60mm;min-height:32mm;padding:4mm;background:#fff;color:#000}}
+    body{margin:0;background:#f4f7fb;color:#172033;font-family:Arial,Tahoma,sans-serif}.shell{max-width:900px;margin:auto;padding:12px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:10px}.field{margin-top:10px}label{display:block;font-weight:800;font-size:13px;margin-bottom:5px}select,input,button{width:100%;font:inherit;padding:11px;border:1px solid #e5e7eb;border-radius:11px;background:#fff}.btn{background:#0f766e;color:#fff;border:0;font-weight:800}.btn.secondary{background:#fff;color:#0f766e;border:1px solid #0f766e}.message{padding:10px;border-radius:10px;background:#eff6ff;color:#1d4ed8;margin-bottom:10px}.message.error{background:#fff1f2;color:#b91c1c}.message.ok{background:#ecfdf5;color:#047857}.muted{color:#6b7280;font-size:12px;line-height:1.7}.picker-source{display:none!important}.product-results{margin-top:7px;border:1px solid #dbe4ea;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 8px 24px #0f172a14}.product-result{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:0;border-bottom:1px solid #eef2f7;border-radius:0;padding:11px 12px;text-align:right;background:#fff;color:#172033}.product-result:last-child{border-bottom:0}.product-result strong{display:block}.product-result small{display:block;margin-top:3px;color:#64748b}.product-result .pick-word{color:#0f766e;font-weight:900;font-size:12px;white-space:nowrap}.product-empty{padding:14px;text-align:center;color:#64748b;font-size:13px}.selected-product{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding:10px 12px;border:1px solid #d1fae5;background:#f0fdfa;border-radius:12px}.selected-product strong{display:block;color:#0f766e}.selected-product small{display:block;color:#64748b;margin-bottom:2px}.selected-product .change-product{width:auto;padding:8px 12px;border:1px solid #0f766e;color:#0f766e;background:#fff;font-weight:900}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:14px;padding:4px;background:#f1f5f9;border-radius:13px}.tab-btn{padding:10px 6px;border:0;background:transparent;color:#475569;font-weight:900;border-radius:10px}.tab-btn.active{background:#fff;color:#0f766e;box-shadow:0 1px 5px #00000012}.tab-panel{margin-top:12px}.tab-panel.hidden{display:none!important}.inline-result{margin-top:10px;padding:10px;border-radius:11px;background:#f8fafc;border:1px solid #e5e7eb;line-height:1.7;font-size:13px}.inline-result.ok{background:#ecfdf5;border-color:#a7f3d0;color:#047857}.inline-result.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}.camera-launch{margin-top:10px}.camera-live{margin-top:10px;padding:10px;border:1px solid #d1fae5;border-radius:13px;background:#f0fdfa}.camera-reader{margin-top:8px;border-radius:11px;overflow:hidden;background:#0f172a}.camera-code{direction:ltr;text-align:center;font-family:monospace;font-size:20px;font-weight:900;margin-top:8px}.camera-status{margin-top:8px;font-size:12px;line-height:1.7;color:#475569}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button{width:auto}.label-preview{margin-top:10px;border:1px dashed #cbd5e1;border-radius:14px;padding:14px;text-align:center;background:#fff}.label-preview svg{max-width:100%;height:auto}.scan-result{margin-top:8px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e5e7eb}.hidden{display:none!important}@media(max-width:650px){.shell{padding:8px}.tabs{position:sticky;top:0;z-index:3}.tab-btn{font-size:12px;padding:9px 4px}.actions{display:grid;grid-template-columns:1fr}.actions button{width:100%}.selected-product{align-items:flex-start}.selected-product .change-product{width:auto}}@media print{body *{visibility:hidden!important}#printLabel,#printLabel *{visibility:visible!important}#printLabel{position:absolute;inset:0;margin:0 auto;border:0;width:60mm;min-height:32mm;padding:4mm;background:#fff;color:#000}}
   </style>
 </head>
 <body data-screen="barcodes">
@@ -20,9 +20,15 @@
 
   <section class="card">
     <h2 style="margin-top:0">باركود المنتجات والملصقات</h2>
-    <div class="muted">اختر المنتج مرة واحدة، ثم استعمل الأداة التي تحتاجها فقط.</div>
+    <div class="muted">ابحث بالاسم أو Product ID، اختر المنتج من النتائج داخل الصفحة، ثم استعمل الأداة التي تحتاجها.</div>
 
-    <div class="field"><label>المنتج</label><input id="productSearch" type="search" placeholder="الاسم أو Product ID"><select id="productSelect" style="margin-top:6px"></select></div>
+    <div class="field">
+      <label>المنتج</label>
+      <input id="productSearch" type="search" autocomplete="off" placeholder="الاسم أو Product ID">
+      <select id="productSelect" class="picker-source" tabindex="-1" aria-hidden="true"></select>
+      <div id="productResults" class="product-results hidden" role="listbox" aria-label="نتائج البحث عن المنتج"></div>
+      <div id="selectedProduct" class="selected-product muted"><span>لم يتم اختيار منتج بعد.</span></div>
+    </div>
 
     <div class="tabs" role="tablist" aria-label="أدوات الباركود">
       <button class="tab-btn active" type="button" data-tab="bind">ربط باركود</button>
@@ -58,6 +64,40 @@
     </div>
   </section>
 </div>
+<script>
+(function(){
+  const search=document.getElementById('productSearch'),select=document.getElementById('productSelect'),results=document.getElementById('productResults'),chosen=document.getElementById('selectedProduct');
+  if(!search||!select||!results||!chosen)return;
+  let open=false;
+  function syncSelected(){
+    const option=select.options[select.selectedIndex];
+    chosen.innerHTML='';
+    if(!option||!option.value){chosen.className='selected-product muted';chosen.textContent='لم يتم اختيار منتج بعد.';return}
+    chosen.className='selected-product';
+    const info=document.createElement('div'),small=document.createElement('small'),strong=document.createElement('strong'),change=document.createElement('button');
+    small.textContent='المنتج المحدد';strong.textContent=option.textContent;change.type='button';change.className='change-product';change.textContent='تغيير';
+    change.onclick=()=>{search.focus();open=true;renderResults()};info.append(small,strong);chosen.append(info,change);
+  }
+  function renderResults(){
+    results.innerHTML='';
+    const options=[...select.options].filter(o=>o.value).slice(0,12);
+    if(!options.length){const empty=document.createElement('div');empty.className='product-empty';empty.textContent='لا يوجد منتج مطابق.';results.appendChild(empty)}
+    for(const option of options){
+      const button=document.createElement('button'),text=document.createElement('span'),name=document.createElement('strong'),meta=document.createElement('small'),word=document.createElement('span');
+      button.type='button';button.className='product-result';button.setAttribute('role','option');name.textContent=option.textContent;meta.textContent='اضغط لاختيار المنتج';word.className='pick-word';word.textContent='اختيار';text.append(name,meta);button.append(text,word);
+      button.onclick=()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));open=false;results.classList.add('hidden');syncSelected()};results.appendChild(button)
+    }
+    results.classList.toggle('hidden',!open)
+  }
+  search.addEventListener('focus',()=>{open=true;requestAnimationFrame(renderResults)});
+  search.addEventListener('input',()=>{open=true;requestAnimationFrame(renderResults)});
+  search.addEventListener('keydown',e=>{if(e.key==='Escape'){open=false;results.classList.add('hidden')}});
+  select.addEventListener('change',()=>{syncSelected();open=false;results.classList.add('hidden')});
+  new MutationObserver(()=>{requestAnimationFrame(()=>{syncSelected();if(open)renderResults()})}).observe(select,{childList:true});
+  document.addEventListener('click',e=>{if(!e.target.closest('#productSearch')&&!e.target.closest('#productResults')&&!e.target.closest('.change-product')){open=false;results.classList.add('hidden')}});
+  syncSelected();
+})();
+</script>
 <script type="module" src="barcodes.js?v=20260913-2230"></script>
 </body>
 </html>
