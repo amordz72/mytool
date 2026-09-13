@@ -238,8 +238,17 @@
   function pricingItem(productId,branchId){return state.pricing.find(x=>Number(x.product_id)===Number(productId)&&Number(x.branch_id)===Number(branchId))||null}
   function syncPurchaseCostHint(){
     const product=Number($('purchaseProduct').value),branch=Number($('purchaseBranch').value),last=pricingItem(product,branch)?.last_purchase_price
-    $('purchaseCostHint').className='hint '+(last!==null&&last!==undefined?'ok':'warn')
-    $('purchaseCostHint').textContent=last!==null&&last!==undefined?'آخر سعر شراء في هذا الفرع: '+Number(last).toLocaleString('ar-DZ',{maximumFractionDigits:2})+' دج. سيُستخدم إذا تركت الحقل فارغًا.':'لا يوجد سعر شراء سابق لهذا المنتج في هذا الفرع؛ يجب إدخال السعر.'
+    const costInput=$('purchaseCost')
+    const hasLast=last!==null&&last!==undefined&&Number.isFinite(Number(last))&&Number(last)>0
+    if(!product||!branch){
+      costInput.value=''
+      $('purchaseCostHint').className='hint warn'
+      $('purchaseCostHint').textContent='اختر المنتج والفرع لمعرفة آخر سعر شراء.'
+      return
+    }
+    costInput.value=hasLast?String(Number(last)):''
+    $('purchaseCostHint').className='hint '+(hasLast?'ok':'warn')
+    $('purchaseCostHint').textContent=hasLast?'آخر سعر شراء في هذا الفرع: '+Number(last).toLocaleString('ar-DZ',{maximumFractionDigits:2})+' دج — تم تحميله تلقائيًا ويمكن تعديله.':'لا يوجد سعر شراء سابق لهذا المنتج في هذا الفرع؛ يجب إدخال السعر.'
   }
 
   async function savePurchase(e){
