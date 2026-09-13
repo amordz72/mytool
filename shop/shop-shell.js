@@ -7,6 +7,7 @@
 
   const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
+  window.ShopApiConfig=Object.freeze({url:SUPABASE_URL,key:SUPABASE_PUBLISHABLE_KEY});
   async function requestLogout(){
     const token=localStorage.getItem('mytool_shop_worker_token')||'';
     try{
@@ -30,87 +31,24 @@
     close.onclick=hide;overlay.onclick=hide;
   }
 
-  function routeItems(options,placement){
-    if(!window.ShopRoutes)throw new Error('ShopRoutes must load before ShopShell');
-    return window.ShopRoutes.list({role:options?.role||'admin',permissions:options?.permissions||{}},placement);
-  }
+  function routeItems(options,placement){if(!window.ShopRoutes)throw new Error('ShopRoutes must load before ShopShell');return window.ShopRoutes.list({role:options?.role||'admin',permissions:options?.permissions||{}},placement)}
   const active=(key,current)=>key===current?' active':'';
-  function routeAnchor(route,current,variant){
-    const label=variant==='top'?(route.shortLabel||route.label):route.label;
-    const icon=variant==='drawer'?'<span class="ico">'+route.icon+'</span>':'';
-    const classes=variant==='drawer'?'side-link drawer-link':'';
-    return '<a class="'+classes+active(route.id,current)+'" href="'+route.path+'">'+icon+'<span>'+label+'</span></a>';
-  }
-  function routeLinks(options,placement,variant){
-    const current=options?.active||'',items=routeItems(options,placement);
-    if(variant!=='drawer')return items.map(route=>routeAnchor(route,current,variant)).join('');
-    const order=['general','operations','inventory','money','admin'];
-    return order.map(group=>{
-      const children=items.filter(route=>route.group===group);if(!children.length)return '';
-      const opened=children.some(route=>route.id===current)?' open':'';
-      const label=window.ShopRoutes.groups[group]||group;
-      return '<details class="shell-nav-group"'+opened+'><summary>'+label+'</summary><div class="shell-nav-group-links">'+children.map(route=>routeAnchor(route,current,'drawer')).join('')+'</div></details>';
-    }).join('');
-  }
-  function canonicalHeader(options){
-    const identityId=options?.identityId||'shellIdentity',role=options?.role||'pending';
-    const badge=role==='worker'?'عامل':role==='admin'?'إدارة':'…';
-    const identity=role==='worker'?'جاري التحقق من الجلسة…':role==='admin'?'حساب الإدارة':'جاري التحقق من الجلسة…';
-    const buttonId=options?.drawerButtonId?' id="'+options.drawerButtonId+'"':'';
-    return '<header class="shop-topbar shell-canonical-header"><div class="topbar-title"><div class="topbar-logo">MT</div><span class="shell-template-mark" title="القالب الموحد 1501" aria-label="علامة القالب الموحد"></span><div class="topbar-copy"><h1>MyTool — حساب المحل</h1><div class="muted shell-identity"'+(identityId?' id="'+identityId+'"':'')+'>'+identity+'</div></div><span class="pill shell-role-badge">'+badge+'</span><button'+buttonId+' class="btn secondary menu-toggle mobile-only" type="button" aria-label="فتح القائمة">☰</button></div><div class="topbar-actions desktop-only"><a class="btn secondary" href="../" style="text-decoration:none">MyTool</a><button class="btn secondary" type="button" data-shell-action="refresh">تحديث</button><button class="btn secondary" type="button" data-shell-action="logout">خروج</button></div></header>';
-  }
-  function canonicalTop(options){
-    const current=options?.active||document.body.dataset.screen||'index';
-    const role=options?.role||'pending';
-    const nav=role==='pending'?'':routeLinks({...options,role,active:current},'top','top');
-    return canonicalHeader({...options,role})+'<nav id="screenNav" class="shared-screen-nav screen-nav unified-nav" aria-label="التنقل الرئيسي">'+nav+'</nav>';
-  }
+  function routeAnchor(route,current,variant){const label=variant==='top'?(route.shortLabel||route.label):route.label;const icon=variant==='drawer'?'<span class="ico">'+route.icon+'</span>':'';const classes=variant==='drawer'?'side-link drawer-link':'';return '<a class="'+classes+active(route.id,current)+'" href="'+route.path+'">'+icon+'<span>'+label+'</span></a>'}
+  function routeLinks(options,placement,variant){const current=options?.active||'',items=routeItems(options,placement);if(variant!=='drawer')return items.map(route=>routeAnchor(route,current,variant)).join('');const order=['general','operations','inventory','money','admin'];return order.map(group=>{const children=items.filter(route=>route.group===group);if(!children.length)return '';const opened=children.some(route=>route.id===current)?' open':'';const label=window.ShopRoutes.groups[group]||group;return '<details class="shell-nav-group"'+opened+'><summary>'+label+'</summary><div class="shell-nav-group-links">'+children.map(route=>routeAnchor(route,current,'drawer')).join('')+'</div></details>'}).join('')}
+  function canonicalHeader(options){const identityId=options?.identityId||'shellIdentity',role=options?.role||'pending';const badge=role==='worker'?'عامل':role==='admin'?'إدارة':'…';const identity=role==='worker'?'جاري التحقق من الجلسة…':role==='admin'?'حساب الإدارة':'جاري التحقق من الجلسة…';const buttonId=options?.drawerButtonId?' id="'+options.drawerButtonId+'"':'';return '<header class="shop-topbar shell-canonical-header"><div class="topbar-title"><div class="topbar-logo">MT</div><span class="shell-template-mark" title="القالب الموحد 1501" aria-label="علامة القالب الموحد"></span><div class="topbar-copy"><h1>MyTool — حساب المحل</h1><div class="muted shell-identity"'+(identityId?' id="'+identityId+'"':'')+'>'+identity+'</div></div><span class="pill shell-role-badge">'+badge+'</span><button'+buttonId+' class="btn secondary menu-toggle mobile-only" type="button" aria-label="فتح القائمة">☰</button></div><div class="topbar-actions desktop-only"><a class="btn secondary" href="../" style="text-decoration:none">MyTool</a><button class="btn secondary" type="button" data-shell-action="refresh">تحديث</button><button class="btn secondary" type="button" data-shell-action="logout">خروج</button></div></header>'}
+  function canonicalTop(options){const current=options?.active||document.body.dataset.screen||'index';const role=options?.role||'pending';const nav=role==='pending'?'':routeLinks({...options,role,active:current},'top','top');return canonicalHeader({...options,role})+'<nav id="screenNav" class="shared-screen-nav screen-nav unified-nav" aria-label="التنقل الرئيسي">'+nav+'</nav>'}
 
-  function emit(name){window.dispatchEvent(new CustomEvent('shop-shell:'+name))}
-  function bindAdminShell(){
-    const sidebar=document.querySelector('#sharedAdminSidebar .shared-admin-drawer');
-    const overlay=document.querySelector('#sharedAdminSidebar .shared-admin-overlay');
-    const close=()=>{sidebar?.classList.remove('open');overlay?.classList.remove('open');setDrawerOpen(false)};
-    document.querySelector('#sharedAdminTop .menu-toggle')?.addEventListener('click',()=>{sidebar?.classList.add('open');overlay?.classList.add('open');setDrawerOpen(true)});
-    overlay?.addEventListener('click',close);
-    document.querySelectorAll('#sharedAdminSidebar a').forEach(a=>a.addEventListener('click',close));
-    document.querySelectorAll('[data-shell-action="refresh"]').forEach(b=>b.addEventListener('click',()=>location.reload()));
-    document.querySelectorAll('[data-shell-action="logout"]').forEach(b=>b.addEventListener('click',requestLogout));
-  }
+  function bindAdminShell(){const sidebar=document.querySelector('#sharedAdminSidebar .shared-admin-drawer'),overlay=document.querySelector('#sharedAdminSidebar .shared-admin-overlay');const close=()=>{sidebar?.classList.remove('open');overlay?.classList.remove('open');setDrawerOpen(false)};document.querySelector('#sharedAdminTop .menu-toggle')?.addEventListener('click',()=>{sidebar?.classList.add('open');overlay?.classList.add('open');setDrawerOpen(true)});overlay?.addEventListener('click',close);document.querySelectorAll('#sharedAdminSidebar a').forEach(a=>a.addEventListener('click',close));document.querySelectorAll('[data-shell-action="refresh"]').forEach(b=>b.addEventListener('click',()=>location.reload()));document.querySelectorAll('[data-shell-action="logout"]').forEach(b=>b.addEventListener('click',requestLogout))}
+  function mountAdminSidebar(targetId,options){const target=document.getElementById(targetId);if(!target||target.dataset.mounted)return;target.dataset.mounted='1';const current=options?.active||'index',links=routeLinks({...options,active:current},'drawer','drawer');target.innerHTML='<div class="shared-admin-overlay"></div><aside class="shared-admin-drawer"><div class="side-brand"><div class="brand-mark">MT</div><div><strong>MyTool</strong><small>إدارة المحل</small></div></div><nav class="side-nav">'+links+'<button class="side-link" data-shell-action="refresh"><span class="ico">↻</span><span>تحديث البيانات</span></button></nav><div class="side-spacer"></div><div class="side-footer"><div class="side-user">حساب الإدارة</div><button class="side-link" data-shell-action="logout"><span class="ico">⇥</span><span>تسجيل الخروج</span></button></div></aside>'}
+  function mountAdminTop(targetId,options){const target=document.getElementById(targetId);if(!target||target.dataset.mounted)return;target.dataset.mounted='1';target.innerHTML=canonicalTop({...options,role:'admin',identityId:'identityText',drawerButtonId:'drawerOpen'})}
+  function watchAdmin(options){const tryMount=()=>{const side=document.getElementById('sharedAdminSidebar'),top=document.getElementById('sharedAdminTop');if(!side||!top)return false;mountAdminSidebar('sharedAdminSidebar',options);mountAdminTop('sharedAdminTop',options);bindAdminShell();return true};if(tryMount())return;const observer=new MutationObserver(()=>{if(tryMount())observer.disconnect()});observer.observe(document.documentElement,{childList:true,subtree:true})}
+  function mountStandalone(targetId,options){const target=document.getElementById(targetId);if(!target)return;const current=options?.active||'',role=options?.role||'admin',links=routeLinks({...options,role,active:current},'drawer','drawer');target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links">'+links+'</nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({...options,role,active:current,identityId:'standaloneIdentity',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target)}
+  function mountOperationTop(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identityText',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target)}
+  function mountOperationNav(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='';target.hidden=true}
+  function mountDailyTop(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identity',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target)}
+  function mountRoleNavigation(context,current){const options={role:context?.role||'admin',permissions:context?.permissions||{},active:current||document.body.dataset.screen||'daily'},screen=document.getElementById('screenNav'),drawer=document.getElementById('drawerLinks'),top=routeLinks(options,'top','top'),side=routeLinks(options,'drawer','drawer');if(screen)screen.innerHTML=top;if(drawer)drawer.innerHTML=side;document.querySelectorAll('.shell-role-badge').forEach(el=>el.textContent=options.role==='worker'?'عامل':'إدارة');if(options.role==='admin')document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='حساب الإدارة');return{top:routeItems(options,'top').length,drawer:routeItems(options,'drawer').length}}
 
-  function mountAdminSidebar(targetId,options){
-    const target=document.getElementById(targetId);if(!target||target.dataset.mounted)return;
-    target.dataset.mounted='1';
-    const current=options?.active||'index';
-    const links=routeLinks({...options,active:current},'drawer','drawer');
-    target.innerHTML=`
-      <div class="shared-admin-overlay"></div>
-      <aside class="shared-admin-drawer">
-        <div class="side-brand"><div class="brand-mark">MT</div><div><strong>MyTool</strong><small>إدارة المحل</small></div></div>
-        <nav class="side-nav">${links}
-          <button class="side-link" data-shell-action="refresh"><span class="ico">↻</span><span>تحديث البيانات</span></button>
-        </nav>
-        <div class="side-spacer"></div>
-        <div class="side-footer">
-          <div class="side-user">حساب الإدارة</div>
-          <button class="side-link" data-shell-action="logout"><span class="ico">⇥</span><span>تسجيل الخروج</span></button>
-        </div>
-      </aside>`;
-  }
-
-  function mountAdminTop(targetId,options){const target=document.getElementById(targetId);if(!target||target.dataset.mounted)return;target.dataset.mounted='1';target.innerHTML=canonicalTop({...options,role:'admin',identityId:'identityText',drawerButtonId:'drawerOpen'});}
-  function watchAdmin(options){const tryMount=()=>{const side=document.getElementById('sharedAdminSidebar'),top=document.getElementById('sharedAdminTop');if(!side||!top)return false;mountAdminSidebar('sharedAdminSidebar',options);mountAdminTop('sharedAdminTop',options);bindAdminShell();return true;};if(tryMount())return;const observer=new MutationObserver(()=>{if(tryMount())observer.disconnect()});observer.observe(document.documentElement,{childList:true,subtree:true});}
-  function mountStandalone(targetId,options){const target=document.getElementById(targetId);if(!target)return;const current=options?.active||'',role=options?.role||'admin';const links=routeLinks({...options,role,active:current},'drawer','drawer');target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links">'+links+'</nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({...options,role,active:current,identityId:'standaloneIdentity',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target);}
-  function mountOperationTop(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identityText',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target);}
-  function mountOperationNav(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='';target.hidden=true;}
-  function mountDailyTop(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identity',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target);}
-  function mountRoleNavigation(context,current){const options={role:context?.role||'admin',permissions:context?.permissions||{},active:current||document.body.dataset.screen||'daily'};const screen=document.getElementById('screenNav');const drawer=document.getElementById('drawerLinks');const top=routeLinks(options,'top','top');const side=routeLinks(options,'drawer','drawer');if(screen)screen.innerHTML=top;if(drawer)drawer.innerHTML=side;document.querySelectorAll('.shell-role-badge').forEach(el=>el.textContent=options.role==='worker'?'عامل':'إدارة');if(options.role==='admin')document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='حساب الإدارة');return{top:routeItems(options,'top').length,drawer:routeItems(options,'drawer').length};}
-
-  function loadScreenEnhancer(){
-    const screen=document.body?.dataset?.screen||'';
-    const map={purchase:['purchase-autofill.js?v=20260913-1700','price-guidance.js?v=20260913-1700'],sale:['sale-price-sync.js?v=20260913-1700','price-guidance.js?v=20260913-1700'],inventory:['inventory-pricing.js?v=20260913-1700'],products:['products-pagination.js?v=20260913-1700'],'opening-stock':['opening-stock-policy.js?v=20260913-1700']};
-    (map[screen]||[]).forEach((src,index)=>{if(document.querySelector('script[data-shop-enhancer="'+screen+'-'+index+'"]'))return;const script=document.createElement('script');script.src=src;script.defer=true;script.dataset.shopEnhancer=screen+'-'+index;document.head.appendChild(script);});
-  }
+  function loadScreenEnhancer(){const screen=document.body?.dataset?.screen||'';const map={purchase:['purchase-autofill.js?v=20260913-1700','price-guidance.js?v=20260913-1700','catalog-picker.js?v=20260913-1805'],sale:['sale-price-sync.js?v=20260913-1700','price-guidance.js?v=20260913-1700','catalog-picker.js?v=20260913-1805'],inventory:['inventory-pricing.js?v=20260913-1700','catalog-picker.js?v=20260913-1805'],products:['products-pagination.js?v=20260913-1700'],'opening-stock':['opening-stock-policy.js?v=20260913-1700']};(map[screen]||[]).forEach((src,index)=>{if(document.querySelector('script[data-shop-enhancer="'+screen+'-'+index+'"]'))return;const script=document.createElement('script');script.src=src;script.defer=true;script.dataset.shopEnhancer=screen+'-'+index;document.head.appendChild(script)})}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadScreenEnhancer,{once:true});else loadScreenEnhancer();
   window.ShopShell={watchAdmin,mountAdminSidebar,mountAdminTop,mountStandalone,mountOperationTop,mountOperationNav,mountDailyTop,mountRoleNavigation,requestLogout};
 })();
