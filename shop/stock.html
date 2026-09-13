@@ -230,8 +230,9 @@
   }
 
   function renderBase(){
-    $('shopHomeLink').href=state.mode==='admin'?'index.html':'daily.html'
-    $('myToolLink').classList.toggle('hidden',state.mode!=='admin')
+    const shopHomeLink=$('shopHomeLink'),myToolLink=$('myToolLink')
+    if(shopHomeLink)shopHomeLink.href=state.mode==='admin'?'index.html':'daily.html'
+    if(myToolLink)myToolLink.classList.toggle('hidden',state.mode!=='admin')
     $('branchList').innerHTML=state.operatingBranches.length?state.operatingBranches.map(b=>'<span class="branch-pill '+(Number(b.id)===Number(state.defaultBranchId)?'default':'')+'">'+esc(b.name)+(Number(b.id)===Number(state.defaultBranchId)?' · افتراضي':'')+'</span>').join(''):'<span class="muted">لا توجد فروع تشغيل متاحة.</span>'
     for(const id of ['saleProduct','purchaseProduct','inventoryProduct','transferProduct'])fillSelect($(id),state.products,'اختر المنتج')
     for(const id of ['saleBranch','purchaseBranch','inventoryBranch','stockBranch'])fillSelect($(id),state.operatingBranches,'اختر الفرع')
