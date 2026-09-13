@@ -120,7 +120,7 @@
     target.innerHTML=`
       <div class="shared-standalone">
         <div class="drawer-overlay drawer-hidden"></div>
-        <aside class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button class="drawer-close" type="button">×</button></div><nav class="drawer-links">${links}</nav></aside>
+        <aside class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button class="drawer-close" type="button">×</button></div><nav class="drawer-links">${links}</nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>
         <header class="shared-standalone-top">
           <div class="shared-brand"><div class="shared-logo">MT</div><div><h1>${title}</h1><div class="shared-subtitle">${subtitle}</div></div></div>
           <button class="drawer-btn" type="button" aria-label="فتح القائمة">☰</button>
