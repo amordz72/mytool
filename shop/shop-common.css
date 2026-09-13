@@ -40,7 +40,7 @@
 .shell-canonical-header .shell-identity{margin-top:3px;color:#6b7280;font-size:13px}
 .shell-canonical-header .shell-identity{min-height:16px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shell-canonical-header .shell-role-badge{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#ecfeff;color:#0f766e;font-size:12px;font-weight:800}
-.shell-template-mark{width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 3px #fef3c7;flex:0 0 auto}
+.shell-template-mark{display:none!important}
 .shell-canonical-header .topbar-actions{display:flex;align-items:center;gap:8px}
 .shell-canonical-header .topbar-actions .btn{width:auto;white-space:nowrap}
 .mobile-only{display:none!important}.desktop-only{display:inline-flex!important}
@@ -68,6 +68,7 @@ html.shell-drawer-open,body.shell-drawer-open{overflow:hidden!important;overscro
 .drawer-links .shell-nav-group .drawer-link{display:flex}
 
 .screen-nav.unified-nav,.unified-nav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:8px 0 12px;margin-bottom:10px;border-bottom:4px solid #d1d5db}
+.screen-nav.unified-nav::before,.unified-nav::before{content:'●';flex:0 0 auto;align-self:center;padding:0 5px;color:#f59e0b;font-size:13px;line-height:1}
 .screen-nav.unified-nav a,.unified-nav a{flex:0 0 auto;padding:11px 15px;border:1px solid var(--line,var(--shell-line));border-radius:14px;background:#fff;color:var(--main,var(--shell-main));font-weight:800;text-decoration:none}
 .screen-nav.unified-nav a.active,.unified-nav a.active{background:var(--main,var(--shell-main));color:#fff;border-color:var(--main,var(--shell-main))}
 
