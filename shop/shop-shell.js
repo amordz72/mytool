@@ -30,9 +30,9 @@
   function bindAdminShell(){
     const sidebar=document.querySelector('#sharedAdminSidebar .sidebar');
     const overlay=document.querySelector('#sharedAdminSidebar .mobile-overlay');
-    document.querySelector('#sharedAdminTop .menu-toggle')?.addEventListener('click',()=>sidebar?.classList.add('open'));
-    overlay?.addEventListener('click',()=>sidebar?.classList.remove('open'));
-    document.querySelectorAll('#sharedAdminSidebar a').forEach(a=>a.addEventListener('click',()=>sidebar?.classList.remove('open')));
+    document.querySelector('#sharedAdminTop .menu-toggle')?.addEventListener('click',()=>{sidebar?.classList.add('open');overlay?.classList.add('open')});
+    overlay?.addEventListener('click',()=>{sidebar?.classList.remove('open');overlay?.classList.remove('open')});
+    document.querySelectorAll('#sharedAdminSidebar a').forEach(a=>a.addEventListener('click',()=>{sidebar?.classList.remove('open');overlay?.classList.remove('open')}));
     document.querySelectorAll('[data-shell-action="refresh"]').forEach(b=>b.addEventListener('click',()=>location.reload()));
     document.querySelectorAll('[data-shell-action="logout"]').forEach(b=>b.addEventListener('click',()=>emit('logout')));
   }
