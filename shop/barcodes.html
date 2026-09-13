@@ -10,7 +10,7 @@
   <script src="shop-shell.js?v=20260913-1501"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <style>
-    body{margin:0;background:#f4f7fb;color:#172033;font-family:Arial,Tahoma,sans-serif}.shell{max-width:900px;margin:auto;padding:12px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin-top:10px}label{display:block;font-weight:800;font-size:13px;margin-bottom:5px}select,input,button{width:100%;font:inherit;padding:11px;border:1px solid #e5e7eb;border-radius:11px;background:#fff}.btn{background:#0f766e;color:#fff;border:0;font-weight:800}.btn.secondary{background:#fff;color:#0f766e;border:1px solid #0f766e}.message{padding:10px;border-radius:10px;background:#eff6ff;color:#1d4ed8;margin-bottom:10px}.message.error{background:#fff1f2;color:#b91c1c}.message.ok{background:#ecfdf5;color:#047857}.muted{color:#6b7280;font-size:12px;line-height:1.7}.label-preview{margin-top:12px;border:1px dashed #cbd5e1;border-radius:14px;padding:14px;text-align:center;background:#fff}.label-preview svg{max-width:100%;height:auto}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button{width:auto}.scan-result{margin-top:8px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e5e7eb}.camera-box{margin-top:10px;padding:12px;border:1px solid #d1fae5;border-radius:14px;background:#f0fdfa}.camera-reader{margin-top:9px;border-radius:12px;overflow:hidden;background:#0f172a}.camera-code{direction:ltr;text-align:center;font-family:monospace;font-size:20px;font-weight:900;margin-top:8px}.camera-status{margin-top:8px;font-size:12px;line-height:1.7;color:#475569}.hidden{display:none!important}@media(max-width:650px){.grid{grid-template-columns:1fr}.shell{padding:8px}.actions button{width:100%}}@media print{body *{visibility:hidden!important}#printLabel,#printLabel *{visibility:visible!important}#printLabel{position:absolute;inset:0;margin:0 auto;border:0;width:60mm;min-height:32mm;padding:4mm;background:#fff;color:#000}}
+    body{margin:0;background:#f4f7fb;color:#172033;font-family:Arial,Tahoma,sans-serif}.shell{max-width:900px;margin:auto;padding:12px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:10px}.field{margin-top:10px}label{display:block;font-weight:800;font-size:13px;margin-bottom:5px}select,input,button{width:100%;font:inherit;padding:11px;border:1px solid #e5e7eb;border-radius:11px;background:#fff}.btn{background:#0f766e;color:#fff;border:0;font-weight:800}.btn.secondary{background:#fff;color:#0f766e;border:1px solid #0f766e}.message{padding:10px;border-radius:10px;background:#eff6ff;color:#1d4ed8;margin-bottom:10px}.message.error{background:#fff1f2;color:#b91c1c}.message.ok{background:#ecfdf5;color:#047857}.muted{color:#6b7280;font-size:12px;line-height:1.7}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:14px;padding:4px;background:#f1f5f9;border-radius:13px}.tab-btn{padding:10px 6px;border:0;background:transparent;color:#475569;font-weight:900;border-radius:10px}.tab-btn.active{background:#fff;color:#0f766e;box-shadow:0 1px 5px #00000012}.tab-panel{margin-top:12px}.tab-panel.hidden{display:none!important}.inline-result{margin-top:10px;padding:10px;border-radius:11px;background:#f8fafc;border:1px solid #e5e7eb;line-height:1.7;font-size:13px}.inline-result.ok{background:#ecfdf5;border-color:#a7f3d0;color:#047857}.inline-result.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}.camera-launch{margin-top:10px}.camera-live{margin-top:10px;padding:10px;border:1px solid #d1fae5;border-radius:13px;background:#f0fdfa}.camera-reader{margin-top:8px;border-radius:11px;overflow:hidden;background:#0f172a}.camera-code{direction:ltr;text-align:center;font-family:monospace;font-size:20px;font-weight:900;margin-top:8px}.camera-status{margin-top:8px;font-size:12px;line-height:1.7;color:#475569}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button{width:auto}.label-preview{margin-top:10px;border:1px dashed #cbd5e1;border-radius:14px;padding:14px;text-align:center;background:#fff}.label-preview svg{max-width:100%;height:auto}.scan-result{margin-top:8px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e5e7eb}.hidden{display:none!important}@media(max-width:650px){.shell{padding:8px}.tabs{position:sticky;top:0;z-index:3}.tab-btn{font-size:12px;padding:9px 4px}.actions{display:grid;grid-template-columns:1fr}.actions button{width:100%}}@media print{body *{visibility:hidden!important}#printLabel,#printLabel *{visibility:visible!important}#printLabel{position:absolute;inset:0;margin:0 auto;border:0;width:60mm;min-height:32mm;padding:4mm;background:#fff;color:#000}}
   </style>
 </head>
 <body data-screen="barcodes">
@@ -20,32 +20,44 @@
 
   <section class="card">
     <h2 style="margin-top:0">باركود المنتجات والملصقات</h2>
-    <div class="muted">اختر المنتج أولًا. يمكنك استعمال Product ID كملصق داخلي Code 128، أو ربط باركود المصنع الموجود أصلًا على العلبة بالمنتج.</div>
-    <div class="grid">
-      <div class="field"><label>ابحث عن المنتج</label><input id="productSearch" type="search" placeholder="الاسم أو Product ID"><select id="productSelect" style="margin-top:6px"></select></div>
-      <div class="field"><label>الباركود الخارجي — اختياري</label><input id="externalBarcode" autocomplete="off" placeholder="امسحه بالكاميرا/القارئ أو اكتبه"><button id="saveExternal" class="btn" type="button" style="margin-top:7px">حفظ الباركود الخارجي</button></div>
+    <div class="muted">اختر المنتج مرة واحدة، ثم استعمل الأداة التي تحتاجها فقط.</div>
+
+    <div class="field"><label>المنتج</label><input id="productSearch" type="search" placeholder="الاسم أو Product ID"><select id="productSelect" style="margin-top:6px"></select></div>
+
+    <div class="tabs" role="tablist" aria-label="أدوات الباركود">
+      <button class="tab-btn active" type="button" data-tab="bind">ربط باركود</button>
+      <button class="tab-btn" type="button" data-tab="print">طباعة ملصق</button>
+      <button class="tab-btn" type="button" data-tab="usb">اختبار USB</button>
     </div>
 
-    <div class="camera-box">
-      <div style="font-weight:900">📷 ربط باركود المصنع بالكاميرا</div>
-      <div id="cameraProductHint" class="muted">اختر المنتج أولًا ثم شغّل الكاميرا.</div>
-      <div class="actions"><button id="startCamera" class="btn" type="button">تشغيل الكاميرا</button><button id="stopCamera" class="btn secondary" type="button" disabled>إيقاف الكاميرا</button></div>
-      <div id="cameraReader" class="camera-reader"></div>
-      <div id="cameraCode" class="camera-code hidden"></div>
-      <div id="cameraStatus" class="camera-status">لن يتم الحفظ تلقائيًا. بعد القراءة راجع الرقم ثم اضغط «حفظ الباركود الخارجي».</div>
+    <div id="tabBind" class="tab-panel" data-panel="bind">
+      <div class="field"><label>باركود المصنع / الخارجي</label><input id="externalBarcode" autocomplete="off" inputmode="numeric" placeholder="امسحه بالكاميرا أو اكتبه"></div>
+      <button id="saveExternal" class="btn" type="button" style="margin-top:8px">حفظ وربط الباركود</button>
+      <div id="bindResult" class="inline-result">اختر المنتج، ثم امسح باركود المصنع أو اكتبه واحفظه.</div>
+      <button id="startCamera" class="btn secondary camera-launch" type="button">📷 مسح بالكاميرا</button>
+      <div id="cameraLive" class="camera-live hidden">
+        <div id="cameraProductHint" class="muted">اختر المنتج أولًا.</div>
+        <div id="cameraReader" class="camera-reader"></div>
+        <div id="cameraCode" class="camera-code hidden"></div>
+        <div id="cameraStatus" class="camera-status">وجّه الكاميرا إلى باركود المصنع.</div>
+        <div class="actions"><button id="stopCamera" class="btn secondary" type="button">إيقاف الكاميرا</button></div>
+      </div>
+      <div class="actions"><button id="clearExternal" class="btn secondary" type="button">حذف الربط الحالي</button></div>
     </div>
 
-    <div id="printLabel" class="label-preview"><div id="labelName" style="font-weight:900;margin-bottom:4px">اختر منتجًا</div><svg id="internalBarcode"></svg><div id="labelId" style="font-weight:800"></div></div>
-    <div class="actions"><button id="printInternal" class="btn" type="button">طباعة ملصق ID الداخلي</button><button id="clearExternal" class="btn secondary" type="button">مسح الباركود الخارجي</button></div>
-  </section>
+    <div id="tabPrint" class="tab-panel hidden" data-panel="print">
+      <div class="muted">يطبع Product ID كملصق داخلي بصيغة Code 128.</div>
+      <div id="printLabel" class="label-preview"><div id="labelName" style="font-weight:900;margin-bottom:4px">اختر منتجًا</div><svg id="internalBarcode"></svg><div id="labelId" style="font-weight:800"></div></div>
+      <div class="actions"><button id="printInternal" class="btn" type="button">طباعة ملصق ID الداخلي</button></div>
+    </div>
 
-  <section class="card">
-    <h3 style="margin-top:0">اختبار قارئ USB</h3>
-    <div class="muted">قارئ USB في وضع HID Keyboard يكتب الرمز كما لو كان لوحة مفاتيح.</div>
-    <div class="field"><label>امسح هنا</label><input id="scannerTest" autocomplete="off" inputmode="none" placeholder="امسح الباركود ثم Enter"></div>
-    <div id="scanResult" class="scan-result">لم يتم المسح بعد.</div>
+    <div id="tabUsb" class="tab-panel hidden" data-panel="usb">
+      <div class="muted">قارئ USB في وضع HID Keyboard يكتب الرمز كما لو كان لوحة مفاتيح.</div>
+      <div class="field"><label>امسح هنا</label><input id="scannerTest" autocomplete="off" inputmode="none" placeholder="امسح الباركود ثم Enter"></div>
+      <div id="scanResult" class="scan-result">لم يتم المسح بعد.</div>
+    </div>
   </section>
 </div>
-<script type="module" src="barcodes.js?v=20260913-2205"></script>
+<script type="module" src="barcodes.js?v=20260913-2230"></script>
 </body>
 </html>
