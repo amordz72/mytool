@@ -88,15 +88,14 @@
 <a v-if="userMode==='admin'" class="" href="users.html">المستخدمون</a>
 <a v-if="userMode==='admin'" class="" href="settings.html">الإعدادات</a>
 </nav>
-<div v-if="userMode==='admin'" class="data-mode-bar"><strong>الوضع الحالي:</strong><span class="mode-btn active">{{ adminDataMode==='test' ? 'تجريبي' : 'حقيقي' }}</span><a class="mode-btn" href="settings.html" style="text-decoration:none">تغييره من الإعدادات</a></div>
-    <section id="dashboard" class="dash-hero content-card">
+<section id="dashboard" class="dash-hero content-card">
       <div class="hero-top">
         <div>
           <div class="hero-eyebrow">MYTOOL / SHOP CONTROL</div>
           <h2 class="hero-title">لوحة تحكم المحل</h2>
           <div class="hero-sub">صورة مباشرة للمبيعات والمخزون وحالة المنتجات اليوم.</div>
         </div>
-        <span class="live-badge"><span class="live-dot"></span> مباشر</span>
+        <span class="live-badge" :class="{test:adminDataMode==='test'}"><span class="live-dot"></span> {{ adminDataMode==='test' ? 'تجريبي' : 'مباشر' }}</span>
       </div>
       <div class="metrics-pro">
         <div class="metric-pro"><div class="mhead"><span>المنتجات</span><span class="mico">▦</span></div><div class="mvalue">{{ products.length }}</div><div class="msub">منتج مسجل</div></div>
