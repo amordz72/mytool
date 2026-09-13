@@ -1,6 +1,6 @@
 /* Role-aware pricing display for MyTool.
  * Worker: sale/minimum/reference only; never accounting cost/profit.
- * Admin stock all-branches: show real purchase/sale prices per branch.
+ * Admin stock: show pricing detail and load quick stock actions.
  */
 (function(){
   'use strict';
@@ -59,9 +59,7 @@
       if(info.textContent!==text){info.className='hint '+(policy?.sale_price!=null?'ok':'warn');info.textContent=text;}
       const hint=document.getElementById('salePriceHint');
       if(hint){const hintText=policy?.minimum_sale_price!=null?'يمكن تعديل السعر بشرط ألا يقل عن الحد الأدنى المسموح.':'راجع السعر قبل الحفظ.';if(hint.textContent!==hintText)hint.textContent=hintText;}
-    }catch(_e){
-      if(info.textContent.includes('متوسط الشراء'))info.textContent='تعذر تحميل سياسة سعر البيع.';
-    }
+    }catch(_e){if(info.textContent.includes('متوسط الشراء'))info.textContent='تعذر تحميل سياسة سعر البيع.';}
   }
 
   async function updateWorkerStock(){
@@ -72,14 +70,12 @@
       document.querySelectorAll('#stockList .stock-item').forEach(card=>{
         const product=productIdFromCard(card);if(!product)return;
         const policy=workerPolicy(rows,product);if(!policy)return;
-        let hint=card.querySelector('.hint');
-        if(!hint){hint=document.createElement('div');hint.className='hint';card.appendChild(hint);}
+        let hint=card.querySelector('.hint');if(!hint){hint=document.createElement('div');hint.className='hint';card.appendChild(hint);}
         const parts=[];
         if(policy.sale_price!=null)parts.push('<strong>سعر البيع:</strong> '+money(policy.sale_price));
         if(policy.minimum_sale_price!=null)parts.push('<strong>الحد الأدنى:</strong> '+money(policy.minimum_sale_price));
         if(policy.worker_reference_purchase_price!=null)parts.push('<strong>مرجع شراء تشغيلي:</strong> '+money(policy.worker_reference_purchase_price));
-        const html=parts.length?parts.join(' — '):'<strong>سعر البيع:</strong> غير محدد';
-        if(hint.innerHTML!==html)hint.innerHTML=html;
+        const html=parts.length?parts.join(' — '):'<strong>سعر البيع:</strong> غير محدد';if(hint.innerHTML!==html)hint.innerHTML=html;
       });
     }catch(_e){}
   }
@@ -94,24 +90,24 @@
   }
   async function updateAdminAllStock(){
     if(workerToken()||screen!=='stock')return;
-    const allButton=document.querySelector('.branch-buttons [data-branch="all"].active');
-    if(!allButton)return;
+    const allButton=document.querySelector('.branch-buttons [data-branch="all"].active');if(!allButton)return;
     try{
-      const data=await adminPricing();
-      const byName=new Map((data.branches||[]).map(b=>[String(b.name).trim(),b]));
+      const data=await adminPricing();const byName=new Map((data.branches||[]).map(b=>[String(b.name).trim(),b]));
       document.querySelectorAll('#stockList .stock-item').forEach(card=>{
         const product=productIdFromCard(card);if(!product)return;
         card.querySelectorAll('.stock-details .branch-pill').forEach(pill=>{
-          const clean=(pill.childNodes[0]?.textContent||pill.textContent||'').split(':')[0].trim();
-          const branch=byName.get(clean);if(!branch)return;
+          const clean=(pill.childNodes[0]?.textContent||pill.textContent||'').split(':')[0].trim();const branch=byName.get(clean);if(!branch)return;
           const row=(data.pricingByBranch[branch.id]||[]).find(x=>Number(x.product_id)===product);
-          let detail=pill.querySelector('[data-pricing-detail]');
-          if(!detail){detail=document.createElement('small');detail.dataset.pricingDetail='1';detail.style.display='block';detail.style.marginTop='4px';detail.style.fontWeight='700';pill.appendChild(detail);}
-          const text='شراء: '+money(row?.last_purchase_price)+' — بيع: '+money(row?.last_sale_price);
-          if(detail.textContent!==text)detail.textContent=text;
+          let detail=pill.querySelector('[data-pricing-detail]');if(!detail){detail=document.createElement('small');detail.dataset.pricingDetail='1';detail.style.display='block';detail.style.marginTop='4px';detail.style.fontWeight='700';pill.appendChild(detail);}
+          const text='شراء: '+money(row?.last_purchase_price)+' — بيع: '+money(row?.last_sale_price);if(detail.textContent!==text)detail.textContent=text;
         });
       });
     }catch(_e){}
+  }
+
+  function loadStockAdminActions(){
+    if(screen!=='stock'||workerToken()||document.querySelector('script[data-stock-admin-actions]'))return;
+    const script=document.createElement('script');script.src='stock-admin-actions.js?v=20260913-2045';script.defer=true;script.dataset.stockAdminActions='1';document.head.appendChild(script);
   }
 
   let timer=0;
@@ -119,9 +115,8 @@
   function start(){
     ['saleProduct','saleBranch','stockBranch'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>{workerCache={branch:0,rows:[]};schedule();}));
     document.addEventListener('click',event=>{if(event.target.closest('[data-branch]'))schedule();},true);
-    const target=document.getElementById('stockList')||document.getElementById('salePricingInfo');
-    if(target)new MutationObserver(schedule).observe(target,{childList:true,subtree:true,characterData:true});
-    schedule();setTimeout(schedule,700);
+    const target=document.getElementById('stockList')||document.getElementById('salePricingInfo');if(target)new MutationObserver(schedule).observe(target,{childList:true,subtree:true,characterData:true});
+    loadStockAdminActions();schedule();setTimeout(schedule,700);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
