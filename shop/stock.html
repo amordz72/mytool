@@ -150,7 +150,7 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false,stockPage:1,stockPageSize:10,stockQuery:'',stockFilter:(['low','out','available','unverified'].includes(new URLSearchParams(location.search).get('filter'))?new URLSearchParams(location.search).get('filter'):'all'),stockAllBranches:false}
+  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false,stockPage:1,stockPageSize:10,stockQuery:'',stockFilter:(['low','out','available','unverified'].includes(new URLSearchParams(location.search).get('filter'))?new URLSearchParams(location.search).get('filter'):'all'),stockAllBranches:false,requestedBranchId:Number(new URLSearchParams(location.search).get('branch'))||null}
   const $=id=>document.getElementById(id)
   $('drawerOpen').addEventListener('click',()=>{$('drawer').classList.remove('drawer-hidden');$('drawerOverlay').classList.remove('drawer-hidden')})
   const closeDrawer=()=>{$('drawer').classList.add('drawer-hidden');$('drawerOverlay').classList.add('drawer-hidden')}
@@ -239,6 +239,7 @@
     fillSelect($('purchaseSupplier'),state.suppliers,'مورد نقد / اختر المورد')
     fillSelect($('transferSource'),state.branches,'اختر المصدر');fillSelect($('transferDestination'),state.branches,'اختر الوجهة')
     for(const id of ['saleBranch','purchaseBranch','inventoryBranch','stockBranch'])if(state.defaultBranchId)$(id).value=String(state.defaultBranchId)
+    if(state.requestedBranchId&&state.operatingBranches.some(b=>Number(b.id)===state.requestedBranchId))$('stockBranch').value=String(state.requestedBranchId)
     if(state.defaultBranchId&&state.branches.some(b=>Number(b.id)===Number(state.defaultBranchId))){$('transferSource').value=String(state.defaultBranchId);syncTransferBranches('source')}
     if(state.mode==='worker'&&state.operatingBranches.length===1){
       for(const id of ['saleBranchWrap','purchaseBranchWrap','inventoryBranchWrap'])$(id).classList.add('hidden')
@@ -254,11 +255,20 @@
 
   async function loadInventory(branchId=Number($('stockBranch')?.value||state.defaultBranchId)){
     if(!branchId)return
-    let r
-    if(state.mode==='worker')r=await supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId})
-    else r=await supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId})
-    if(r.error){if(expireInvalidWorkerSession(r.error))return;throw r.error}
-    const allowedProducts=new Set(state.products.map(x=>Number(x.id)));const incoming=state.mode==='admin'?(r.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))):(r.data||[]);const other=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId));state.inventory=other.concat(incoming)
+    const inventoryCall=state.mode==='worker'
+      ?supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId})
+      :supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId})
+    const pricingCall=state.mode==='worker'
+      ?supabase.rpc('worker_get_branch_product_prices',{p_session_token:state.workerToken,p_branch_id:branchId})
+      :supabase.rpc('admin_get_branch_product_prices',{p_branch_id:branchId})
+    const [r,prices]=await Promise.all([inventoryCall,pricingCall])
+    const error=r.error||prices.error
+    if(error){if(expireInvalidWorkerSession(error))return;throw error}
+    const allowedProducts=new Set(state.products.map(x=>Number(x.id)))
+    const incoming=state.mode==='admin'?(r.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))):(r.data||[])
+    state.inventory=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId)).concat(incoming)
+    const incomingPrices=(prices.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))).map(x=>({...x,branch_id:branchId}))
+    state.pricing=state.pricing.filter(x=>Number(x.branch_id)!==Number(branchId)).concat(incomingPrices)
     if(Number($('stockBranch').value)===Number(branchId))renderStock()
     syncSaleStatus();syncInventoryStatus()
   }
@@ -292,17 +302,23 @@
       return matchesQuery&&matchesFilter
     })
   }
+  function pricingItem(productId,branchId){return state.pricing.find(x=>Number(x.product_id)===Number(productId)&&Number(x.branch_id)===Number(branchId))||null}
+  function money(value){return value===null||value===undefined?'لا يوجد':Number(value).toLocaleString('ar-DZ',{maximumFractionDigits:2})+' دج'}
+
   function renderStock(){
     const rows=filteredStockRows(),root=$('stockList'),pages=Math.max(1,Math.ceil(rows.length/state.stockPageSize))
     state.stockPage=Math.min(Math.max(1,state.stockPage),pages)
     const start=(state.stockPage-1)*state.stockPageSize,pageRows=rows.slice(start,start+state.stockPageSize)
-    $('stockSummary').textContent=rows.length?'عرض '+(start+1)+'–'+Math.min(start+state.stockPageSize,rows.length)+' من '+rows.length+' منتج':'لا توجد منتجات تطابق البحث.'
+    const reportLabel=state.stockFilter==='out'?'تقرير النافد — ':''
+    $('stockSummary').textContent=rows.length?reportLabel+'عرض '+(start+1)+'–'+Math.min(start+state.stockPageSize,rows.length)+' من '+rows.length+' منتج':reportLabel+'لا توجد منتجات تطابق البحث.'
     $('stockPageInfo').textContent='صفحة '+state.stockPage+' من '+pages
     $('stockPrev').disabled=state.stockPage<=1;$('stockNext').disabled=state.stockPage>=pages
     if(!pageRows.length){root.innerHTML='<div class="empty">لا توجد بيانات مطابقة.</div>';return}
     root.innerHTML=pageRows.map(x=>{
       const status=stockStatus(x),soldOut=status==='out',details=state.stockAllBranches?(Array.isArray(x.branches)?'<details class="stock-details"><summary>تفاصيل المخازن</summary>'+(x.branches||[]).map(b=>'<div class="branch-pill">'+esc(branchName(b.branch_id))+': <strong>'+esc(b.stock_quantity)+'</strong></div>').join('')+'</details>':'<div class="muted">'+esc(branchName(x.branch_id))+'</div>'):'<div class="muted">'+esc(branchName(x.branch_id))+'</div>'
-      return '<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+' <small>#'+esc(x.product_id)+'</small></div><span class="badge '+(soldOut?'danger':status==='available'?'ok':'warn')+'">'+(soldOut?'نافد':status==='low'?'منخفض':status==='available'?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div>'+details+'</div>'
+      const pricing=state.stockAllBranches?null:pricingItem(x.product_id,x.branch_id)
+      const priceDetails=state.stockAllBranches?'':'<div class="hint"><strong>آخر شراء:</strong> '+money(pricing?.last_purchase_price)+' — <strong>آخر بيع:</strong> '+money(pricing?.last_sale_price)+'</div>'
+      return '<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+' <small>#'+esc(x.product_id)+'</small></div><span class="badge '+(soldOut?'danger':status==='available'?'ok':'warn')+'">'+(soldOut?'نافد':status==='low'?'منخفض':status==='available'?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div>'+details+priceDetails+'</div>'
     }).join('')
   }
 
@@ -461,7 +477,7 @@
   }
 
   async function init(){
-    try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();applyScreenMode();await loadInventory(state.defaultBranchId);if(document.body.dataset.screen==='stock'&&state.mode==='admin'&&(state.stockFilter==='low'||state.stockFilter==='out')){await renderAllStock();document.querySelectorAll('[data-branch]').forEach(x=>x.classList.toggle('active',x.dataset.branch==='all'))}if(state.permissions.can_transfer)await loadTransfers();notify('العمليات جاهزة حسب الفرع.','ok')}catch(err){if(expireInvalidWorkerSession(err))return;notify('تعذر تشغيل الصفحة: '+err.message,'error')}
+    try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();applyScreenMode();await loadInventory(Number($('stockBranch').value||state.defaultBranchId))if(state.permissions.can_transfer)await loadTransfers();notify('العمليات جاهزة حسب الفرع.','ok')}catch(err){if(expireInvalidWorkerSession(err))return;notify('تعذر تشغيل الصفحة: '+err.message,'error')}
   }
   init()
 </script>
