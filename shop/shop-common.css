@@ -29,3 +29,51 @@
 @media(min-width:861px){.shared-admin-overlay,.shared-admin-drawer{display:none!important}}
 
 .drawer-logout{width:100%;margin-top:14px;padding:12px;border:1px solid #475569;border-radius:11px;background:#ffffff12;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+
+
+/* Canonical header: identical on dashboard and operation pages. */
+.shell-canonical-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:4px 2px}
+.shell-canonical-header .topbar-title{display:flex;align-items:center;gap:10px;min-width:0}
+.shell-canonical-header .topbar-logo{width:48px;height:48px;border-radius:15px;font-size:18px}
+.shell-canonical-header .topbar-copy{min-width:0}
+.shell-canonical-header .topbar-copy h1{margin:0;font-size:23px;line-height:1.15;white-space:nowrap}
+.shell-canonical-header .shell-identity{margin-top:3px;color:#6b7280;font-size:13px}
+.shell-canonical-header .shell-role-badge{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#ecfeff;color:#0f766e;font-size:12px;font-weight:800}
+.shell-canonical-header .topbar-actions{display:flex;align-items:center;gap:8px}
+.shell-canonical-header .topbar-actions .btn{width:auto;white-space:nowrap}
+.mobile-only{display:none!important}.desktop-only{display:inline-flex!important}
+
+/* The page behind the drawer never scrolls while navigation is open. */
+html.shell-drawer-open,body.shell-drawer-open{overflow:hidden!important;overscroll-behavior:none}
+
+/* Drawer layout: fixed head/footer, scrollable route groups only. */
+.drawer{display:flex;flex-direction:column;overflow:hidden}
+.drawer-head{flex:0 0 auto}
+.drawer-links{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 12px}
+.drawer-logout{flex:0 0 auto;margin-top:10px}
+.shared-admin-drawer{overflow:hidden}
+.shared-admin-drawer .side-brand,.shared-admin-drawer .side-footer{flex:0 0 auto}
+.shared-admin-drawer .side-nav{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 12px}
+.shared-admin-drawer .side-spacer{display:none}
+
+.shell-nav-group{margin:0 0 9px;border:1px solid rgba(255,255,255,.10);border-radius:13px;background:rgba(255,255,255,.035);overflow:hidden}
+.shell-nav-group summary{list-style:none;cursor:pointer;padding:12px;color:#94a3b8;font-size:12px;font-weight:900;user-select:none}
+.shell-nav-group summary::-webkit-details-marker{display:none}
+.shell-nav-group summary:after{content:'⌄';float:left;font-size:16px;transition:transform .15s ease}
+.shell-nav-group[open] summary:after{transform:rotate(180deg)}
+.shell-nav-group-links{display:grid;gap:7px;padding:0 7px 8px}
+.shell-nav-group .side-link{margin:0}
+.drawer-links .shell-nav-group .drawer-link{display:flex}
+
+.screen-nav.unified-nav,.unified-nav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:8px 0 12px;margin-bottom:10px;border-bottom:4px solid #d1d5db}
+.screen-nav.unified-nav a,.unified-nav a{flex:0 0 auto;padding:11px 15px;border:1px solid var(--line,var(--shell-line));border-radius:14px;background:#fff;color:var(--main,var(--shell-main));font-weight:800;text-decoration:none}
+.screen-nav.unified-nav a.active,.unified-nav a.active{background:var(--main,var(--shell-main));color:#fff;border-color:var(--main,var(--shell-main))}
+
+@media(max-width:860px){
+  .mobile-only{display:inline-flex!important}.desktop-only{display:none!important}
+  .shell-canonical-header{position:static;margin-bottom:12px;padding:4px 2px}
+  .shell-canonical-header .topbar-title{width:100%}
+  .shell-canonical-header .topbar-logo{width:48px;height:48px}
+  .shell-canonical-header .topbar-copy h1{font-size:20px}
+  .shell-canonical-header .menu-toggle{display:inline-flex!important;align-items:center;justify-content:center;width:50px!important;height:50px;padding:0!important;margin-right:auto;border-radius:15px!important;font-size:27px}
+}
