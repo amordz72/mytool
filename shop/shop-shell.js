@@ -120,5 +120,5 @@
       <div class="top"><div class="daily-brand"><div class="daily-logo" aria-hidden="true">MT</div><div><h1>الرئيسية</h1><div id="identity" class="identity">جاري التحقق…</div></div></div><button id="drawerOpen" class="drawer-btn" type="button" aria-label="فتح القائمة">☰</button></div>`;
   }
 
-  window.ShopShell={mountAdminSidebar,mountAdminTop,mountOperationTop,mountOperationNav,mountDailyTop};
+  window.ShopShell={watchAdmin,mountAdminSidebar,mountAdminTop,mountOperationTop,mountOperationNav,mountDailyTop};
 })();
