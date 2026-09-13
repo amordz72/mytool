@@ -38,6 +38,7 @@
         <div class="field"><label>المنتج</label><select id="saleProduct" required></select></div>
         <div class="field" id="saleBranchWrap"><label>الفرع</label><select id="saleBranch" required></select></div>
         <div id="saleStockInfo" class="hint">اختر المنتج لمعرفة حالة المخزون.</div>
+        <div id="salePricingInfo" class="hint">متوسط الشراء وآخر بيع سيظهران هنا.</div>
         <div class="field hidden" id="firstCountWrap">
           <label>الكمية الموجودة الآن قبل البيع — أول مرة فقط</label>
           <input id="saleInitialCount" type="number" min="0" step="1" inputmode="numeric">
@@ -133,7 +134,7 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
+  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
   $('drawerOpen').addEventListener('click',()=>{$('drawer').classList.remove('drawer-hidden');$('drawerOverlay').classList.remove('drawer-hidden')})
   const closeDrawer=()=>{$('drawer').classList.add('drawer-hidden');$('drawerOverlay').classList.add('drawer-hidden')}
@@ -236,11 +237,20 @@
 
   async function loadInventory(branchId=Number($('stockBranch')?.value||state.defaultBranchId)){
     if(!branchId)return
-    let r
-    if(state.mode==='worker')r=await supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId})
-    else r=await supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId})
-    if(r.error){if(expireInvalidWorkerSession(r.error))return;throw r.error}
-    const allowedProducts=new Set(state.products.map(x=>Number(x.id)));const incoming=state.mode==='admin'?(r.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))):(r.data||[]);const other=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId));state.inventory=other.concat(incoming)
+    const inventoryCall=state.mode==='worker'
+      ?supabase.rpc('worker_get_branch_inventory',{p_session_token:state.workerToken,p_branch_id:branchId})
+      :supabase.rpc('admin_get_branch_inventory',{p_branch_id:branchId})
+    const pricingCall=state.mode==='worker'
+      ?supabase.rpc('worker_get_branch_product_prices',{p_session_token:state.workerToken,p_branch_id:branchId})
+      :supabase.rpc('admin_get_branch_product_prices',{p_branch_id:branchId})
+    const [r,prices]=await Promise.all([inventoryCall,pricingCall])
+    const error=r.error||prices.error
+    if(error){if(expireInvalidWorkerSession(error))return;throw error}
+    const allowedProducts=new Set(state.products.map(x=>Number(x.id)))
+    const incoming=state.mode==='admin'?(r.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))):(r.data||[])
+    state.inventory=state.inventory.filter(x=>Number(x.branch_id)!==Number(branchId)).concat(incoming)
+    const incomingPrices=(prices.data||[]).filter(x=>allowedProducts.has(Number(x.product_id))).map(x=>({...x,branch_id:branchId}))
+    state.pricing=state.pricing.filter(x=>Number(x.branch_id)!==Number(branchId)).concat(incomingPrices)
     if(Number($('stockBranch').value)===Number(branchId))renderStock()
     syncSaleStatus();syncInventoryStatus()
   }
@@ -251,33 +261,28 @@
     root.innerHTML=rows.map(x=>{const soldOut=x.is_verified&&Number(x.stock_quantity)<=0;return '<div class="stock-item"><div class="stock-head"><div class="stock-name">'+esc(x.product_name)+'</div><span class="badge '+(soldOut?'danger':x.is_verified?'ok':'warn')+'">'+(soldOut?'نافد':x.is_verified?'مجرود':'غير مجرود')+'</span></div><div class="stock-qty">'+esc(x.stock_quantity)+'</div><div class="muted">'+esc(branchName(x.branch_id))+'</div></div>'}).join('')
   }
 
-  let salePriceRequest=0
-  async function fillLastSalePrice(product,branch){
-    const request=++salePriceRequest
-    $('salePrice').value=''
-    $('salePriceHint').className='hint'
-    if(!product||!branch){$('salePriceHint').textContent='اختر المنتج لعرض آخر سعر بيع.';return}
-    $('salePriceHint').textContent='جارٍ البحث عن آخر سعر بيع...'
-    let data,error
-    if(state.mode==='worker'){
-      const r=await supabase.rpc('worker_get_last_sale_price',{p_session_token:state.workerToken,p_product_id:product,p_branch_id:branch})
-      data=r.data;error=r.error
-    }else{
-      const r=await supabase.from('sales').select('unit_price').eq('product_id',product).eq('branch_id',branch).order('operation_at',{ascending:false}).order('id',{ascending:false}).limit(1).maybeSingle()
-      data=r.data?.unit_price??null;error=r.error
-    }
-    if(request!==salePriceRequest)return
-    if(error){$('salePriceHint').className='hint error';$('salePriceHint').textContent='تعذر جلب آخر سعر. أدخله يدويًا.';return}
-    if(data===null||data===undefined){$('salePriceHint').textContent='لا يوجد بيع سابق لهذا المنتج في هذا الفرع؛ أدخل السعر يدويًا.';return}
-    $('salePrice').value=String(data)
-    $('salePriceHint').className='hint ok'
-    $('salePriceHint').textContent='تم اقتراح آخر سعر بيع: '+data+' دج. يمكنك تغييره.'
-  }
+  function pricingItem(productId,branchId){return state.pricing.find(x=>Number(x.product_id)===Number(productId)&&Number(x.branch_id)===Number(branchId))||null}
+  function money(value){return value===null||value===undefined?'لا يوجد':Number(value).toLocaleString('ar-DZ',{maximumFractionDigits:2})+' دج'}
 
-  async function syncSaleStatus(){
-    const product=Number($('saleProduct').value),branch=Number($('saleBranch').value),item=inventoryItem(product,branch)
-    await fillLastSalePrice(product,branch)
-    if(!product||!branch||!item){$('saleStockInfo').textContent='اختر المنتج والفرع لمعرفة حالة المخزون.';$('firstCountWrap').classList.add('hidden');return}
+  function syncSaleStatus(){
+    const product=Number($('saleProduct').value),branch=Number($('saleBranch').value),item=inventoryItem(product,branch),pricing=pricingItem(product,branch)
+    if(!product||!branch){
+      $('salePricingInfo').textContent='اختر المنتج والفرع لعرض متوسط الشراء وآخر بيع.'
+      $('saleStockInfo').textContent='اختر المنتج والفرع لمعرفة حالة المخزون.'
+      $('firstCountWrap').classList.add('hidden')
+      return
+    }
+    $('salePricingInfo').className='hint '+(pricing?'ok':'warn')
+    $('salePricingInfo').textContent='متوسط الشراء: '+money(pricing?.weighted_average_purchase)+' — آخر بيع: '+money(pricing?.last_sale_price)
+    if(pricing?.last_sale_price!==null&&pricing?.last_sale_price!==undefined&&!$('salePrice').value){
+      $('salePrice').value=String(pricing.last_sale_price)
+      $('salePriceHint').className='hint ok'
+      $('salePriceHint').textContent='تم اقتراح آخر سعر بيع؛ يمكنك تغييره.'
+    }else if(pricing?.last_sale_price===null||pricing?.last_sale_price===undefined){
+      $('salePriceHint').className='hint'
+      $('salePriceHint').textContent='لا يوجد بيع سابق لهذا المنتج في هذا الفرع؛ أدخل السعر يدويًا.'
+    }
+    if(!item){$('saleStockInfo').textContent='تعذر تحميل حالة المخزون.';$('firstCountWrap').classList.add('hidden');return}
     if(item.is_verified){const soldOut=Number(item.stock_quantity)<=0;$('saleStockInfo').className='hint '+(soldOut?'error':'');$('saleStockInfo').textContent=soldOut?'هذا المنتج نافد في هذا المخزن. سجّل جردًا أو مشتريات قبل البيع.':'المخزون المؤكد: '+item.stock_quantity+'. لا يمكن إعادة ضبط الكمية من البيع.';$('firstCountWrap').classList.add('hidden');$('saleInitialCount').value=''}
     else{$('saleStockInfo').className='hint warn';$('saleStockInfo').textContent='هذا المنتج غير مجرود في هذا الفرع. الكمية التشغيلية الحالية '+item.stock_quantity+'. عند أول بيع اكتب الموجود فعليًا قبل البيع.';$('firstCountWrap').classList.remove('hidden')}
   }
