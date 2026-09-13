@@ -42,10 +42,18 @@
     if(BRANCH_SELECT_IDS.includes(target.id))return true;
     return target.id==='branch'&&document.body?.dataset?.screen==='physical-inventory';
   }
+  function syncBranchButtonState(select){
+    if(!select)return;
+    const box=select.parentNode?.querySelector('.branch-buttons');
+    if(!box)return;
+    const selected=String(select.value);
+    box.querySelectorAll('[data-branch]').forEach(button=>button.classList.toggle('active',String(button.dataset.branch)===selected));
+  }
   function saveAdminBranch(target){
     if(workerOwnsBranchContext()||!isAdminBranchSelect(target))return;
     const branchId=Number(target.value);
     if(Number.isInteger(branchId)&&branchId>0)localStorage.setItem(ADMIN_BRANCH_KEY,String(branchId));
+    syncBranchButtonState(target);
   }
   function adminBranchSelects(){
     const result=BRANCH_SELECT_IDS.map(id=>document.getElementById(id)).filter(Boolean);
@@ -60,7 +68,7 @@
     if(!savedBranchId)return false;
     let found=false;
     for(const select of adminBranchSelects()){
-      if(select.dataset.adminBranchApplied==='1')continue;
+      if(select.dataset.adminBranchApplied==='1'){syncBranchButtonState(select);continue;}
       found=true;
       const available=Array.from(select.options||[]).some(option=>Number(option.value)===savedBranchId);
       if(!available)continue;
@@ -69,12 +77,13 @@
         select.value=String(savedBranchId);
         select.dispatchEvent(new Event('change',{bubbles:true}));
       }
+      syncBranchButtonState(select);
     }
     return found;
   }
   function watchAdminBranchContext(){
     if(workerOwnsBranchContext())return;
-    document.addEventListener('change',event=>saveAdminBranch(event.target),true);
+    document.addEventListener('change',event=>{saveAdminBranch(event.target);if(isAdminBranchSelect(event.target))syncBranchButtonState(event.target)},true);
     let attempts=0;
     const tick=()=>{
       attempts+=1;applySavedAdminBranch();
