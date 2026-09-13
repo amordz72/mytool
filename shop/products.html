@@ -647,6 +647,7 @@
       }
       loading.value=false
       if(!isLoggedIn.value){window.location.replace('../');return}
+      if(userMode.value==='worker'){window.location.replace('daily.html');return}
       await loadAll()
       supabase.auth.onAuthStateChange((_event,newSession)=>{session.value=newSession;if(newSession)clearWorkerSession()})
       setInterval(enforceTimeout,30000)
