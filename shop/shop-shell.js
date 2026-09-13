@@ -28,8 +28,8 @@
 
   function emit(name){window.dispatchEvent(new CustomEvent('shop-shell:'+name))}
   function bindAdminShell(){
-    const sidebar=document.querySelector('#sharedAdminSidebar .sidebar');
-    const overlay=document.querySelector('#sharedAdminSidebar .mobile-overlay');
+    const sidebar=document.querySelector('#sharedAdminSidebar .shared-admin-drawer');
+    const overlay=document.querySelector('#sharedAdminSidebar .shared-admin-overlay');
     document.querySelector('#sharedAdminTop .menu-toggle')?.addEventListener('click',()=>{sidebar?.classList.add('open');overlay?.classList.add('open')});
     overlay?.addEventListener('click',()=>{sidebar?.classList.remove('open');overlay?.classList.remove('open')});
     document.querySelectorAll('#sharedAdminSidebar a').forEach(a=>a.addEventListener('click',()=>{sidebar?.classList.remove('open');overlay?.classList.remove('open')}));
@@ -45,8 +45,8 @@
       `<a class="side-link${active(key,current)}" href="${href}"><span class="ico">${icon}</span><span>${label}</span></a>`
     ).join('');
     target.innerHTML=`
-      <div class="mobile-overlay"></div>
-      <aside class="sidebar">
+      <div class="shared-admin-overlay"></div>
+      <aside class="shared-admin-drawer">
         <div class="side-brand"><div class="brand-mark">MT</div><div><strong>MyTool</strong><small>إدارة المحل</small></div></div>
         <nav class="side-nav">${links}
           <button class="side-link" data-shell-action="refresh"><span class="ico">↻</span><span>تحديث البيانات</span></button>
