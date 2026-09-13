@@ -20,7 +20,7 @@
 <div class="shell" id="app">
   <div class="topbar">
     <div class="brand"><div class="logo">M</div><div><strong>MyTool — حساب المحل</strong><div class="muted" id="identityText">جاري التحقق من الجلسة…</div></div></div>
-    <div class="top-actions"><a href="./">حساب المحل</a><a id="myToolLink" class="hidden" href="../">MyTool</a></div>
+    <div class="top-actions"><a id="shopHomeLink" href="daily.html">الرئيسية</a><a id="myToolLink" class="hidden" href="../">MyTool</a></div>
   </div>
 
   <div id="message" class="message info">جاري تحميل بيانات التشغيل…</div>
@@ -214,6 +214,7 @@
   }
 
   function renderBase(){
+    $('shopHomeLink').href=state.mode==='admin'?'index.html':'daily.html'
     $('adminModeBar').classList.toggle('hidden',state.mode!=='admin');$('modeReal').classList.toggle('active',state.adminDataMode==='real');$('modeTest').classList.toggle('active',state.adminDataMode==='test');$('modeTestNote').classList.toggle('hidden',state.adminDataMode!=='test')
     $('myToolLink').classList.toggle('hidden',state.mode!=='admin')
     $('branchList').innerHTML=state.operatingBranches.length?state.operatingBranches.map(b=>'<span class="branch-pill '+(Number(b.id)===Number(state.defaultBranchId)?'default':'')+'">'+esc(b.name)+(Number(b.id)===Number(state.defaultBranchId)?' · افتراضي':'')+'</span>').join(''):'<span class="muted">لا توجد فروع تشغيل متاحة.</span>'
