@@ -31,5 +31,59 @@
     return routes.filter(route=>(!placement||route.placement.includes(placement))&&allowed(route,context));
   }
   function get(id){return routes.find(route=>route.id===id)||null}
-  window.ShopRoutes=Object.freeze({groups,all:Object.freeze(routes.map(Object.freeze)),list,get,allowed});
+
+  const ADMIN_BRANCH_KEY='mytool_admin_branch_id';
+  const BRANCH_SELECT_IDS=['saleBranch','purchaseBranch','stockBranch','inventoryBranch','transferSource','branchSelect'];
+  function workerOwnsBranchContext(){
+    return !!localStorage.getItem('mytool_shop_worker_token')&&!localStorage.getItem('mytool_admin_expires_at');
+  }
+  function isAdminBranchSelect(target){
+    if(!target||target.tagName!=='SELECT')return false;
+    if(BRANCH_SELECT_IDS.includes(target.id))return true;
+    return target.id==='branch'&&document.body?.dataset?.screen==='physical-inventory';
+  }
+  function saveAdminBranch(target){
+    if(workerOwnsBranchContext()||!isAdminBranchSelect(target))return;
+    const branchId=Number(target.value);
+    if(Number.isInteger(branchId)&&branchId>0)localStorage.setItem(ADMIN_BRANCH_KEY,String(branchId));
+  }
+  function adminBranchSelects(){
+    const result=BRANCH_SELECT_IDS.map(id=>document.getElementById(id)).filter(Boolean);
+    if(document.body?.dataset?.screen==='physical-inventory'){
+      const physical=document.getElementById('branch');if(physical)result.push(physical);
+    }
+    return result;
+  }
+  function applySavedAdminBranch(){
+    if(workerOwnsBranchContext())return false;
+    const savedBranchId=Number(localStorage.getItem(ADMIN_BRANCH_KEY)||0);
+    if(!savedBranchId)return false;
+    let found=false;
+    for(const select of adminBranchSelects()){
+      if(select.dataset.adminBranchApplied==='1')continue;
+      found=true;
+      const available=Array.from(select.options||[]).some(option=>Number(option.value)===savedBranchId);
+      if(!available)continue;
+      select.dataset.adminBranchApplied='1';
+      if(Number(select.value)!==savedBranchId){
+        select.value=String(savedBranchId);
+        select.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+    }
+    return found;
+  }
+  function watchAdminBranchContext(){
+    if(workerOwnsBranchContext())return;
+    document.addEventListener('change',event=>saveAdminBranch(event.target),true);
+    let attempts=0;
+    const tick=()=>{
+      attempts+=1;applySavedAdminBranch();
+      if(attempts<40)setTimeout(tick,150);
+    };
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tick,{once:true});
+    else tick();
+  }
+  watchAdminBranchContext();
+
+  window.ShopRoutes=Object.freeze({groups,all:Object.freeze(routes.map(Object.freeze)),list,get,allowed,applySavedAdminBranch});
 })();
