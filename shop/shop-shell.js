@@ -30,7 +30,6 @@
     close.onclick=hide;overlay.onclick=hide;
   }
 
-
   function routeItems(options,placement){
     if(!window.ShopRoutes)throw new Error('ShopRoutes must load before ShopShell');
     return window.ShopRoutes.list({role:options?.role||'admin',permissions:options?.permissions||{}},placement);
@@ -99,71 +98,19 @@
       </aside>`;
   }
 
-  function mountAdminTop(targetId,options){
-    const target=document.getElementById(targetId);if(!target||target.dataset.mounted)return;
-    target.dataset.mounted='1';
-    target.innerHTML=canonicalTop({...options,role:'admin',identityId:'identityText',drawerButtonId:'drawerOpen'});
-  }
-
-  function watchAdmin(options){
-    const tryMount=()=>{
-      const side=document.getElementById('sharedAdminSidebar'),top=document.getElementById('sharedAdminTop');
-      if(!side||!top)return false;
-      mountAdminSidebar('sharedAdminSidebar',options);mountAdminTop('sharedAdminTop',options);bindAdminShell();return true;
-    };
-    if(tryMount())return;
-    const observer=new MutationObserver(()=>{if(tryMount())observer.disconnect()});
-    observer.observe(document.documentElement,{childList:true,subtree:true});
-  }
-
-  function mountStandalone(targetId,options){
-    const target=document.getElementById(targetId);if(!target)return;
-    const current=options?.active||'',role=options?.role||'admin';
-    const links=routeLinks({...options,role,active:current},'drawer','drawer');
-    target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links">'+links+'</nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({...options,role,active:current,identityId:'standaloneIdentity',drawerButtonId:'drawerOpen'});
-    bindLogout(target);bindDrawer(target);
-  }
-
-  function mountOperationTop(targetId){
-    const target=document.getElementById(targetId);if(!target)return;
-    target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identityText',drawerButtonId:'drawerOpen'});
-    bindLogout(target);bindDrawer(target);
-  }
-
-  function mountOperationNav(targetId){
-    const target=document.getElementById(targetId);if(!target)return;
-    target.innerHTML='';target.hidden=true;
-  }
-
-  function mountDailyTop(targetId){
-    const target=document.getElementById(targetId);if(!target)return;
-    target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identity',drawerButtonId:'drawerOpen'});
-    bindLogout(target);bindDrawer(target);
-  }
-
-  function mountRoleNavigation(context,current){
-    const options={role:context?.role||'admin',permissions:context?.permissions||{},active:current||document.body.dataset.screen||'daily'};
-    const screen=document.getElementById('screenNav');
-    const drawer=document.getElementById('drawerLinks');
-    const top=routeLinks(options,'top','top');
-    const side=routeLinks(options,'drawer','drawer');
-    if(screen)screen.innerHTML=top;
-    if(drawer)drawer.innerHTML=side;
-    document.querySelectorAll('.shell-role-badge').forEach(el=>el.textContent=options.role==='worker'?'عامل':'إدارة');
-    if(options.role==='admin')document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='حساب الإدارة');
-    return {top:routeItems(options,'top').length,drawer:routeItems(options,'drawer').length};
-  }
+  function mountAdminTop(targetId,options){const target=document.getElementById(targetId);if(!target||target.dataset.mounted)return;target.dataset.mounted='1';target.innerHTML=canonicalTop({...options,role:'admin',identityId:'identityText',drawerButtonId:'drawerOpen'});}
+  function watchAdmin(options){const tryMount=()=>{const side=document.getElementById('sharedAdminSidebar'),top=document.getElementById('sharedAdminTop');if(!side||!top)return false;mountAdminSidebar('sharedAdminSidebar',options);mountAdminTop('sharedAdminTop',options);bindAdminShell();return true;};if(tryMount())return;const observer=new MutationObserver(()=>{if(tryMount())observer.disconnect()});observer.observe(document.documentElement,{childList:true,subtree:true});}
+  function mountStandalone(targetId,options){const target=document.getElementById(targetId);if(!target)return;const current=options?.active||'',role=options?.role||'admin';const links=routeLinks({...options,role,active:current},'drawer','drawer');target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links">'+links+'</nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({...options,role,active:current,identityId:'standaloneIdentity',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target);}
+  function mountOperationTop(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identityText',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target);}
+  function mountOperationNav(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='';target.hidden=true;}
+  function mountDailyTop(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identity',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target);}
+  function mountRoleNavigation(context,current){const options={role:context?.role||'admin',permissions:context?.permissions||{},active:current||document.body.dataset.screen||'daily'};const screen=document.getElementById('screenNav');const drawer=document.getElementById('drawerLinks');const top=routeLinks(options,'top','top');const side=routeLinks(options,'drawer','drawer');if(screen)screen.innerHTML=top;if(drawer)drawer.innerHTML=side;document.querySelectorAll('.shell-role-badge').forEach(el=>el.textContent=options.role==='worker'?'عامل':'إدارة');if(options.role==='admin')document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='حساب الإدارة');return{top:routeItems(options,'top').length,drawer:routeItems(options,'drawer').length};}
 
   function loadScreenEnhancer(){
     const screen=document.body?.dataset?.screen||'';
-    const src={purchase:'purchase-autofill.js?v=20260913-1618'}[screen];
-    if(!src||document.querySelector('script[data-shop-enhancer="'+screen+'"]'))return;
-    const script=document.createElement('script');
-    script.src=src;script.defer=true;script.dataset.shopEnhancer=screen;
-    document.head.appendChild(script);
+    const map={purchase:['purchase-autofill.js?v=20260913-1700','price-guidance.js?v=20260913-1700'],sale:['sale-price-sync.js?v=20260913-1700','price-guidance.js?v=20260913-1700'],inventory:['inventory-pricing.js?v=20260913-1700'],products:['products-pagination.js?v=20260913-1700'],'opening-stock':['opening-stock-policy.js?v=20260913-1700']};
+    (map[screen]||[]).forEach((src,index)=>{if(document.querySelector('script[data-shop-enhancer="'+screen+'-'+index+'"]'))return;const script=document.createElement('script');script.src=src;script.defer=true;script.dataset.shopEnhancer=screen+'-'+index;document.head.appendChild(script);});
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadScreenEnhancer,{once:true});
-  else loadScreenEnhancer();
-
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadScreenEnhancer,{once:true});else loadScreenEnhancer();
   window.ShopShell={watchAdmin,mountAdminSidebar,mountAdminTop,mountStandalone,mountOperationTop,mountOperationNav,mountDailyTop,mountRoleNavigation,requestLogout};
 })();
