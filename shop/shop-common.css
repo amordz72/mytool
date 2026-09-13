@@ -30,7 +30,6 @@
 
 .drawer-logout{width:100%;margin-top:14px;padding:12px;border:1px solid #475569;border-radius:11px;background:#ffffff12;color:#fff;font:inherit;font-weight:800;cursor:pointer}
 
-
 /* Canonical header: identical on dashboard and operation pages. */
 .shell-canonical-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:4px 2px}
 .shell-canonical-header .topbar-title{display:flex;align-items:center;gap:10px;min-width:0}
@@ -79,4 +78,32 @@ html.shell-drawer-open,body.shell-drawer-open{overflow:hidden!important;overscro
   .shell-canonical-header .topbar-logo{width:48px;height:48px}
   .shell-canonical-header .topbar-copy h1{font-size:20px}
   .shell-canonical-header .menu-toggle{display:inline-flex!important;align-items:center;justify-content:center;width:50px!important;height:50px;padding:0!important;margin-right:auto;border-radius:15px!important;font-size:27px}
+}
+
+/* Shared shell ownership enforcement.
+ * Legacy page CSS may still exist, but it must not change shared shell geometry.
+ */
+#screenNav.shared-screen-nav.screen-nav.unified-nav{display:flex!important;flex-wrap:nowrap!important;gap:8px!important;overflow-x:auto!important;scrollbar-width:thin!important;padding:8px 0 12px!important;margin:0 0 10px!important;border-bottom:4px solid #d1d5db!important}
+#screenNav.shared-screen-nav.screen-nav.unified-nav::before{content:'●'!important;display:block!important;flex:0 0 auto!important;align-self:center!important;padding:0 5px!important;color:#f59e0b!important;font-size:13px!important;line-height:1!important}
+#screenNav.shared-screen-nav.screen-nav.unified-nav>a{display:block!important;flex:0 0 auto!important;padding:11px 15px!important;border:1px solid var(--line,var(--shell-line))!important;border-radius:14px!important;background:#fff!important;color:var(--main,var(--shell-main))!important;font-weight:800!important;font-size:16px!important;line-height:1.2!important;text-decoration:none!important;white-space:nowrap!important}
+#screenNav.shared-screen-nav.screen-nav.unified-nav>a.active{background:var(--main,var(--shell-main))!important;color:#fff!important;border-color:var(--main,var(--shell-main))!important}
+header.shell-canonical-header.shop-topbar{position:static!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin:0 0 14px!important;padding:4px 2px!important;background:transparent!important;border-bottom:0!important;backdrop-filter:none!important}
+header.shell-canonical-header.shop-topbar .topbar-title{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important}
+header.shell-canonical-header.shop-topbar .topbar-logo{display:grid!important;place-items:center!important;width:48px!important;height:48px!important;border-radius:15px!important;font-size:18px!important;flex:0 0 auto!important}
+header.shell-canonical-header.shop-topbar .topbar-copy h1{margin:0!important;font-size:23px!important;line-height:1.15!important;white-space:nowrap!important}
+header.shell-canonical-header.shop-topbar .shell-identity{display:block!important;margin-top:3px!important;min-height:16px!important;line-height:16px!important;color:#6b7280!important;font-size:13px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+header.shell-canonical-header.shop-topbar .shell-role-badge{display:inline-flex!important;align-items:center!important;padding:6px 9px!important;border-radius:999px!important;background:#ecfeff!important;color:#0f766e!important;font-size:12px!important;font-weight:800!important}
+#drawerOverlay.drawer-overlay{position:fixed!important;inset:0!important;background:#0f172a73!important;z-index:80!important}
+#drawer.drawer{position:fixed!important;top:0!important;right:0!important;width:min(82vw,310px)!important;height:100vh!important;height:100dvh!important;background:#0f172a!important;color:#fff!important;z-index:81!important;padding:18px!important;box-shadow:-15px 0 35px #0f172a40!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+#drawer.drawer.drawer-hidden,#drawerOverlay.drawer-overlay.drawer-hidden{display:none!important}
+#drawer.drawer .drawer-head{display:flex!important;align-items:center!important;justify-content:space-between!important;margin-bottom:16px!important;flex:0 0 auto!important}
+#drawer.drawer .drawer-links{display:block!important;flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;padding:2px 2px 12px!important}
+#drawer.drawer .drawer-links a{display:flex!important;align-items:center!important;gap:9px!important;padding:12px!important;border-radius:11px!important;background:#ffffff12!important;color:#fff!important;text-decoration:none!important;font-weight:800!important}
+#drawer.drawer .drawer-links a.active{background:var(--main,var(--shell-main))!important}
+#drawer.drawer .drawer-logout{flex:0 0 auto!important;width:100%!important;margin-top:10px!important;margin-bottom:max(0px,env(safe-area-inset-bottom))!important;padding:12px!important}
+@media(max-width:860px){
+  header.shell-canonical-header.shop-topbar{position:static!important;margin-bottom:12px!important;padding:4px 2px!important}
+  header.shell-canonical-header.shop-topbar .topbar-title{width:100%!important}
+  header.shell-canonical-header.shop-topbar .topbar-copy h1{font-size:20px!important}
+  header.shell-canonical-header.shop-topbar .menu-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:50px!important;height:50px!important;padding:0!important;margin-right:auto!important;border-radius:15px!important;font-size:27px!important}
 }
