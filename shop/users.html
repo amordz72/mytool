@@ -44,118 +44,11 @@
       <main class="shop-main">
     <div id="sharedAdminTop"></div>
 
-    <section id="dashboard" class="dash-hero content-card">
-      <div class="hero-top">
-        <div>
-          <div class="hero-eyebrow">MYTOOL / SHOP CONTROL</div>
-          <h2 class="hero-title">لوحة تحكم المحل</h2>
-          <div class="hero-sub">صورة مباشرة للمبيعات والمخزون وحالة المنتجات اليوم.</div>
-        </div>
-        <span class="live-badge"><span class="live-dot"></span> مباشر</span>
-      </div>
-      <div class="metrics-pro">
-        <div class="metric-pro"><div class="mhead"><span>المنتجات</span><span class="mico">▦</span></div><div class="mvalue">{{ products.length }}</div><div class="msub">منتج مسجل</div></div>
-        <div v-if="can('view_stock')" class="metric-pro"><div class="mhead"><span>إجمالي المخزون</span><span class="mico">◫</span></div><div class="mvalue">{{ stockUnits }}</div><div class="msub">وحدة متاحة حسب الحركات</div></div>
-        <div v-if="can('view_sales')" class="metric-pro"><div class="mhead"><span>عمليات اليوم</span><span class="mico">↗</span></div><div class="mvalue">{{ todaySalesCount }}</div><div class="msub">عملية بيع مسجلة</div></div>
-        <div v-if="can('view_sales')" class="metric-pro"><div class="mhead"><span>مبيعات اليوم</span><span class="mico">دج</span></div><div class="mvalue">{{ money(todayRevenue) }}</div><div class="msub">دينار جزائري</div></div>
-      </div>
-      <div class="quick-actions">
-        <a href="daily.html">☀ التشغيل اليومي</a>
-        <a v-if="can('sell')" href="sale.html">＋ بيع جديد</a>
-        <a v-if="can('view_stock')" class="mobile-hide" href="#inventory" @click="inventoryTab='stock'">▦ عرض المخزون</a>
-        <a v-if="can('inventory')" href="inventory-count.html">✓ جرد فعلي</a>
-        <a v-if="userMode==='admin'" href="products.html">◇ المنتجات</a><a v-if="userMode==='admin'" href="users.html">♙ المستخدمون</a><a v-if="userMode==='admin'" href="settings.html">⚙ الإعدادات</a><button class="mobile-hide" @click="loadAll" :disabled="busy">↻ تحديث البيانات</button>
-      </div>
-      <div v-if="userMode==='admin' && lowStockCount>0" class="alert-card"><span><strong>تنبيه مخزون:</strong> {{ lowStockCount }} منتجات كميتها 2 أو أقل.</span><span>منها {{ outOfStockCount }} نافد</span></div>
-    </section>
 
-    <section v-if="can('sell')" id="sale" class="card content-card">
-      <div class="section-title"><div><div class="section-kicker">المبيعات</div><h2>بيع جديد آمن</h2></div><span class="pill">حسب المخزن</span></div>
-      <p class="muted">البيع يعمل من شاشة التشغيل اليومية حتى تُفحص كمية مخزن العامل قبل الحفظ. المنتج غير المجرود يطلب كميته الحالية أول مرة، والمنتج النافد يبقى ظاهرًا بعلامة نافد ولا يُسمح ببيعه.</p>
-      <a class="btn" href="sale.html" style="display:inline-block;text-decoration:none">فتح شاشة البيع</a>
-    </section>
 
-    <section v-if="can('view_stock') || can('manage_products') || can('inventory')" id="inventory" class="card content-card">
-      <div class="top" style="margin:0 0 12px">
-        <div><div class="section-kicker">إدارة المخزون</div><h2 style="margin:0">المنتجات والمخزون</h2><div class="muted">المنتجات منفصلة عن حركة المخزون، والجرد الفعلي يسجل الفرق كتعديل مستقل.</div></div>
-        <div class="pill">{{ inventory.length }} سلع</div>
-      </div>
 
-      <div class="tabs">
-        <button v-if="can('manage_products')" class="tab" :class="{active:inventoryTab==='products'}" @click="inventoryTab='products'">المنتجات</button>
-        <button v-if="can('view_stock')" class="tab" :class="{active:inventoryTab==='stock'}" @click="inventoryTab='stock'">المخزون</button>
-        <button v-if="can('inventory')" class="tab" :class="{active:inventoryTab==='count'}" @click="openPhysicalCount">الجرد الفعلي</button>
-      </div>
 
-      <template v-if="can('view_stock') && inventoryTab==='stock'">
-        <div class="stock">
-          <div class="stock-item" v-for="item in inventory" :key="item.product_id">
-            <div class="stock-name">{{ item.name }}</div><div class="stock-num">{{ item.stock_quantity }}</div>
-          </div>
-        </div>
-      </template>
 
-      <template v-if="can('manage_products') && inventoryTab==='products'">
-        <form @submit.prevent="addProduct" class="grid" style="margin-bottom:12px">
-          <div><label>اسم المنتج الجديد</label><input v-model.trim="newProductName" required placeholder="مثال: كابل Type-C"></div>
-          <div v-if="userMode==='admin'">
-            <label>صورة المنتج (اختيارية)</label>
-            <input :key="newProductImageKey" type="file" accept="image/jpeg,image/png,image/webp" @change="selectNewProductImage">
-            <div v-if="newProductImageName" class="muted" style="margin-top:5px">تم اختيار: {{ newProductImageName }}</div>
-          </div>
-          <div style="align-self:end"><button class="btn" :disabled="busy">{{ busy ? 'جاري الحفظ…' : 'إضافة منتج' }}</button></div>
-        </form>
-        <div class="product-list">
-          <div class="product-row" v-for="p in products" :key="p.id">
-            <div class="product-image-wrap">
-              <img v-if="p.image_url" :src="p.image_url" :alt="'صورة '+p.name" loading="lazy">
-              <span v-else>بدون صورة</span>
-            </div>
-            <div class="product-main">
-              <input v-model.trim="productNames[p.id]" :aria-label="'اسم '+p.name">
-              <div class="product-actions">
-                <button class="btn secondary" @click="renameProduct(p)" :disabled="busy || !productNames[p.id]">حفظ الاسم</button>
-                <label v-if="userMode==='admin'" class="image-picker" :aria-busy="!!imageUploading[p.id]">
-                  {{ imageUploading[p.id] ? 'جاري الرفع…' : (p.image_url ? 'تغيير الصورة' : 'إضافة صورة') }}
-                  <input type="file" accept="image/jpeg,image/png,image/webp" :disabled="!!imageUploading[p.id]" @change="uploadProductImage($event,p)">
-                </label>
-              </div>
-              <div v-if="userMode==='admin' && imageHistory[p.id]?.length" class="image-history">
-                <div class="image-history-title">آخر الصور — اضغط لاسترجاع صورة</div>
-                <button v-for="image in imageHistory[p.id]" :key="image.id" type="button" class="history-thumb" :class="{current:image.is_current}" :disabled="busy || image.is_current" @click="restoreProductImage(image)">
-                  <img :src="image.image_url" :alt="'نسخة سابقة من '+p.name" loading="lazy">
-                  <span v-if="image.is_current" class="history-current">الحالية</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="muted" style="margin-top:10px">لا نحذف المنتجات التي لها سجل مبيعات؛ تغيير الاسم يحافظ على تاريخ الحركات.</div>
-      </template>
-
-      <template v-if="can('inventory') && inventoryTab==='count'">
-        <p class="muted">{{ userMode==='worker' ? 'جرد أعمى: اكتب العدد الفعلي دون رؤية كمية النظام. الزيادة تطبق مباشرة، والنقص ينتظر موافقة الإدارة.' : 'اكتب العدد الموجود فعليًا فقط للسلع التي قمت بعدها. اترك الباقي فارغًا، ولن يتغير.' }}</p>
-        <div v-if="physicalResult" :class="physicalResultType==='error'?'error':'ok'" style="margin-bottom:12px;font-weight:800">{{ physicalResult }}</div>
-        <div class="count-list">
-          <div class="count-row" v-for="item in inventory" :key="item.product_id">
-            <div class="count-name">{{ item.name }}</div>
-            <div v-if="userMode==='admin'"><div class="count-label">كمية النظام</div><strong>{{ item.stock_quantity }}</strong></div>
-            <div><div class="count-label">العدد الحقيقي</div><input v-model.number="physicalCounts[item.product_id]" type="number" min="0" step="1" inputmode="numeric" placeholder="—"></div>
-            <div v-if="userMode==='admin'"><div class="count-label">الفرق</div><div class="diff" :class="difference(item)>0?'plus':(difference(item)<0?'minus':'')">{{ physicalCounts[item.product_id] === '' || physicalCounts[item.product_id] == null ? '—' : signed(difference(item)) }}</div></div>
-            <div v-else><div class="count-label">الحالة</div><strong>يظهر بعد الحفظ</strong></div>
-          </div>
-        </div>
-        <div class="audit-summary" v-if="countedItems.length">
-          <span class="pill">تم عد {{ countedItems.length }} سلعة</span>
-          <span v-if="userMode==='admin'" class="pill">إجمالي الفرق {{ signed(totalCountDifference) }}</span>
-        </div>
-        <div><label>سبب الجرد</label><input v-model.trim="physicalReason" placeholder="مثال: جرد نهاية اليوم"></div>
-        <div class="section-actions">
-          <button class="btn" @click="applyPhysicalCount" :disabled="busy || !countedItems.length">تأكيد الجرد وتسجيل الفروق</button>
-          <button class="btn secondary" @click="resetPhysicalCount" :disabled="busy">مسح العد</button>
-        </div>
-      </template>
-    </section>
 
     <template v-if="userMode==='admin'">
       <section id="users" class="card content-card">
@@ -196,15 +89,7 @@
         <div v-else class="muted" style="margin-top:12px">لا توجد حسابات خدام بعد.</div>
       </section>
 
-      <section id="settings" class="card content-card">
-        <div class="section-kicker">النظام</div><h2>إعدادات جلسة الأدمن</h2>
-        <p class="muted">اختر مدة الجلسة من 1 إلى 96 ساعة. عند انتهاء المدة يخرج MyTool من حساب الإدارة تلقائيًا.</p>
-        <div class="setting-line">
-          <div><label>عدد الساعات</label><input v-model.number="adminSessionHours" type="number" min="1" max="96" step="1"></div>
-          <button class="btn" @click="saveAdminSessionHours" :disabled="busy">حفظ المدة</button>
-        </div>
-        <div class="muted" style="margin-top:8px">المدة الحالية: {{ adminSessionHours }} ساعة.</div>
-      </section>
+
     </template>
 
     <div class="footer">البيانات التشغيلية محفوظة في Supabase وليست داخل GitHub.</div>

@@ -44,36 +44,9 @@
       <main class="shop-main">
     <div id="sharedAdminTop"></div>
 
-    <section id="dashboard" class="dash-hero content-card">
-      <div class="hero-top">
-        <div>
-          <div class="hero-eyebrow">MYTOOL / SHOP CONTROL</div>
-          <h2 class="hero-title">لوحة تحكم المحل</h2>
-          <div class="hero-sub">صورة مباشرة للمبيعات والمخزون وحالة المنتجات اليوم.</div>
-        </div>
-        <span class="live-badge"><span class="live-dot"></span> مباشر</span>
-      </div>
-      <div class="metrics-pro">
-        <div class="metric-pro"><div class="mhead"><span>المنتجات</span><span class="mico">▦</span></div><div class="mvalue">{{ products.length }}</div><div class="msub">منتج مسجل</div></div>
-        <div v-if="can('view_stock')" class="metric-pro"><div class="mhead"><span>إجمالي المخزون</span><span class="mico">◫</span></div><div class="mvalue">{{ stockUnits }}</div><div class="msub">وحدة متاحة حسب الحركات</div></div>
-        <div v-if="can('view_sales')" class="metric-pro"><div class="mhead"><span>عمليات اليوم</span><span class="mico">↗</span></div><div class="mvalue">{{ todaySalesCount }}</div><div class="msub">عملية بيع مسجلة</div></div>
-        <div v-if="can('view_sales')" class="metric-pro"><div class="mhead"><span>مبيعات اليوم</span><span class="mico">دج</span></div><div class="mvalue">{{ money(todayRevenue) }}</div><div class="msub">دينار جزائري</div></div>
-      </div>
-      <div class="quick-actions">
-        <a href="daily.html">☀ التشغيل اليومي</a>
-        <a v-if="can('sell')" href="sale.html">＋ بيع جديد</a>
-        <a v-if="can('view_stock')" class="mobile-hide" href="#inventory" @click="inventoryTab='stock'">▦ عرض المخزون</a>
-        <a v-if="can('inventory')" href="inventory-count.html">✓ جرد فعلي</a>
-        <a v-if="userMode==='admin'" href="products.html">◇ المنتجات</a><a v-if="userMode==='admin'" href="users.html">♙ المستخدمون</a><a v-if="userMode==='admin'" href="settings.html">⚙ الإعدادات</a><button class="mobile-hide" @click="loadAll" :disabled="busy">↻ تحديث البيانات</button>
-      </div>
-      <div v-if="userMode==='admin' && lowStockCount>0" class="alert-card"><span><strong>تنبيه مخزون:</strong> {{ lowStockCount }} منتجات كميتها 2 أو أقل.</span><span>منها {{ outOfStockCount }} نافد</span></div>
-    </section>
 
-    <section v-if="can('sell')" id="sale" class="card content-card">
-      <div class="section-title"><div><div class="section-kicker">المبيعات</div><h2>بيع جديد آمن</h2></div><span class="pill">حسب المخزن</span></div>
-      <p class="muted">البيع يعمل من شاشة التشغيل اليومية حتى تُفحص كمية مخزن العامل قبل الحفظ. المنتج غير المجرود يطلب كميته الحالية أول مرة، والمنتج النافد يبقى ظاهرًا بعلامة نافد ولا يُسمح ببيعه.</p>
-      <a class="btn" href="sale.html" style="display:inline-block;text-decoration:none">فتح شاشة البيع</a>
-    </section>
+
+
 
     <section v-if="can('view_stock') || can('manage_products') || can('inventory')" id="inventory" class="card content-card">
       <div class="top" style="margin:0 0 12px">
@@ -158,53 +131,9 @@
     </section>
 
     <template v-if="userMode==='admin'">
-      <section id="users" class="card content-card">
-        <div class="section-kicker">الصلاحيات</div><h2>إدارة المستخدمين</h2>
-        <p class="muted">أضف حساب عامل من هنا. اختر الخدام المرتبط وحدد صلاحياته. كلمة المرور لا تُحفظ كنص صريح؛ قاعدة البيانات تحفظها مشفرة.</p>
-        <form @submit.prevent="createWorker">
-          <div class="grid">
-            <div><label>اسم المستخدم</label><input v-model.trim="workerForm.username" required placeholder="مثال: kamal"></div>
-            <div><label>الاسم المستعار</label><input v-model.trim="workerForm.nickname" required placeholder="مثال: كمال"></div><div><label>نوع الحساب</label><select v-model="workerForm.is_test"><option :value="false">عامل حقيقي</option><option :value="true">عامل تجريبي</option></select></div>
-            <div><label>الخدام المرتبط</label><select v-model.number="workerForm.staff_id" required><option disabled value="">اختر</option><option v-for="s in staff" :key="s.id" :value="s.id">{{ s.name }}</option></select></div>
-            <div><label>الهاتف (اختياري)</label><input v-model.trim="workerForm.phone" inputmode="tel"></div>
-            <div><label>كلمة مرور خاصة</label><input v-model="workerForm.password" type="password" autocomplete="new-password" required placeholder="4 أحرف/أرقام أو أكثر"></div>
-            <div class="worker-permissions"><label>الصلاحيات الأولية</label><div class="permissions-grid"><label class="permission-check"><input type="checkbox" v-model="workerForm.can_sell"> البيع</label><label class="permission-check"><input type="checkbox" v-model="workerForm.can_view_stock"> رؤية المخزون</label><label class="permission-check"><input type="checkbox" v-model="workerForm.can_inventory"> الجرد الفعلي</label><label class="permission-check"><input type="checkbox" v-model="workerForm.can_manage_products"> إدارة المنتجات</label><label class="permission-check"><input type="checkbox" v-model="workerForm.can_view_sales"> رؤية مبيعات اليوم</label></div></div>
-          </div>
-          <button class="btn" style="margin-top:10px" :disabled="busy">{{ busy ? 'جاري الحفظ…' : 'إضافة المستخدم' }}</button>
-        </form>
 
-        <div class="worker-list" v-if="adminWorkers.length">
-          <div class="worker-row" v-for="w in adminWorkers" :key="w.id">
-            <div class="worker-meta">
-              <h3>{{ w.nickname || w.username }} — {{ w.username }} · {{ w.is_test ? 'تجريبي' : 'حقيقي' }}</h3>
-              <small>{{ w.phone || 'بدون هاتف' }} · <span :class="w.active?'status-on':'status-off'">{{ w.active ? 'مفعّل' : 'موقوف' }}</span></small>
-              <div class="worker-permissions permissions-grid">
-                <label class="permission-check"><input type="checkbox" v-model="w.can_sell"> البيع</label>
-                <label class="permission-check"><input type="checkbox" v-model="w.can_view_stock"> المخزون</label>
-                <label class="permission-check"><input type="checkbox" v-model="w.can_inventory"> الجرد</label>
-                <label class="permission-check"><input type="checkbox" v-model="w.can_manage_products"> المنتجات</label>
-                <label class="permission-check"><input type="checkbox" v-model="w.can_view_sales"> مبيعات اليوم</label>
-              </div>
-            </div>
-            <div class="worker-actions">
-              <button class="btn" @click="saveWorkerPermissions(w)" :disabled="busy">حفظ الصلاحيات</button>
-              <button class="btn secondary" @click="toggleWorker(w)" :disabled="busy">{{ w.active ? 'إيقاف' : 'تفعيل' }}</button>
-              <button class="btn danger" @click="deleteWorker(w)" :disabled="busy">حذف</button>
-            </div>
-          </div>
-        </div>
-        <div v-else class="muted" style="margin-top:12px">لا توجد حسابات خدام بعد.</div>
-      </section>
 
-      <section id="settings" class="card content-card">
-        <div class="section-kicker">النظام</div><h2>إعدادات جلسة الأدمن</h2>
-        <p class="muted">اختر مدة الجلسة من 1 إلى 96 ساعة. عند انتهاء المدة يخرج MyTool من حساب الإدارة تلقائيًا.</p>
-        <div class="setting-line">
-          <div><label>عدد الساعات</label><input v-model.number="adminSessionHours" type="number" min="1" max="96" step="1"></div>
-          <button class="btn" @click="saveAdminSessionHours" :disabled="busy">حفظ المدة</button>
-        </div>
-        <div class="muted" style="margin-top:8px">المدة الحالية: {{ adminSessionHours }} ساعة.</div>
-      </section>
+
     </template>
 
     <div class="footer">البيانات التشغيلية محفوظة في Supabase وليست داخل GitHub.</div>
