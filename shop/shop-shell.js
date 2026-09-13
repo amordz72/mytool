@@ -154,5 +154,16 @@
     return {top:routeItems(options,'top').length,drawer:routeItems(options,'drawer').length};
   }
 
+  function loadScreenEnhancer(){
+    const screen=document.body?.dataset?.screen||'';
+    const src={purchase:'purchase-autofill.js?v=20260913-1618'}[screen];
+    if(!src||document.querySelector('script[data-shop-enhancer="'+screen+'"]'))return;
+    const script=document.createElement('script');
+    script.src=src;script.defer=true;script.dataset.shopEnhancer=screen;
+    document.head.appendChild(script);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadScreenEnhancer,{once:true});
+  else loadScreenEnhancer();
+
   window.ShopShell={watchAdmin,mountAdminSidebar,mountAdminTop,mountStandalone,mountOperationTop,mountOperationNav,mountDailyTop,mountRoleNavigation,requestLogout};
 })();
