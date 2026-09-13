@@ -406,13 +406,14 @@
         :await supabase.from('products').insert({name,is_test:adminDataMode.value==='test'}).select('id,name,image_url,is_test').single()
       if(result.error){busy.value=false;return notify('لم تتم إضافة المنتج: '+result.error.message,'error')}
 
+      newProductName.value='';newProductImage.value=null;newProductImageName.value='';newProductImageKey.value++
+
       let imageError=null
       if(selectedImage&&result.data?.id){
         try{await sendProductImage(selectedImage,result.data)}
         catch(error){imageError=error}
       }
 
-      newProductName.value='';newProductImage.value=null;newProductImageName.value='';newProductImageKey.value++
       await loadAll();inventoryTab.value='products';busy.value=false
       if(imageError)return notify('تمت إضافة المنتج، لكن تعذر رفع صورته: '+(imageError?.message||'خطأ غير معروف'),'error')
       notify(selectedImage?'تمت إضافة المنتج وصورته.':'تمت إضافة المنتج.')
