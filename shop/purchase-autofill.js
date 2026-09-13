@@ -39,7 +39,12 @@
     const branch=document.getElementById('purchaseBranch');
     if(!cost||!hint||!product||!branch)return;
 
-    const markSelectionChanged=()=>{cost.dataset.autofillPending='1'};
+    const markSelectionChanged=()=>{
+      // The visible price belongs to the previous product/branch, so never carry it over.
+      cost.value='';
+      cost.dataset.autofillPending='1';
+      cost.dataset.autofilled='0';
+    };
     product.addEventListener('change',markSelectionChanged);
     branch.addEventListener('change',markSelectionChanged);
     cost.addEventListener('input',()=>{
@@ -50,7 +55,14 @@
     const apply=()=>{
       const text=hint.textContent||'';
       const match=text.match(/آخر سعر شراء في هذا الفرع:\s*(.*?)\s*دج/u);
-      if(!match)return;
+      if(!match){
+        if(cost.dataset.autofillPending==='1'&&text.includes('لا يوجد سعر شراء سابق')){
+          cost.value='';
+          cost.dataset.autofillPending='0';
+          cost.dataset.autofilled='0';
+        }
+        return;
+      }
       const price=parseLocalizedNumber(match[1]);
       if(price===null||price<=0)return;
       const shouldFill=cost.value.trim()===''||cost.dataset.autofillPending==='1'||cost.dataset.autofilled==='1';
