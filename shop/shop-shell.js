@@ -69,7 +69,7 @@
         <nav class="side-nav">${links}
           <button class="side-link" data-shell-action="refresh"><span class="ico">↻</span><span>تحديث البيانات</span></button>
           <a class="side-link" href="../"><span class="ico">↩</span><span>رئيسية MyTool</span></a>
-          <button class="side-link shell-logout" type="button"><span class="ico">⇥</span><span>تسجيل الخروج</span></button>
+          <button class="side-link" type="button" data-shell-action="logout"><span class="ico">⇥</span><span>تسجيل الخروج</span></button>
         </nav>
         <div class="side-spacer"></div>
         <div class="side-footer">
