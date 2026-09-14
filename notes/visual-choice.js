@@ -5,7 +5,9 @@
   'use strict';
 
   const MAX_OPTIONS=12;
+  const PRIMARY_IDS=new Set(['type','priority','area']);
   const state=new WeakMap();
+  let activeSelect=null;
 
   function eligible(select){
     if(!(select instanceof HTMLSelectElement))return false;
@@ -18,8 +20,39 @@
     return [...select.options].filter(o=>!o.hidden).map(o=>({value:o.value,label:(o.textContent||o.label||o.value).trim(),disabled:o.disabled}));
   }
 
+  function markLayout(select){
+    if(!PRIMARY_IDS.has(select.id))return;
+    const label=select.closest('label');
+    if(!label)return;
+    label.classList.add('vchoice-primary-field');
+    const row=label.parentElement;
+    if(row?.classList.contains('row'))row.classList.add('vchoice-primary-row');
+  }
+
+  function closeActive(except=null){
+    if(!activeSelect||activeSelect===except)return;
+    const previous=activeSelect;
+    activeSelect=null;
+    const old=state.get(previous);
+    if(old){old.expanded=false;render(previous)}
+  }
+
+  function setExpanded(select,expanded){
+    const s=state.get(select);
+    if(!s||select.disabled)return;
+    if(expanded){
+      closeActive(select);
+      activeSelect=select;
+    }else if(activeSelect===select){
+      activeSelect=null;
+    }
+    s.expanded=expanded;
+    render(select);
+  }
+
   function build(select){
     if(state.has(select)||!eligible(select))return;
+    markLayout(select);
     select.classList.add('vchoice-source');
     select.tabIndex=-1;
 
@@ -32,40 +65,39 @@
     selected.type='button';
     selected.className='vchoice-selected';
     selected.setAttribute('aria-haspopup','listbox');
-    const change=document.createElement('button');
-    change.type='button';
-    change.className='vchoice-change';
-    change.textContent='×';
-    change.title='تغيير الاختيار';
-    change.setAttribute('aria-label','إظهار بقية الخيارات');
+    const selectedText=document.createElement('span');
+    selectedText.className='vchoice-selected-text';
+    const caret=document.createElement('span');
+    caret.className='vchoice-caret';
+    caret.setAttribute('aria-hidden','true');
+    selected.append(selectedText,caret);
     const options=document.createElement('div');
     options.className='vchoice-options';
     options.hidden=true;
     options.setAttribute('role','listbox');
-    current.append(selected,change);
+    current.append(selected);
     root.append(current,options);
     select.insertAdjacentElement('afterend',root);
 
-    const s={root,current,selected,change,options,expanded:false,lastSignature:''};
+    const s={root,current,selected,selectedText,caret,options,expanded:false,lastSignature:''};
     state.set(select,s);
 
-    const open=()=>{
-      if(select.disabled)return;
-      s.expanded=true;
-      render(select,true);
-    };
-    selected.addEventListener('click',open);
-    change.addEventListener('click',open);
-    select.addEventListener('change',()=>render(select,false));
-    select.addEventListener('input',()=>render(select,false));
-    render(select,false);
+    selected.addEventListener('click',()=>setExpanded(select,!s.expanded));
+    select.addEventListener('change',()=>{
+      s.expanded=false;
+      if(activeSelect===select)activeSelect=null;
+      render(select);
+    });
+    select.addEventListener('input',()=>render(select));
+    render(select);
   }
 
-  function render(select,preserveOpen){
+  function render(select){
     const s=state.get(select);
     if(!s)return;
     const rows=optionRows(select);
     if(rows.length<2||rows.length>MAX_OPTIONS){
+      if(activeSelect===select)activeSelect=null;
       s.root.remove();
       select.classList.remove('vchoice-source');
       select.tabIndex=0;
@@ -74,11 +106,11 @@
     }
     const selectedOption=select.selectedOptions[0]||rows.find(r=>r.value===select.value)||rows[0];
     const selectedLabel=selectedOption?.label||'اختر';
-    s.selected.textContent='✓ '+selectedLabel;
+    s.selectedText.textContent='✓ '+selectedLabel;
+    s.caret.textContent=s.expanded?'⌃':'⌄';
     s.selected.disabled=select.disabled;
-    s.change.disabled=select.disabled;
     s.root.classList.toggle('is-disabled',select.disabled);
-    if(!preserveOpen)s.expanded=false;
+    s.root.classList.toggle('is-open',s.expanded);
     s.options.hidden=!s.expanded;
     s.selected.setAttribute('aria-expanded',String(s.expanded));
 
@@ -97,15 +129,17 @@
       box.className='vchoice-box';
       box.textContent='✓';
       const text=document.createElement('span');
+      text.className='vchoice-option-text';
       text.textContent=row.label;
       button.append(box,text);
       button.addEventListener('click',()=>{
         if(button.disabled)return;
         select.value=row.value;
+        s.expanded=false;
+        if(activeSelect===select)activeSelect=null;
         select.dispatchEvent(new Event('input',{bubbles:true}));
         select.dispatchEvent(new Event('change',{bubbles:true}));
-        s.expanded=false;
-        render(select,false);
+        render(select);
       });
       s.options.appendChild(button);
     }
@@ -117,9 +151,12 @@
   }
 
   function syncAll(){
+    activeSelect=null;
     document.querySelectorAll('select').forEach(select=>{
-      if(state.has(select))render(select,state.get(select).expanded);
-      else build(select);
+      if(state.has(select)){
+        state.get(select).expanded=false;
+        render(select);
+      }else build(select);
     });
   }
 
@@ -129,13 +166,13 @@
         mutation.addedNodes.forEach(node=>{if(node.nodeType===1)scan(node)});
         const parent=mutation.target.closest?.('select');
         if(parent){
-          if(state.has(parent))render(parent,state.get(parent).expanded);
+          if(state.has(parent))render(parent);
           else build(parent);
         }
       }
       if(mutation.type==='attributes'&&mutation.target instanceof HTMLSelectElement){
         const select=mutation.target;
-        if(state.has(select))render(select,state.get(select).expanded);else build(select);
+        if(state.has(select))render(select);else build(select);
       }
     }
   });
@@ -143,6 +180,14 @@
   function start(){
     scan(document);
     observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['disabled']});
+    document.addEventListener('click',event=>{
+      if(!activeSelect)return;
+      const s=state.get(activeSelect);
+      if(s&&!s.root.contains(event.target))setExpanded(activeSelect,false);
+    });
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&activeSelect)setExpanded(activeSelect,false);
+    });
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
