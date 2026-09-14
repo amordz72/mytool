@@ -23,8 +23,8 @@
     @media(max-width:860px){.shop-shell{display:block;padding:10px}.shop-main{width:100%}.sidebar{position:fixed;z-index:50;top:0;right:0;height:100vh;width:min(82vw,290px);border-radius:0 0 0 22px;transform:translateX(110%);transition:transform .2s ease}.sidebar.open{transform:translateX(0)}.mobile-overlay{display:block;position:fixed;z-index:40;inset:0;background:rgba(15,23,42,.48)}.menu-toggle{display:inline-flex;align-items:center;justify-content:center}.metrics-pro{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-title{font-size:23px}.desktop-only{display:none!important}.mobile-only{display:inline-flex}.shop-topbar{position:sticky;top:0;z-index:30;margin:0 -2px 10px;padding:8px 4px;background:rgba(244,247,251,.94);backdrop-filter:blur(10px);border-bottom:1px solid rgba(226,232,240,.9)}.topbar-logo{width:36px;height:36px}.topbar-copy h1{font-size:20px}.topbar-copy .muted{display:none}.menu-toggle{width:42px!important;height:42px;padding:0!important;border-radius:12px!important;font-size:20px}.topbar-actions{gap:6px}}@media(max-width:620px){.dashboard{grid-template-columns:repeat(2,minmax(0,1fr))}.grid,.stock{grid-template-columns:1fr}.app{padding:0}.top{align-items:flex-start}.toolbar{flex-wrap:wrap}.worker-row{align-items:flex-start;flex-direction:column}.worker-actions{width:100%}.worker-actions button{flex:1}.setting-line{align-items:stretch;flex-direction:column}.setting-line button{width:100%}.count-row{grid-template-columns:1fr 1fr}.count-name{grid-column:1/-1}.product-row{align-items:stretch;flex-direction:column}.product-row button{width:100%}.section-actions button{flex:1;min-width:130px}.shop-shell{padding:8px}.dash-hero{padding:14px;border-radius:18px;box-shadow:0 10px 24px rgba(15,23,42,.14)}.dash-hero:after{width:130px;height:130px;left:-45px;top:-55px}.hero-top{align-items:center}.hero-eyebrow{font-size:10px;margin-bottom:3px}.hero-title{font-size:20px;line-height:1.2}.hero-sub{display:none}.live-badge{font-size:10px;padding:6px 8px}.metrics-pro{grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric-pro{padding:10px;border-radius:13px;min-height:88px}.metric-pro .mhead{font-size:10.5px}.metric-pro .mico{width:26px;height:26px;border-radius:8px;font-size:12px}.metric-pro .mvalue{font-size:21px;margin-top:6px}.metric-pro .msub{display:none}.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}.quick-actions a,.quick-actions button{width:100%;text-align:center;padding:8px 9px;font-size:11px}.quick-actions .mobile-hide{display:none}.alert-card{align-items:flex-start;padding:9px 10px;margin-top:10px;font-size:11px;line-height:1.5;background:#fff7ed;color:#7c2d12}.content-card{scroll-margin-top:64px}.card{border-radius:16px;padding:14px}.section-title{margin-bottom:11px}}
   #sale,#inventory,#users,#settings{display:none!important}.shop-shell{display:block;max-width:760px;margin:auto;padding:12px}.shop-main{width:100%}.shop-topbar{position:static;margin-bottom:12px;border-radius:0;background:transparent;box-shadow:none;padding:0}.topbar-logo{background:linear-gradient(135deg,#14b8a6,#0f766e)}.unified-nav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:8px 0 12px;margin-bottom:10px;border-bottom:4px solid #d1d5db}.unified-nav a{flex:0 0 auto;padding:11px 15px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--main);font-weight:800;text-decoration:none}.unified-nav a.active{background:var(--main);color:#fff;border-color:var(--main)}@media(max-width:760px){.shop-shell{padding:8px}.shop-topbar{padding:4px 2px}.topbar-title{width:100%}.menu-toggle{margin-right:auto}.topbar-actions{display:none!important}.content-card{border-radius:18px}.unified-nav{margin-inline:-8px;padding-inline:8px}}.data-mode-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;margin-bottom:12px}.data-mode-bar strong{margin-left:auto}.mode-btn{width:auto!important;padding:9px 14px!important;background:#fff!important;color:var(--main)!important;border:1px solid var(--main)!important}.mode-btn.active{background:var(--main)!important;color:#fff!important}.test-warning{color:#b45309;font-weight:800}@media(min-width:761px){.sidebar,.mobile-overlay{display:none!important}}</style>
 <link rel="stylesheet" href="shop-common.css?v=20260913-1501">
-<script src="shop-routes.js?v=20260913-1501"></script>
-<script src="shop-shell.js?v=20260913-1501"></script>
+<script src="shop-routes.js?v=20260914-1630"></script>
+<script src="shop-shell.js?v=20260914-1630"></script>
 </head>
 <body data-screen="index">
 <div id="app" class="app" v-cloak>
@@ -66,6 +66,7 @@
       </div>
       <div class="quick-actions">
         <a v-if="can('sell')" href="sale.html">＋ بيع</a>
+        <a v-if="userMode==='worker' && can('record_money')" href="cash-receipts.html">⇩ استلام مال</a>
         <a v-if="userMode==='admin' || can('purchase')" href="purchase.html">⇩ مشتريات</a>
         <a v-if="userMode==='admin' || can('view_stock')" href="stock.html">▦ المخزون</a>
         <a v-if="userMode==='admin' || can('inventory')" href="inventory-count.html">✓ جرد</a>
@@ -113,13 +114,13 @@
     const storedWorkerNickname=storedWorkerToken?(localStorage.getItem(WORKER_NICKNAME_KEY)||''):''
 
     const session=ref(null),workerToken=ref(storedWorkerToken),workerNickname=ref(storedWorkerNickname)
-    const workerPermissions=ref({can_sell:false,can_view_stock:false,can_inventory:false,can_manage_products:false,can_view_sales:false})
+    const workerPermissions=ref({can_sell:false,can_view_stock:false,can_inventory:false,can_manage_products:false,can_view_sales:false,can_record_money:false})
     const workerSalesSummary=ref({sales_count:0,revenue:0})
     const loading=ref(true),busy=ref(false),loginMode=ref('worker'),email=ref(''),password=ref(''),workerUsername=ref(''),workerPassword=ref('')
     const message=ref(''),messageType=ref('ok'),staff=ref([]),products=ref([]),inventory=ref([]),adminWorkers=ref([]),todaySales=ref([]),branches=ref([]),currentBranchId=ref('')
     const sale=ref({sold_by:'',product_id:'',quantity:1,unit_price:'',notes:''})
     const inventoryTab=ref(location.pathname.endsWith('/products.html')?'products':'stock'),sidebarOpen=ref(false),newProductName=ref(''),newProductImage=ref(null),newProductImageName=ref(''),newProductImageKey=ref(0),productNames=ref({}),imageUploading=ref({}),imageHistory=ref({}),physicalCounts=ref({}),physicalReason=ref('جرد فعلي'),physicalResult=ref(''),physicalResultType=ref('ok')
-    const workerForm=ref({username:'',nickname:'',phone:'',password:'',staff_id:'',is_test:false,can_sell:true,can_view_stock:true,can_inventory:false,can_manage_products:false,can_view_sales:false})
+    const workerForm=ref({username:'',nickname:'',phone:'',password:'',staff_id:'',is_test:false,can_sell:true,can_view_stock:true,can_inventory:false,can_manage_products:false,can_view_sales:false,can_record_money:false})
     const adminSessionHours=ref(clampHours(localStorage.getItem(ADMIN_SESSION_HOURS_KEY)||24))
     const adminDataMode=ref(localStorage.getItem(ADMIN_DATA_MODE_KEY)==='test'?'test':'real')
 
@@ -135,7 +136,7 @@
     const totalCountDifference=computed(()=>countedItems.value.reduce((sum,x)=>sum+difference(x),0))
     const money=value=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(Number(value||0))
 
-    function clearWorkerSession(){workerToken.value='';workerNickname.value='';workerPermissions.value={can_sell:false,can_view_stock:false,can_inventory:false,can_manage_products:false,can_view_sales:false};workerSalesSummary.value={sales_count:0,revenue:0};localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY);localStorage.removeItem(WORKER_EXPIRES_KEY)}
+    function clearWorkerSession(){workerToken.value='';workerNickname.value='';workerPermissions.value={can_sell:false,can_view_stock:false,can_inventory:false,can_manage_products:false,can_view_sales:false,can_record_money:false};workerSalesSummary.value={sales_count:0,revenue:0};localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY);localStorage.removeItem(WORKER_EXPIRES_KEY)}
     function invalidWorkerSession(value){return userMode.value==='worker'&&String(value?.message||value||'').includes('INVALID_SESSION')}
     function expireInvalidWorkerSession(value){if(!invalidWorkerSession(value))return false;busy.value=false;clearWorkerSession();products.value=[];inventory.value=[];staff.value=[];todaySales.value=[];window.location.replace('../');return true}
     function notify(text,type='ok'){if(expireInvalidWorkerSession(text))return;message.value=text;messageType.value=type==='error'?'error':'ok'}
@@ -195,7 +196,7 @@
         const workerBranchContext=branchResult.data||{}
         branches.value=workerBranchContext.branches||[]
         currentBranchId.value=String(workerBranchContext.default_branch_id||branches.value[0]?.id||'')
-        workerPermissions.value={can_sell:!!ctx.can_sell,can_view_stock:!!ctx.can_view_stock,can_inventory:!!ctx.can_inventory,can_manage_products:!!ctx.can_manage_products,can_view_sales:!!ctx.can_view_sales}
+        workerPermissions.value={can_sell:!!ctx.can_sell,can_view_stock:!!ctx.can_view_stock,can_inventory:!!ctx.can_inventory,can_manage_products:!!ctx.can_manage_products,can_view_sales:!!ctx.can_view_sales,can_record_money:!!ctx.can_record_money}
         localStorage.setItem(WORKER_NICKNAME_KEY,workerNickname.value)
         inventory.value=[];products.value=[];workerSalesSummary.value={sales_count:0,revenue:0}
         if(can('sell')||can('view_stock')||can('inventory')||can('manage_products')){
@@ -450,7 +451,7 @@
       const {error}=await supabase.from('worker_accounts').insert(payload)
       busy.value=false
       if(error)return notify('لم تتم إضافة المستخدم: '+error.message,'error')
-      workerForm.value={username:'',nickname:'',phone:'',password:'',staff_id:'',is_test:false,can_sell:true,can_view_stock:true,can_inventory:false,can_manage_products:false,can_view_sales:false}
+      workerForm.value={username:'',nickname:'',phone:'',password:'',staff_id:'',is_test:false,can_sell:true,can_view_stock:true,can_inventory:false,can_manage_products:false,can_view_sales:false,can_record_money:false}
       notify('تمت إضافة المستخدم بنجاح.')
       await loadAll()
     }
