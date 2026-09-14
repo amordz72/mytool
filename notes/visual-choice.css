@@ -10,15 +10,12 @@
   white-space:nowrap!important;
   border:0!important;
 }
-.vchoice{margin-top:7px;min-width:0}
-.vchoice-current{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.vchoice{margin-top:7px;min-width:0;position:relative}
+.vchoice-current{display:block;min-width:0}
 .vchoice-selected,.vchoice-option{
-  width:auto!important;
   min-height:42px;
-  display:inline-flex;
+  display:flex;
   align-items:center;
-  justify-content:center;
-  gap:7px;
   border:1px solid #b8c7cf!important;
   border-radius:12px!important;
   padding:8px 11px!important;
@@ -30,28 +27,66 @@
   cursor:pointer;
   box-shadow:none!important;
 }
-.vchoice-selected{border-color:var(--teal,#117f78)!important;background:#ecfdf9!important;color:#0f6f69!important}
-.vchoice-change{
-  width:38px!important;
-  height:38px!important;
-  min-width:38px;
-  padding:0!important;
-  border:1px solid #cfd8df!important;
-  border-radius:12px!important;
-  background:#fff!important;
-  color:#6b7280!important;
-  font-size:21px!important;
-  line-height:1!important;
+.vchoice-selected{
+  width:100%!important;
+  justify-content:space-between;
+  gap:8px;
+  border-color:var(--teal,#117f78)!important;
+  background:#ecfdf9!important;
+  color:#0f6f69!important;
 }
-.vchoice-options{display:flex;align-items:stretch;gap:7px;flex-wrap:wrap;margin-top:8px;padding:9px;border:1px solid #d9e1e7;border-radius:14px;background:#f8fafc}
+.vchoice-selected-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vchoice-caret{flex:0 0 auto;font-size:17px;line-height:1;font-weight:900;color:#0f766e}
+.vchoice-options{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(108px,1fr));
+  gap:7px;
+  margin-top:8px;
+  padding:9px;
+  border:1px solid #d9e1e7;
+  border-radius:14px;
+  background:#f8fafc;
+  box-shadow:0 10px 26px #0f172a14;
+}
 .vchoice-options[hidden]{display:none!important}
-.vchoice-option{flex:0 0 auto;text-align:right}
+.vchoice-option{width:100%!important;justify-content:flex-start;gap:7px;text-align:right}
 .vchoice-option.is-selected{border-color:var(--teal,#117f78)!important;background:#e9fbf6!important;color:#08766c!important}
 .vchoice-box{width:18px;height:18px;display:grid;place-items:center;flex:0 0 18px;border:1.5px solid #94a3b8;border-radius:5px;background:#fff;color:transparent;font-size:12px;font-weight:900}
 .vchoice-option.is-selected .vchoice-box{background:var(--teal,#117f78);border-color:var(--teal,#117f78);color:#fff}
-.vchoice-selected:focus-visible,.vchoice-option:focus-visible,.vchoice-change:focus-visible{outline:3px solid #99f6e4;outline-offset:2px}
+.vchoice-option-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vchoice-selected:focus-visible,.vchoice-option:focus-visible{outline:3px solid #99f6e4;outline-offset:2px}
 .vchoice.is-disabled{opacity:.6}.vchoice.is-disabled button{cursor:not-allowed}
+
+/* Main note fields: compact, equal-width and responsive. */
+.row.vchoice-primary-row{grid-template-columns:repeat(6,minmax(0,1fr));align-items:start}
+.row.vchoice-primary-row>.vchoice-primary-field{grid-column:span 2;min-width:0}
+.row.vchoice-primary-row>label:not(.vchoice-primary-field){grid-column:1/-1}
+.vchoice-primary-field .vchoice-selected{min-height:46px;padding:9px 10px!important}
+.vchoice-primary-field .vchoice-options{
+  position:absolute;
+  z-index:30;
+  top:calc(100% + 4px);
+  width:min(420px,calc(100vw - 40px));
+  max-height:52vh;
+  overflow:auto;
+  margin-top:0;
+  grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+}
+.vchoice[data-for-select="type"] .vchoice-options{right:0}
+.vchoice[data-for-select="priority"] .vchoice-options{left:50%;transform:translateX(-50%)}
+.vchoice[data-for-select="area"] .vchoice-options{left:0}
+
 @media(max-width:640px){
-  .vchoice-options{gap:6px;padding:8px}
+  .vchoice-options{gap:6px;padding:8px;grid-template-columns:repeat(auto-fit,minmax(100px,1fr))}
   .vchoice-option,.vchoice-selected{min-height:44px;padding:9px 10px!important}
+  .row.vchoice-primary-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .row.vchoice-primary-row>.vchoice-primary-field{grid-column:span 1}
+  .vchoice-primary-field .vchoice-selected{font-size:14px;padding:8px 8px!important}
+  .vchoice-primary-field .vchoice-options{width:min(390px,calc(100vw - 32px));grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:390px){
+  .row.vchoice-primary-row{gap:6px}
+  .vchoice-primary-field .vchoice-selected{font-size:13px;padding:8px 6px!important}
+  .vchoice-caret{font-size:15px}
 }
