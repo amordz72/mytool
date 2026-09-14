@@ -1,4 +1,4 @@
-/* Tasks #84/#85/#86/#88 — visual choices + container-first responsive pilot. */
+/* Tasks #84/#85/#86/#88/#89/#90 — visual choices + container-first responsive pilot. */
 .vchoice-source{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 .vchoice{margin-top:7px;min-width:0;position:relative}
 .vchoice-current{display:block;min-width:0}
@@ -32,10 +32,18 @@ section.panel>.toolbar{display:block!important}
 .toolbar-filters>.vchoice{margin-top:0;min-width:0}
 .toolbar-filters .vchoice-options,.note-ops .vchoice-options{position:absolute;z-index:40;top:calc(100% + 6px);inset-inline:0;width:100%;max-height:58vh;overflow:auto;margin-top:0}
 
+/* Task #89: archive is a real view/tab, separate from normal status filtering. */
+.notes-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px;padding:4px;background:#f3f7f8;border:1px solid #dbe5e8;border-radius:14px}
+.notes-tab{width:100%;min-height:42px;margin:0;padding:9px 12px!important;border-radius:10px!important;background:transparent!important;color:#52616b!important;border:1px solid transparent!important}
+.notes-tab.is-active{background:#fff!important;color:var(--teal,#117f78)!important;border-color:#b8d8d4!important;box-shadow:0 2px 8px #102a4314}
+.notes-archive-mode .toolbar-filters{grid-template-columns:1fr}
+.notes-archive-mode .toolbar-filters>.vchoice[data-for-select="statusFilter"]{display:none!important}
+
 /* Per-note status/archive is its own group. */
 .note-ops{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:8px!important;align-items:start;margin-top:10px!important}
 .note-ops>.vchoice{margin-top:0;min-width:0}
 .note-ops>.archive{min-height:44px;align-self:start}
+.note-ops>.archive.restore{background:#eefbf7!important;color:#08766c!important;border-color:#8fd8cc!important}
 
 /* Task #88: compact actions belong to each note; legacy global action bar is hidden. */
 section.panel>.toolbar+.actions{display:none!important}
@@ -64,6 +72,7 @@ section.panel>.toolbar+.actions{display:none!important}
   .row.vchoice-primary-row>.vchoice-primary-field{grid-column:auto}
   .vchoice-options,.vchoice-primary-field .vchoice-options,.toolbar-filters .vchoice-options,.note-ops .vchoice-options{grid-template-columns:repeat(auto-fit,minmax(125px,1fr))!important}
   .toolbar-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .notes-archive-mode .toolbar-filters{grid-template-columns:1fr}
 }
 
 @media(max-width:380px) and (orientation:portrait){
