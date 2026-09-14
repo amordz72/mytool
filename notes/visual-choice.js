@@ -1,6 +1,4 @@
-/* Task #84 — replace suitable native selects with compact visual single-choice controls.
- * The original <select> remains the source of truth so existing save/filter logic keeps working.
- */
+/* Tasks #84/#85/#86/#88 — visual single-choice controls + responsive note actions. */
 (function(){
   'use strict';
 
@@ -18,6 +16,24 @@
 
   function optionRows(select){
     return [...select.options].filter(o=>!o.hidden).map(o=>({value:o.value,label:(o.textContent||o.label||o.value).trim(),disabled:o.disabled}));
+  }
+
+  function prepareContainers(){
+    const toolbar=document.querySelector('section.panel .toolbar');
+    if(toolbar&&!toolbar.dataset.containerReady){
+      toolbar.dataset.containerReady='1';
+      const search=document.getElementById('search');
+      const status=document.getElementById('statusFilter');
+      const type=document.getElementById('typeFilter');
+      const searchGroup=document.createElement('div');
+      searchGroup.className='toolbar-search';
+      const filterGroup=document.createElement('div');
+      filterGroup.className='toolbar-filters';
+      if(search)searchGroup.appendChild(search);
+      if(status)filterGroup.appendChild(status);
+      if(type)filterGroup.appendChild(type);
+      toolbar.append(searchGroup,filterGroup);
+    }
   }
 
   function markLayout(select){
@@ -145,19 +161,59 @@
     }
   }
 
+  function runLegacyActionForNote(article,actionId){
+    const pick=article.querySelector('.pick');
+    const action=document.getElementById(actionId);
+    if(!pick||!action)return;
+    document.querySelectorAll('.pick').forEach(x=>x.checked=false);
+    pick.checked=true;
+    action.click();
+    pick.checked=false;
+  }
+
+  function enhanceNote(article){
+    if(!(article instanceof HTMLElement)||!article.matches('.note')||article.dataset.toolsReady)return;
+    article.dataset.toolsReady='1';
+    const ops=article.querySelector('.actions');
+    if(ops)ops.classList.add('note-ops');
+    const tools=document.createElement('div');
+    tools.className='note-tools';
+    const defs=[['copy','🤖 AI','نسخ هذه الملاحظة للذكاء الاصطناعي'],['txt','TXT','تحميل هذه الملاحظة TXT'],['json','JSON','تحميل هذه الملاحظة JSON']];
+    for(const [actionId,label,title] of defs){
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='outline note-tool';
+      button.textContent=label;
+      button.title=title;
+      button.setAttribute('aria-label',title);
+      button.addEventListener('click',()=>runLegacyActionForNote(article,actionId));
+      tools.appendChild(button);
+    }
+    const meta=article.querySelector('.meta');
+    if(meta)article.insertBefore(tools,meta);else article.appendChild(tools);
+  }
+
+  function enhanceNotes(root=document){
+    if(root instanceof HTMLElement&&root.matches('.note'))enhanceNote(root);
+    root.querySelectorAll?.('.note').forEach(enhanceNote);
+  }
+
   function scan(root=document){
     if(root instanceof HTMLSelectElement)build(root);
     root.querySelectorAll?.('select').forEach(build);
+    enhanceNotes(root);
   }
 
   function syncAll(){
     activeSelect=null;
+    prepareContainers();
     document.querySelectorAll('select').forEach(select=>{
       if(state.has(select)){
         state.get(select).expanded=false;
         render(select);
       }else build(select);
     });
+    enhanceNotes(document);
   }
 
   const observer=new MutationObserver(mutations=>{
@@ -178,6 +234,7 @@
   });
 
   function start(){
+    prepareContainers();
     scan(document);
     observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['disabled']});
     document.addEventListener('click',event=>{
