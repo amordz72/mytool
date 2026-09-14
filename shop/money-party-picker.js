@@ -1,7 +1,7 @@
 /* MyTool — reusable customer/shop picker for money workflows. */
 (function(){
   'use strict';
-  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=value=>String(value??'').trim().replace(/\s+/g,' ').toLocaleLowerCase('ar');
   function create(options){
     const supabase=options.supabase,input=typeof options.input==='string'?document.getElementById(options.input):options.input,results=typeof options.results==='string'?document.getElementById(options.results):options.results;
