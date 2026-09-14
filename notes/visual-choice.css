@@ -1,0 +1,57 @@
+/* Task #84 — visual single-choice controls for small/medium option sets. */
+.vchoice-source{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
+.vchoice{margin-top:7px;min-width:0}
+.vchoice-current{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.vchoice-selected,.vchoice-option{
+  width:auto!important;
+  min-height:42px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  border:1px solid #b8c7cf!important;
+  border-radius:12px!important;
+  padding:8px 11px!important;
+  background:#fff!important;
+  color:#172033!important;
+  font:inherit!important;
+  font-weight:800!important;
+  line-height:1.25;
+  cursor:pointer;
+  box-shadow:none!important;
+}
+.vchoice-selected{border-color:var(--teal,#117f78)!important;background:#ecfdf9!important;color:#0f6f69!important}
+.vchoice-change{
+  width:38px!important;
+  height:38px!important;
+  min-width:38px;
+  padding:0!important;
+  border:1px solid #cfd8df!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#6b7280!important;
+  font-size:21px!important;
+  line-height:1!important;
+}
+.vchoice-options{display:flex;align-items:stretch;gap:7px;flex-wrap:wrap;margin-top:8px;padding:9px;border:1px solid #d9e1e7;border-radius:14px;background:#f8fafc}
+.vchoice-options[hidden]{display:none!important}
+.vchoice-option{flex:0 0 auto;text-align:right}
+.vchoice-option.is-selected{border-color:var(--teal,#117f78)!important;background:#e9fbf6!important;color:#08766c!important}
+.vchoice-box{width:18px;height:18px;display:grid;place-items:center;flex:0 0 18px;border:1.5px solid #94a3b8;border-radius:5px;background:#fff;color:transparent;font-size:12px;font-weight:900}
+.vchoice-option.is-selected .vchoice-box{background:var(--teal,#117f78);border-color:var(--teal,#117f78);color:#fff}
+.vchoice-selected:focus-visible,.vchoice-option:focus-visible,.vchoice-change:focus-visible{outline:3px solid #99f6e4;outline-offset:2px}
+.vchoice.is-disabled{opacity:.6}.vchoice.is-disabled button{cursor:not-allowed}
+@media(max-width:640px){
+  .vchoice-options{gap:6px;padding:8px}
+  .vchoice-option,.vchoice-selected{min-height:44px;padding:9px 10px!important}
+}
