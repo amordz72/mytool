@@ -1,0 +1,5 @@
+MyTool notes release
+2026-09-14
+Tasks: #82 #91 #92 #95
+Public app files: notes/index.html + notes/notes-list-tools.js
+Status: USER_CONFIRM_REQUIRED
