@@ -20,6 +20,7 @@
     {id:'money',group:'money',label:'أماكن الأموال',shortLabel:'الأموال',path:'money.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'دج'},
     {id:'cash-receipts',group:'money',label:'استلام أموال',shortLabel:'استلام مال',path:'cash-receipts.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'⇩'},
     {id:'expected-money',group:'money',label:'الفيرسمون المتوقع',shortLabel:'فيرسمون',path:'expected-money.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'◷'},
+    {id:'shift-close',group:'money',label:'إغلاق الوردية',shortLabel:'إغلاق وردية',path:'shift-close.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'✓'},
     {id:'cash',group:'money',label:'الصندوق',shortLabel:'الصندوق',path:'cash.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'▣'},
     {id:'users',group:'admin',label:'المستخدمون',shortLabel:'المستخدمون',path:'users.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'♙'},
     {id:'settings',group:'admin',label:'الإعدادات',shortLabel:'الإعدادات',path:'settings.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'⚙'},
