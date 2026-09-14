@@ -1,4 +1,4 @@
-/* Tasks #84/#85/#86/#88 — visual single-choice controls + responsive note actions. */
+/* Tasks #84/#85/#86/#88/#89/#90 — visual choices, responsive note actions, archive tab and no-jump local actions. */
 (function(){
   'use strict';
 
@@ -34,6 +34,68 @@
       if(type)filterGroup.appendChild(type);
       toolbar.append(searchGroup,filterGroup);
     }
+  }
+
+  function syncArchiveTabs(){
+    const filter=document.getElementById('statusFilter');
+    const tabs=document.querySelector('.notes-tabs');
+    if(!filter||!tabs)return;
+    const archived=filter.value==='ARCHIVED';
+    document.body.classList.toggle('notes-archive-mode',archived);
+    tabs.querySelectorAll('[data-notes-tab]').forEach(button=>{
+      const active=(button.dataset.notesTab==='archived')===archived;
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-selected',String(active));
+    });
+  }
+
+  function setNotesTab(mode){
+    const filter=document.getElementById('statusFilter');
+    if(!filter)return;
+    filter.value=mode==='archived'?'ARCHIVED':'ACTIVE';
+    filter.dispatchEvent(new Event('input',{bubbles:true}));
+    filter.dispatchEvent(new Event('change',{bubbles:true}));
+    syncArchiveTabs();
+  }
+
+  function prepareArchiveTabs(){
+    const toolbar=document.querySelector('section.panel .toolbar');
+    const filter=document.getElementById('statusFilter');
+    if(!toolbar||!filter)return;
+
+    const archivedOption=filter.querySelector('option[value="ARCHIVED"]');
+    if(archivedOption)archivedOption.hidden=true;
+
+    let tabs=document.querySelector('.notes-tabs');
+    if(!tabs){
+      tabs=document.createElement('div');
+      tabs.className='notes-tabs';
+      tabs.setAttribute('role','tablist');
+      tabs.setAttribute('aria-label','عرض الملاحظات');
+      const current=document.createElement('button');
+      current.type='button';
+      current.className='notes-tab';
+      current.dataset.notesTab='current';
+      current.textContent='الحالية';
+      current.setAttribute('role','tab');
+      current.addEventListener('click',()=>setNotesTab('current'));
+      const archived=document.createElement('button');
+      archived.type='button';
+      archived.className='notes-tab';
+      archived.dataset.notesTab='archived';
+      archived.textContent='المؤرشفة';
+      archived.setAttribute('role','tab');
+      archived.addEventListener('click',()=>setNotesTab('archived'));
+      tabs.append(current,archived);
+      toolbar.parentElement.insertBefore(tabs,toolbar);
+    }
+
+    if(!filter.dataset.archiveTabsReady){
+      filter.dataset.archiveTabsReady='1';
+      filter.addEventListener('change',syncArchiveTabs);
+      filter.addEventListener('input',syncArchiveTabs);
+    }
+    syncArchiveTabs();
   }
 
   function markLayout(select){
@@ -161,18 +223,69 @@
     }
   }
 
+  function runLocalWithoutJump(action){
+    const y=window.scrollY;
+    const x=window.scrollX;
+    const message=document.getElementById('message');
+    let restoreMessage=null;
+    if(message){
+      const hadOwn=Object.prototype.hasOwnProperty.call(message,'scrollIntoView');
+      const previous=message.scrollIntoView;
+      try{
+        message.scrollIntoView=()=>{};
+        restoreMessage=()=>{
+          try{
+            if(hadOwn)message.scrollIntoView=previous;
+            else delete message.scrollIntoView;
+          }catch{}
+        };
+      }catch{}
+    }
+    action();
+    [0,80,220,500].forEach(delay=>setTimeout(()=>window.scrollTo({top:y,left:x,behavior:'auto'}),delay));
+    if(restoreMessage)setTimeout(restoreMessage,1200);
+  }
+
   function runLegacyActionForNote(article,actionId){
     const pick=article.querySelector('.pick');
     const action=document.getElementById(actionId);
     if(!pick||!action)return;
-    document.querySelectorAll('.pick').forEach(x=>x.checked=false);
-    pick.checked=true;
-    action.click();
-    pick.checked=false;
+    const run=()=>{
+      document.querySelectorAll('.pick').forEach(x=>x.checked=false);
+      pick.checked=true;
+      action.click();
+      pick.checked=false;
+    };
+    if(actionId==='copy')runLocalWithoutJump(run);
+    else run();
+  }
+
+  function configureArchiveAction(article){
+    const status=article.querySelector('select.status');
+    const archive=article.querySelector('button.archive');
+    if(!status||!archive)return;
+    if(status.value==='ARCHIVED'){
+      archive.textContent='↩ إرجاع من الأرشيف';
+      archive.classList.add('restore');
+      archive.title='إرجاع الملاحظة إلى الحالية';
+      archive.onclick=event=>{
+        event.preventDefault();
+        runLocalWithoutJump(()=>{
+          status.value='NEW';
+          status.dispatchEvent(new Event('input',{bubbles:true}));
+          status.dispatchEvent(new Event('change',{bubbles:true}));
+        });
+      };
+    }else{
+      archive.classList.remove('restore');
+      archive.title='أرشفة الملاحظة';
+    }
   }
 
   function enhanceNote(article){
-    if(!(article instanceof HTMLElement)||!article.matches('.note')||article.dataset.toolsReady)return;
+    if(!(article instanceof HTMLElement)||!article.matches('.note'))return;
+    configureArchiveAction(article);
+    if(article.dataset.toolsReady)return;
     article.dataset.toolsReady='1';
     const ops=article.querySelector('.actions');
     if(ops)ops.classList.add('note-ops');
@@ -207,6 +320,7 @@
   function syncAll(){
     activeSelect=null;
     prepareContainers();
+    prepareArchiveTabs();
     document.querySelectorAll('select').forEach(select=>{
       if(state.has(select)){
         state.get(select).expanded=false;
@@ -214,6 +328,7 @@
       }else build(select);
     });
     enhanceNotes(document);
+    syncArchiveTabs();
   }
 
   const observer=new MutationObserver(mutations=>{
@@ -231,10 +346,12 @@
         if(state.has(select))render(select);else build(select);
       }
     }
+    syncArchiveTabs();
   });
 
   function start(){
     prepareContainers();
+    prepareArchiveTabs();
     scan(document);
     observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['disabled']});
     document.addEventListener('click',event=>{
