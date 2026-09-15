@@ -37,10 +37,11 @@
 
   function render(row){
     const target=ensureBell();if(!target)return;
-    const cash=Number(row?.worker_handover_count||0),pending=Number(row?.pending_party_count||0),total=Number(row?.total_count||0);
+    const held=Number(row?.worker_held_count||0),cash=Number(row?.worker_handover_count||0),pending=Number(row?.pending_party_count||0),total=Number(row?.total_count||0);
     target.classList.toggle('has-alerts',total>0);
     const count=target.querySelector('.mytool-admin-bell-count');if(count)count.textContent=total>99?'99+':String(total);
     const details=[];
+    if(held)details.push(held+' مبلغ مسجل عند الخدام');
     if(cash)details.push(cash+' مبلغ بانتظار المراجعة');
     if(pending)details.push(pending+' اسم مؤقت بانتظار الاعتماد');
     target.title=details.length?details.join(' — '):'لا توجد إشعارات معلقة';
