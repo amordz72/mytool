@@ -8,6 +8,7 @@
   const REQUEST_ID_KEY='mytool_tools_request_id';
   const REQUEST_TOKEN_KEY='mytool_tools_request_token';
   const REQUEST_EXPIRES_KEY='mytool_tools_request_expires_at';
+  const REQUEST_TYPE_KEY='mytool_tools_request_type';
   const ADMIN_EXPIRES_KEY='mytool_admin_expires_at';
   const EMERGENCY_EXPIRES_KEY='mytool_emergency_admin_expires_at';
   const WORKER_TOKEN_KEY='mytool_shop_worker_token';
@@ -24,17 +25,57 @@
       ||(Boolean(localStorage.getItem(WORKER_TOKEN_KEY))&&Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)>now);
   }
 
+  function clearStorageSession(storage){
+    try{
+      storage.removeItem(TOOLS_TOKEN_KEY);
+      storage.removeItem(TOOLS_EXPIRES_KEY);
+      storage.removeItem(TOOLS_TYPE_KEY);
+    }catch(_e){}
+  }
+
   function clearToolsSession(){
-    sessionStorage.removeItem(TOOLS_TOKEN_KEY);
-    sessionStorage.removeItem(TOOLS_EXPIRES_KEY);
-    sessionStorage.removeItem(TOOLS_TYPE_KEY);
+    clearStorageSession(sessionStorage);
+    clearStorageSession(localStorage);
+  }
+
+  function readStorageSession(storage){
+    try{
+      const token=storage.getItem(TOOLS_TOKEN_KEY)||'';
+      const expiresAt=Number(storage.getItem(TOOLS_EXPIRES_KEY)||0);
+      const accessType=storage.getItem(TOOLS_TYPE_KEY)||'client';
+      return {storage,token,expiresAt,accessType};
+    }catch(_e){return {storage,token:'',expiresAt:0,accessType:'client'}}
+  }
+
+  function readToolsSession(){
+    const current=readStorageSession(sessionStorage);
+    if(current.token&&current.expiresAt>Date.now())return current;
+    const personal=readStorageSession(localStorage);
+    if(personal.token&&personal.expiresAt>Date.now())return personal;
+    return {storage:null,token:'',expiresAt:0,accessType:'client'};
+  }
+
+  function saveToolsSession(token,expiresAt,accessType='client'){
+    clearToolsSession();
+    const storage=accessType==='personal'?localStorage:sessionStorage;
+    storage.setItem(TOOLS_TOKEN_KEY,token);
+    storage.setItem(TOOLS_EXPIRES_KEY,String(expiresAt));
+    storage.setItem(TOOLS_TYPE_KEY,accessType);
   }
 
   function clearRequest(){
     sessionStorage.removeItem(REQUEST_ID_KEY);
     sessionStorage.removeItem(REQUEST_TOKEN_KEY);
     sessionStorage.removeItem(REQUEST_EXPIRES_KEY);
+    sessionStorage.removeItem(REQUEST_TYPE_KEY);
     if(pollTimer){clearInterval(pollTimer);pollTimer=0;}
+  }
+
+  function clearLoginMessage(){
+    const el=$('loginMessage');
+    if(!el)return;
+    el.hidden=true;
+    el.textContent='';
   }
 
   function setLoginMessage(text,type='error'){
@@ -94,12 +135,14 @@
       box.style.paddingTop='14px';
       box.style.borderTop='1px solid var(--line)';
       box.innerHTML=`
-        <button id="toolsRequestBtn" class="btn secondary" type="button">طلب دخول الأدوات العامة</button>
-        <div class="small">لا تحتاج كلمة مرور. اكتب في الخانة الأولى بريدك أو رقم هاتفك أو اسمًا واضحًا، ثم أرسل الطلب للإدارة.</div>
+        <button id="toolsRequestBtn" class="btn secondary" type="button">طلب دخول مؤقت للأدوات</button>
+        <button id="personalRequestBtn" class="btn secondary" type="button" style="margin-top:8px">هذا جهازي الشخصي</button>
+        <div class="small">لا تحتاج كلمة مرور. الدخول المؤقت يحفظ الجلسة داخل هذه التبويبة فقط. الجهاز الشخصي يحتاج موافقة الإدارة أيضًا، وبعد القبول تُحفظ جلسته على هذا المتصفح حتى انتهاء المدة أو إلغائها.</div>
         <div id="toolsRequestState" class="msg" hidden></div>
         <button id="toolsCheckBtn" class="btn secondary" type="button" hidden style="margin-top:8px">تحقق الآن</button>`;
       loginForm.insertAdjacentElement('afterend',box);
-      $('toolsRequestBtn').addEventListener('click',requestAccess);
+      $('toolsRequestBtn').addEventListener('click',()=>requestAccess('client'));
+      $('personalRequestBtn').addEventListener('click',()=>requestAccess('personal'));
       $('toolsCheckBtn').addEventListener('click',()=>checkRequest(true));
     }
 
@@ -118,7 +161,7 @@
           <a class="card" href="https://pairdrop.net/" target="_blank" rel="noopener"><div class="icon">📲</div><h2>PairDrop</h2><p>نقل ملفات بين الهاتف والكمبيوتر من المتصفح.</p><span class="badge">خارجي</span></a>
           <a class="card" href="https://omnitools.app/" target="_blank" rel="noopener"><div class="icon">🖼️</div><h2>أدوات الصور والملفات</h2><p>تحويل وضغط الصور وPDF وأدوات أخرى.</p><span class="badge">خارجي</span></a>
         </section>
-        <div class="small">هذه جلسة مؤقتة للأدوات العامة فقط، ولا تفتح حساب المحل أو الملاحظات أو بيانات الإدارة.</div>`;
+        <div id="toolsSessionNote" class="small">هذه جلسة مؤقتة للأدوات العامة فقط، ولا تفتح حساب المحل أو الملاحظات أو بيانات الإدارة.</div>`;
       workerTools.insertAdjacentElement('beforebegin',panel);
     }
   }
@@ -134,44 +177,51 @@
     if($('generalTools'))$('generalTools').hidden=false;
     if($('githubLink'))$('githubLink').hidden=true;
     if($('sessionMode'))$('sessionMode').textContent=accessType==='personal'?'دخول أدوات — جهاز شخصي':'دخول أدوات مؤقت';
-    updateToolsExpiry(expiresAt);
+    if($('toolsSessionNote'))$('toolsSessionNote').textContent=accessType==='personal'
+      ?'هذا الجهاز معتمد حاليًا كجهاز شخصي أونلاين. لا يوجد PIN أو Offline في هذه الدفعة، ويمكن للإدارة إلغاء الجلسة في أي وقت.'
+      :'هذه جلسة مؤقتة للأدوات العامة فقط، ولا تفتح حساب المحل أو الملاحظات أو بيانات الإدارة.';
+    updateToolsExpiry(expiresAt,accessType);
     if(expiryTimer)clearInterval(expiryTimer);
     expiryTimer=setInterval(()=>{
-      const current=Number(sessionStorage.getItem(TOOLS_EXPIRES_KEY)||0);
-      if(!current||current<=Date.now()){
+      const current=readToolsSession();
+      if(!current.token||current.expiresAt<=Date.now()){
         clearToolsSession();
         clearInterval(expiryTimer);expiryTimer=0;
         location.replace(location.href);
-      }else updateToolsExpiry(current);
+      }else updateToolsExpiry(current.expiresAt,current.accessType);
     },30000);
   }
 
-  function updateToolsExpiry(expiresAt){
-    if($('sessionExpiry'))$('sessionExpiry').textContent=`تنتهي جلسة الأدوات بعد ${formatRemaining(expiresAt)}`;
+  function updateToolsExpiry(expiresAt,accessType='client'){
+    if($('sessionExpiry'))$('sessionExpiry').textContent=`${accessType==='personal'?'اعتماد الجهاز':'جلسة الأدوات'} ينتهي بعد ${formatRemaining(expiresAt)}`;
   }
 
   async function restoreTools(){
     if(otherModeActive())return;
-    const token=sessionStorage.getItem(TOOLS_TOKEN_KEY)||'';
-    const expiresAt=Number(sessionStorage.getItem(TOOLS_EXPIRES_KEY)||0);
-    if(token&&expiresAt>Date.now()){
+    const current=readToolsSession();
+    if(current.token&&current.expiresAt>Date.now()){
       try{
-        const session=await api('/v1/session',{token});
+        const session=await api('/v1/session',{token:current.token});
         if(session.ok&&session.role==='tools'){
-          showTools(Number(session.expires_at),session.access_type||sessionStorage.getItem(TOOLS_TYPE_KEY)||'client');
+          const accessType=session.access_type||current.accessType||'client';
+          if(accessType==='personal'&&current.storage!==localStorage)saveToolsSession(current.token,Number(session.expires_at),accessType);
+          showTools(Number(session.expires_at),accessType);
           return;
         }
       }catch(_e){}
       clearToolsSession();
-    }else if(token||expiresAt){
-      clearToolsSession();
+    }else{
+      const staleSession=readStorageSession(sessionStorage);
+      const stalePersonal=readStorageSession(localStorage);
+      if(staleSession.token||staleSession.expiresAt||stalePersonal.token||stalePersonal.expiresAt)clearToolsSession();
     }
 
     const requestId=sessionStorage.getItem(REQUEST_ID_KEY)||'';
     const requestToken=sessionStorage.getItem(REQUEST_TOKEN_KEY)||'';
     const requestExpires=Number(sessionStorage.getItem(REQUEST_EXPIRES_KEY)||0);
+    const requestType=sessionStorage.getItem(REQUEST_TYPE_KEY)||'client';
     if(requestId&&requestToken&&requestExpires>Date.now()){
-      showPending(requestExpires);
+      showPending(requestExpires,requestType);
       await checkRequest(false);
       startPolling();
     }else if(requestId||requestToken||requestExpires){
@@ -179,16 +229,18 @@
     }
   }
 
-  function showPending(expiresAt){
-    const btn=$('toolsRequestBtn'),check=$('toolsCheckBtn');
-    if(btn){btn.disabled=true;btn.textContent='الطلب قيد المراجعة';}
+  function showPending(expiresAt,accessType='client'){
+    const btn=$('toolsRequestBtn'),personalBtn=$('personalRequestBtn'),check=$('toolsCheckBtn');
+    if(btn){btn.disabled=true;btn.textContent=accessType==='personal'?'طلب اعتماد جهاز شخصي قيد المراجعة':'طلب الدخول المؤقت قيد المراجعة';}
+    if(personalBtn)personalBtn.disabled=true;
     if(check)check.hidden=false;
-    setRequestState(`تم إرسال الطلب للإدارة. يبقى صالحًا حوالي ${formatRemaining(expiresAt)}.`,'ok');
+    setRequestState(`${accessType==='personal'?'تم إرسال طلب اعتماد الجهاز الشخصي':'تم إرسال طلب الدخول'} للإدارة. يبقى الطلب صالحًا حوالي ${formatRemaining(expiresAt)}.`,'ok');
   }
 
   function resetRequestUi(){
-    const btn=$('toolsRequestBtn'),check=$('toolsCheckBtn');
-    if(btn){btn.disabled=false;btn.textContent='طلب دخول الأدوات العامة';}
+    const btn=$('toolsRequestBtn'),personalBtn=$('personalRequestBtn'),check=$('toolsCheckBtn');
+    if(btn){btn.disabled=false;btn.textContent='طلب دخول مؤقت للأدوات';}
+    if(personalBtn){personalBtn.disabled=false;personalBtn.textContent='هذا جهازي الشخصي';}
     if(check)check.hidden=true;
   }
 
@@ -197,20 +249,24 @@
     pollTimer=setInterval(()=>checkRequest(false),5000);
   }
 
-  async function requestAccess(){
+  async function requestAccess(accessType='client'){
+    clearLoginMessage();
     const identity=String($('identity')?.value||'').trim();
     if(identity.length<3){setLoginMessage('اكتب بريدك أو رقم هاتفك أو اسمًا واضحًا في الخانة الأولى.');return;}
-    const btn=$('toolsRequestBtn');
-    btn.disabled=true;btn.textContent='جاري إرسال الطلب…';
+    const btn=accessType==='personal'?$('personalRequestBtn'):$('toolsRequestBtn');
+    if(btn){btn.disabled=true;btn.textContent='جاري إرسال الطلب…';}
+    if($('toolsRequestBtn'))$('toolsRequestBtn').disabled=true;
+    if($('personalRequestBtn'))$('personalRequestBtn').disabled=true;
     try{
       const data=await api('/v1/access/requests',{
         method:'POST',
-        body:{identifier:identity,access_type:'client',client_label:'MyTool web'}
+        body:{identifier:identity,access_type:accessType,client_label:accessType==='personal'?'MyTool personal device':'MyTool web'}
       });
       sessionStorage.setItem(REQUEST_ID_KEY,data.request_id);
       sessionStorage.setItem(REQUEST_TOKEN_KEY,data.request_token);
       sessionStorage.setItem(REQUEST_EXPIRES_KEY,String(data.expires_at));
-      showPending(data.expires_at);
+      sessionStorage.setItem(REQUEST_TYPE_KEY,accessType);
+      showPending(data.expires_at,accessType);
       startPolling();
     }catch(error){
       resetRequestUi();
@@ -227,17 +283,16 @@
     try{
       const state=await api(`/v1/access/requests/${encodeURIComponent(requestId)}`,{token:requestToken});
       if(state.status==='pending'){
-        showPending(state.request_expires_at);
+        showPending(state.request_expires_at,state.access_type||sessionStorage.getItem(REQUEST_TYPE_KEY)||'client');
         return;
       }
       if(state.status==='approved'&&state.can_exchange){
         const session=await api(`/v1/access/requests/${encodeURIComponent(requestId)}/exchange`,{method:'POST',token:requestToken});
-        sessionStorage.setItem(TOOLS_TOKEN_KEY,session.session_token);
-        sessionStorage.setItem(TOOLS_EXPIRES_KEY,String(session.expires_at));
-        sessionStorage.setItem(TOOLS_TYPE_KEY,session.access_type||'client');
+        const accessType=session.access_type||sessionStorage.getItem(REQUEST_TYPE_KEY)||'client';
+        saveToolsSession(session.session_token,session.expires_at,accessType);
         clearRequest();
         resetRequestUi();
-        showTools(session.expires_at,session.access_type||'client');
+        showTools(session.expires_at,accessType);
         return;
       }
       if(state.status==='rejected'){
