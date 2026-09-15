@@ -4,7 +4,7 @@
 
   const notesToolsScript=document.currentScript;
   const myToolRoot=new URL('../',notesToolsScript?.src||location.href);
-  const NAV_VERSION='20260916-context-nav-1';
+  const NAV_VERSION='20260916-tools-placement-1';
   function loadBottomNav(){
     if(!document.querySelector('link[data-mytool-bottom-nav]')){
       const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('mytool-bottom-nav.css?v='+NAV_VERSION,myToolRoot).href;link.dataset.mytoolBottomNav='1';document.head.appendChild(link);
