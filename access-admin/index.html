@@ -136,7 +136,8 @@ function renderRequests(rows){
   document.querySelectorAll('.reject').forEach(btn=>btn.addEventListener('click',()=>decide(btn,false)))
 }
 
-function renderSessions(rows){
+function renderSessions(rows,requestRows=[]){
+  const requestMap=new Map(requestRows.map(row=>[String(row.id||''),row]))
   const active=rows.filter(row=>!row.revoked_at&&Number(row.expires_at)>Date.now())
   $('sessionCount').textContent=String(active.length)
   if(!active.length){$('sessions').innerHTML='<div class="empty">لا توجد جلسات فعالة.</div>';return}
@@ -147,8 +148,13 @@ function renderSessions(rows){
     const typeLabel=owner?'إدارة':accessLabel(row.access_type)
     const badge=owner?'owner':row.access_type||'tools'
     const badgeClass=owner?'owner':personal?'personal':''
+    const source=owner?null:requestMap.get(String(row.source_request_id||''))
+    const userLine=source?.identifier?`<br>المستخدم: ${escapeHtml(source.identifier)}`:''
+    const deviceLine=source?.client_label?`<br>الجهاز: ${escapeHtml(source.client_label)}`:''
+    const sessionShort=String(row.id||'').slice(0,8)
+    const sessionLine=!owner&&sessionShort?`<br>معرف الجلسة: ${escapeHtml(sessionShort)}`:''
     return `<article class="item" data-session-id="${escapeHtml(row.id)}">
-      <div class="row"><div><div class="name">${escapeHtml(title)}</div><div class="meta">النوع: ${escapeHtml(typeLabel)}<br>تنتهي: ${escapeHtml(fmt(row.expires_at))}</div></div><span class="pill ${badgeClass}">${escapeHtml(badge)}</span></div>
+      <div class="row"><div><div class="name">${escapeHtml(title)}</div><div class="meta">النوع: ${escapeHtml(typeLabel)}${userLine}${deviceLine}${sessionLine}<br>تنتهي: ${escapeHtml(fmt(row.expires_at))}</div></div><span class="pill ${badgeClass}">${escapeHtml(badge)}</span></div>
       ${row.role==='tools'?'<div class="item-actions"><button class="btn danger revoke" type="button">إلغاء الجلسة فورًا</button></div>':''}
     </article>`
   }).join('')
@@ -203,11 +209,12 @@ async function loadAll(){
   const [requests,sessions,history]=await Promise.all([
     api('/v1/admin/requests?status=pending&limit=100'),
     api('/v1/admin/sessions'),
-    api('/v1/admin/requests?status=all&limit=50')
+    api('/v1/admin/requests?status=all&limit=100')
   ])
+  const historyRows=history.requests||[]
   renderRequests(requests.requests||[])
-  renderSessions(sessions.sessions||[])
-  renderHistory(history.requests||[])
+  renderSessions(sessions.sessions||[],historyRows)
+  renderHistory(historyRows)
   setStatus('متصل بخدمة الوصول. القرارات تحفظ مباشرة في D1.')
 }
 
