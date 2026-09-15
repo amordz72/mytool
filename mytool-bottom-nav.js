@@ -27,7 +27,7 @@
     document.querySelector('.mytool-nav-toast')?.remove();
     const el=document.createElement('div');el.className='mytool-nav-toast'+(error?' error':'');el.textContent=text;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);
   }
-  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
   function itemHtml(slot,item){
     if(!item)return '<div class="mytool-bottom-nav-empty" aria-hidden="true"></div>';
     const icon=item.icon||'•',label=item.label||'',title=item.title||label,cls='mytool-bottom-nav-item'+(item.home?' is-home':'');
@@ -54,9 +54,7 @@
     return admin||emergency||Boolean(toolsToken&&toolsExpiry>now);
   }
 
-  function toolsNavItem(){
-    return {href:rootUrl.href,icon:'🧰',label:'الأدوات',title:'الرجوع إلى أدوات MyTool',autoTools:true};
-  }
+  function toolsNavItem(){return {href:rootUrl.href,icon:'🧰',label:'الأدوات',title:'الرجوع إلى أدوات MyTool',autoTools:true}}
 
   function showFloatingTools(show){
     let a=document.querySelector('.mytool-floating-tools');
@@ -89,11 +87,13 @@
     const prev=pager?.querySelector('.notes-prev');
     const next=pager?.querySelector('.notes-next');
     const paged=tab!=='quick';
-    state.slots[1]=paged?{icon:'→',label:'التالي',title:'الصفحة التالية',disabled:!next||next.disabled,onClick(){const b=document.querySelector('#notesPager .notes-next');if(b&&!b.disabled){b.click();setTimeout(setNotesNav,0)}}}:null;
-    state.slots[2]=notesTabAction('archive','🗃','الأرشيف',tab==='archive');
+
+    // #108: ترتيب الشريط منطقي RTL. السابق ثم التالي متجاوران من جهة اليمين.
+    state.slots[1]=paged?{icon:'→',label:'السابق',title:'الصفحة السابقة',disabled:!prev||prev.disabled,onClick(){const b=document.querySelector('#notesPager .notes-prev');if(b&&!b.disabled){b.click();setTimeout(setNotesNav,0)}}}:null;
+    state.slots[2]=paged?{icon:'←',label:'التالي',title:'الصفحة التالية',disabled:!next||next.disabled,onClick(){const b=document.querySelector('#notesPager .notes-next');if(b&&!b.disabled){b.click();setTimeout(setNotesNav,0)}}}:null;
     state.slots[3]=notesTabAction('quick','⌂','سريع',tab==='quick');
     state.slots[4]=notesTabAction('notes','📝','الملاحظات',tab==='notes');
-    state.slots[5]=paged?{icon:'←',label:'السابق',title:'الصفحة السابقة',disabled:!prev||prev.disabled,onClick(){const b=document.querySelector('#notesPager .notes-prev');if(b&&!b.disabled){b.click();setTimeout(setNotesNav,0)}}}:null;
+    state.slots[5]=notesTabAction('archive','🗃','الأرشيف',tab==='archive');
     render();
   }
 
@@ -144,8 +144,8 @@
     if(!currentApp)return;
     loadShopAdminNotifications();loadNotesEditor();loadNotesTabs();
     const existing=document.querySelector('.mytool-bottom-nav');
-    if(existing){nav=existing;forceFixedPosition(nav);defaultActions();render();watchNotesPagination();requestAnimationFrame(()=>forceFixedPosition(nav));setTimeout(()=>forceFixedPosition(nav),250);dispatchReady();return}
-    nav=document.createElement('nav');nav.className='mytool-bottom-nav';nav.setAttribute('aria-label','تنقل MyTool السريع');nav.innerHTML=[1,2,3,4,5].map(slot=>'<div class="mytool-bottom-nav-slot" data-slot="'+slot+'"></div>').join('');document.body.appendChild(nav);
+    if(existing){nav=existing;nav.setAttribute('dir','rtl');forceFixedPosition(nav);defaultActions();render();watchNotesPagination();requestAnimationFrame(()=>forceFixedPosition(nav));setTimeout(()=>forceFixedPosition(nav),250);dispatchReady();return}
+    nav=document.createElement('nav');nav.className='mytool-bottom-nav';nav.setAttribute('dir','rtl');nav.setAttribute('aria-label','تنقل MyTool السريع');nav.innerHTML=[1,2,3,4,5].map(slot=>'<div class="mytool-bottom-nav-slot" data-slot="'+slot+'"></div>').join('');document.body.appendChild(nav);
     forceFixedPosition(nav);defaultActions();render();watchNotesPagination();requestAnimationFrame(()=>forceFixedPosition(nav));setTimeout(()=>forceFixedPosition(nav),250);dispatchReady();
   }
 
