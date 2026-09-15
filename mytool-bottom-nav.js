@@ -51,14 +51,28 @@
     const emergency=Number(localStorage.getItem('mytool_emergency_admin_expires_at')||0)>now;
     const toolsExpiry=Math.max(Number(sessionStorage.getItem('mytool_tools_access_expires_at')||0),Number(localStorage.getItem('mytool_tools_access_expires_at')||0));
     const toolsToken=sessionStorage.getItem('mytool_tools_access_token')||localStorage.getItem('mytool_tools_access_token')||'';
-    return admin||emergency||Boolean(toolsToken&&toolsExpiry>now)||currentApp==='notes';
+    return admin||emergency||Boolean(toolsToken&&toolsExpiry>now);
   }
 
-  function mountFloatingTools(){
-    if(!currentApp||!privilegedToolsAccess()||document.querySelector('.mytool-floating-tools'))return;
-    const a=document.createElement('a');
+  function toolsNavItem(){
+    return {href:rootUrl.href,icon:'🧰',label:'الأدوات',title:'الرجوع إلى أدوات MyTool',autoTools:true};
+  }
+
+  function showFloatingTools(show){
+    let a=document.querySelector('.mytool-floating-tools');
+    if(!show){a?.remove();return}
+    if(a)return;
+    a=document.createElement('a');
     a.className='mytool-floating-tools';a.href=rootUrl.href;a.textContent='🧰';a.title='الأدوات';a.setAttribute('aria-label','الرجوع إلى أدوات MyTool');
     document.body.appendChild(a);
+  }
+
+  function syncToolsPlacement(){
+    [1,2,4,5].forEach(slot=>{if(state.slots[slot]?.autoTools)state.slots[slot]=null});
+    if(!currentApp||!privilegedToolsAccess()){showFloatingTools(false);return}
+    const freeSlot=[1,5,2,4].find(slot=>!state.slots[slot]);
+    if(freeSlot){state.slots[freeSlot]=toolsNavItem();showFloatingTools(false)}
+    else showFloatingTools(true);
   }
 
   function currentNotesTab(){
@@ -114,6 +128,7 @@
   }
   function render(){
     if(!nav)return;
+    syncToolsPlacement();
     for(let slot=1;slot<=5;slot++){
       const holder=nav.querySelector('[data-slot="'+slot+'"]');if(!holder)continue;const item=state.slots[slot];holder.innerHTML=itemHtml(slot,item);
       if(item&&!item.href&&typeof item.onClick==='function'){const button=holder.querySelector('button');if(button)button.addEventListener('click',item.onClick)}
@@ -127,7 +142,7 @@
 
   function mount(){
     if(!currentApp)return;
-    loadShopAdminNotifications();loadNotesEditor();loadNotesTabs();mountFloatingTools();
+    loadShopAdminNotifications();loadNotesEditor();loadNotesTabs();
     const existing=document.querySelector('.mytool-bottom-nav');
     if(existing){nav=existing;forceFixedPosition(nav);defaultActions();render();watchNotesPagination();requestAnimationFrame(()=>forceFixedPosition(nav));setTimeout(()=>forceFixedPosition(nav),250);dispatchReady();return}
     nav=document.createElement('nav');nav.className='mytool-bottom-nav';nav.setAttribute('aria-label','تنقل MyTool السريع');nav.innerHTML=[1,2,3,4,5].map(slot=>'<div class="mytool-bottom-nav-slot" data-slot="'+slot+'"></div>').join('');document.body.appendChild(nav);
