@@ -7,7 +7,7 @@
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at';
   const guardScript=document.currentScript;
   const rootUrl=new URL('./',guardScript?.src||location.href);
-  const NAV_VERSION='20260915-1021';
+  const NAV_VERSION='20260915-flow3';
 
   const now=Date.now();
   const adminActive=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now;
