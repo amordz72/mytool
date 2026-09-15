@@ -68,7 +68,6 @@
     nav.setAttribute('aria-label','تنقل MyTool السريع');
     nav.innerHTML=[1,2,3,4,5].map(slot=>'<div class="mytool-bottom-nav-slot" data-slot="'+slot+'"></div>').join('');
     document.body.appendChild(nav);
-    const spacer=document.createElement('div');spacer.className='mytool-bottom-nav-spacer';spacer.setAttribute('aria-hidden','true');document.body.appendChild(spacer);
     defaultActions();render();
     window.dispatchEvent(new CustomEvent('mytool-bottom-nav-ready',{detail:{currentApp,appHome:appHome.href,root:rootUrl.href}}));
   }

@@ -7,6 +7,7 @@
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at';
   const guardScript=document.currentScript;
   const rootUrl=new URL('./',guardScript?.src||location.href);
+  const NAV_VERSION='20260915-1021';
 
   const now=Date.now();
   const adminActive=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now;
@@ -31,10 +32,10 @@
 
   if(!document.querySelector('link[data-mytool-bottom-nav]')){
     const link=document.createElement('link');
-    link.rel='stylesheet';link.href=new URL('mytool-bottom-nav.css',rootUrl).href;link.dataset.mytoolBottomNav='1';document.head.appendChild(link);
+    link.rel='stylesheet';link.href=new URL('mytool-bottom-nav.css?v='+NAV_VERSION,rootUrl).href;link.dataset.mytoolBottomNav='1';document.head.appendChild(link);
   }
   if(!document.querySelector('script[data-mytool-bottom-nav]')){
     const nav=document.createElement('script');
-    nav.src=new URL('mytool-bottom-nav.js',rootUrl).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=rootUrl.href;document.head.appendChild(nav);
+    nav.src=new URL('mytool-bottom-nav.js?v='+NAV_VERSION,rootUrl).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=rootUrl.href;document.head.appendChild(nav);
   }
 })();
