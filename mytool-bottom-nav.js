@@ -31,7 +31,7 @@
   function loadNotesTabs(){
     if(currentApp!=='notes'||document.querySelector('script[data-mytool-notes-tabs]'))return;
     const s=document.createElement('script');
-    s.src=new URL('notes/notes-tabs.js?v=20260915-2310',rootUrl).href;
+    s.src=new URL('notes/notes-tabs.js?v=20260916-0006',rootUrl).href;
     s.defer=true;
     s.dataset.mytoolNotesTabs='1';
     document.head.appendChild(s);
@@ -66,8 +66,16 @@
     return match?match[1]+'/'+match[2]:'الصفحات';
   }
 
+  function setQuickNotesActions(){
+    state.slots[2]={icon:'📝',label:'الملاحظات',title:'فتح كل الملاحظات',onClick(){document.querySelector('#notesTabs [data-tab="notes"]')?.click()}};
+    state.slots[4]={icon:'🗃',label:'الأرشيف',title:'فتح الأرشيف',onClick(){document.querySelector('#notesTabs [data-tab="archive"]')?.click()}};
+    state.slots[5]=null;
+    render();
+  }
+
   function syncNotesPagination(){
     if(currentApp!=='notes')return;
+    if(document.documentElement.classList.contains('notes-quick-mode')){setQuickNotesActions();return}
     const pager=document.getElementById('notesPager');
     const prev=pager?.querySelector('.notes-prev');
     const next=pager?.querySelector('.notes-next');
@@ -170,6 +178,7 @@
     dispatchReady();
   }
 
+  if(currentApp==='notes')window.addEventListener('mytool-notes-tab-change',()=>syncNotesPagination());
   window.MyToolBottomNav={setActions,toast,get currentApp(){return currentApp},get appHome(){return appHome.href},get root(){return rootUrl.href}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
