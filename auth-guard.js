@@ -11,7 +11,7 @@
   const ACCESS_API='https://mytool-access.dzamor72.workers.dev';
   const guardScript=document.currentScript;
   const rootUrl=new URL('./',guardScript?.src||location.href);
-  const NAV_VERSION='20260915-fixed-notes-1';
+  const NAV_VERSION='20260916-context-nav-1';
 
   const now=Date.now();
   const adminActive=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now;
@@ -19,14 +19,7 @@
   const workerActive=Boolean(localStorage.getItem(WORKER_TOKEN_KEY))&&Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)>now;
 
   function readTools(storage){
-    try{
-      return {
-        storage,
-        token:storage.getItem(TOOLS_TOKEN_KEY)||'',
-        expiry:Number(storage.getItem(TOOLS_EXPIRES_KEY)||0),
-        accessType:storage.getItem(TOOLS_TYPE_KEY)||'client'
-      };
-    }catch(_e){return {storage,token:'',expiry:0,accessType:'client'}}
+    try{return {storage,token:storage.getItem(TOOLS_TOKEN_KEY)||'',expiry:Number(storage.getItem(TOOLS_EXPIRES_KEY)||0),accessType:storage.getItem(TOOLS_TYPE_KEY)||'client'}}catch(_e){return {storage,token:'',expiry:0,accessType:'client'}}
   }
 
   const tabTools=readTools(sessionStorage);
@@ -52,46 +45,28 @@
 
   if(!allowed){
     try{sessionStorage.setItem('mytool_blocked_path',location.pathname+location.search+location.hash)}catch(_e){}
-    location.replace(rootUrl.href);
-    return;
+    location.replace(rootUrl.href);return;
   }
 
   function clearToolsSession(){
-    [sessionStorage,localStorage].forEach(storage=>{
-      try{
-        storage.removeItem(TOOLS_TOKEN_KEY);
-        storage.removeItem(TOOLS_EXPIRES_KEY);
-        storage.removeItem(TOOLS_TYPE_KEY);
-      }catch(_e){}
-    });
+    [sessionStorage,localStorage].forEach(storage=>{try{storage.removeItem(TOOLS_TOKEN_KEY);storage.removeItem(TOOLS_EXPIRES_KEY);storage.removeItem(TOOLS_TYPE_KEY)}catch(_e){}});
   }
 
   const toolsGate=toolsMayEnter&&!adminActive&&!emergencyActive;
   if(toolsGate){
     document.documentElement.style.visibility='hidden';
-    fetch(ACCESS_API+'/v1/session',{
-      headers:{Authorization:'Bearer '+toolsToken,Accept:'application/json'},
-      cache:'no-store'
-    }).then(async response=>{
-      const data=await response.json().catch(()=>null);
-      if(!response.ok||!data?.ok||data.role!=='tools')throw new Error('TOOLS_SESSION_INVALID');
-      document.documentElement.style.visibility='';
-    }).catch(()=>{
-      clearToolsSession();
-      try{sessionStorage.setItem('mytool_blocked_path',location.pathname+location.search+location.hash)}catch(_e){}
-      location.replace(rootUrl.href);
-    });
+    fetch(ACCESS_API+'/v1/session',{headers:{Authorization:'Bearer '+toolsToken,Accept:'application/json'},cache:'no-store'}).then(async response=>{
+      const data=await response.json().catch(()=>null);if(!response.ok||!data?.ok||data.role!=='tools')throw new Error('TOOLS_SESSION_INVALID');document.documentElement.style.visibility='';
+    }).catch(()=>{clearToolsSession();try{sessionStorage.setItem('mytool_blocked_path',location.pathname+location.search+location.hash)}catch(_e){}location.replace(rootUrl.href)});
   }
 
   window.MyToolAccessContext=Object.freeze({access,adminActive,emergencyActive,workerActive,toolsActive,toolsAccessType,authenticated,rootUrl:rootUrl.href});
   if(guardScript?.dataset?.nav==='off')return;
 
   if(!document.querySelector('link[data-mytool-bottom-nav]')){
-    const link=document.createElement('link');
-    link.rel='stylesheet';link.href=new URL('mytool-bottom-nav.css?v='+NAV_VERSION,rootUrl).href;link.dataset.mytoolBottomNav='1';document.head.appendChild(link);
+    const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('mytool-bottom-nav.css?v='+NAV_VERSION,rootUrl).href;link.dataset.mytoolBottomNav='1';document.head.appendChild(link);
   }
   if(!document.querySelector('script[data-mytool-bottom-nav]')){
-    const nav=document.createElement('script');
-    nav.src=new URL('mytool-bottom-nav.js?v='+NAV_VERSION,rootUrl).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=rootUrl.href;document.head.appendChild(nav);
+    const nav=document.createElement('script');nav.src=new URL('mytool-bottom-nav.js?v='+NAV_VERSION,rootUrl).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=rootUrl.href;document.head.appendChild(nav);
   }
 })();
