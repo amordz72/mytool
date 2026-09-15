@@ -11,7 +11,7 @@
   const ACCESS_API='https://mytool-access.dzamor72.workers.dev';
   const guardScript=document.currentScript;
   const rootUrl=new URL('./',guardScript?.src||location.href);
-  const NAV_VERSION='20260916-context-nav-1';
+  const NAV_VERSION='20260916-tools-placement-1';
 
   const now=Date.now();
   const adminActive=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now;
