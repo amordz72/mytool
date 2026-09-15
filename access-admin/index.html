@@ -69,6 +69,7 @@ function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;',
 function accessLabel(type){return type==='personal'?'جهاز شخصي':type==='paid'?'مدفوع':'عميل مؤقت'}
 function requestStatusLabel(status){return status==='approved'?'مقبول':status==='rejected'?'مرفوض':status==='expired'?'منتهي':'غير معروف'}
 function requestStatusClass(status){return ['approved','rejected','expired'].includes(status)?status:''}
+function durationText(minutes){const n=Number(minutes||0);if(n%1440===0)return `${n/1440} يوم`;if(n%60===0)return `${n/60} ساعة`;return `${n} دقيقة`}
 
 function showTab(name){
   const active=name==='history'?'history':'main'
@@ -115,7 +116,8 @@ async function ensureOwner(force=false){
 }
 
 function durationOptions(personal){
-  return `<option value="15">15 دقيقة</option><option value="30">30 دقيقة</option><option value="60" ${personal?'':'selected'}>ساعة</option><option value="120">ساعتان</option><option value="480">8 ساعات</option><option value="1440" ${personal?'selected':''}>24 ساعة</option>`
+  if(personal)return `<option value="1440">24 ساعة</option><option value="4320">3 أيام</option><option value="10080" selected>7 أيام</option>`
+  return `<option value="15">15 دقيقة</option><option value="30">30 دقيقة</option><option value="60" selected>ساعة</option><option value="120">ساعتان</option><option value="480">8 ساعات</option><option value="1440">24 ساعة</option>`
 }
 
 function renderRequests(rows){
@@ -184,8 +186,8 @@ async function decide(button,approve){
   try{
     if(approve){
       const minutes=Number(card.querySelector('.minutes')?.value||60)
-      await api(`/v1/admin/requests/${encodeURIComponent(id)}/approve`,{method:'POST',body:{session_minutes:minutes}})
-      setStatus(`تم قبول الطلب لمدة ${minutes} دقيقة.`)
+      const result=await api(`/v1/admin/requests/${encodeURIComponent(id)}/approve`,{method:'POST',body:{session_minutes:minutes}})
+      setStatus(`تم قبول الطلب لمدة ${durationText(result.session_minutes||minutes)}.`)
     }else{
       await api(`/v1/admin/requests/${encodeURIComponent(id)}/reject`,{method:'POST',body:{cooldown_hours:6,reason:'رفض من الإدارة'}})
       setStatus('تم رفض الطلب وحظره مؤقتًا لمدة 6 ساعات.')
