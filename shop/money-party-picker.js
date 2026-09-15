@@ -6,10 +6,14 @@
   function create(options){
     const supabase=options.supabase,input=typeof options.input==='string'?document.getElementById(options.input):options.input,results=typeof options.results==='string'?document.getElementById(options.results):options.results;
     if(!supabase||!input||!results)throw new Error('MoneyPartyPicker: missing required options');
-    const role=options.role||'admin',token=options.token||'',limit=options.limit||50,allowCreate=role==='admin'&&options.allowCreate===true,partyType=options.partyType||'customer';
+    const role=options.role||'admin',token=options.token||'',limit=options.limit||50,allowCreate=role==='admin'&&options.allowCreate===true,partyType=options.partyType||'customer',manageFavorites=role==='admin'&&options.manageFavorites!==false;
     let selected=null,timer=null,seq=0,rows=[];
     const emit=()=>{if(typeof options.onSelect==='function')options.onSelect(selected)};
     function badges(row){const bits=[];if(row.favorite)bits.push('<span class="mpp-badge favorite">★ مفضلة</span>');if(row.financial_open)bits.push('<span class="mpp-badge financial">له رصيد/دين</span>');if(!row.active)bits.push('<span class="mpp-badge inactive">غير نشط</span>');return bits.join('')}
+    function rowHtml(row){
+      const star=manageFavorites?'<button class="mpp-favorite-toggle'+(row.favorite?' on':'')+'" type="button" data-favorite-party="'+row.id+'" aria-label="'+(row.favorite?'إزالة من المفضلة':'إضافة إلى المفضلة')+'">'+(row.favorite?'★':'☆')+'</button>':'';
+      return '<div class="mpp-row">'+star+'<button class="mpp-item" type="button" data-party-id="'+row.id+'"><span class="mpp-name">'+esc(row.display_name)+'</span><span class="mpp-tags">'+badges(row)+'</span></button></div>';
+    }
     async function createMissing(name){
       const clean=String(name||'').trim().replace(/\s+/g,' ');if(clean.length<2)return;
       if(!confirm('إضافة «'+clean+'» إلى دليل العملاء؟'))return;
@@ -17,13 +21,29 @@
       if(error){results.innerHTML='<div class="mpp-empty error">تعذر إضافة الاسم.</div>';if(typeof options.onError==='function')options.onError(error);return}
       selected={id:Number(data),name:clean,row:{id:Number(data),display_name:clean,active:true,financial_open:false,favorite:false}};input.value=clean;results.innerHTML='';emit();if(typeof options.onCreate==='function')options.onCreate(selected);
     }
+    async function toggleFavorite(id){
+      const row=rows.find(r=>String(r.id)===String(id));if(!row)return;
+      const next=!row.favorite;
+      results.querySelectorAll('[data-favorite-party="'+id+'"]').forEach(btn=>btn.disabled=true);
+      const {error}=await supabase.rpc('admin_set_money_party_favorite',{p_party_id:Number(id),p_favorite:next});
+      if(error){results.insertAdjacentHTML('afterbegin','<div class="mpp-empty error">تعذر تحديث المفضلة.</div>');if(typeof options.onError==='function')options.onError(error);return}
+      row.favorite=next;
+      if(typeof options.onFavoriteChange==='function')options.onFavoriteChange(row);
+      await search();
+    }
     function render(query){
       const q=String(query||'').trim().replace(/\s+/g,' '),exact=rows.some(r=>norm(r.display_name)===norm(q));
       const createButton=allowCreate&&q.length>=2&&!exact?'<button class="mpp-item" type="button" data-create-party="1"><span class="mpp-name">＋ إضافة «'+esc(q)+'»</span><span class="mpp-tags"><span class="mpp-badge favorite">اسم جديد</span></span></button>':'';
-      const items=rows.map(r=>'<button class="mpp-item" type="button" data-party-id="'+r.id+'"><span class="mpp-name">'+esc(r.display_name)+'</span><span class="mpp-tags">'+badges(r)+'</span></button>').join('');
+      let items='';
+      if(!q){
+        const favorites=rows.filter(r=>r.favorite),others=rows.filter(r=>!r.favorite);
+        if(favorites.length)items+='<div class="mpp-section-title">★ المفضلة</div>'+favorites.map(rowHtml).join('');
+        if(others.length)items+='<div class="mpp-section-title">باقي الحسابات</div>'+others.map(rowHtml).join('');
+      }else items=rows.map(rowHtml).join('');
       results.innerHTML=createButton+items+(!items&&!createButton?'<div class="mpp-empty">لا توجد نتائج.</div>':'');
       results.querySelector('[data-create-party]')?.addEventListener('click',()=>createMissing(q));
       results.querySelectorAll('[data-party-id]').forEach(btn=>btn.addEventListener('click',()=>{const row=rows.find(r=>String(r.id)===String(btn.dataset.partyId));if(!row)return;selected={id:Number(row.id),name:row.display_name,row};input.value=row.display_name;results.innerHTML='';emit()}));
+      results.querySelectorAll('[data-favorite-party]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggleFavorite(btn.dataset.favoriteParty)}));
     }
     async function search(){const mySeq=++seq,q=input.value.trim(),rpc=role==='worker'?'worker_search_money_parties':'admin_search_money_parties',args=role==='worker'?{p_session_token:token,p_query:q||null,p_limit:limit}:{p_query:q||null,p_limit:limit};const {data,error}=await supabase.rpc(rpc,args);if(mySeq!==seq)return;if(error){results.innerHTML='<div class="mpp-empty error">تعذر تحميل القائمة.</div>';if(typeof options.onError==='function')options.onError(error);return}rows=data||[];render(q)}
     function schedule(){selected=null;emit();clearTimeout(timer);timer=setTimeout(search,180)}
