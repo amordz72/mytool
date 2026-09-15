@@ -9,6 +9,7 @@
   const REQUEST_TOKEN_KEY='mytool_tools_request_token';
   const REQUEST_EXPIRES_KEY='mytool_tools_request_expires_at';
   const REQUEST_TYPE_KEY='mytool_tools_request_type';
+  const DEVICE_ID_KEY='mytool_device_id';
   const ADMIN_EXPIRES_KEY='mytool_admin_expires_at';
   const EMERGENCY_EXPIRES_KEY='mytool_emergency_admin_expires_at';
   const WORKER_TOKEN_KEY='mytool_shop_worker_token';
@@ -23,6 +24,46 @@
     return Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now
       ||Number(localStorage.getItem(EMERGENCY_EXPIRES_KEY)||0)>now
       ||(Boolean(localStorage.getItem(WORKER_TOKEN_KEY))&&Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)>now);
+  }
+
+  function getDeviceId(){
+    try{
+      let id=localStorage.getItem(DEVICE_ID_KEY)||'';
+      if(/^D-[A-Z0-9]{8}$/.test(id))return id;
+      const raw=globalThis.crypto?.randomUUID?.().replace(/-/g,'').slice(0,8)
+        ||Math.random().toString(36).slice(2,10);
+      id=`D-${String(raw).toUpperCase().replace(/[^A-Z0-9]/g,'').padEnd(8,'0').slice(0,8)}`;
+      localStorage.setItem(DEVICE_ID_KEY,id);
+      return id;
+    }catch(_e){return 'D-UNKNOWN';}
+  }
+
+  function detectBrowser(){
+    const ua=navigator.userAgent||'';
+    if(/SamsungBrowser\//i.test(ua))return 'Samsung Internet';
+    if(/Edg\//i.test(ua))return 'Edge';
+    if(/OPR\//i.test(ua))return 'Opera';
+    if(/Firefox\//i.test(ua)||/FxiOS\//i.test(ua))return 'Firefox';
+    if(/Chrome\//i.test(ua)||/CriOS\//i.test(ua))return 'Chrome';
+    if(/Safari\//i.test(ua))return 'Safari';
+    return 'Browser';
+  }
+
+  function detectDeviceType(){
+    const ua=navigator.userAgent||'';
+    const platform=navigator.platform||'';
+    if(/Android/i.test(ua))return /Mobile/i.test(ua)?'Android phone':'Android tablet';
+    if(/iPhone/i.test(ua))return 'iPhone';
+    if(/iPad/i.test(ua)||(/Mac/i.test(platform)&&navigator.maxTouchPoints>1))return 'iPad';
+    if(/Windows/i.test(ua)||/Win/i.test(platform))return 'Windows PC';
+    if(/Macintosh|Mac OS X/i.test(ua)||/Mac/i.test(platform))return 'Mac';
+    if(/Linux/i.test(ua)||/Linux/i.test(platform))return 'Linux PC';
+    return 'Device';
+  }
+
+  function buildClientLabel(accessType){
+    const scope=accessType==='personal'?'شخصي':'مؤقت';
+    return `${scope} · ${detectDeviceType()} · ${detectBrowser()} · ${getDeviceId()}`.slice(0,80);
   }
 
   function clearStorageSession(storage){
@@ -260,7 +301,7 @@
     try{
       const data=await api('/v1/access/requests',{
         method:'POST',
-        body:{identifier:identity,access_type:accessType,client_label:accessType==='personal'?'MyTool personal device':'MyTool web'}
+        body:{identifier:identity,access_type:accessType,client_label:buildClientLabel(accessType)}
       });
       sessionStorage.setItem(REQUEST_ID_KEY,data.request_id);
       sessionStorage.setItem(REQUEST_TOKEN_KEY,data.request_token);
