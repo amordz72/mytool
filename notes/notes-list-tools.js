@@ -2,6 +2,17 @@
 (function(){
   'use strict';
 
+  const notesToolsScript=document.currentScript;
+  const myToolRoot=new URL('../',notesToolsScript?.src||location.href);
+  function loadBottomNav(){
+    if(!document.querySelector('link[data-mytool-bottom-nav]')){
+      const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('mytool-bottom-nav.css',myToolRoot).href;link.dataset.mytoolBottomNav='1';document.head.appendChild(link);
+    }
+    if(!document.querySelector('script[data-mytool-bottom-nav]')){
+      const nav=document.createElement('script');nav.src=new URL('mytool-bottom-nav.js',myToolRoot).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=myToolRoot.href;nav.dataset.app='notes';document.head.appendChild(nav);
+    }
+  }
+
   const PAGE_SIZE_KEY='mytool.notes.pageSize';
   const PAGE_SIZES=[3,5,10,20];
   const DEFAULT_PAGE_SIZE=3;
@@ -82,13 +93,13 @@
     style.textContent=`
 .note .selectline .pick{display:inline-block!important;width:22px!important;height:22px!important;min-width:22px;accent-color:var(--teal,#117f78);cursor:pointer}
 .note .selectline{min-height:30px}.note .selectline:has(.pick:checked){color:var(--teal,#117f78)}
-.notes-pager{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line,#d9e1e7);border-radius:16px;padding:10px 12px;margin:2px 0 90px;box-shadow:0 5px 18px #102a4310}
+.notes-pager{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line,#d9e1e7);border-radius:16px;padding:10px 12px;margin:2px 0 150px;box-shadow:0 5px 18px #102a4310}
 .notes-pager[hidden]{display:none!important}.notes-pager button{min-width:88px;padding:9px 12px}.notes-page-info{font-weight:800;color:#334155}.notes-page-size{display:flex;align-items:center;gap:7px;font-size:13px;color:#64748b}.notes-page-size select{width:auto!important;min-width:68px;padding:8px!important;border-radius:10px!important}
-.notes-selection-bar{position:fixed;z-index:70;left:50%;bottom:14px;transform:translateX(-50%);width:min(720px,calc(100vw - 24px));display:none;grid-template-columns:auto repeat(3,minmax(0,1fr)) auto;gap:7px;align-items:center;padding:9px;background:#0f2f35f2;color:#fff;border:1px solid #ffffff2b;border-radius:18px;box-shadow:0 16px 40px #0f172a45;backdrop-filter:blur(10px)}
+.notes-selection-bar{position:fixed;z-index:96;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(720px,calc(100vw - 24px));display:none;grid-template-columns:auto repeat(3,minmax(0,1fr)) auto;gap:7px;align-items:center;padding:9px;background:#0f2f35f2;color:#fff;border:1px solid #ffffff2b;border-radius:18px;box-shadow:0 16px 40px #0f172a45;backdrop-filter:blur(10px)}
 .notes-selection-bar.open{display:grid}.notes-selection-count{min-width:36px;text-align:center;font-weight:900}.notes-selection-bar button{min-height:42px;padding:8px 10px!important;border-radius:11px!important;background:#fff!important;color:#0f6f69!important;border:0!important}.notes-selection-bar .clear-selection{background:#ffffff18!important;color:#fff!important;border:1px solid #ffffff40!important}
 .note-image-item{position:relative;flex:0 0 auto;display:inline-block}.note-image-item img{display:block}.note-image-download{position:absolute;left:5px;bottom:5px;width:30px;height:30px;min-width:30px!important;padding:0!important;border-radius:9px!important;background:#102a43db!important;color:#fff!important;border:1px solid #ffffff55!important;box-shadow:0 3px 9px #0003;font-size:15px;line-height:1}
 .note-image-download:disabled{opacity:.65;cursor:wait}
-@media(max-width:560px){.notes-selection-bar{grid-template-columns:repeat(4,minmax(0,1fr));}.notes-selection-count{grid-column:1/-1}.notes-selection-bar .clear-selection{grid-column:1/-1}.notes-pager{margin-bottom:130px}.notes-pager button{min-width:74px}}
+@media(max-width:560px){.notes-selection-bar{grid-template-columns:repeat(4,minmax(0,1fr));}.notes-selection-count{grid-column:1/-1}.notes-selection-bar .clear-selection{grid-column:1/-1}.notes-pager{margin-bottom:190px}.notes-pager button{min-width:74px}}
 `;
     document.head.appendChild(style);
   }
@@ -242,6 +253,7 @@
   }
 
   function start(){
+    loadBottomNav();
     ensureStyles();
     patchLegacyDownloadNames();
     ensureSelectionBar();

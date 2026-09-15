@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2ea8e6">
+<title>مراجعة الحسابات — MyTool</title>
+<script src="../auth-guard.js" data-access="admin"></script>
+<style>
+:root{--blue:#2ea8e6;--orange:#ff8a1f;--ink:#163047;--muted:#61778a;--line:#dbe7f0;--panel:#fff;--soft:#f5faff;--danger:#b42318;--ok:#047857}
+*{box-sizing:border-box}body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear-gradient(135deg,#fff7ef,#eef9ff);color:var(--ink)}[v-cloak]{display:none}.wrap{max-width:920px;margin:auto}.hero{padding:18px;border-radius:20px;color:#fff;background:linear-gradient(135deg,var(--orange),#79cffc);box-shadow:0 8px 24px #16304718}.hero h1{margin:0 0 5px;font-size:24px}.hero p{margin:0;font-size:13px;line-height:1.7}.panel{margin-top:12px;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 6px 18px #1630470d}.upload{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}.btn{border:0;border-radius:12px;padding:11px 14px;background:linear-gradient(135deg,#147fb2,var(--blue));color:#fff;font:800 14px Arial,Tahoma,sans-serif;cursor:pointer}.btn.secondary{background:#fff;color:#14729f;border:1px solid #bfe3f6}.file-name{font-size:12px;color:var(--muted);overflow-wrap:anywhere}.privacy{margin-top:9px;font-size:11px;color:var(--muted)}.msg{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:13px}.msg.err{background:#fff0ef;color:var(--danger)}.msg.ok{background:#ecfdf5;color:var(--ok)}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.stat{padding:13px;border:1px solid var(--line);border-radius:15px;background:#fff}.stat span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.stat strong{font-size:20px;direction:ltr;display:block;text-align:right}.stat.debt strong{color:#b42318}.stat.balance strong{color:#14729f}.stat.profit strong{color:#047857}.head-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.head-row h2{margin:0;font-size:18px}.goal-grid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px}input,select{font:inherit;border:1px solid var(--line);border-radius:12px;background:#fff;padding:11px;color:var(--ink)}input{width:100%}.goal-result{margin-top:10px;border:1px solid #c9e6f5;background:#f5fbff;border-radius:14px;padding:11px}.goal-result strong{direction:ltr;display:inline-block}.goal-list{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px}.goal-list li{display:grid;grid-template-columns:1fr auto;gap:8px;border-top:1px dashed #cee1ec;padding-top:6px;font-size:13px}.table-wrap{margin-top:10px;overflow:auto;border:1px solid var(--line);border-radius:14px}table{width:100%;border-collapse:collapse;min-width:620px;background:#fff}th,td{padding:10px;border-bottom:1px solid #edf2f6;text-align:right;font-size:13px}th{background:#f4f9fc;font-size:12px;color:#496579;position:sticky;top:0}.amount{direction:ltr;text-align:left;font-weight:800}.rank{width:52px;text-align:center}.empty{text-align:center;color:var(--muted);padding:24px}.meta{font-size:12px;color:var(--muted)}.select-small{padding:8px 10px}.name-main{font-weight:800}.username{direction:ltr;text-align:right;color:var(--muted);font-size:11px;margin-top:2px}.top-actions{display:flex;gap:7px;flex-wrap:wrap}.copy-state{font-size:11px;color:var(--ok);font-weight:800}
+@media(max-width:620px){body{padding:8px}.hero{border-radius:17px}.hero h1{font-size:21px}.panel{border-radius:15px;padding:11px}.upload,.goal-grid{grid-template-columns:1fr}.btn{width:100%}.summary{grid-template-columns:1fr}.stat{display:grid;grid-template-columns:1fr auto;align-items:center}.stat span{margin:0}.stat strong{font-size:18px}.head-row{align-items:flex-start}.top-actions{width:100%}.top-actions .btn,.top-actions select{flex:1;min-width:0}}
+</style>
+</head>
+<body data-mytool-app="accounts-review">
+<main id="app" class="wrap" v-cloak>
+<section class="hero"><h1>📊 مراجعة الحسابات</h1><p>ارفع ملف الحسابات اليومي، وخذ الإجماليات وأكبر المدينين وخطة تحصيل تقريبية مباشرة.</p></section>
+<section class="panel">
+<div class="upload"><button class="btn" type="button" @click="pickFile">📂 اختر ملف CSV</button><div><div class="file-name">{{ fileName || 'لم يتم اختيار ملف بعد.' }}</div><div v-if="rows.length" class="meta">{{ rows.length }} حسابًا مقروءًا</div></div><input ref="fileInput" type="file" accept=".csv,text/csv" hidden @change="readFile"></div>
+<div class="privacy">المعالجة تتم داخل المتصفح. ملف الحسابات لا يُرفع إلى GitHub أو إلى خادم من هذه الأداة.</div>
+<div v-if="message" class="msg" :class="messageType">{{ message }}</div>
+</section>
+<template v-if="rows.length">
+<section class="summary">
+<div class="stat debt"><span>إجمالي الديون</span><strong>{{ money(totalDebt) }}</strong></div>
+<div class="stat balance"><span>إجمالي الأرصدة</span><strong>{{ money(totalBalance) }}</strong></div>
+<div class="stat profit"><span>إجمالي الأرباح</span><strong>{{ money(totalProfit) }}</strong></div>
+</section>
+<section class="panel">
+<div class="head-row"><div><h2>هدف التحصيل</h2><div class="meta">اختر مبلغًا تقريبيًا، ونبدأ من أكبر المدينين.</div></div><button class="btn secondary" type="button" @click="copySummary">📋 نسخ الملخص</button></div>
+<div class="goal-grid"><input v-model="goalText" inputmode="decimal" placeholder="مثال: 300000" aria-label="مبلغ التحصيل المستهدف"><button class="btn" type="button" @click="normalizeGoal">احسب</button></div>
+<div v-if="goalTarget>0" class="goal-result"><div>الهدف: <strong>{{ money(goalTarget) }}</strong> — المقترح: <strong>{{ money(goalPlan.total) }}</strong> من {{ goalPlan.customers.length }} عميل.</div><ul class="goal-list"><li v-for="customer in goalPlan.customers" :key="customer.index"><span>{{ displayName(customer) }} <small>({{ customer.username || 'بدون مستخدم' }})</small></span><strong>{{ money(customer.debt) }}</strong></li></ul></div>
+</section>
+<section class="panel">
+<div class="head-row"><div><h2>أكبر العملاء المدينين</h2><div class="meta">الحسابات ذات الدين الأكبر من صفر فقط، مرتبة تنازليًا.</div></div><div class="top-actions"><select class="select-small" v-model="limit" aria-label="عدد المدينين الظاهرين"><option value="5">أكبر 5</option><option value="10">أكبر 10</option><option value="20">أكبر 20</option><option value="all">الكل</option></select></div></div>
+<div class="table-wrap"><table><thead><tr><th class="rank">#</th><th>العميل</th><th>اسم المستخدم</th><th>الدين</th></tr></thead><tbody><tr v-for="(customer,i) in visibleDebtors" :key="customer.index"><td class="rank">{{ i+1 }}</td><td><div class="name-main">{{ displayName(customer) }}</div></td><td class="username">{{ customer.username || '—' }}</td><td class="amount">{{ money(customer.debt) }}</td></tr></tbody></table><div v-if="!visibleDebtors.length" class="empty">لا توجد ديون في الملف.</div></div>
+</section>
+</template>
+<section v-else class="panel empty">ابدأ برفع ملف CSV اليومي.</section>
+</main>
+<script type="module">
+import {createApp,ref,computed,nextTick} from 'https://cdn.jsdelivr.net/npm/vue@3/dist/vue.esm-browser.prod.js';
+
+function detectDelimiter(text){const first=String(text||'').replace(/^\uFEFF/,'').split(/\r?\n/,1)[0]||'';const choices=[',',';','\t'];let best=',',count=-1;for(const d of choices){let c=0,q=false;for(let i=0;i<first.length;i++){const ch=first[i];if(ch==='"'){if(q&&first[i+1]==='"'){i++;continue}q=!q}else if(ch===d&&!q)c++}if(c>count){count=c;best=d}}return best}
+function parseCsv(text){const delimiter=detectDelimiter(text);const rows=[];let row=[],field='',quoted=false;const input=String(text||'').replace(/^\uFEFF/,'');for(let i=0;i<input.length;i++){const ch=input[i];if(ch==='"'){if(quoted&&input[i+1]==='"'){field+='"';i++}else quoted=!quoted;continue}if(ch===delimiter&&!quoted){row.push(field);field='';continue}if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&input[i+1]==='\n')i++;row.push(field);field='';if(row.some(v=>String(v).trim()!==''))rows.push(row);row=[];continue}field+=ch}row.push(field);if(row.some(v=>String(v).trim()!==''))rows.push(row);return rows}
+function cleanHeader(v){return String(v??'').replace(/^\uFEFF/,'').trim().toLowerCase().replace(/\s+/g,' ')}
+function numeric(v){const s=String(v??'').trim().replace(/[\s\u00a0,]/g,'').replace(/٫/g,'.');const n=Number(s);return Number.isFinite(n)?n:0}
+function findHeader(headers,names){const normalized=headers.map(cleanHeader);for(const name of names){const i=normalized.indexOf(cleanHeader(name));if(i>=0)return i}return -1}
+
+createApp({
+  setup(){
+    const fileInput=ref(null),fileName=ref(''),rows=ref([]),message=ref(''),messageType=ref('ok'),limit=ref('10'),goalText=ref(''),goalTarget=ref(0);
+    const debtors=computed(()=>rows.value.filter(x=>x.debt>0).slice().sort((a,b)=>b.debt-a.debt));
+    const totalDebt=computed(()=>rows.value.reduce((s,x)=>s+x.debt,0));
+    const totalBalance=computed(()=>rows.value.reduce((s,x)=>s+x.balance,0));
+    const totalProfit=computed(()=>rows.value.reduce((s,x)=>s+x.profit,0));
+    const visibleDebtors=computed(()=>limit.value==='all'?debtors.value:debtors.value.slice(0,Number(limit.value)||10));
+    const goalPlan=computed(()=>{const customers=[];let total=0;const target=goalTarget.value;if(target<=0)return{customers,total};for(const c of debtors.value){if(total>=target)break;customers.push(c);total+=c.debt}return{customers,total}});
+    function pickFile(){fileInput.value?.click()}
+    function setMessage(text,type='ok'){message.value=text;messageType.value=type}
+    async function readFile(event){const file=event.target.files?.[0];if(!file)return;fileName.value=file.name;try{const text=await file.text();const matrix=parseCsv(text);if(matrix.length<2)throw new Error('الملف لا يحتوي حسابات كافية.');const headers=matrix[0];const idx={username:findHeader(headers,['اسم المستخدم','username','user']),first:findHeader(headers,['الاسم','name','first name']),last:findHeader(headers,['اللقب','lastname','last name','surname']),balance:findHeader(headers,['رصيد','الرصيد','balance']),debt:findHeader(headers,['ديون','الدين','debt','debts']),profit:findHeader(headers,['ارباح','أرباح','الارباح','الأرباح','profit','profits'])};const missing=[];if(idx.username<0)missing.push('اسم المستخدم');if(idx.balance<0)missing.push('رصيد');if(idx.debt<0)missing.push('ديون');if(idx.profit<0)missing.push('ارباح');if(missing.length)throw new Error('أعمدة ناقصة: '+missing.join('، '));rows.value=matrix.slice(1).map((r,index)=>({index,username:String(r[idx.username]??'').trim(),first:idx.first>=0?String(r[idx.first]??'').trim():'',last:idx.last>=0?String(r[idx.last]??'').trim():'',balance:numeric(r[idx.balance]),debt:numeric(r[idx.debt]),profit:numeric(r[idx.profit])})).filter(r=>r.username||r.first||r.last||r.balance||r.debt||r.profit);goalText.value='';goalTarget.value=0;setMessage('تمت قراءة '+rows.value.length+' حسابًا بنجاح.');await nextTick();configureNav()}catch(error){rows.value=[];setMessage(error?.message||'تعذر قراءة الملف.','err')}}
+    function displayName(c){const name=[c.first,c.last].filter(Boolean).join(' ').trim();return name||c.username||'بدون اسم'}
+    function money(value){return new Intl.NumberFormat('ar-DZ',{minimumFractionDigits:0,maximumFractionDigits:2}).format(Number(value)||0)+' دج'}
+    function normalizeGoal(){goalTarget.value=Math.max(0,numeric(goalText.value));goalText.value=goalTarget.value?String(goalTarget.value):''}
+    function summaryText(){let out='مراجعة الحسابات\nإجمالي الديون: '+money(totalDebt.value)+'\nإجمالي الأرصدة: '+money(totalBalance.value)+'\nإجمالي الأرباح: '+money(totalProfit.value);if(goalTarget.value>0){out+='\n\nهدف التحصيل: '+money(goalTarget.value)+'\nالمجموع المقترح: '+money(goalPlan.value.total)+'\nالعملاء:';goalPlan.value.customers.forEach((c,i)=>{out+='\n'+(i+1)+'. '+displayName(c)+' | '+(c.username||'—')+' | '+money(c.debt)})}return out}
+    async function copySummary(){if(!rows.value.length){window.MyToolBottomNav?.toast('ارفع ملف الحسابات أولًا',true);return}const text=summaryText();try{await navigator.clipboard.writeText(text)}catch{const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}window.MyToolBottomNav?.toast('تم نسخ الملخص')}
+    function configureNav(){const apply=()=>window.MyToolBottomNav?.setActions([{slot:2,icon:'📂',label:'فتح CSV',title:'اختيار ملف الحسابات',onClick:pickFile},{slot:4,icon:'📋',label:'نسخ',title:'نسخ ملخص الحسابات',onClick:copySummary}]);if(window.MyToolBottomNav)apply();else window.addEventListener('mytool-bottom-nav-ready',apply,{once:true})}
+    configureNav();
+    return{fileInput,fileName,rows,message,messageType,limit,goalText,goalTarget,totalDebt,totalBalance,totalProfit,visibleDebtors,goalPlan,pickFile,readFile,displayName,money,normalizeGoal,copySummary};
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

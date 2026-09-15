@@ -5,6 +5,17 @@
 (function(){
   'use strict';
 
+  const shellScript=document.currentScript;
+  const myToolRoot=new URL('../',shellScript?.src||location.href);
+  function loadMyToolBottomNav(){
+    if(!document.querySelector('link[data-mytool-bottom-nav]')){
+      const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('mytool-bottom-nav.css',myToolRoot).href;link.dataset.mytoolBottomNav='1';document.head.appendChild(link);
+    }
+    if(!document.querySelector('script[data-mytool-bottom-nav]')){
+      const nav=document.createElement('script');nav.src=new URL('mytool-bottom-nav.js',myToolRoot).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=myToolRoot.href;nav.dataset.app='shop';document.head.appendChild(nav);
+    }
+  }
+
   const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
   window.ShopApiConfig=Object.freeze({url:SUPABASE_URL,key:SUPABASE_PUBLISHABLE_KEY});
@@ -48,7 +59,13 @@
   function mountDailyTop(targetId){const target=document.getElementById(targetId);if(!target)return;target.innerHTML='<div id="drawerOverlay" class="drawer-overlay drawer-hidden"></div><aside id="drawer" class="drawer drawer-hidden"><div class="drawer-head"><strong>قائمة حساب المحل</strong><button id="drawerClose" class="drawer-close" type="button">×</button></div><nav id="drawerLinks" class="drawer-links"></nav><button class="shell-logout drawer-logout" type="button">تسجيل الخروج</button></aside>'+canonicalTop({role:'pending',identityId:'identity',drawerButtonId:'drawerOpen'});bindLogout(target);bindDrawer(target)}
   function mountRoleNavigation(context,current){const options={role:context?.role||'admin',permissions:context?.permissions||{},active:current||document.body.dataset.screen||'daily'},screen=document.getElementById('screenNav'),drawer=document.getElementById('drawerLinks'),top=routeLinks(options,'top','top'),side=routeLinks(options,'drawer','drawer');if(screen)screen.innerHTML=top;if(drawer)drawer.innerHTML=side;document.querySelectorAll('.shell-role-badge').forEach(el=>el.textContent=options.role==='worker'?'عامل':'إدارة');if(options.role==='admin')document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='حساب الإدارة');return{top:routeItems(options,'top').length,drawer:routeItems(options,'drawer').length}}
 
-  function loadScreenEnhancer(){const screen=document.body?.dataset?.screen||'';const map={purchase:['purchase-autofill.js?v=20260913-1700','price-guidance.js?v=20260913-1700','catalog-picker.js?v=20260913-1805'],sale:['sale-price-sync.js?v=20260913-1700','price-guidance.js?v=20260913-1700','catalog-picker.js?v=20260913-1805'],inventory:['inventory-pricing.js?v=20260913-1700','catalog-picker.js?v=20260913-1805'],products:['products-pagination.js?v=20260913-1700'],'opening-stock':['opening-stock-policy.js?v=20260913-1700']};(map[screen]||[]).forEach((src,index)=>{if(document.querySelector('script[data-shop-enhancer="'+screen+'-'+index+'"]'))return;const script=document.createElement('script');script.src=src;script.defer=true;script.dataset.shopEnhancer=screen+'-'+index;document.head.appendChild(script)})}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadScreenEnhancer,{once:true});else loadScreenEnhancer();
+  function loadScreenEnhancer(){const screen=document.body?.dataset?.screen||'';const quick='quick-pricing.js?v=20260913-1938';const map={purchase:[quick,'purchase-autofill.js?v=20260913-1700','price-guidance.js?v=20260913-1700','catalog-picker.js?v=20260913-1805'],sale:[quick,'sale-price-sync.js?v=20260913-1700','price-guidance.js?v=20260913-1700','catalog-picker.js?v=20260913-1805'],inventory:[quick,'inventory-pricing.js?v=20260913-1938','catalog-picker.js?v=20260913-1805'],products:['products-pagination.js?v=20260913-1700'],'opening-stock':['opening-stock-policy.js?v=20260913-1700']};(map[screen]||[]).forEach((src,index)=>{if(document.querySelector('script[data-shop-enhancer="'+screen+'-'+index+'"]'))return;const script=document.createElement('script');script.src=src;script.defer=true;script.dataset.shopEnhancer=screen+'-'+index;document.head.appendChild(script)})}
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',loadScreenEnhancer,{once:true});
+    document.addEventListener('DOMContentLoaded',loadMyToolBottomNav,{once:true});
+  }else{
+    loadScreenEnhancer();
+    loadMyToolBottomNav();
+  }
   window.ShopShell={watchAdmin,mountAdminSidebar,mountAdminTop,mountStandalone,mountOperationTop,mountOperationNav,mountDailyTop,mountRoleNavigation,requestLogout};
 })();
