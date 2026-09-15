@@ -42,6 +42,13 @@
     }
   }
 
+  function forceFlowPosition(target){
+    if(!target)return;
+    document.querySelectorAll('.mytool-bottom-nav-spacer').forEach(el=>el.remove());
+    const style=target.style;
+    [['position','static'],['inset','auto'],['top','auto'],['right','auto'],['bottom','auto'],['left','auto'],['transform','none'],['float','none']].forEach(([prop,value])=>style.setProperty(prop,value,'important'));
+  }
+
   function render(){
     if(!nav)return;
     state.handlers={};
@@ -61,15 +68,32 @@
     render();
   }
 
+  function dispatchReady(){
+    window.dispatchEvent(new CustomEvent('mytool-bottom-nav-ready',{detail:{currentApp,appHome:appHome.href,root:rootUrl.href}}));
+  }
+
   function mount(){
-    if(document.querySelector('.mytool-bottom-nav')||!currentApp)return;
+    if(!currentApp)return;
+    const existing=document.querySelector('.mytool-bottom-nav');
+    if(existing){
+      nav=existing;
+      forceFlowPosition(nav);
+      defaultActions();render();
+      requestAnimationFrame(()=>forceFlowPosition(nav));
+      setTimeout(()=>forceFlowPosition(nav),250);
+      dispatchReady();
+      return;
+    }
     nav=document.createElement('nav');
     nav.className='mytool-bottom-nav';
     nav.setAttribute('aria-label','تنقل MyTool السريع');
     nav.innerHTML=[1,2,3,4,5].map(slot=>'<div class="mytool-bottom-nav-slot" data-slot="'+slot+'"></div>').join('');
     document.body.appendChild(nav);
+    forceFlowPosition(nav);
     defaultActions();render();
-    window.dispatchEvent(new CustomEvent('mytool-bottom-nav-ready',{detail:{currentApp,appHome:appHome.href,root:rootUrl.href}}));
+    requestAnimationFrame(()=>forceFlowPosition(nav));
+    setTimeout(()=>forceFlowPosition(nav),250);
+    dispatchReady();
   }
 
   window.MyToolBottomNav={setActions,toast,get currentApp(){return currentApp},get appHome(){return appHome.href},get root(){return rootUrl.href}};
