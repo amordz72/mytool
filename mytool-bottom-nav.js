@@ -28,6 +28,15 @@
     document.head.appendChild(s);
   }
 
+  function loadNotesTabs(){
+    if(currentApp!=='notes'||document.querySelector('script[data-mytool-notes-tabs]'))return;
+    const s=document.createElement('script');
+    s.src=new URL('notes/notes-tabs.js?v=20260915-2310',rootUrl).href;
+    s.defer=true;
+    s.dataset.mytoolNotesTabs='1';
+    document.head.appendChild(s);
+  }
+
   function toast(text,error=false){
     document.querySelector('.mytool-nav-toast')?.remove();
     const el=document.createElement('div');el.className='mytool-nav-toast'+(error?' error':'');el.textContent=text;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);
@@ -136,6 +145,7 @@
     if(!currentApp)return;
     loadShopAdminNotifications();
     loadNotesEditor();
+    loadNotesTabs();
     const existing=document.querySelector('.mytool-bottom-nav');
     if(existing){
       nav=existing;
