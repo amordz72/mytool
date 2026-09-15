@@ -2,6 +2,9 @@
   'use strict';
 
   const API_BASE='https://mytool-access.dzamor72.workers.dev';
+  const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
+  const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
+  const SUPABASE_MODULE='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
   const TOOLS_TOKEN_KEY='mytool_tools_access_token';
   const TOOLS_EXPIRES_KEY='mytool_tools_access_expires_at';
   const TOOLS_TYPE_KEY='mytool_tools_access_type';
@@ -10,20 +13,39 @@
   const REQUEST_EXPIRES_KEY='mytool_tools_request_expires_at';
   const REQUEST_TYPE_KEY='mytool_tools_request_type';
   const DEVICE_ID_KEY='mytool_device_id';
+  const GOOGLE_PENDING_KEY='mytool_google_oauth_pending';
+  const ADMIN_HOURS_KEY='mytool_admin_session_hours';
   const ADMIN_EXPIRES_KEY='mytool_admin_expires_at';
+  const OWNER_TOKEN_KEY='mytool_tools_owner_token';
+  const OWNER_EXPIRES_KEY='mytool_tools_owner_expires_at';
   const EMERGENCY_EXPIRES_KEY='mytool_emergency_admin_expires_at';
   const WORKER_TOKEN_KEY='mytool_shop_worker_token';
+  const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname';
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at';
 
   const $=id=>document.getElementById(id);
   let pollTimer=0;
   let expiryTimer=0;
+  let authClient=null;
 
   function otherModeActive(){
     const now=Date.now();
     return Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now
       ||Number(localStorage.getItem(EMERGENCY_EXPIRES_KEY)||0)>now
       ||(Boolean(localStorage.getItem(WORKER_TOKEN_KEY))&&Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)>now);
+  }
+
+  function adminDurationMs(){
+    const raw=Math.floor(Number(localStorage.getItem(ADMIN_HOURS_KEY)||24)||24);
+    const hours=Math.min(96,Math.max(1,raw));
+    return hours*60*60*1000;
+  }
+
+  async function getAuthClient(){
+    if(authClient)return authClient;
+    const mod=await import(SUPABASE_MODULE);
+    authClient=mod.createClient(SUPABASE_URL,SUPABASE_KEY);
+    return authClient;
   }
 
   function getDeviceId(){
@@ -167,8 +189,85 @@
     return 'تعذر الاتصال بخدمة الدخول. حاول مرة أخرى.';
   }
 
+  async function startGoogleLogin(){
+    clearLoginMessage();
+    const btn=$('googleLoginBtn');
+    if(btn){btn.disabled=true;btn.textContent='جاري فتح حسابات Google…';}
+    try{
+      localStorage.setItem(GOOGLE_PENDING_KEY,'1');
+      const client=await getAuthClient();
+      const redirectTo=`${location.origin}${location.pathname}`;
+      const {error}=await client.auth.signInWithOAuth({
+        provider:'google',
+        options:{redirectTo,queryParams:{prompt:'select_account'}}
+      });
+      if(error)throw error;
+    }catch(_error){
+      localStorage.removeItem(GOOGLE_PENDING_KEY);
+      setLoginMessage('تعذر بدء دخول Google. إذا كانت أول مرة، قد يحتاج مزود Google إلى التفعيل في Supabase.');
+      if(btn){btn.disabled=false;btn.textContent='الدخول بحساب Google';}
+    }
+  }
+
+  async function restoreGoogleLogin(){
+    const pending=localStorage.getItem(GOOGLE_PENDING_KEY)==='1';
+    const oauthSignal=pending||/access_token=|error=/.test(location.hash)||/[?&](code|error)=/.test(location.search);
+    if(!oauthSignal)return false;
+
+    const btn=$('googleLoginBtn');
+    if(btn){btn.disabled=true;btn.textContent='جاري التحقق من حساب Google…';}
+    try{
+      const client=await getAuthClient();
+      const {data,error}=await client.auth.getSession();
+      if(error)throw error;
+      const session=data?.session;
+      if(!session?.access_token)throw new Error('GOOGLE_SESSION_MISSING');
+
+      const owner=await api('/v1/owner/session',{method:'POST',token:session.access_token});
+      clearToolsSession();
+      clearRequest();
+      localStorage.removeItem(EMERGENCY_EXPIRES_KEY);
+      localStorage.removeItem(WORKER_TOKEN_KEY);
+      localStorage.removeItem(WORKER_NICKNAME_KEY);
+      localStorage.removeItem(WORKER_EXPIRES_KEY);
+      const exp=Date.now()+adminDurationMs();
+      localStorage.setItem(ADMIN_EXPIRES_KEY,String(exp));
+      sessionStorage.setItem(OWNER_TOKEN_KEY,owner.session_token);
+      sessionStorage.setItem(OWNER_EXPIRES_KEY,String(owner.expires_at));
+      localStorage.removeItem(GOOGLE_PENDING_KEY);
+      history.replaceState({},document.title,location.pathname);
+      location.replace(`${location.origin}${location.pathname}`);
+      return true;
+    }catch(error){
+      localStorage.removeItem(GOOGLE_PENDING_KEY);
+      localStorage.removeItem(ADMIN_EXPIRES_KEY);
+      try{(await getAuthClient()).auth.signOut();}catch(_e){}
+      const code=error?.data?.code||error?.message||'';
+      if(code==='OWNER_NOT_ALLOWED')setLoginMessage('هذا حساب Google غير مسموح له بدخول الإدارة.');
+      else if(code==='OWNER_PROVIDER_INVALID')setLoginMessage('تعذر التحقق من حساب Google.');
+      else setLoginMessage('تعذر إكمال دخول Google. إذا كانت أول مرة، قد يحتاج مزود Google إلى التفعيل في Supabase.');
+      if(btn){btn.disabled=false;btn.textContent='الدخول بحساب Google';}
+      return false;
+    }
+  }
+
   function injectUi(){
     const loginForm=$('loginForm');
+    if(loginForm&&!$('googleLoginBtn')){
+      const googleBtn=document.createElement('button');
+      googleBtn.id='googleLoginBtn';
+      googleBtn.className='btn secondary';
+      googleBtn.type='button';
+      googleBtn.style.marginTop='8px';
+      googleBtn.textContent='الدخول بحساب Google';
+      loginForm.appendChild(googleBtn);
+      const googleNote=document.createElement('div');
+      googleNote.className='small';
+      googleNote.textContent='للإدارة: اختر حساب Google المسموح بدل كتابة البريد وكلمة المرور.';
+      loginForm.appendChild(googleNote);
+      googleBtn.addEventListener('click',startGoogleLogin);
+    }
+
     if(loginForm&&!$('toolsRequestBtn')){
       const box=document.createElement('div');
       box.id='toolsAccessBox';
@@ -364,5 +463,8 @@
     }
   });
 
-  setTimeout(restoreTools,0);
+  setTimeout(async()=>{
+    const handled=await restoreGoogleLogin();
+    if(!handled)await restoreTools();
+  },0);
 })();
