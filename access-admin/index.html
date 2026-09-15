@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2ea8e6">
+<title>طلبات دخول الأدوات — MyTool</title>
+<script src="../auth-guard.js?v=20260915-access1" data-access="admin"></script>
+<style>
+:root{--blue:#2ea8e6;--orange:#ff8a1f;--ink:#163047;--muted:#61778a;--line:#dbe7f0;--soft:#f6fbff;--ok:#047857;--danger:#b91c1c}*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:linear-gradient(135deg,#fff7ef,#eef9ff);color:var(--ink);padding:14px}.wrap{max-width:920px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.back{display:inline-flex;text-decoration:none;color:#14729f;font-weight:800;background:#fff;border:1px solid var(--line);padding:10px 13px;border-radius:12px}.actions{display:flex;gap:8px}.btn{font:inherit;border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#147fb2,var(--blue));color:#fff}.btn.secondary{background:#fff;color:#14729f;border:1px solid #bfe3f6}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}.btn:disabled{opacity:.55;cursor:not-allowed}.hero{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 7px 22px rgba(22,48,71,.08);margin-bottom:14px}.hero h1{margin:0 0 6px;font-size:24px}.hero p{margin:0;color:var(--muted);line-height:1.7;font-size:13px}.status{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:13px;background:#eef8ff;color:#14668e}.status.error{background:#fff1f2;color:var(--danger)}.section{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 5px 16px rgba(22,48,71,.05)}.section h2{margin:0 0 12px;font-size:18px}.empty{padding:16px;text-align:center;color:var(--muted);font-size:13px}.list{display:grid;gap:10px}.item{border:1px solid var(--line);border-radius:14px;padding:13px;background:var(--soft)}.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.name{font-weight:800;word-break:break-word}.meta{font-size:12px;color:var(--muted);line-height:1.65;margin-top:5px}.item-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.item-actions select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff;color:var(--ink)}.pill{display:inline-block;padding:3px 7px;border-radius:99px;font-size:10px;font-weight:800;background:#edf8ff;color:#14729f}.pill.owner{background:#ecfdf5;color:var(--ok)}@media(max-width:600px){body{padding:9px}.top{align-items:stretch;flex-direction:column}.actions{display:grid;grid-template-columns:1fr 1fr}.back{text-align:center;justify-content:center}.row{flex-direction:column}.item-actions{display:grid;grid-template-columns:1fr 1fr}.item-actions select{grid-column:1/-1}.btn{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top">
+    <a class="back" href="../">← MyTool</a>
+    <div class="actions"><button id="refreshBtn" class="btn secondary" type="button">↻ تحديث</button><button id="newOwnerBtn" class="btn secondary" type="button">تجديد جلسة الإدارة</button></div>
+  </div>
+
+  <section class="hero">
+    <h1>طلبات دخول الأدوات</h1>
+    <p>هذه الصفحة تدير وصول أجهزة العملاء إلى الأدوات العامة فقط. القبول لا يفتح حساب المحل أو الملاحظات أو بيانات الإدارة.</p>
+    <div id="status" class="status">جاري التحقق من جلسة الإدارة…</div>
+  </section>
+
+  <section class="section">
+    <h2>طلبات تنتظر القرار <span id="pendingCount" class="pill">0</span></h2>
+    <div id="requests" class="list"><div class="empty">جاري التحميل…</div></div>
+  </section>
+
+  <section class="section">
+    <h2>الجلسات الحالية <span id="sessionCount" class="pill owner">0</span></h2>
+    <div id="sessions" class="list"><div class="empty">جاري التحميل…</div></div>
+  </section>
+</main>
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co'
+const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj'
+const ACCESS_API='https://mytool-access.dzamor72.workers.dev'
+const OWNER_TOKEN_KEY='mytool_tools_owner_token'
+const OWNER_EXPIRES_KEY='mytool_tools_owner_expires_at'
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY)
+const $=id=>document.getElementById(id)
+let ownerToken=''
+
+function setStatus(text,error=false){const el=$('status');el.textContent=text;el.className='status'+(error?' error':'')}
+function fmt(ts){if(!ts)return '—';try{return new Date(Number(ts)).toLocaleString('ar-DZ')}catch{return '—'}}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+async function api(path,{method='GET',token=ownerToken,body}={}){
+  const headers={Accept:'application/json'}
+  if(token)headers.Authorization=`Bearer ${token}`
+  if(body!==undefined)headers['Content-Type']='application/json'
+  const response=await fetch(ACCESS_API+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'})
+  const data=await response.json().catch(()=>({ok:false,code:'INVALID_RESPONSE'}))
+  if(!response.ok){const e=new Error(data.code||`HTTP_${response.status}`);e.status=response.status;e.data=data;throw e}
+  return data
+}
+
+function clearOwner(){sessionStorage.removeItem(OWNER_TOKEN_KEY);sessionStorage.removeItem(OWNER_EXPIRES_KEY);ownerToken=''}
+
+async function ensureOwner(force=false){
+  if(!force){
+    const token=sessionStorage.getItem(OWNER_TOKEN_KEY)||''
+    const expires=Number(sessionStorage.getItem(OWNER_EXPIRES_KEY)||0)
+    if(token&&expires>Date.now()+30000){
+      try{const state=await api('/v1/session',{token});if(state.ok&&state.role==='owner'){ownerToken=token;return token}}catch{}
+      clearOwner()
+    }
+  }else clearOwner()
+
+  const {data}=await supabase.auth.getSession()
+  const providerToken=data?.session?.access_token||''
+  if(!providerToken)throw new Error('SUPABASE_ADMIN_SESSION_REQUIRED')
+  const session=await api('/v1/owner/session',{method:'POST',token:providerToken})
+  ownerToken=session.session_token
+  sessionStorage.setItem(OWNER_TOKEN_KEY,ownerToken)
+  sessionStorage.setItem(OWNER_EXPIRES_KEY,String(session.expires_at))
+  return ownerToken
+}
+
+function renderRequests(rows){
+  $('pendingCount').textContent=String(rows.length)
+  if(!rows.length){$('requests').innerHTML='<div class="empty">لا توجد طلبات معلقة الآن.</div>';return}
+  $('requests').innerHTML=rows.map(row=>`
+    <article class="item" data-request-id="${escapeHtml(row.id)}">
+      <div class="row"><div><div class="name">${escapeHtml(row.identifier)}</div><div class="meta">${escapeHtml(row.client_label||'جهاز بدون تسمية')} · ${escapeHtml(row.access_type||'client')}<br>أرسل: ${escapeHtml(fmt(row.created_at))}<br>ينتهي الطلب: ${escapeHtml(fmt(row.request_expires_at))}</div></div><span class="pill">pending</span></div>
+      <div class="item-actions">
+        <select class="minutes" aria-label="مدة الجلسة"><option value="15">15 دقيقة</option><option value="30">30 دقيقة</option><option value="60" selected>ساعة</option><option value="120">ساعتان</option><option value="480">8 ساعات</option><option value="1440">24 ساعة</option></select>
+        <button class="btn approve" type="button">قبول</button>
+        <button class="btn danger reject" type="button">رفض 6 ساعات</button>
+      </div>
+    </article>`).join('')
+  document.querySelectorAll('.approve').forEach(btn=>btn.addEventListener('click',()=>decide(btn,true)))
+  document.querySelectorAll('.reject').forEach(btn=>btn.addEventListener('click',()=>decide(btn,false)))
+}
+
+function renderSessions(rows){
+  const active=rows.filter(row=>!row.revoked_at&&Number(row.expires_at)>Date.now())
+  $('sessionCount').textContent=String(active.length)
+  if(!active.length){$('sessions').innerHTML='<div class="empty">لا توجد جلسات فعالة.</div>';return}
+  $('sessions').innerHTML=active.map(row=>`
+    <article class="item" data-session-id="${escapeHtml(row.id)}">
+      <div class="row"><div><div class="name">جلسة ${escapeHtml(row.role==='owner'?'إدارة':'أدوات')}</div><div class="meta">النوع: ${escapeHtml(row.access_type||'—')}<br>تنتهي: ${escapeHtml(fmt(row.expires_at))}</div></div><span class="pill ${row.role==='owner'?'owner':''}">${escapeHtml(row.role)}</span></div>
+      ${row.role==='tools'?'<div class="item-actions"><button class="btn danger revoke" type="button">إلغاء الجلسة فورًا</button></div>':''}
+    </article>`).join('')
+  document.querySelectorAll('.revoke').forEach(btn=>btn.addEventListener('click',()=>revoke(btn)))
+}
+
+async function decide(button,approve){
+  const card=button.closest('[data-request-id]')
+  const id=card?.dataset?.requestId
+  if(!id)return
+  card.querySelectorAll('button,select').forEach(el=>el.disabled=true)
+  try{
+    if(approve){
+      const minutes=Number(card.querySelector('.minutes')?.value||60)
+      await api(`/v1/admin/requests/${encodeURIComponent(id)}/approve`,{method:'POST',body:{session_minutes:minutes}})
+      setStatus(`تم قبول الطلب لمدة ${minutes} دقيقة.`)
+    }else{
+      await api(`/v1/admin/requests/${encodeURIComponent(id)}/reject`,{method:'POST',body:{cooldown_hours:6,reason:'رفض من الإدارة'}})
+      setStatus('تم رفض الطلب وحظره مؤقتًا لمدة 6 ساعات.')
+    }
+    await loadAll()
+  }catch(error){
+    setStatus(`تعذر تنفيذ القرار: ${error?.data?.code||error.message}`,true)
+    card.querySelectorAll('button,select').forEach(el=>el.disabled=false)
+  }
+}
+
+async function revoke(button){
+  const card=button.closest('[data-session-id]')
+  const id=card?.dataset?.sessionId
+  if(!id)return
+  button.disabled=true
+  try{await api(`/v1/admin/sessions/${encodeURIComponent(id)}/revoke`,{method:'POST'});setStatus('تم إلغاء الجلسة فورًا.');await loadAll()}catch(error){setStatus(`تعذر إلغاء الجلسة: ${error?.data?.code||error.message}`,true);button.disabled=false}
+}
+
+async function loadAll(){
+  const [requests,sessions]=await Promise.all([
+    api('/v1/admin/requests?status=pending&limit=100'),
+    api('/v1/admin/sessions')
+  ])
+  renderRequests(requests.requests||[])
+  renderSessions(sessions.sessions||[])
+  setStatus('متصل بخدمة الوصول. القرارات تحفظ مباشرة في D1.')
+}
+
+async function boot(force=false){
+  $('refreshBtn').disabled=true;$('newOwnerBtn').disabled=true
+  try{await ensureOwner(force);await loadAll()}catch(error){
+    if(error.message==='SUPABASE_ADMIN_SESSION_REQUIRED')setStatus('لا توجد جلسة Supabase للإدارة. ارجع إلى MyTool وسجّل دخول الإدارة العادي ثم افتح هذه الصفحة.',true)
+    else setStatus(`تعذر فتح إدارة الوصول: ${error?.data?.code||error.message}`,true)
+    $('requests').innerHTML='<div class="empty">تعذر تحميل الطلبات.</div>'
+    $('sessions').innerHTML='<div class="empty">تعذر تحميل الجلسات.</div>'
+  }finally{$('refreshBtn').disabled=false;$('newOwnerBtn').disabled=false}
+}
+
+$('refreshBtn').addEventListener('click',()=>boot(false))
+$('newOwnerBtn').addEventListener('click',()=>boot(true))
+boot(false)
+</script>
+</body>
+</html>
