@@ -49,7 +49,7 @@ let ownerToken=''
 
 function setStatus(text,error=false){const el=$('status');el.textContent=text;el.className='status'+(error?' error':'')}
 function fmt(ts){if(!ts)return '—';try{return new Date(Number(ts)).toLocaleString('ar-DZ')}catch{return '—'}}
-function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function accessLabel(type){return type==='personal'?'جهاز شخصي':type==='paid'?'مدفوع':'عميل مؤقت'}
 
 async function api(path,{method='GET',token=ownerToken,body}={}){
