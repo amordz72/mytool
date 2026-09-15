@@ -19,6 +19,15 @@
     document.head.appendChild(s);
   }
 
+  function loadNotesEditor(){
+    if(currentApp!=='notes'||document.querySelector('script[data-mytool-notes-edit]'))return;
+    const s=document.createElement('script');
+    s.src=new URL('notes/notes-edit.js?v=20260915-2255',rootUrl).href;
+    s.defer=true;
+    s.dataset.mytoolNotesEdit='1';
+    document.head.appendChild(s);
+  }
+
   function toast(text,error=false){
     document.querySelector('.mytool-nav-toast')?.remove();
     const el=document.createElement('div');el.className='mytool-nav-toast'+(error?' error':'');el.textContent=text;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);
@@ -126,6 +135,7 @@
   function mount(){
     if(!currentApp)return;
     loadShopAdminNotifications();
+    loadNotesEditor();
     const existing=document.querySelector('.mytool-bottom-nav');
     if(existing){
       nav=existing;
