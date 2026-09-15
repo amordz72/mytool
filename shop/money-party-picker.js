@@ -6,7 +6,7 @@
   function create(options){
     const supabase=options.supabase,input=typeof options.input==='string'?document.getElementById(options.input):options.input,results=typeof options.results==='string'?document.getElementById(options.results):options.results;
     if(!supabase||!input||!results)throw new Error('MoneyPartyPicker: missing required options');
-    const role=options.role||'admin',token=options.token||'',limit=options.limit||50,allowCreate=role==='admin'&&options.allowCreate===true,partyType=options.partyType||'customer',manageFavorites=role==='admin'&&options.manageFavorites!==false;
+    const role=options.role||'admin',token=options.token||'',limit=options.limit||50,allowCreate=role==='admin'&&options.allowCreate===true,partyType=options.partyType||'customer',manageFavorites=options.manageFavorites!==false;
     let selected=null,timer=null,seq=0,rows=[];
     const emit=()=>{if(typeof options.onSelect==='function')options.onSelect(selected)};
     function badges(row){const bits=[];if(row.favorite)bits.push('<span class="mpp-badge favorite">★ مفضلة</span>');if(row.financial_open)bits.push('<span class="mpp-badge financial">له رصيد/دين</span>');if(!row.active)bits.push('<span class="mpp-badge inactive">غير نشط</span>');return bits.join('')}
@@ -25,7 +25,9 @@
       const row=rows.find(r=>String(r.id)===String(id));if(!row)return;
       const next=!row.favorite;
       results.querySelectorAll('[data-favorite-party="'+id+'"]').forEach(btn=>btn.disabled=true);
-      const {error}=await supabase.rpc('admin_set_money_party_favorite',{p_party_id:Number(id),p_favorite:next});
+      const rpc=role==='worker'?'worker_set_money_party_favorite':'admin_set_money_party_favorite';
+      const args=role==='worker'?{p_session_token:token,p_party_id:Number(id),p_favorite:next}:{p_party_id:Number(id),p_favorite:next};
+      const {error}=await supabase.rpc(rpc,args);
       if(error){results.insertAdjacentHTML('afterbegin','<div class="mpp-empty error">تعذر تحديث المفضلة.</div>');if(typeof options.onError==='function')options.onError(error);return}
       row.favorite=next;
       if(typeof options.onFavoriteChange==='function')options.onFavoriteChange(row);
