@@ -8,7 +8,7 @@
   const relative=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length):'';
   const currentApp=(document.body?.dataset?.mytoolApp||script?.dataset?.app||relative.split('/').filter(Boolean)[0]||'').trim();
   const appHome=currentApp?new URL(currentApp+'/',rootUrl):rootUrl;
-  let nav=null;
+  let nav=null,notesPagerObserver=null,notesFinderObserver=null;
 
   function loadShopAdminNotifications(){
     if(currentApp!=='shop'||document.querySelector('script[data-mytool-admin-notifications]'))return;
@@ -39,9 +39,44 @@
       3:{href:appHome.href,icon:'⌂',label:'الرئيسية',title:'الرجوع إلى رئيسية '+(labels[currentApp]||'التطبيق الحالي'),home:true},
       4:null,
       5:null
-    },
-    handlers:{}
+    }
   };
+
+  function notesPageInfo(){
+    const text=document.querySelector('#notesPager .notes-page-info')?.textContent||'';
+    const match=text.match(/صفحة\s*(\d+)\s*\/\s*(\d+)/);
+    return match?match[1]+'/'+match[2]:'الصفحات';
+  }
+
+  function syncNotesPagination(){
+    if(currentApp!=='notes')return;
+    const pager=document.getElementById('notesPager');
+    const prev=pager?.querySelector('.notes-prev');
+    const next=pager?.querySelector('.notes-next');
+    state.slots[2]={icon:'←',label:'السابق',title:'الصفحة السابقة',disabled:!prev||prev.disabled,onClick(){const button=document.querySelector('#notesPager .notes-prev');if(button&&!button.disabled){button.click();setTimeout(syncNotesPagination,0)}}};
+    state.slots[4]={icon:'→',label:'التالي',title:'الصفحة التالية',disabled:!next||next.disabled,onClick(){const button=document.querySelector('#notesPager .notes-next');if(button&&!button.disabled){button.click();setTimeout(syncNotesPagination,0)}}};
+    state.slots[5]={icon:'≡',label:notesPageInfo(),title:'رقم الصفحة الحالية',disabled:true};
+    render();
+  }
+
+  function watchNotesPagination(){
+    if(currentApp!=='notes')return;
+    document.documentElement.classList.add('mytool-notes-fixed-pagination');
+    const attach=()=>{
+      const pager=document.getElementById('notesPager');
+      if(!pager)return false;
+      notesFinderObserver?.disconnect();notesFinderObserver=null;
+      notesPagerObserver?.disconnect();
+      notesPagerObserver=new MutationObserver(()=>syncNotesPagination());
+      notesPagerObserver.observe(pager,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','hidden']});
+      syncNotesPagination();
+      return true;
+    };
+    if(attach())return;
+    notesFinderObserver=new MutationObserver(()=>attach());
+    notesFinderObserver.observe(document.body,{childList:true,subtree:true});
+    syncNotesPagination();
+  }
 
   function defaultActions(){
     if(currentApp==='shop')state.slots[5]={icon:'☰',label:'القائمة',title:'فتح قائمة المحل',onClick(){const btn=document.querySelector('#drawerOpen,.menu-toggle');if(btn)btn.click();else toast('القائمة غير متاحة في هذه الصفحة',true)}};
@@ -51,16 +86,23 @@
     }
   }
 
-  function forceFlowPosition(target){
+  function forceFixedPosition(target){
     if(!target)return;
-    document.querySelectorAll('.mytool-bottom-nav-spacer').forEach(el=>el.remove());
+    let spacer=document.querySelector('.mytool-bottom-nav-spacer');
+    if(!spacer){spacer=document.createElement('div');spacer.className='mytool-bottom-nav-spacer';target.insertAdjacentElement('beforebegin',spacer)}
     const style=target.style;
-    [['position','static'],['inset','auto'],['top','auto'],['right','auto'],['bottom','auto'],['left','auto'],['transform','none'],['float','none']].forEach(([prop,value])=>style.setProperty(prop,value,'important'));
+    style.setProperty('position','fixed','important');
+    style.setProperty('inset','auto','important');
+    style.setProperty('top','auto','important');
+    style.setProperty('right','auto','important');
+    style.setProperty('bottom','calc(8px + env(safe-area-inset-bottom,0px))','important');
+    style.setProperty('left','50%','important');
+    style.setProperty('transform','translateX(-50%)','important');
+    style.setProperty('float','none','important');
   }
 
   function render(){
     if(!nav)return;
-    state.handlers={};
     for(let slot=1;slot<=5;slot++){
       const holder=nav.querySelector('[data-slot="'+slot+'"]');if(!holder)continue;
       const item=state.slots[slot];holder.innerHTML=itemHtml(slot,item);
@@ -87,10 +129,11 @@
     const existing=document.querySelector('.mytool-bottom-nav');
     if(existing){
       nav=existing;
-      forceFlowPosition(nav);
+      forceFixedPosition(nav);
       defaultActions();render();
-      requestAnimationFrame(()=>forceFlowPosition(nav));
-      setTimeout(()=>forceFlowPosition(nav),250);
+      watchNotesPagination();
+      requestAnimationFrame(()=>forceFixedPosition(nav));
+      setTimeout(()=>forceFixedPosition(nav),250);
       dispatchReady();
       return;
     }
@@ -99,10 +142,11 @@
     nav.setAttribute('aria-label','تنقل MyTool السريع');
     nav.innerHTML=[1,2,3,4,5].map(slot=>'<div class="mytool-bottom-nav-slot" data-slot="'+slot+'"></div>').join('');
     document.body.appendChild(nav);
-    forceFlowPosition(nav);
+    forceFixedPosition(nav);
     defaultActions();render();
-    requestAnimationFrame(()=>forceFlowPosition(nav));
-    setTimeout(()=>forceFlowPosition(nav),250);
+    watchNotesPagination();
+    requestAnimationFrame(()=>forceFixedPosition(nav));
+    setTimeout(()=>forceFixedPosition(nav),250);
     dispatchReady();
   }
 
