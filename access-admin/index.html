@@ -8,7 +8,7 @@
 <title>طلبات دخول الأدوات — MyTool</title>
 <script src="../auth-guard.js?v=20260915-personal1" data-access="admin"></script>
 <style>
-:root{--blue:#2ea8e6;--orange:#ff8a1f;--ink:#163047;--muted:#61778a;--line:#dbe7f0;--soft:#f6fbff;--ok:#047857;--danger:#b91c1c}*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:linear-gradient(135deg,#fff7ef,#eef9ff);color:var(--ink);padding:14px}.wrap{max-width:920px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.back{display:inline-flex;text-decoration:none;color:#14729f;font-weight:800;background:#fff;border:1px solid var(--line);padding:10px 13px;border-radius:12px}.actions{display:flex;gap:8px}.btn{font:inherit;border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#147fb2,var(--blue));color:#fff}.btn.secondary{background:#fff;color:#14729f;border:1px solid #bfe3f6}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}.btn:disabled{opacity:.55;cursor:not-allowed}.hero{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 7px 22px rgba(22,48,71,.08);margin-bottom:14px}.hero h1{margin:0 0 6px;font-size:24px}.hero p{margin:0;color:var(--muted);line-height:1.7;font-size:13px}.status{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:13px;background:#eef8ff;color:#14668e}.status.error{background:#fff1f2;color:var(--danger)}.section{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 5px 16px rgba(22,48,71,.05)}.section h2{margin:0 0 12px;font-size:18px}.empty{padding:16px;text-align:center;color:var(--muted);font-size:13px}.list{display:grid;gap:10px}.item{border:1px solid var(--line);border-radius:14px;padding:13px;background:var(--soft)}.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.name{font-weight:800;word-break:break-word}.meta{font-size:12px;color:var(--muted);line-height:1.65;margin-top:5px}.item-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.item-actions select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff;color:var(--ink)}.pill{display:inline-block;padding:3px 7px;border-radius:99px;font-size:10px;font-weight:800;background:#edf8ff;color:#14729f}.pill.owner{background:#ecfdf5;color:var(--ok)}.pill.personal{background:#fff7ed;color:#c2410c}@media(max-width:600px){body{padding:9px}.top{align-items:stretch;flex-direction:column}.actions{display:grid;grid-template-columns:1fr 1fr}.back{text-align:center;justify-content:center}.row{flex-direction:column}.item-actions{display:grid;grid-template-columns:1fr 1fr}.item-actions select{grid-column:1/-1}.btn{width:100%}}
+:root{--blue:#2ea8e6;--orange:#ff8a1f;--ink:#163047;--muted:#61778a;--line:#dbe7f0;--soft:#f6fbff;--ok:#047857;--danger:#b91c1c}*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:linear-gradient(135deg,#fff7ef,#eef9ff);color:var(--ink);padding:14px}.wrap{max-width:920px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.back{display:inline-flex;text-decoration:none;color:#14729f;font-weight:800;background:#fff;border:1px solid var(--line);padding:10px 13px;border-radius:12px}.actions{display:flex;gap:8px}.btn{font:inherit;border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#147fb2,var(--blue));color:#fff}.btn.secondary{background:#fff;color:#14729f;border:1px solid #bfe3f6}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}.btn:disabled{opacity:.55;cursor:not-allowed}.hero{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 7px 22px rgba(22,48,71,.08);margin-bottom:12px}.hero h1{margin:0 0 6px;font-size:24px}.hero p{margin:0;color:var(--muted);line-height:1.7;font-size:13px}.status{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:13px;background:#eef8ff;color:#14668e}.status.error{background:#fff1f2;color:var(--danger)}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:7px;margin:12px 0;box-shadow:0 5px 16px rgba(22,48,71,.05)}.tab-btn{font:inherit;border:0;background:transparent;color:var(--muted);font-weight:800;padding:11px 12px;border-radius:11px;cursor:pointer}.tab-btn.active{background:#eaf7fe;color:#14668e}.tab-panel[hidden]{display:none!important}.section{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 5px 16px rgba(22,48,71,.05)}.section h2{margin:0 0 12px;font-size:18px}.empty{padding:16px;text-align:center;color:var(--muted);font-size:13px}.list{display:grid;gap:10px}.item{border:1px solid var(--line);border-radius:14px;padding:13px;background:var(--soft)}.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.name{font-weight:800;word-break:break-word}.meta{font-size:12px;color:var(--muted);line-height:1.65;margin-top:5px}.item-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.item-actions select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff;color:var(--ink)}.pill{display:inline-block;padding:3px 7px;border-radius:99px;font-size:10px;font-weight:800;background:#edf8ff;color:#14729f}.pill.owner{background:#ecfdf5;color:var(--ok)}.pill.personal{background:#fff7ed;color:#c2410c}.pill.rejected{background:#fff1f2;color:var(--danger)}.pill.approved{background:#ecfdf5;color:var(--ok)}.pill.expired{background:#f3f4f6;color:#6b7280}.history-note{font-size:12px;color:var(--muted);margin:-4px 0 10px}@media(max-width:600px){body{padding:9px}.top{align-items:stretch;flex-direction:column}.actions{display:grid;grid-template-columns:1fr 1fr}.back{text-align:center;justify-content:center}.row{flex-direction:column}.item-actions{display:grid;grid-template-columns:1fr 1fr}.item-actions select{grid-column:1/-1}.btn{width:100%}}
 </style>
 </head>
 <body>
@@ -20,19 +20,34 @@
 
   <section class="hero">
     <h1>طلبات دخول الأدوات</h1>
-    <p>هذه الصفحة تدير وصول أجهزة العملاء والأجهزة الشخصية إلى الأدوات العامة فقط. الجهاز الشخصي يحتاج موافقة الإدارة أيضًا، ولا يحصل في هذه الدفعة على PIN أو Offline.</p>
+    <p>الرئيسية للعمل اليومي والقرارات الحالية. السجل للطلبات السابقة والمعلومات التكميلية.</p>
     <div id="status" class="status">جاري التحقق من جلسة الإدارة…</div>
   </section>
 
-  <section class="section">
-    <h2>طلبات تنتظر القرار <span id="pendingCount" class="pill">0</span></h2>
-    <div id="requests" class="list"><div class="empty">جاري التحميل…</div></div>
-  </section>
+  <nav class="tabs" role="tablist" aria-label="أقسام إدارة الوصول">
+    <button id="mainTabBtn" class="tab-btn active" type="button" role="tab" aria-selected="true" data-tab="main">الرئيسية</button>
+    <button id="historyTabBtn" class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="history">السجل</button>
+  </nav>
 
-  <section class="section">
-    <h2>الجلسات الحالية <span id="sessionCount" class="pill owner">0</span></h2>
-    <div id="sessions" class="list"><div class="empty">جاري التحميل…</div></div>
-  </section>
+  <div id="mainTab" class="tab-panel" role="tabpanel">
+    <section class="section">
+      <h2>طلبات تنتظر القرار <span id="pendingCount" class="pill">0</span></h2>
+      <div id="requests" class="list"><div class="empty">جاري التحميل…</div></div>
+    </section>
+
+    <section class="section">
+      <h2>الجلسات الحالية <span id="sessionCount" class="pill owner">0</span></h2>
+      <div id="sessions" class="list"><div class="empty">جاري التحميل…</div></div>
+    </section>
+  </div>
+
+  <div id="historyTab" class="tab-panel" role="tabpanel" hidden>
+    <section class="section">
+      <h2>آخر القرارات <span id="historyCount" class="pill">0</span></h2>
+      <div class="history-note">يعرض آخر 50 طلبًا غير معلّق: مقبول، مرفوض أو منتهي.</div>
+      <div id="history" class="list"><div class="empty">جاري التحميل…</div></div>
+    </section>
+  </div>
 </main>
 
 <script type="module">
@@ -43,6 +58,7 @@ const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj'
 const ACCESS_API='https://mytool-access.dzamor72.workers.dev'
 const OWNER_TOKEN_KEY='mytool_tools_owner_token'
 const OWNER_EXPIRES_KEY='mytool_tools_owner_expires_at'
+const TAB_KEY='mytool_access_admin_tab'
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY)
 const $=id=>document.getElementById(id)
 let ownerToken=''
@@ -51,6 +67,20 @@ function setStatus(text,error=false){const el=$('status');el.textContent=text;el
 function fmt(ts){if(!ts)return '—';try{return new Date(Number(ts)).toLocaleString('ar-DZ')}catch{return '—'}}
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function accessLabel(type){return type==='personal'?'جهاز شخصي':type==='paid'?'مدفوع':'عميل مؤقت'}
+function requestStatusLabel(status){return status==='approved'?'مقبول':status==='rejected'?'مرفوض':status==='expired'?'منتهي':'غير معروف'}
+function requestStatusClass(status){return ['approved','rejected','expired'].includes(status)?status:''}
+
+function showTab(name){
+  const active=name==='history'?'history':'main'
+  $('mainTab').hidden=active!=='main'
+  $('historyTab').hidden=active!=='history'
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    const on=btn.dataset.tab===active
+    btn.classList.toggle('active',on)
+    btn.setAttribute('aria-selected',on?'true':'false')
+  })
+  sessionStorage.setItem(TAB_KEY,active)
+}
 
 async function api(path,{method='GET',token=ownerToken,body}={}){
   const headers={Accept:'application/json'}
@@ -93,8 +123,7 @@ function renderRequests(rows){
   if(!rows.length){$('requests').innerHTML='<div class="empty">لا توجد طلبات معلقة الآن.</div>';return}
   $('requests').innerHTML=rows.map(row=>{
     const personal=row.access_type==='personal'
-    return `
-    <article class="item" data-request-id="${escapeHtml(row.id)}">
+    return `<article class="item" data-request-id="${escapeHtml(row.id)}">
       <div class="row"><div><div class="name">${escapeHtml(row.identifier)}</div><div class="meta">${escapeHtml(row.client_label||'جهاز بدون تسمية')}<br>النوع: ${escapeHtml(accessLabel(row.access_type))}<br>أرسل: ${escapeHtml(fmt(row.created_at))}<br>ينتهي الطلب: ${escapeHtml(fmt(row.request_expires_at))}</div></div><span class="pill ${personal?'personal':''}">${escapeHtml(personal?'personal':'pending')}</span></div>
       <div class="item-actions">
         <select class="minutes" aria-label="مدة الجلسة">${durationOptions(personal)}</select>
@@ -111,12 +140,34 @@ function renderSessions(rows){
   const active=rows.filter(row=>!row.revoked_at&&Number(row.expires_at)>Date.now())
   $('sessionCount').textContent=String(active.length)
   if(!active.length){$('sessions').innerHTML='<div class="empty">لا توجد جلسات فعالة.</div>';return}
-  $('sessions').innerHTML=active.map(row=>`
-    <article class="item" data-session-id="${escapeHtml(row.id)}">
-      <div class="row"><div><div class="name">${row.role==='owner'?'جلسة إدارة':row.access_type==='personal'?'جهاز شخصي معتمد':'جلسة أدوات'}</div><div class="meta">النوع: ${escapeHtml(accessLabel(row.access_type))}<br>تنتهي: ${escapeHtml(fmt(row.expires_at))}</div></div><span class="pill ${row.role==='owner'?'owner':row.access_type==='personal'?'personal':''}">${escapeHtml(row.role==='owner'?'owner':row.access_type||'tools')}</span></div>
+  $('sessions').innerHTML=active.map(row=>{
+    const owner=row.role==='owner'
+    const personal=!owner&&row.access_type==='personal'
+    const title=owner?'جلسة إدارة':personal?'جهاز شخصي معتمد':'جلسة أدوات'
+    const typeLabel=owner?'إدارة':accessLabel(row.access_type)
+    const badge=owner?'owner':row.access_type||'tools'
+    const badgeClass=owner?'owner':personal?'personal':''
+    return `<article class="item" data-session-id="${escapeHtml(row.id)}">
+      <div class="row"><div><div class="name">${escapeHtml(title)}</div><div class="meta">النوع: ${escapeHtml(typeLabel)}<br>تنتهي: ${escapeHtml(fmt(row.expires_at))}</div></div><span class="pill ${badgeClass}">${escapeHtml(badge)}</span></div>
       ${row.role==='tools'?'<div class="item-actions"><button class="btn danger revoke" type="button">إلغاء الجلسة فورًا</button></div>':''}
-    </article>`).join('')
+    </article>`
+  }).join('')
   document.querySelectorAll('.revoke').forEach(btn=>btn.addEventListener('click',()=>revoke(btn)))
+}
+
+function renderHistory(rows){
+  const history=rows.filter(row=>row.status!=='pending').slice(0,50)
+  $('historyCount').textContent=String(history.length)
+  if(!history.length){$('history').innerHTML='<div class="empty">لا يوجد سجل قرارات بعد.</div>';return}
+  $('history').innerHTML=history.map(row=>{
+    const personal=row.access_type==='personal'
+    let extra=''
+    if(row.status==='approved'&&row.approved_until)extra=`<br>اعتماد حتى: ${escapeHtml(fmt(row.approved_until))}`
+    if(row.status==='rejected'&&row.blocked_until)extra=`<br>الحظر حتى: ${escapeHtml(fmt(row.blocked_until))}`
+    return `<article class="item">
+      <div class="row"><div><div class="name">${escapeHtml(row.identifier)}</div><div class="meta">${escapeHtml(row.client_label||'جهاز بدون تسمية')}<br>النوع: ${escapeHtml(accessLabel(row.access_type))}<br>أرسل: ${escapeHtml(fmt(row.created_at))}<br>القرار: ${escapeHtml(fmt(row.decision_at))}${extra}</div></div><span class="pill ${requestStatusClass(row.status)} ${personal?'personal':''}">${escapeHtml(requestStatusLabel(row.status))}</span></div>
+    </article>`
+  }).join('')
 }
 
 async function decide(button,approve){
@@ -149,12 +200,14 @@ async function revoke(button){
 }
 
 async function loadAll(){
-  const [requests,sessions]=await Promise.all([
+  const [requests,sessions,history]=await Promise.all([
     api('/v1/admin/requests?status=pending&limit=100'),
-    api('/v1/admin/sessions')
+    api('/v1/admin/sessions'),
+    api('/v1/admin/requests?status=all&limit=50')
   ])
   renderRequests(requests.requests||[])
   renderSessions(sessions.sessions||[])
+  renderHistory(history.requests||[])
   setStatus('متصل بخدمة الوصول. القرارات تحفظ مباشرة في D1.')
 }
 
@@ -165,11 +218,14 @@ async function boot(force=false){
     else setStatus(`تعذر فتح إدارة الوصول: ${error?.data?.code||error.message}`,true)
     $('requests').innerHTML='<div class="empty">تعذر تحميل الطلبات.</div>'
     $('sessions').innerHTML='<div class="empty">تعذر تحميل الجلسات.</div>'
+    $('history').innerHTML='<div class="empty">تعذر تحميل السجل.</div>'
   }finally{$('refreshBtn').disabled=false;$('newOwnerBtn').disabled=false}
 }
 
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showTab(btn.dataset.tab)))
 $('refreshBtn').addEventListener('click',()=>boot(false))
 $('newOwnerBtn').addEventListener('click',()=>boot(true))
+showTab(sessionStorage.getItem(TAB_KEY)||'main')
 boot(false)
 </script>
 </body>
