@@ -10,6 +10,15 @@
   const appHome=currentApp?new URL(currentApp+'/',rootUrl):rootUrl;
   let nav=null;
 
+  function loadShopAdminNotifications(){
+    if(currentApp!=='shop'||document.querySelector('script[data-mytool-admin-notifications]'))return;
+    const s=document.createElement('script');
+    s.src=new URL('shop/admin-notifications.js?v=20260915-2329',rootUrl).href;
+    s.defer=true;
+    s.dataset.mytoolAdminNotifications='1';
+    document.head.appendChild(s);
+  }
+
   function toast(text,error=false){
     document.querySelector('.mytool-nav-toast')?.remove();
     const el=document.createElement('div');el.className='mytool-nav-toast'+(error?' error':'');el.textContent=text;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);
@@ -74,6 +83,7 @@
 
   function mount(){
     if(!currentApp)return;
+    loadShopAdminNotifications();
     const existing=document.querySelector('.mytool-bottom-nav');
     if(existing){
       nav=existing;
