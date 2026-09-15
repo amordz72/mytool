@@ -7,21 +7,34 @@
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at';
   const TOOLS_TOKEN_KEY='mytool_tools_access_token';
   const TOOLS_EXPIRES_KEY='mytool_tools_access_expires_at';
+  const TOOLS_TYPE_KEY='mytool_tools_access_type';
   const ACCESS_API='https://mytool-access.dzamor72.workers.dev';
   const guardScript=document.currentScript;
   const rootUrl=new URL('./',guardScript?.src||location.href);
-  const NAV_VERSION='20260915-access1';
+  const NAV_VERSION='20260915-personal1';
 
   const now=Date.now();
   const adminActive=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now;
   const emergencyActive=Number(localStorage.getItem(EMERGENCY_EXPIRES_KEY)||0)>now;
   const workerActive=Boolean(localStorage.getItem(WORKER_TOKEN_KEY))&&Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)>now;
-  let toolsToken='';
-  let toolsExpiry=0;
-  try{
-    toolsToken=sessionStorage.getItem(TOOLS_TOKEN_KEY)||'';
-    toolsExpiry=Number(sessionStorage.getItem(TOOLS_EXPIRES_KEY)||0);
-  }catch(_e){}
+
+  function readTools(storage){
+    try{
+      return {
+        storage,
+        token:storage.getItem(TOOLS_TOKEN_KEY)||'',
+        expiry:Number(storage.getItem(TOOLS_EXPIRES_KEY)||0),
+        accessType:storage.getItem(TOOLS_TYPE_KEY)||'client'
+      };
+    }catch(_e){return {storage,token:'',expiry:0,accessType:'client'}}
+  }
+
+  const tabTools=readTools(sessionStorage);
+  const savedTools=readTools(localStorage);
+  const toolsState=tabTools.token&&tabTools.expiry>now?tabTools:(savedTools.token&&savedTools.expiry>now?savedTools:{storage:null,token:'',expiry:0,accessType:'client'});
+  const toolsToken=toolsState.token;
+  const toolsExpiry=toolsState.expiry;
+  const toolsAccessType=toolsState.accessType;
   const toolsActive=Boolean(toolsToken)&&toolsExpiry>now;
   const authenticated=adminActive||emergencyActive||workerActive||toolsActive;
 
@@ -43,6 +56,16 @@
     return;
   }
 
+  function clearToolsSession(){
+    [sessionStorage,localStorage].forEach(storage=>{
+      try{
+        storage.removeItem(TOOLS_TOKEN_KEY);
+        storage.removeItem(TOOLS_EXPIRES_KEY);
+        storage.removeItem(TOOLS_TYPE_KEY);
+      }catch(_e){}
+    });
+  }
+
   const toolsGate=toolsMayEnter&&!adminActive&&!emergencyActive;
   if(toolsGate){
     document.documentElement.style.visibility='hidden';
@@ -54,13 +77,13 @@
       if(!response.ok||!data?.ok||data.role!=='tools')throw new Error('TOOLS_SESSION_INVALID');
       document.documentElement.style.visibility='';
     }).catch(()=>{
-      try{sessionStorage.removeItem(TOOLS_TOKEN_KEY);sessionStorage.removeItem(TOOLS_EXPIRES_KEY)}catch(_e){}
+      clearToolsSession();
       try{sessionStorage.setItem('mytool_blocked_path',location.pathname+location.search+location.hash)}catch(_e){}
       location.replace(rootUrl.href);
     });
   }
 
-  window.MyToolAccessContext=Object.freeze({access,adminActive,emergencyActive,workerActive,toolsActive,authenticated,rootUrl:rootUrl.href});
+  window.MyToolAccessContext=Object.freeze({access,adminActive,emergencyActive,workerActive,toolsActive,toolsAccessType,authenticated,rootUrl:rootUrl.href});
   if(guardScript?.dataset?.nav==='off')return;
 
   if(!document.querySelector('link[data-mytool-bottom-nav]')){
