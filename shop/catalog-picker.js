@@ -14,10 +14,30 @@
   }[screen];
   if(!config)return;
 
-  let supabase=null,rows=[],page=1,busy=false,scannerBuffer='',scannerLast=0;
+  let supabase=null,rows=[],page=1,busy=false,scannerBuffer='',scannerLast=0,inventoryGuardStarted=false;
   const PAGE_SIZE=10;
   const workerToken=()=>localStorage.getItem('mytool_shop_worker_token')||'';
   const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+  function ensureSingleInventoryDom(){
+    if(screen!=='inventory')return;
+    ['inventoryCard','inventoryForm','message'].forEach(id=>{
+      const nodes=[...document.querySelectorAll('[id="'+id+'"]')];
+      nodes.slice(1).forEach(node=>{
+        const duplicateCard=node.closest?.('[id="inventoryCard"]');
+        if(duplicateCard&&duplicateCard!==nodes[0]?.closest?.('[id="inventoryCard"]'))duplicateCard.remove();
+        else node.remove();
+      });
+    });
+  }
+
+  function startInventoryGuard(){
+    if(screen!=='inventory'||inventoryGuardStarted)return;
+    inventoryGuardStarted=true;
+    ensureSingleInventoryDom();
+    const root=document.getElementById('app')||document.body;
+    new MutationObserver(ensureSingleInventoryDom).observe(root,{childList:true,subtree:true});
+  }
 
   async function db(){
     if(supabase)return supabase;
@@ -33,7 +53,7 @@
     return qty<=0?'نفد 0':'📦 '+qty;
   }
   function stockClass(row){
-    if(!row.is_verified)return 'unverified';
+    if(!row.is_verified)return'unverified';
     return Number(row.stock_quantity||0)<=0?'out':'available';
   }
 
@@ -68,8 +88,10 @@
   function mount(select){
     if(select.dataset.catalogPickerMounted==='1')return select.parentElement.querySelector('[data-catalog-picker]');
     const parent=select.parentElement;
+    select.dataset.enhanced='1';
+    select.classList.add('native-product-select');
     const legacy=[...parent.children].filter(el=>el!==select&&(el.matches?.('input[type="search"]')||el.classList?.contains('product-search-results')||el.classList?.contains('product-selected')));
-    legacy.forEach(el=>{el.style.display='none';el.dataset.legacyPicker='1'});
+    legacy.forEach(el=>el.remove());
 
     const root=document.createElement('div');root.dataset.catalogPicker='1';root.dataset.collapsed='0';root.className='catalog-picker';
     const search='<input class="catalog-search" type="search" inputmode="search" autocomplete="off" placeholder="ابحث بالاسم أو Product ID أو الباركود">';
@@ -189,11 +211,14 @@
   }
 
   async function tryStart(attempt=0){
+    startInventoryGuard();
     const select=document.getElementById(config.select),branch=document.getElementById(config.branch);
-    if(!select||!branch||!branch.value||select.dataset.enhanced!=='1'){if(attempt<60)setTimeout(()=>tryStart(attempt+1),180);return}
+    if(!select||!branch||!branch.value){if(attempt<60)setTimeout(()=>tryStart(attempt+1),180);return}
+    const root=mount(select);
+    root.querySelector('.catalog-note').textContent='جاري تحميل المنتجات…';
     let initial;try{initial=await loadRows()}catch(_e){initial=null}
-    if(initial===null){if(attempt<60)setTimeout(()=>tryStart(attempt+1),300);return}
-    const root=mount(select);updateCategoryOptions(root);render(root,select);root.querySelector('.catalog-note').textContent='الكمية والحالة حسب الفرع المختار. قارئ USB يعمل كلوحة مفاتيح ويمكن المسح مباشرة.';
+    if(initial===null){root.querySelector('.catalog-note').textContent='تعذر التحميل الآن؛ ستتم إعادة المحاولة.';if(attempt<60)setTimeout(()=>tryStart(attempt+1),300);return}
+    updateCategoryOptions(root);render(root,select);root.querySelector('.catalog-note').textContent='الكمية والحالة حسب الفرع المختار. قارئ USB يعمل كلوحة مفاتيح ويمكن المسح مباشرة.';
     branch.addEventListener('change',()=>refresh(select,root));window.addEventListener('shop:catalog-refresh',()=>refresh(select,root));bindGlobalScanner(select,root);
   }
 
