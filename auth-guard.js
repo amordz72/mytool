@@ -11,7 +11,7 @@
   const ACCESS_API='https://mytool-access.dzamor72.workers.dev';
   const guardScript=document.currentScript;
   const rootUrl=new URL('./',guardScript?.src||location.href);
-  const NAV_VERSION='20260916-options-panel-1';
+  const NAV_VERSION='20260916-safe-clearance-1';
 
   const now=Date.now();
   const adminActive=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now;
@@ -68,5 +68,8 @@
   }
   if(!document.querySelector('script[data-mytool-bottom-nav]')){
     const nav=document.createElement('script');nav.src=new URL('mytool-bottom-nav.js?v='+NAV_VERSION,rootUrl).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=rootUrl.href;document.head.appendChild(nav);
+  }
+  if(!document.querySelector('script[data-mytool-bottom-nav-space]')){
+    const space=document.createElement('script');space.src=new URL('mytool-bottom-nav-space.js?v='+NAV_VERSION,rootUrl).href;space.defer=true;space.dataset.mytoolBottomNavSpace='1';document.head.appendChild(space);
   }
 })();
