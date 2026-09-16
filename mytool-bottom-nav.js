@@ -8,7 +8,7 @@
   const relative=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length):'';
   const currentApp=(document.body?.dataset?.mytoolApp||script?.dataset?.app||relative.split('/').filter(Boolean)[0]||'').trim();
   const appHome=currentApp?new URL(currentApp+'/',rootUrl):rootUrl;
-  let nav=null,notesPagerObserver=null,notesFinderObserver=null;
+  let nav=null,notesPagerObserver=null,notesFinderObserver=null,optionsPanel=null;
 
   function loadShopAdminNotifications(){
     if(currentApp!=='shop'||document.querySelector('script[data-mytool-admin-notifications]'))return;
@@ -30,7 +30,7 @@
   function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
   function itemHtml(slot,item){
     if(!item)return '<div class="mytool-bottom-nav-empty" aria-hidden="true"></div>';
-    const icon=item.icon||'•',label=item.label||'',title=item.title||label,cls='mytool-bottom-nav-item'+(item.home?' is-home':'');
+    const icon=item.icon||'•',label=item.label||'',title=item.title||label,cls='mytool-bottom-nav-item'+(item.home?' is-home':'')+(item.optionsTrigger?' is-options':'');
     if(item.href)return '<a class="'+cls+'" href="'+item.href+'" title="'+escapeHtml(title)+'"><span class="mytool-nav-icon">'+escapeHtml(icon)+'</span><span class="mytool-nav-label">'+escapeHtml(label)+'</span></a>';
     return '<button type="button" class="'+cls+'" data-mytool-action-slot="'+slot+'" title="'+escapeHtml(title)+'"'+(item.disabled?' disabled':'')+'><span class="mytool-nav-icon">'+escapeHtml(icon)+'</span><span class="mytool-nav-label">'+escapeHtml(label)+'</span></button>';
   }
@@ -41,7 +41,7 @@
     3:{href:appHome.href,icon:'⌂',label:'الرئيسية',title:'الرجوع إلى رئيسية '+(labels[currentApp]||'التطبيق الحالي'),home:true},
     4:null,
     5:null
-  }};
+  },options:[],optionsConfig:{icon:'⋯',label:'خيارات',title:'خيارات إضافية',slot:5}};
 
   function privilegedToolsAccess(){
     const ctx=window.MyToolAccessContext;
@@ -73,6 +73,50 @@
     else showFloatingTools(true);
   }
 
+  function closeOptions(){
+    optionsPanel?.remove();optionsPanel=null;
+    nav?.querySelector('.mytool-bottom-nav-item.is-options')?.setAttribute('aria-expanded','false');
+  }
+  function optionItemHtml(item,index){
+    const icon=item?.icon||'•',label=item?.label||item?.title||'خيار',title=item?.title||label,disabled=item?.disabled?' disabled':'';
+    if(item?.href)return '<a class="mytool-nav-option-item" data-mytool-option-index="'+index+'" href="'+escapeHtml(item.href)+'" title="'+escapeHtml(title)+'"><span class="mytool-nav-option-icon">'+escapeHtml(icon)+'</span><span>'+escapeHtml(label)+'</span></a>';
+    return '<button type="button" class="mytool-nav-option-item" data-mytool-option-index="'+index+'" title="'+escapeHtml(title)+'"'+disabled+'><span class="mytool-nav-option-icon">'+escapeHtml(icon)+'</span><span>'+escapeHtml(label)+'</span></button>';
+  }
+  function openOptions(){
+    if(!nav||!state.options.length)return;
+    closeOptions();
+    optionsPanel=document.createElement('div');
+    optionsPanel.className='mytool-nav-options-panel';
+    optionsPanel.setAttribute('dir','rtl');
+    optionsPanel.setAttribute('role','menu');
+    optionsPanel.setAttribute('aria-label',state.optionsConfig.title||'خيارات إضافية');
+    optionsPanel.innerHTML='<div class="mytool-nav-options-head"><strong>'+escapeHtml(state.optionsConfig.title||'خيارات إضافية')+'</strong><button type="button" class="mytool-nav-options-close" aria-label="إغلاق">×</button></div><div class="mytool-nav-options-grid">'+state.options.map(optionItemHtml).join('')+'</div>';
+    document.body.appendChild(optionsPanel);
+    nav.querySelector('.mytool-bottom-nav-item.is-options')?.setAttribute('aria-expanded','true');
+    optionsPanel.querySelector('.mytool-nav-options-close')?.addEventListener('click',closeOptions);
+    optionsPanel.querySelectorAll('[data-mytool-option-index]').forEach(el=>{
+      const item=state.options[Number(el.dataset.mytoolOptionIndex)];
+      if(item?.href){el.addEventListener('click',()=>closeOptions());return}
+      if(typeof item?.onClick==='function')el.addEventListener('click',async()=>{if(item.disabled)return;closeOptions();try{await item.onClick()}catch(_e){toast('تعذر تنفيذ الخيار',true)}});
+    });
+  }
+  function toggleOptions(){if(optionsPanel)closeOptions();else openOptions()}
+  function optionSlot(config={}){
+    const preferred=Number(config.slot||5);const order=[preferred,5,1,4,2].filter((v,i,a)=>a.indexOf(v)===i&&[1,2,4,5].includes(v));
+    return order.find(slot=>!state.slots[slot]||state.slots[slot]?.optionsTrigger)||null;
+  }
+  function placeOptionsButton(items=[],config={}){
+    [1,2,4,5].forEach(slot=>{if(state.slots[slot]?.optionsTrigger)state.slots[slot]=null});
+    state.options=(items||[]).filter(Boolean);
+    state.optionsConfig={icon:config.icon||'⋯',label:config.label||'خيارات',title:config.title||'خيارات إضافية',slot:Number(config.slot||5)};
+    closeOptions();
+    if(!state.options.length)return;
+    const slot=optionSlot(state.optionsConfig);if(!slot)return;
+    state.slots[slot]={icon:state.optionsConfig.icon,label:state.optionsConfig.label,title:state.optionsConfig.title,optionsTrigger:true,onClick:toggleOptions};
+  }
+  function setOptions(items=[],config={}){placeOptionsButton(items,config);render()}
+  function configuredOverflowLabels(){return new Set(String(document.body?.dataset?.mytoolNavOverflow||'').split(',').map(x=>x.trim()).filter(Boolean))}
+
   function currentNotesTab(){
     const root=document.documentElement;
     if(root.classList.contains('notes-archive-mode'))return 'archive';
@@ -82,6 +126,7 @@
   function notesTabAction(tab,icon,label,active){return {icon,label,title:'فتح '+label,home:active,onClick(){document.querySelector('#notesTabs [data-tab="'+tab+'"]')?.click()}}}
   function setNotesNav(){
     if(currentApp!=='notes')return;
+    closeOptions();state.options=[];
     const tab=currentNotesTab();
     const pager=document.getElementById('notesPager');
     const prev=pager?.querySelector('.notes-prev');
@@ -131,18 +176,25 @@
     syncToolsPlacement();
     for(let slot=1;slot<=5;slot++){
       const holder=nav.querySelector('[data-slot="'+slot+'"]');if(!holder)continue;const item=state.slots[slot];holder.innerHTML=itemHtml(slot,item);
-      if(item&&!item.href&&typeof item.onClick==='function'){const button=holder.querySelector('button');if(button)button.addEventListener('click',item.onClick)}
+      if(item&&!item.href&&typeof item.onClick==='function'){const button=holder.querySelector('button');if(button){button.addEventListener('click',item.onClick);if(item.optionsTrigger){button.setAttribute('aria-haspopup','menu');button.setAttribute('aria-expanded',optionsPanel?'true':'false')}}}
     }
   }
   function setActions(actions=[]){
+    closeOptions();state.options=[];
     [1,2,4,5].forEach(slot=>state.slots[slot]=null);
-    actions.forEach(action=>{const slot=Number(action?.slot);if([1,2,4,5].includes(slot))state.slots[slot]=action});render();
+    const overflowLabels=configuredOverflowLabels(),overflow=[],direct=[];
+    actions.forEach(action=>{if(action?.overflow===true||overflowLabels.has(String(action?.label||'')))overflow.push(action);else direct.push(action)});
+    direct.forEach(action=>{const slot=Number(action?.slot);if([1,2,4,5].includes(slot))state.slots[slot]=action});
+    if(overflow.length)placeOptionsButton(overflow,{title:document.body?.dataset?.mytoolNavOptionsTitle||'خيارات إضافية',label:document.body?.dataset?.mytoolNavOptionsLabel||'خيارات',icon:document.body?.dataset?.mytoolNavOptionsIcon||'⋯',slot:Number(document.body?.dataset?.mytoolNavOptionsSlot||5)});
+    render();
   }
   function dispatchReady(){window.dispatchEvent(new CustomEvent('mytool-bottom-nav-ready',{detail:{currentApp,appHome:appHome.href,root:rootUrl.href}}))}
 
   function mount(){
     if(!currentApp)return;
     loadShopAdminNotifications();loadNotesEditor();loadNotesTabs();
+    document.addEventListener('pointerdown',event=>{if(optionsPanel&&!optionsPanel.contains(event.target)&&!nav?.contains(event.target))closeOptions()});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')closeOptions()});
     const existing=document.querySelector('.mytool-bottom-nav');
     if(existing){nav=existing;nav.setAttribute('dir','rtl');forceFixedPosition(nav);defaultActions();render();watchNotesPagination();requestAnimationFrame(()=>forceFixedPosition(nav));setTimeout(()=>forceFixedPosition(nav),250);dispatchReady();return}
     nav=document.createElement('nav');nav.className='mytool-bottom-nav';nav.setAttribute('dir','rtl');nav.setAttribute('aria-label','تنقل MyTool السريع');nav.innerHTML=[1,2,3,4,5].map(slot=>'<div class="mytool-bottom-nav-slot" data-slot="'+slot+'"></div>').join('');document.body.appendChild(nav);
@@ -150,6 +202,6 @@
   }
 
   if(currentApp==='notes')window.addEventListener('mytool-notes-tab-change',()=>setNotesNav());
-  window.MyToolBottomNav={setActions,toast,get currentApp(){return currentApp},get appHome(){return appHome.href},get root(){return rootUrl.href}};
+  window.MyToolBottomNav={setActions,setOptions,closeOptions,toast,get currentApp(){return currentApp},get appHome(){return appHome.href},get root(){return rootUrl.href}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
