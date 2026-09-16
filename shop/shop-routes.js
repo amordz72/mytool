@@ -30,7 +30,6 @@
   function allowed(route,context){const role=context?.role||'admin';if(!route.roles.includes(role))return false;if(role==='admin'||!route.permission)return true;const permissions=context?.permissions||{};return permissions[route.permission]===true||permissions['can_'+route.permission]===true;}
   function list(context,placement){return routes.filter(route=>(!placement||route.placement.includes(placement))&&allowed(route,context));}
   function get(id){return routes.find(route=>route.id===id)||null}
-
   const ADMIN_BRANCH_KEY='mytool_admin_branch_id';
   const BRANCH_SELECT_IDS=['saleBranch','purchaseBranch','stockBranch','inventoryBranch','transferSource','branchSelect'];
   const LEGACY_BRANCH_CARD_SCREENS=new Set(['sale','purchase','stock','inventory']);
@@ -45,8 +44,9 @@
   function loadPricingAccess(){const screen=document.body?.dataset?.screen||'';if(!['sale','stock'].includes(screen)||document.querySelector('script[data-pricing-access]'))return;const script=document.createElement('script');script.src='pricing-access.js?v=20260913-1735';script.defer=true;script.dataset.pricingAccess='1';document.head.appendChild(script);}
   function loadInventoryPricingButton(){if(document.body?.dataset?.screen!=='inventory'||document.querySelector('script[data-inventory-pricing-button]'))return;const script=document.createElement('script');script.src='inventory-quick-pricing-button.js?v=20260913-2022';script.defer=true;script.dataset.inventoryPricingButton='1';document.head.appendChild(script);}
   function loadWorkerMoneyShortcut(){if(document.body?.dataset?.screen!=='index'||document.querySelector('script[data-worker-money-shortcut]'))return;const script=document.createElement('script');script.src='worker-money-shortcut.js?v=20260914-001';script.defer=true;script.dataset.workerMoneyShortcut='1';document.head.appendChild(script);}
+  function loadCoreDesign(){const screen=document.body?.dataset?.screen||'';if(!['index','sale','stock'].includes(screen)||document.querySelector('script[data-shop-core-design]'))return;const script=document.createElement('script');script.src='shop-core-design.js?v=20260916-1';script.defer=true;script.dataset.shopCoreDesign='1';document.head.appendChild(script);}
   watchAdminBranchContext();
-  const loadExtras=()=>{loadPricingAccess();loadInventoryPricingButton();loadWorkerMoneyShortcut();};
+  const loadExtras=()=>{loadPricingAccess();loadInventoryPricingButton();loadWorkerMoneyShortcut();loadCoreDesign();};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadExtras,{once:true});else loadExtras();
   window.ShopRoutes=Object.freeze({groups,all:Object.freeze(routes.map(Object.freeze)),list,get,allowed,applySavedAdminBranch});
 })();
