@@ -1,4 +1,5 @@
 dialog[open]{max-height:calc(100dvh - var(--mytool-bottom-nav-space,92px) - 16px);overflow:hidden}
-dialog[open] .modal{max-height:calc(100dvh - var(--mytool-bottom-nav-space,92px) - 16px);overflow:auto;overscroll-behavior:contain;padding-bottom:0}
-dialog[open] .modal-actions{position:sticky;bottom:0;z-index:6;margin-top:12px;padding:10px 0 8px;background:linear-gradient(to bottom,rgba(255,255,255,.92),#fff 30%);border-top:1px solid #edf2f6}
-@media(max-width:620px){dialog[open]{position:fixed;top:8px;right:7px;bottom:calc(var(--mytool-bottom-nav-space,92px) + 8px);left:7px;width:auto;max-height:none;margin:0;overflow:hidden}dialog[open] .modal{height:100%;max-height:none;overflow:auto}.modal-actions{grid-template-columns:1fr 1fr}}
+dialog[open] .modal{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;max-height:calc(100dvh - var(--mytool-bottom-nav-space,92px) - 16px);overflow:hidden;overscroll-behavior:contain;padding:14px}
+dialog[open] .mapping-grid{min-height:0;overflow:auto;overscroll-behavior:contain;padding:2px 2px 12px;margin-top:10px;align-content:start}
+dialog[open] .modal-actions{position:relative;z-index:6;margin-top:0;padding:10px 0 2px;background:#fff;border-top:1px solid #edf2f6;box-shadow:0 -10px 18px rgba(255,255,255,.96)}
+@media(max-width:620px){dialog[open]{position:fixed;top:8px;right:7px;bottom:calc(var(--mytool-bottom-nav-space,92px) + 8px);left:7px;width:auto;max-height:none;margin:0;overflow:hidden}dialog[open] .modal{height:100%;max-height:none;overflow:hidden}.modal-actions{grid-template-columns:1fr 1fr}}
