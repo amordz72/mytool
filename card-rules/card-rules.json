@@ -17,7 +17,7 @@
       "snLength": null,
       "uniformFormat": true,
       "outputTitle": "بطاقات Mobilis بدون SN",
-      "filePrefix": "MOB",
+      "filePrefix": "MB",
       "detectValueFromFilename": true,
       "defaultValue": "CARTE",
       "outputBom": false
@@ -38,7 +38,7 @@
       "snLength": 15,
       "uniformFormat": true,
       "outputTitle": "بطاقات Idoom بدون SN",
-      "filePrefix": "IDOOM",
+      "filePrefix": "ID",
       "detectValueFromFilename": false,
       "defaultValue": "",
       "outputBom": false
