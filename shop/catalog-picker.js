@@ -14,7 +14,7 @@
   }[screen];
   if(!config)return;
 
-  let supabase=null,rows=[],page=1,busy=false,scannerBuffer='',scannerLast=0,inventoryGuardStarted=false;
+  let supabase=null,rows=[],page=1,busy=false,scannerBuffer='',scannerLast=0,inventoryGuardStarted=false,started=false;
   const PAGE_SIZE=10;
   const workerToken=()=>localStorage.getItem('mytool_shop_worker_token')||'';
   const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -207,6 +207,7 @@
   }
 
   async function tryStart(attempt=0){
+    if(started)return;
     startInventoryGuard();
     const select=document.getElementById(config.select),branch=document.getElementById(config.branch);
     if(!select||!branch||!branch.value){if(attempt<60)setTimeout(()=>tryStart(attempt+1),180);return}
@@ -215,7 +216,7 @@
     let initial;try{initial=await loadRows()}catch(_e){initial=null}
     if(initial===null){root.querySelector('.catalog-note').textContent='تعذر التحميل الآن؛ ستتم إعادة المحاولة.';if(attempt<60)setTimeout(()=>tryStart(attempt+1),300);return}
     updateCategoryOptions(root);render(root,select);root.querySelector('.catalog-note').textContent='الكمية والحالة حسب الفرع المختار. قارئ USB يعمل كلوحة مفاتيح ويمكن المسح مباشرة.';
-    branch.addEventListener('change',()=>refresh(select,root));window.addEventListener('shop:catalog-refresh',()=>refresh(select,root));bindGlobalScanner(select,root);
+    branch.addEventListener('change',()=>refresh(select,root));window.addEventListener('shop:catalog-refresh',()=>refresh(select,root));bindGlobalScanner(select,root);started=true;
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>tryStart(),{once:true});else tryStart();
