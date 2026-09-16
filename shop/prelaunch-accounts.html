@@ -32,8 +32,7 @@ async function identify(){
 async function load(){
   stat('جاري تحميل الحسابات…');
   if(mode==='developer'){
-    const r=await s.from('worker_accounts').select('id,username,nickname,account_role,active,daily_pin_hash,can_sell,can_view_stock,can_inventory,can_manage_products,can_view_sales,can_purchase,can_transfer,can_record_money,default_branch_id').eq('workspace_code','PRELAUNCH').order('id');
-    if(r.error)throw r.error;rows=(r.data||[]).map(x=>({...x,pin_set:!!x.daily_pin_hash}));
+    const r=await s.rpc('admin_prelaunch_list_accounts');if(r.error)throw r.error;rows=r.data||[];
   }else{
     const r=await s.rpc('workspace_admin_list_accounts',{p_session_token:token});if(r.error)throw r.error;rows=r.data||[];
   }
