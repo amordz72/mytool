@@ -30,6 +30,7 @@
   function allowed(route,context){const role=context?.role||'admin';if(!route.roles.includes(role))return false;if(role==='admin'||!route.permission)return true;const permissions=context?.permissions||{};return permissions[route.permission]===true||permissions['can_'+route.permission]===true;}
   function list(context,placement){return routes.filter(route=>(!placement||route.placement.includes(placement))&&allowed(route,context));}
   function get(id){return routes.find(route=>route.id===id)||null}
+
   const ADMIN_BRANCH_KEY='mytool_admin_branch_id';
   const BRANCH_SELECT_IDS=['saleBranch','purchaseBranch','stockBranch','inventoryBranch','transferSource','branchSelect'];
   const LEGACY_BRANCH_CARD_SCREENS=new Set(['sale','purchase','stock','inventory']);
