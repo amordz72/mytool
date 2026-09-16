@@ -19,13 +19,30 @@
   const readSplit=id=>readBool(SPLIT_PREFIX+id,id==='mobilis'||id==='plain');
 
   const pad=n=>String(n).padStart(2,'0');
+  function timeStamp(){const d=new Date();return pad(d.getHours())+pad(d.getMinutes())}
   function plainName(count,part,total){
-    const d=new Date(),tm=pad(d.getHours())+pad(d.getMinutes()),dt=pad(d.getDate())+pad(d.getMonth()+1)+String(d.getFullYear()).slice(-2),p=part?`_P${part}-${total}`:'';
-    return `TXT_${count}${p}_${tm}_${dt}.txt`;
+    const p=part?`_P${part}-${total}`:'';
+    return `TX_C${count}${p}_${timeStamp()}.txt`;
   }
+  function smartKind(kind){return kind==='DIGITS'?'D':kind==='ALNUM'?'A':'M'}
   function smartName(kind,length,count,part,total){
-    const d=new Date(),tm=pad(d.getHours())+pad(d.getMinutes()),dt=pad(d.getDate())+pad(d.getMonth()+1)+String(d.getFullYear()).slice(-2),p=part?`_P${part}-${total}`:'';
-    return `SMART_${kind}_${length}_Count${count}${p}_${dt}_${tm}.txt`;
+    const p=part?`_P${part}-${total}`:'';
+    return `SM_C${count}_${smartKind(kind)}${length}${p}_${timeStamp()}.txt`;
+  }
+
+  // أسماء بطاقات قصيرة وآمنة للهاتف: العدد يظهر مباشرة بعد البادئة.
+  if(typeof window.nameCard==='function'&&!window.nameCard.__mytoolShortNames){
+    const shortCardName=function(rule,count,part,total){
+      const id=String(rule?.id||'').toLowerCase();
+      const prefix=id==='mobilis'?'MB':id==='idoom'?'ID':String(rule?.filePrefix||id||'CD').toUpperCase().slice(0,3);
+      const p=part?`_P${part}-${total}`:'';
+      let value='';
+      if(id==='mobilis'&&rule?.detectValueFromFilename&&typeof mobilisValue==='function')value=mobilisValue()||'';
+      const v=value?`_${String(value).replace(/[^A-Za-z0-9_-]/g,'')}`:'';
+      return `${prefix}_C${count}${v}${p}_${timeStamp()}.txt`;
+    };
+    shortCardName.__mytoolShortNames=true;
+    window.nameCard=shortCardName;
   }
 
   // النص العادي القديم يحتفظ بسلوكه إن استُخدم مباشرة.
@@ -70,22 +87,27 @@
     return{kind,length};
   }
 
-  // smart-extractor يرسم نتيجته بنفسه، لذلك نضيف أدوات التقسيم بعد ظهور كل مجموعة.
+  // smart-extractor يرسم نتيجته بنفسه، لذلك نضيف أدوات التقسيم ونفرض الاسم القصير بعد ظهور كل مجموعة.
   function ensureSmartSplit(){
     result.querySelectorAll('.group').forEach(group=>{
       const down=group.querySelector('.actions button[id^="smart"][id$="download"]');
-      if(!down||group.querySelector('.splitQuick'))return;
+      if(!down)return;
       const id=(down.id||'').replace(/download$/,'');
       const box=group.querySelector('.codes');
       if(!id||!box)return;
       const codes=String(box.textContent||'').split(/\r\n|\n|\r/).map(x=>x.trim()).filter(Boolean);
-      if(codes.length<2)return;
+      if(!codes.length)return;
+      const meta=smartMeta(group),nameFn=(n,a,b)=>smartName(meta.kind,meta.length,n,a,b);
+
+      // حتى التحميل بدون تقسيم يأخذ اسمًا قصيرًا والعدد في البداية.
+      if(typeof window.download==='function')down.onclick=()=>window.download(codes.join('\n'),nameFn(codes.length),true);
+
+      if(codes.length<2||group.querySelector('.splitQuick'))return;
       if(typeof window.splitTopUI!=='function'||typeof window.splitBottomUI!=='function'||typeof window.initSplit!=='function')return;
       const actions=group.querySelector('.actions');
       if(!actions)return;
       actions.insertAdjacentHTML('afterend',window.splitTopUI(id,codes));
       box.insertAdjacentHTML('afterend',window.splitBottomUI(id,codes));
-      const meta=smartMeta(group),nameFn=(n,a,b)=>smartName(meta.kind,meta.length,n,a,b);
       window.initSplit(id,codes,nameFn,true);
     });
   }
