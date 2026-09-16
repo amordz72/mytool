@@ -21,14 +21,10 @@
 
   function ensureSingleInventoryDom(){
     if(screen!=='inventory')return;
-    ['inventoryCard','inventoryForm','message'].forEach(id=>{
-      const nodes=[...document.querySelectorAll('[id="'+id+'"]')];
-      nodes.slice(1).forEach(node=>{
-        const duplicateCard=node.closest?.('[id="inventoryCard"]');
-        if(duplicateCard&&duplicateCard!==nodes[0]?.closest?.('[id="inventoryCard"]'))duplicateCard.remove();
-        else node.remove();
-      });
-    });
+    const cards=[...document.querySelectorAll('[id="inventoryCard"]')];
+    cards.slice(1).forEach(card=>card.remove());
+    const messages=[...document.querySelectorAll('[id="message"]')];
+    messages.slice(1).forEach(message=>message.remove());
   }
 
   function startInventoryGuard(){
