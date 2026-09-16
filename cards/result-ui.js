@@ -15,6 +15,7 @@
   const readPrefix=id=>cleanPrefix(readText(FILE_PREFIX+id,''),DEFAULT_PREFIX[id]||String(id||'CD').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,2)||'CD');
   const readSplit=id=>readBool(SPLIT_PREFIX+id,id==='mobilis'||id==='plain');
   const readParts=(id,total)=>{const raw=Number(readText(SPLIT_PARTS+id,'2'));let n=Number.isInteger(raw)?raw:2;if(n<2)n=2;if(total&&n>total)n=total;return n};
+  const useBomForType=id=>!(id==='plain'||id==='mobilis'||id==='idoom');
 
   try{
     if(localStorage.getItem(SMART_SPLIT_MIGRATION_KEY)===null){
@@ -78,7 +79,7 @@
       if(!lines.length)return original();
       const nameFn=(n,a,b)=>plainName(n,a,b),filename=plainName(lines.length);
       result.innerHTML=window.group('النص جاهز',lines,filename,'plain',nameFn,true);
-      window.bindGroup('plain',lines,filename,nameFn,true,true);
+      window.bindGroup('plain',lines,filename,nameFn,true,false);
     };
     wrapped.__mytoolPlainSplit=true;
     window.processPlain=wrapped;
@@ -122,13 +123,13 @@
       const id=(down.id||'').replace(/download$/,''),box=group.querySelector('.codes'),codes=groupCodes(group);
       if(!id||!box||!codes.length)return;
       const nameFn=groupNameFn(group,'plain');
-      if(typeof window.download==='function')down.onclick=()=>window.download(codes.join('\n'),nameFn(codes.length),true);
+      if(typeof window.download==='function')down.onclick=()=>window.download(codes.join('\n'),nameFn(codes.length),false);
       if(codes.length<2||group.querySelector('.splitQuick'))return;
       if(typeof window.initSplit!=='function')return;
       const actions=group.querySelector('.actions');if(!actions)return;
       actions.insertAdjacentHTML('afterend',window.splitTopUI(id,codes));
       box.insertAdjacentHTML('afterend',window.splitBottomUI(id,codes));
-      window.initSplit(id,codes,nameFn,true);
+      window.initSplit(id,codes,nameFn,false);
     });
   }
 
@@ -144,12 +145,12 @@
 
     const down=group.querySelector('.splitDownload');
     if(!down||!codes.length)return;
-    const nameFn=groupNameFn(group,type);
+    const nameFn=groupNameFn(group,type),withBom=useBomForType(type);
     down.onclick=()=>{
       const vals=[...group.querySelectorAll('input[data-count]')].map(x=>Number(x.value));
       const valid=vals.length&&vals.every(x=>Number.isInteger(x)&&x>=1)&&vals.reduce((a,b)=>a+b,0)===codes.length;
       if(!valid){if(status)status.textContent='المجموع لا يساوي عدد البطاقات، لم يتم التحميل.';return}
-      let off=0;vals.forEach((n,i)=>{const chunk=codes.slice(off,off+n);off+=n;setTimeout(()=>window.download(chunk.join('\n'),nameFn(n,i+1,vals.length),true),i*250)});
+      let off=0;vals.forEach((n,i)=>{const chunk=codes.slice(off,off+n);off+=n;setTimeout(()=>window.download(chunk.join('\n'),nameFn(n,i+1,vals.length),withBom),i*250)});
       if(status)status.textContent=`تم تجهيز ${vals.length} ملفات.`;
     };
   }
@@ -157,8 +158,8 @@
   function applyDirectDownloadName(group,type,codes){
     const down=group.querySelector('.actions button[id$="download"]');
     if(!down||!codes.length||typeof window.download!=='function')return;
-    const nameFn=groupNameFn(group,type);
-    down.onclick=()=>window.download(codes.join('\n'),nameFn(codes.length),true);
+    const nameFn=groupNameFn(group,type),withBom=useBomForType(type);
+    down.onclick=()=>window.download(codes.join('\n'),nameFn(codes.length),withBom);
   }
 
   function applySplitVisibility(){
