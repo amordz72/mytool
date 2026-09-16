@@ -4,13 +4,20 @@
   const screen=document.body?.dataset?.screen||'';
   if(!['index','sale','stock'].includes(screen))return;
   const script=document.currentScript;
-  const cssHref=new URL('shop-core-design.css?v=20260916-2',script?.src||location.href).href;
+  const cssHref=new URL('shop-core-design.css?v=20260916-4',script?.src||location.href).href;
   if(!document.querySelector('link[data-shop-core-design]')){
     const link=document.createElement('link');link.rel='stylesheet';link.href=cssHref;link.dataset.shopCoreDesign='1';document.head.appendChild(link);
   }
   document.documentElement.classList.add('mt-core-design');
   const workerActive=Boolean(localStorage.getItem('mytool_shop_worker_token'))&&!localStorage.getItem('mytool_admin_expires_at');
   if(workerActive)document.documentElement.classList.add('mt-worker-mode');
+
+  function enforceMobileShell(){
+    if(!window.matchMedia('(max-width:759px)').matches)return;
+    document.querySelectorAll('.shared-screen-nav,.screen-nav.unified-nav').forEach(el=>el.style.setProperty('display','none','important'));
+    document.querySelectorAll('.mytool-floating-tools').forEach(el=>el.remove());
+    document.querySelectorAll('.shell-canonical-header .topbar-copy h1').forEach(el=>{if(el.textContent!=='MyTool')el.textContent='MyTool'});
+  }
 
   function addHeading(target,title,subtitle,kicker){
     if(!target||document.querySelector('.mt-page-heading[data-for="'+screen+'"]'))return false;
@@ -47,7 +54,9 @@
     return true;
   }
 
-  function run(){return screen==='sale'?enhanceSale():screen==='stock'?enhanceStock():enhanceHome()}
-  if(run())return;
-  let tries=0;const timer=setInterval(()=>{tries++;if(run()||tries>=50)clearInterval(timer)},100);
+  function run(){enforceMobileShell();return screen==='sale'?enhanceSale():screen==='stock'?enhanceStock():enhanceHome()}
+  run();
+  let tries=0;const timer=setInterval(()=>{tries++;enforceMobileShell();if(tries>=60)clearInterval(timer)},100);
+  const observer=new MutationObserver(()=>enforceMobileShell());observer.observe(document.documentElement,{childList:true,subtree:true});setTimeout(()=>observer.disconnect(),12000);
+  window.addEventListener('resize',enforceMobileShell);
 })();
