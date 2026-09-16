@@ -3,17 +3,32 @@
   if(!result)return;
 
   const SPLIT_PREFIX='mytool.cards.split.';
+  const SMART_SPLIT_MIGRATION_KEY='mytool.cards.smartSplitDefaultV2';
   const TRIM_KEY='mytool.cards.trim';
   const readBool=(key,def)=>{try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}};
-  const readSplit=id=>readBool(SPLIT_PREFIX+id,id==='mobilis');
+
+  // من هذه النسخة: الاستخراج الذكي يعرض التقسيم افتراضيًا مثل Mobilis.
+  // ترحيل لمرة واحدة حتى لا يبقى مخفيًا عند من حفظ الإعدادات القديمة.
+  try{
+    if(localStorage.getItem(SMART_SPLIT_MIGRATION_KEY)===null){
+      localStorage.setItem(SPLIT_PREFIX+'plain','1');
+      localStorage.setItem(SMART_SPLIT_MIGRATION_KEY,'1');
+    }
+  }catch(e){}
+
+  const readSplit=id=>readBool(SPLIT_PREFIX+id,id==='mobilis'||id==='plain');
 
   const pad=n=>String(n).padStart(2,'0');
   function plainName(count,part,total){
     const d=new Date(),tm=pad(d.getHours())+pad(d.getMinutes()),dt=pad(d.getDate())+pad(d.getMonth()+1)+String(d.getFullYear()).slice(-2),p=part?`_P${part}-${total}`:'';
     return `TXT_${count}${p}_${tm}_${dt}.txt`;
   }
+  function smartName(kind,length,count,part,total){
+    const d=new Date(),tm=pad(d.getHours())+pad(d.getMinutes()),dt=pad(d.getDate())+pad(d.getMonth()+1)+String(d.getFullYear()).slice(-2),p=part?`_P${part}-${total}`:'';
+    return `SMART_${kind}_${length}_Count${count}${p}_${dt}_${tm}.txt`;
+  }
 
-  // النص العادي لا ينشئ أدوات تقسيم إلا إذا فعّلها المستخدم من الإعدادات.
+  // النص العادي القديم يحتفظ بسلوكه إن استُخدم مباشرة.
   if(typeof window.processPlain==='function'&&!window.processPlain.__mytoolPlainSplit){
     const original=window.processPlain;
     const wrapped=function(){
@@ -39,11 +54,40 @@
     const down=group.querySelector('.actions button[id$="download"]');
     if(!down)return null;
     const id=down.id||'';
-    if(id==='plaindownload')return'plain';
+    if(id==='plaindownload'||/^smart\d+download$/.test(id))return'plain';
     if(/^waf\d+download$/.test(id))return'waffarly';
     if(/^tok\d+download$/.test(id))return'token';
     const m=id.match(/^card-(.+)download$/);
     return m?m[1]:null;
+  }
+
+  function smartMeta(group){
+    const label=(group.querySelector('.title span')?.textContent||'').replace(/^🔎\s*/,'');
+    const length=(label.match(/(\d+)\s*خانة/)||[])[1]||'X';
+    let kind='MIXED';
+    if(label.includes('أرقام فقط'))kind='DIGITS';
+    else if(label.includes('أحرف + أرقام'))kind='ALNUM';
+    return{kind,length};
+  }
+
+  // smart-extractor يرسم نتيجته بنفسه، لذلك نضيف أدوات التقسيم بعد ظهور كل مجموعة.
+  function ensureSmartSplit(){
+    result.querySelectorAll('.group').forEach(group=>{
+      const down=group.querySelector('.actions button[id^="smart"][id$="download"]');
+      if(!down||group.querySelector('.splitQuick'))return;
+      const id=(down.id||'').replace(/download$/,'');
+      const box=group.querySelector('.codes');
+      if(!id||!box)return;
+      const codes=String(box.textContent||'').split(/\r\n|\n|\r/).map(x=>x.trim()).filter(Boolean);
+      if(codes.length<2)return;
+      if(typeof window.splitTopUI!=='function'||typeof window.splitBottomUI!=='function'||typeof window.initSplit!=='function')return;
+      const actions=group.querySelector('.actions');
+      if(!actions)return;
+      actions.insertAdjacentHTML('afterend',window.splitTopUI(id,codes));
+      box.insertAdjacentHTML('afterend',window.splitBottomUI(id,codes));
+      const meta=smartMeta(group),nameFn=(n,a,b)=>smartName(meta.kind,meta.length,n,a,b);
+      window.initSplit(id,codes,nameFn,true);
+    });
   }
 
   function applySplitVisibility(){
@@ -85,7 +129,7 @@
     result.prepend(bar);
   }
 
-  function refresh(){applySplitVisibility();ensureDownloadAll()}
+  function refresh(){ensureSmartSplit();applySplitVisibility();ensureDownloadAll()}
   const observer=new MutationObserver(()=>setTimeout(refresh,0));
   observer.observe(result,{childList:true,subtree:true});
   window.addEventListener('pageshow',refresh);
