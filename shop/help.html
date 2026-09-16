@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0f766e">
+  <title>دليل استخدام MyTool</title>
+  <link rel="stylesheet" href="shop-common.css?v=20260916-help1">
+  <script src="shop-routes.js?v=20260916-help1"></script>
+  <script src="shop-shell.js?v=20260916-help1"></script>
+  <style>
+    body{margin:0;background:#f4f7fb;color:#172033;font-family:Arial,Tahoma,sans-serif}
+    main{max-width:860px;margin:auto;padding:10px 10px 95px}
+    .hero,.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:10px}
+    .hero h2,.card h3{margin:0 0 7px}.muted{color:#6b7280;font-size:13px;line-height:1.7}
+    .switches{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+    .switches button{border:1px solid #d1d5db;border-radius:12px;background:#fff;padding:11px;font:inherit;font-weight:800}
+    .switches button.active{background:#0f766e;color:#fff;border-color:#0f766e}
+    .guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    .topic{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fafafa}
+    .topic h4{margin:0 0 6px;font-size:16px}.topic p{margin:0;color:#4b5563;font-size:13px;line-height:1.65}
+    .steps{margin:7px 0 0;padding-right:20px;color:#374151;font-size:13px;line-height:1.8}
+    .warn{background:#fffbeb;border-color:#fde68a}.good{background:#ecfdf5;border-color:#a7f3d0}
+    .role-admin,.role-worker{display:none}.show-admin .role-admin,.show-worker .role-worker{display:block}
+    details{border:1px solid #e5e7eb;border-radius:12px;background:#fff;margin-top:8px;padding:9px 11px}
+    summary{font-weight:900;cursor:pointer}.small{font-size:12px;color:#6b7280}
+    @media(max-width:650px){.guide-grid{grid-template-columns:1fr}.switches{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body data-screen="help">
+<main>
+  <div id="top"></div>
+
+  <section class="hero">
+    <h2>دليل استخدام MyTool</h2>
+    <div class="muted">هذا الدليل يشرح لك ماذا تفعل كل شاشة، ومتى تستعملها، وما الذي يحدث بعدها. الهدف: ما تحتاجش تحفظ البرنامج من الذاكرة.</div>
+    <div class="switches" id="roleSwitches">
+      <button type="button" data-role="worker">شرح العامل</button>
+      <button type="button" data-role="admin">شرح الإدارة</button>
+    </div>
+  </section>
+
+  <section class="card role-worker">
+    <h3>المسار اليومي للعامل</h3>
+    <div class="guide-grid">
+      <div class="topic"><h4>الرئيسية / التشغيل اليومي</h4><p>نقطة البداية للوصول السريع للبيع، المخزون، الأموال، التحويلات وإغلاق الوردية حسب الصلاحيات.</p></div>
+      <div class="topic"><h4>بيع</h4><p>اختر المنتج، الكمية والسعر ثم سجل البيع. بعد الحفظ تنقص الكمية من مخزون الفرع.</p></div>
+      <div class="topic"><h4>مشتريات</h4><p>تسجيل دخول سلعة أو كمية جديدة للمخزون بسعر الشراء. بعد الحفظ تزيد الكمية.</p></div>
+      <div class="topic"><h4>المخزون / الجرد</h4><p>المخزون للعرض، والجرد لتأكيد الكمية الحقيقية وتصحيح الفرق حسب الصلاحية.</p></div>
+      <div class="topic"><h4>استلام مال</h4><p>سجل المال الذي استلمته من محل/عميل. بعد تسليمه للإدارة اضغط «تم التسليم» حتى ينتقل للمراجعة.</p></div>
+      <div class="topic"><h4>إغلاق الوردية</h4><p>عدّ النقد الموجود فعليًا في نهاية الوردية وأرسل الإغلاق. لا يتغير رصيد الكيس حتى تعتمد الإدارة.</p></div>
+    </div>
+  </section>
+
+  <section class="card role-admin">
+    <h3>المسار اليومي للإدارة</h3>
+    <div class="guide-grid">
+      <div class="topic"><h4>مراجعة استلام الأموال</h4><p>راجع ما سلّمه العمال. يمكنك التأكيد أو الاعتراض. الأسماء المؤقتة تبقى مسارًا منفصلًا عن تأكيد المال.</p></div>
+      <div class="topic"><h4>إغلاقات العمال</h4><p>تراجع المتوقع والموجود والفرق، ثم تعتمد أو ترفض. الاعتماد هو الذي يطابق رصيد الكيس.</p></div>
+      <div class="topic"><h4>حسابات الفرع</h4><p>هذه شاشة الحسابات الداخلية للفرع: الخزنة، تحصيلات العملاء، الكيس، مال المشتريات ومال الفليكسي.</p></div>
+      <div class="topic"><h4>أماكن الأموال / السيولة</h4><p>هذه ليست نفس حسابات الفرع. هدفها معرفة أين توجد السيولة فعليًا، ونقلها بين الأماكن، ومطابقة الموجود.</p></div>
+      <div class="topic"><h4>المستخدمون والإعدادات</h4><p>إدارة الحسابات والصلاحيات والإعدادات العامة التي لا يغيرها العامل.</p></div>
+      <div class="topic"><h4>تصحيح العمليات</h4><p>مسار إداري لتصحيح العمليات بدل حذف السجل المالي أو تغييره بصمت.</p></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>الأموال — ما الفرق بين الشاشات؟</h3>
+    <details open>
+      <summary>استلام أموال</summary>
+      <p class="muted">عندما يستلم العامل مالًا من عميل/محل. العامل يسجل، ثم «تم التسليم»، ثم الإدارة تؤكد/تعترض.</p>
+    </details>
+    <details>
+      <summary>حسابات الفرع</summary>
+      <p class="muted">دفاتر داخلية مرتبطة بفرع واحد مثل: الخزنة، تحصيلات العملاء، الكيس، المشتريات والفليكسي. تستعمل لتسجيل حركة مالية بين هذه الحسابات أو من/إلى جهة.</p>
+    </details>
+    <details>
+      <summary>أماكن الأموال / السيولة</summary>
+      <p class="muted">تجيب عن سؤال: «أين يوجد المال فعليًا الآن؟». مثال: في الكيس، عند شخص، في خزنة، بنك، أو قيد التحويل.</p>
+    </details>
+    <details>
+      <summary>إغلاق الوردية</summary>
+      <p class="muted">مقارنة ما كان متوقعًا أن يكون في الكيس مع ما تم عده فعليًا. الفرق لا يجب اعتباره خسارة مباشرة قبل تفسير المصروفات والسحوبات والتحويلات.</p>
+    </details>
+  </section>
+
+  <section class="card good role-worker">
+    <h3>مثال سريع — استلام مال</h3>
+    <ol class="steps">
+      <li>اختر العميل أو اكتب اسمًا جديدًا عند الحاجة.</li>
+      <li>أدخل المبلغ واحفظ.</li>
+      <li>عند تسليم المال فعليًا اضغط «تم التسليم».</li>
+      <li>انتظر تأكيد الإدارة أو الاعتراض.</li>
+    </ol>
+  </section>
+
+  <section class="card good role-admin">
+    <h3>مثال سريع — إغلاق وردية عامل</h3>
+    <ol class="steps">
+      <li>افتح «إغلاق الوردية» من حساب الإدارة.</li>
+      <li>راجع العامل والفرع والمتوقع والموجود والفرق.</li>
+      <li>اعتمد إذا العد صحيح، أو ارفض إذا يحتاج تصحيح.</li>
+      <li>بعد الاعتماد تحقق من رصيد الكيس/مكان المال والحركة الناتجة.</li>
+    </ol>
+  </section>
+
+  <section class="card warn">
+    <h3>ملاحظة تطويرية</h3>
+    <div class="muted">بعض الأسماء الحالية ما زالت تحتاج توحيدًا. مثال: القائمة تسمي `money.html` «أماكن الأموال» بينما محتوى الصفحة «حسابات الفرع»، و`cash.html` أقرب لوظيفة أماكن السيولة. سيتم توحيد الأسماء بعد مراجعة المسارات حتى لا نخلق تسمية جديدة مربكة.</div>
+  </section>
+
+  <section class="card">
+    <h3>المساعدة السياقية القادمة</h3>
+    <div class="muted">المرحلة التالية: زر `؟` أو «شرح هذه الصفحة» داخل القالب. عند الضغط يظهر شرح الشاشة الحالية في جانب الصفحة أو Bottom Sheet بدون مغادرة العمل.</div>
+  </section>
+</main>
+<script>
+(function(){
+  const workerToken=localStorage.getItem('mytool_shop_worker_token')||'';
+  const workerExp=Number(localStorage.getItem('mytool_shop_worker_expires_at')||0);
+  const adminExp=Number(localStorage.getItem('mytool_admin_expires_at')||0);
+  const isWorker=!!workerToken && workerExp>Date.now() && !adminExp;
+  const currentRole=isWorker?'worker':'admin';
+  ShopShell.mountStandalone('top',{role:currentRole,active:'help',permissions:{can_record_money:true,record_money:true,sell:true,purchase:true,view_stock:true,inventory:true,transfer:true}});
+  const root=document.body;
+  const buttons=[...document.querySelectorAll('[data-role]')];
+  function show(role){
+    root.classList.toggle('show-worker',role==='worker');
+    root.classList.toggle('show-admin',role==='admin');
+    buttons.forEach(b=>b.classList.toggle('active',b.dataset.role===role));
+  }
+  if(isWorker){
+    buttons.find(b=>b.dataset.role==='admin')?.remove();
+    show('worker');
+  }else show('admin');
+  buttons.forEach(b=>b.addEventListener('click',()=>show(b.dataset.role)));
+})();
+</script>
+</body>
+</html>
