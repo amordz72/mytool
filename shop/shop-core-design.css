@@ -32,5 +32,20 @@ body[data-screen="stock"] #message.message.ok,body[data-screen="stock"] #message
   body[data-screen="index"] .shell-canonical-header .shell-role-badge,body[data-screen="sale"] .shell-canonical-header .shell-role-badge,body[data-screen="stock"] .shell-canonical-header .shell-role-badge{font-size:10px!important;padding:4px 6px!important;flex:0 0 auto}
   body[data-screen="index"] .shell-canonical-header .menu-toggle,body[data-screen="sale"] .shell-canonical-header .menu-toggle,body[data-screen="stock"] .shell-canonical-header .menu-toggle{width:40px!important;height:40px!important;min-width:40px!important;padding:0!important;border-radius:12px!important;font-size:21px!important;flex:0 0 40px!important}
   body[data-screen="index"] .shop-shell{padding:8px 9px}.mt-page-heading{margin-bottom:8px}.mt-page-heading h1{font-size:20px}body[data-screen="index"] .dash-hero{padding:14px;border-radius:18px}.hero-title{font-size:21px!important}.metrics-pro{grid-template-columns:repeat(2,minmax(0,1fr))!important}.metric-pro .mvalue{font-size:22px!important}body[data-screen="sale"] .shell,body[data-screen="stock"] .shell{padding:8px 9px calc(var(--mytool-bottom-nav-space,92px) + 12px)}body[data-screen="sale"] .row{grid-template-columns:1fr 1fr}.mt-qty-control{grid-template-columns:48px minmax(70px,1fr) 48px}body[data-screen="stock"] .stock-tools{grid-template-columns:1fr 122px}.stock-grid{grid-template-columns:1fr!important}.stock-item{padding:10px}.stock-pager{position:static!important;bottom:auto!important;width:100%;display:flex;justify-content:center;box-shadow:none;backdrop-filter:none;background:#fff}.stock-pager .btn{min-width:74px;padding:9px 10px}
+
+  /* Home cleanup: keep only shortcuts that are not already in the bottom navigation. */
+  body[data-screen="index"] .quick-actions a[href="sale.html"],
+  body[data-screen="index"] .quick-actions a[href="stock.html"],
+  body[data-screen="index"] .quick-actions a[href="inventory-count.html"],
+  body[data-screen="index"] .quick-actions a[href="products.html"],
+  body[data-screen="index"] .quick-actions a[href="users.html"],
+  body[data-screen="index"] .quick-actions a[href="settings.html"]{display:none!important}
+  body[data-screen="index"] .quick-actions{margin-top:10px;gap:7px}
+  body[data-screen="index"] .quick-actions a,body[data-screen="index"] .quick-actions button{min-height:44px;padding:8px 10px}
+
+  /* Sale action stays visible immediately above Bottom Navigation. */
+  body[data-screen="sale"] #saleForm{padding-bottom:74px}
+  body[data-screen="sale"] #saleForm>button[type="submit"]{position:fixed!important;z-index:90;left:50%!important;right:auto!important;bottom:calc(var(--mytool-bottom-nav-space,84px) + 8px)!important;transform:translateX(-50%);width:min(720px,calc(100% - 24px))!important;min-height:52px!important;margin:0!important;box-shadow:0 10px 28px rgba(0,90,113,.24)}
+  html.shell-drawer-open body[data-screen="sale"] #saleForm>button[type="submit"],body.shell-drawer-open[data-screen="sale"] #saleForm>button[type="submit"]{display:none!important}
 }
 @media(max-width:390px){body[data-screen="sale"] .row{grid-template-columns:1fr}.mt-page-heading h1{font-size:19px}}
