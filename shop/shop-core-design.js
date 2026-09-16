@@ -4,7 +4,7 @@
   const screen=document.body?.dataset?.screen||'';
   if(!['index','sale','stock'].includes(screen))return;
   const script=document.currentScript;
-  const cssHref=new URL('shop-core-design.css?v=20260916-4',script?.src||location.href).href;
+  const cssHref=new URL('shop-core-design.css?v=20260916-5',script?.src||location.href).href;
   if(!document.querySelector('link[data-shop-core-design]')){
     const link=document.createElement('link');link.rel='stylesheet';link.href=cssHref;link.dataset.shopCoreDesign='1';document.head.appendChild(link);
   }
