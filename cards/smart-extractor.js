@@ -94,7 +94,7 @@
   function filename(g){return `SMART_${g.kind.toUpperCase()}_${g.length}_Count${g.codes.length}_${stamp()}.txt`}
 
   function downloadCodes(codes,name){
-    if(typeof window.download==='function'){window.download(codes.join('\n'),name,true);return}
+    if(typeof window.download==='function'){window.download(codes.join('\n'),name,false);return}
     const blob=new Blob([codes.join('\n')],{type:'text/plain;charset=utf-8'}),u=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),800);
   }
