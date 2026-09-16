@@ -148,7 +148,8 @@ async function loadAdmin(){
     supabase.from('products').select('id,name,is_test').eq('is_test',mode==='test').order('id')
   ])
   if(branchesRes.error||productsRes.error)throw branchesRes.error||productsRes.error
-  const branches=branchesRes.data||[];products=productsRes.data||[]
+  const branches=branchesRes.data||[]
+  products=productsRes.data||[]
   const saved=Number(localStorage.getItem(ADMIN_BRANCH)||0)
   const fallback=branches.find(x=>x.code==='HOME_SHOP')||branches[0]
   let branchId=branches.some(x=>Number(x.id)===saved)?saved:Number(fallback?.id||0)
