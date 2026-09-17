@@ -15,6 +15,8 @@ let token = '';
 let me = null;
 let rows = [];
 let syncing = false;
+let completingTaskId = null;
+let completionHasMoney = null;
 
 $('day').value = today();
 
@@ -88,7 +90,7 @@ function pendingForTask(taskId) {
 
 function queuedAmount(taskId) {
   return pendingForTask(taskId)
-    .filter(item => item.kind === 'collect')
+    .filter(item => item.kind === 'collect' || (item.kind === 'complete' && item.has_money))
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 }
 
@@ -174,6 +176,10 @@ function applyQueuedStateLocally() {
     const row = rows.find(x => Number(x.id) === Number(item.task_id));
     if (!row) continue;
     if (item.kind === 'status') row.status = item.status;
+    if (item.kind === 'complete') {
+      row.status = 'done';
+      row.completion_note = item.notes || null;
+    }
   }
 }
 
@@ -252,10 +258,9 @@ function moneyBlock(row) {
   return `<div class="money"><div><small>تقدير الإدارة</small><b>${expected}</b></div><div><small>المستلم</small><b>${received}</b></div><div><small>${extra > 0 ? 'زيادة تحتاج مراجعة' : 'الباقي التقديري'}</small><b>${extra > 0 ? money(extra) : remaining}</b></div></div>`;
 }
 
-function workerCollect(row) {
-  if (me.account_role !== 'worker') return '';
-  if (!row.party_id) return '<div class="warnbox">هذا الاسم غير مربوط بحساب مؤكد في دليل العملاء. سجّل من صفحة «استلام أموال» أو صحح الاسم أولًا.</div>';
-  return `<div class="collect"><b>تسجيل استلام من ${esc(row.party_name || row.shop_name)}</b><div class="collect-grid"><div class="field"><label>المبلغ المستلم فعليًا</label><input data-collect-amount="${row.id}" type="number" min="0.01" step="0.01" inputmode="decimal" value="" placeholder="أدخل ما استلمته"></div><button class="btn" data-collect="${row.id}" type="button">سجل الاستلام</button></div></div>`;
+function workerLinkNotice(row) {
+  if (me.account_role !== 'worker' || row.party_id) return '';
+  return '<div class="warnbox">هذا الاسم غير مربوط بدليل العملاء. يمكنك إتمام الزيارة وتسجيل المبلغ؛ سيُحفظ مؤقتًا باسم المحل حتى تربطه الإدارة لاحقًا.</div>';
 }
 
 function adminExpected(row) {
@@ -279,31 +284,67 @@ function dedupeRenderedCards(root) {
   });
 }
 
+function renderDoneSection(doneRows) {
+  const section = $('doneSection');
+  const root = $('doneItems');
+  $('doneSectionCount').textContent = doneRows.length;
+  section.hidden = doneRows.length === 0;
+  if (!doneRows.length) {
+    root.innerHTML = '';
+    return;
+  }
+  root.innerHTML = doneRows.map(row => {
+    const note = row.completion_note ? `<div class="note">ملاحظة الإتمام: ${esc(row.completion_note)}</div>` : '';
+    const unlinked = !row.party_id && Number(row.received_amount || 0) > 0
+      ? '<div class="warnbox">الاستلام محفوظ باسم المحل وغير مربوط بحساب بعد.</div>'
+      : '';
+    const reopen = me.account_role === 'worker'
+      ? `<div class="actions"><button class="btn secondary" data-reopen="${row.id}" type="button">إرجاع للزيارات</button></div>`
+      : '';
+    return `<div class="done-card" data-done-id="${row.id}"><div class="head"><div><div class="name">${esc(row.shop_name)}</div><div class="meta"><span class="done-label">تمت الزيارة</span> ${pendingBadge(row)}</div></div></div>${moneyBlock(row)}${note}${unlinked}${reopen}</div>`;
+  }).join('');
+  root.querySelectorAll('[data-reopen]').forEach(button => {
+    button.onclick = () => setStatus(Number(button.dataset.reopen), 'pending');
+  });
+}
+
 function render() {
   const root = $('items');
-  $('allCount').textContent = rows.length;
-  $('pendingCount').textContent = rows.filter(x => x.status === 'pending').length;
-  $('doneCount').textContent = rows.filter(x => x.status === 'done').length;
-  $('expectedSum').textContent = money(rows.reduce((sum, x) => sum + Number(x.expected_amount || 0), 0));
-  $('receivedSum').textContent = money(rows.reduce((sum, x) => sum + Number(x.received_amount || 0), 0));
-  $('remainingSum').textContent = money(rows.reduce((sum, x) => sum + Number(x.remaining_amount || 0), 0));
-  renderSyncState();
+  const activeRows = rows.filter(row => row.status !== 'done');
+  const doneRows = rows.filter(row => row.status === 'done');
 
-  if (!rows.length) {
-    root.innerHTML = '<div class="card empty">لا توجد محلات في الجولة.</div>';
+  $('allCount').textContent = rows.length;
+  $('pendingCount').textContent = activeRows.length;
+  $('doneCount').textContent = doneRows.length;
+  $('expectedSum').textContent = money(rows.reduce((sum, row) => sum + Number(row.expected_amount || 0), 0));
+  $('receivedSum').textContent = money(rows.reduce((sum, row) => sum + Number(row.received_amount || 0), 0));
+  $('remainingSum').textContent = money(rows.reduce((sum, row) => sum + Number(row.remaining_amount || 0), 0));
+  renderSyncState();
+  renderDoneSection(doneRows);
+
+  if (!activeRows.length) {
+    root.innerHTML = '<div class="card empty">لا توجد زيارات متبقية.</div>';
     return;
   }
 
-  root.innerHTML = rows.map((row, index) => {
+  root.innerHTML = activeRows.map((row, index) => {
     const workerActions = me.account_role === 'worker'
-      ? '<button class="btn" data-s="done">تمت الزيارة</button><button class="btn secondary" data-s="unavailable">تعذر</button>' + (row.status !== 'pending' ? '<button class="btn secondary" data-s="pending">إرجاع</button>' : '')
+      ? `<button class="btn" data-complete="${row.id}" type="button">تمت الزيارة</button>`
+        + (row.status !== 'unavailable'
+          ? '<button class="btn secondary" data-s="unavailable" type="button">تعذر</button>'
+          : '<button class="btn secondary" data-s="pending" type="button">إرجاع</button>')
       : '';
-    const adminActions = me.account_role === 'workspace_admin' ? '<button class="btn danger" data-del>حذف</button>' : '';
-    return `<section class="item ${row.status === 'done' ? 'done' : ''}" data-id="${row.id}"><div class="head"><div><div class="name">${index + 1}. ${esc(row.shop_name)}</div><div class="meta">${me.account_role === 'workspace_admin' && row.assigned_name ? esc(row.assigned_name) + ' · ' : ''}<span class="${cls(row.status)}">${label(row.status)}</span>${row.party_name ? ' · مربوط: ' + esc(row.party_name) : ''} ${pendingBadge(row)}</div></div></div>${row.notes ? `<div class="note">${esc(row.notes)}</div>` : ''}${moneyBlock(row)}${adminExpected(row)}${workerCollect(row)}<div class="actions">${workerActions}${adminActions}</div></section>`;
+    const adminActions = me.account_role === 'workspace_admin'
+      ? '<button class="btn danger" data-del type="button">حذف</button>'
+      : '';
+    return `<section class="item" data-id="${row.id}"><div class="head"><div><div class="name">${index + 1}. ${esc(row.shop_name)}</div><div class="meta">${me.account_role === 'workspace_admin' && row.assigned_name ? esc(row.assigned_name) + ' · ' : ''}<span class="${cls(row.status)}">${label(row.status)}</span>${row.party_name ? ' · مربوط: ' + esc(row.party_name) : ''} ${pendingBadge(row)}</div></div></div>${row.notes ? `<div class="note">${esc(row.notes)}</div>` : ''}${moneyBlock(row)}${adminExpected(row)}${workerLinkNotice(row)}<div class="actions">${workerActions}${adminActions}</div></section>`;
   }).join('');
 
   dedupeRenderedCards(root);
 
+  root.querySelectorAll('[data-complete]').forEach(button => {
+    button.onclick = () => openCompleteDialog(Number(button.dataset.complete));
+  });
   root.querySelectorAll('[data-s]').forEach(button => {
     button.onclick = () => setStatus(Number(button.closest('[data-id]').dataset.id), button.dataset.s);
   });
@@ -313,9 +354,93 @@ function render() {
   root.querySelectorAll('[data-save-expected]').forEach(button => {
     button.onclick = () => saveExpected(Number(button.dataset.saveExpected));
   });
-  root.querySelectorAll('[data-collect]').forEach(button => {
-    button.onclick = () => collect(Number(button.dataset.collect));
-  });
+}
+
+function setCompletionChoice(hasMoney) {
+  completionHasMoney = hasMoney;
+  $('completeYesMoney').classList.toggle('active', hasMoney === true);
+  $('completeNoMoney').classList.toggle('active', hasMoney === false);
+  $('completeMoneyFields').hidden = hasMoney !== true;
+  if (hasMoney !== true) $('completeAmount').value = '';
+}
+
+function openCompleteDialog(id) {
+  if (me.account_role !== 'worker') return;
+  const row = rows.find(item => Number(item.id) === Number(id));
+  if (!row) return stat('تعذر العثور على الزيارة.', 'err');
+
+  completingTaskId = id;
+  completionHasMoney = null;
+  $('completeShopName').textContent = row.shop_name;
+  $('completeAmount').value = '';
+  $('completeNote').value = row.completion_note || '';
+  $('completeYesMoney').classList.remove('active');
+  $('completeNoMoney').classList.remove('active');
+  $('completeMoneyFields').hidden = true;
+
+  if (row.party_id) {
+    $('completeLinkHint').hidden = true;
+    $('completeLinkHint').textContent = '';
+  } else {
+    $('completeLinkHint').hidden = false;
+    $('completeLinkHint').textContent = 'إذا اخترت «نعم»، سيُحفظ المبلغ مؤقتًا باسم هذا المحل حتى تربطه الإدارة بحساب العميل الصحيح.';
+  }
+
+  $('completeDialog').hidden = false;
+  document.body.classList.add('dialog-open');
+}
+
+function closeCompleteDialog() {
+  $('completeDialog').hidden = true;
+  document.body.classList.remove('dialog-open');
+  completingTaskId = null;
+  completionHasMoney = null;
+}
+
+async function completeVisit() {
+  if (completingTaskId == null) return;
+  if (completionHasMoney === null) return stat('اختر هل استلمت مالًا أم لا.', 'err');
+
+  const row = rows.find(item => Number(item.id) === Number(completingTaskId));
+  if (!row) return stat('تعذر العثور على الزيارة.', 'err');
+
+  const amount = completionHasMoney ? Number($('completeAmount').value) : null;
+  if (completionHasMoney && (!Number.isFinite(amount) || amount <= 0)) {
+    return stat('أدخل المبلغ الذي استلمته فعليًا.', 'err');
+  }
+
+  const note = $('completeNote').value.trim() || null;
+  const taskId = completingTaskId;
+  const item = {
+    local_id: crypto.randomUUID(),
+    owner: ownerKey(),
+    kind: 'complete',
+    task_id: taskId,
+    has_money: completionHasMoney,
+    amount,
+    notes: note,
+    request_key: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
+    state: 'pending',
+    last_error: ''
+  };
+
+  upsertQueueItem(item);
+  row.status = 'done';
+  row.completion_note = note;
+  saveRouteCache();
+  closeCompleteDialog();
+  render();
+
+  if (!navigator.onLine) {
+    stat(completionHasMoney
+      ? 'تم حفظ الزيارة والمبلغ محليًا، وسيُزامنان معًا عند رجوع الإنترنت.'
+      : 'تم حفظ إتمام الزيارة محليًا، وسيُزامن عند رجوع الإنترنت.', 'warn');
+    return;
+  }
+
+  stat('جاري حفظ إتمام الزيارة…');
+  await flushQueue(false);
 }
 
 async function saveExpected(id) {
@@ -336,7 +461,19 @@ async function syncItem(item) {
       p_session_token: token,
       p_task_id: item.task_id,
       p_amount: item.amount,
-      p_notes: 'من جولة اليوم',
+      p_notes: item.notes || 'من جولة اليوم',
+      p_request_key: item.request_key
+    });
+    if (response.error) throw response.error;
+    return;
+  }
+  if (item.kind === 'complete') {
+    const response = await s.rpc('worker_complete_visit_safe', {
+      p_session_token: token,
+      p_task_id: item.task_id,
+      p_has_money: Boolean(item.has_money),
+      p_amount: item.has_money ? Number(item.amount) : null,
+      p_notes: item.notes || null,
       p_request_key: item.request_key
     });
     if (response.error) throw response.error;
@@ -527,6 +664,16 @@ $('addBtn').onclick = async () => {
 
 $('day').onchange = load;
 $('syncNow').onclick = () => void flushQueue(true);
+$('completeNoMoney').onclick = () => setCompletionChoice(false);
+$('completeYesMoney').onclick = () => setCompletionChoice(true);
+$('completeCancel').onclick = closeCompleteDialog;
+$('completeSave').onclick = () => void completeVisit();
+$('completeDialog').onclick = event => {
+  if (event.target === $('completeDialog')) closeCompleteDialog();
+};
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !$('completeDialog').hidden) closeCompleteDialog();
+});
 window.addEventListener('online', () => {
   stat('عاد الاتصال. جاري فحص العمليات المحلية…', 'info');
   void flushQueue(false);
