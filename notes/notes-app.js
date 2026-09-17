@@ -185,15 +185,26 @@
     const pending=localRows.filter(n=>isPendingState(n.sync_state)).length;
     const conflicts=localRows.filter(n=>n.sync_state==='conflict').length;
     const box=$('syncState'),btn=$('syncNow');
+    btn.hidden=true;
+    btn.disabled=syncRunning;
     if(!hasSupabaseSession){
       box.className='sync-state local';
       box.textContent='وضع الاستمرارية: الحفظ يتم على هذا الجهاز داخل IndexedDB. هذه الملاحظات ليست في قاعدة البيانات حتى تدخل لاحقًا بحساب الإدارة العادي.'+(pending?' بانتظار المزامنة: '+pending+'.':'');
-      btn.hidden=true;return;
+      return;
     }
-    btn.hidden=false;btn.disabled=syncRunning;
-    if(conflicts){box.className='sync-state warn';box.textContent='يوجد '+conflicts+' تعارض. لم يكتب MyTool فوق نسخة القاعدة تلقائيًا.';return}
-    if(pending){box.className='sync-state pending';box.textContent='محفوظ محليًا بأمان. بانتظار المزامنة مع قاعدة البيانات: '+pending+'.';return}
-    box.className='sync-state synced';box.textContent=remoteAvailable?'متصل بقاعدة البيانات — لا توجد ملاحظات محلية معلقة.':'جلسة الإدارة موجودة، لكن قاعدة البيانات غير متاحة الآن. سيبقى الحفظ محليًا.';
+    if(conflicts){
+      box.className='sync-state warn';
+      box.textContent='يوجد '+conflicts+' تعارض. لم يكتب MyTool فوق نسخة القاعدة تلقائيًا.';
+      return;
+    }
+    if(pending){
+      box.className='sync-state pending';
+      box.textContent='محفوظ محليًا بأمان. بانتظار المزامنة مع قاعدة البيانات: '+pending+'.';
+      btn.hidden=false;
+      return;
+    }
+    box.className='sync-state synced';
+    box.textContent=remoteAvailable?'متصل بقاعدة البيانات — لا توجد ملاحظات محلية معلقة.':'جلسة الإدارة موجودة، لكن قاعدة البيانات غير متاحة الآن. سيبقى الحفظ محليًا.';
   }
 
   function validateFiles(files){
