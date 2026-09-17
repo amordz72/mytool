@@ -13,7 +13,7 @@
   const ACCESS_API='https://mytool-access.dzamor72.workers.dev';
   const guardScript=document.currentScript;
   const rootUrl=new URL('./',guardScript?.src||location.href);
-  const NAV_VERSION='20260917-continuity-1';
+  const NAV_VERSION='20260917-continuity-2';
 
   function readTools(storage,now){
     try{
@@ -26,7 +26,7 @@
 
   function resolveAccessContext(){
     const now=Date.now();
-    const adminActive=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now;
+    const ownerActive=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now;
     const emergencyActive=Number(localStorage.getItem(EMERGENCY_EXPIRES_KEY)||0)>now;
     const workerToken=localStorage.getItem(WORKER_TOKEN_KEY)||'';
     const workerExpiry=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0);
@@ -42,13 +42,13 @@
     const savedTools=readTools(localStorage,now);
     const toolsState=tabTools.active?tabTools:(savedTools.active?savedTools:{storage:null,token:'',expiry:0,accessType:'client',active:false});
     const toolsActive=toolsState.active;
-    const adminLike=adminActive||emergencyActive||workspaceAdminActive;
+    const adminLike=ownerActive||emergencyActive||workspaceAdminActive;
     const workerLike=workerActive||workspaceWorkerActive;
     const authenticated=adminLike||workerLike||toolsActive;
-    const role=adminActive?'owner':emergencyActive?'emergency_admin':workspaceAdminActive?'workspace_admin':workspaceWorkerActive?'workspace_worker':workerActive?'worker':toolsActive?'tools':'anonymous';
+    const role=ownerActive?'owner':emergencyActive?'emergency_admin':workspaceAdminActive?'workspace_admin':workspaceWorkerActive?'workspace_worker':workerActive?'worker':toolsActive?'tools':'anonymous';
 
     return Object.freeze({
-      now,role,adminActive,emergencyActive,workspaceAdminActive,workspaceWorkerActive,workspaceActive,workspaceRole,workspaceCode,
+      now,role,ownerActive,adminActive:adminLike,emergencyActive,workspaceAdminActive,workspaceWorkerActive,workspaceActive,workspaceRole,workspaceCode,
       workerActive,workerLike,workerSessionActive,toolsActive,toolsToken:toolsState.token,toolsExpiry:toolsState.expiry,
       toolsAccessType:toolsState.accessType,toolsStorage:toolsState.storage,adminLike,authenticated,rootUrl:rootUrl.href
     });
@@ -60,14 +60,16 @@
   const rootPath=rootUrl.pathname.endsWith('/')?rootUrl.pathname:rootUrl.pathname+'/';
   const relativePath=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length):'';
   const toolsAllowedPath=['cards/','programs/','qr/'].some(prefix=>relativePath===prefix.slice(0,-1)||relativePath.startsWith(prefix));
-  const access=(guardScript?.dataset?.access||'admin').toLowerCase();
+  const declaredAccess=(guardScript?.dataset?.access||'admin').toLowerCase();
+  const ownerOnlyPath=relativePath==='access-admin'||relativePath.startsWith('access-admin/');
+  const access=ownerOnlyPath?'owner':declaredAccess;
   const toolsMayEnter=context.toolsActive&&toolsAllowedPath;
   const allowed=access==='public'
     ||(access==='authenticated'&&context.authenticated)
     ||(access==='worker'&&(context.adminLike||context.workerLike))
     ||(access==='tools'&&(context.adminLike||toolsMayEnter))
     ||(access==='admin'&&(context.adminLike||toolsMayEnter))
-    ||(access==='owner'&&context.adminActive);
+    ||(access==='owner'&&context.ownerActive);
 
   if(!allowed){
     try{sessionStorage.setItem('mytool_blocked_path',location.pathname+location.search+location.hash)}catch(_e){}
@@ -92,7 +94,7 @@
     });
   }
 
-  window.MyToolAccessContext=Object.freeze({...context,access,toolsMayEnter});
+  window.MyToolAccessContext=Object.freeze({...context,access,declaredAccess,toolsMayEnter});
   if(guardScript?.dataset?.nav==='off')return;
 
   if(!document.querySelector('link[data-mytool-bottom-nav]')){
@@ -102,6 +104,6 @@
     const nav=document.createElement('script');nav.src=new URL('mytool-bottom-nav.js?v='+NAV_VERSION,rootUrl).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=rootUrl.href;document.head.appendChild(nav);
   }
   if(!document.querySelector('script[data-mytool-bottom-nav-space]')){
-    const space=document.createElement('script');space.src=new URL('mytool-bottom-nav-space.js?v='+NAV_VERSION,rootUrl).href;space.defer=true;space.dataset.mytoolBottomNavSpace='1';document.head.appendChild(space);
+    const space=document.createElement('script');space.src=new URL('mytool-bottom-nav-space.js?v='+NAV_VERSION,rootUrl).href;space.defer=true;space.dataset.mytoolBottomNavSpace='1';space.dataset.root=rootUrl.href;document.head.appendChild(space);
   }
 })();
