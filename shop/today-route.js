@@ -99,7 +99,7 @@ function renderSyncState() {
   const blocked = list.filter(item => item.state === 'blocked').length;
   $('syncCount').textContent = list.length;
   $('syncBlocked').textContent = blocked;
-  box.hidden = !me || me.account_role !== 'worker';
+  box.hidden = !me || me.account_role !== 'worker' || (navigator.onLine && list.length === 0 && !syncing);
   box.classList.toggle('has-pending', list.length > 0);
   box.classList.toggle('has-blocked', blocked > 0);
   $('syncNow').disabled = syncing || !list.length;
