@@ -51,7 +51,7 @@
         <div class="offline-note">هذا الوضع يفتح أدوات MyTool المحلية فقط. بيانات Supabase تحتاج الخدمة متاحة ودخولًا عاديًا.</div>
       </div>
       <div id="loginMessage" class="msg" hidden></div>
-      <div class="small">المطور: جلسة الإدارة المعتادة. حسابات وضع الاستمرارية: كلمة مرور لأول دخول ثم PIN يومي عند ضبطه.</div>
+      <div class="small">المالك: جلسة النظام الرئيسي. حسابات وضع الاستمرارية: كلمة مرور لأول دخول ثم PIN يومي عند ضبطه.</div>
     </section>
   </div>
 
@@ -66,7 +66,7 @@
         <a class="card" href="flexy/"><div class="icon">📱</div><h2>صفحة فليكسي</h2><p>معاينة Mobile First لإدخال الرقم واكتشاف المتعامل ثم عرض العروض المتاحة.</p></a>
         <a class="card" href="programs/"><div class="icon">🧰</div><h2>البرامج</h2><p>روابط تحميل مباشرة للبرامج الأساسية وبرامج صيانة الكمبيوتر، مع نسخ 32-bit و64-bit عند توفرها.</p></a>
         <a class="card" href="shop/"><div class="icon">🧾</div><h2>حساب المحل</h2><p>تسجيل المبيعات من الهاتف ومتابعة المخزون المتصل بقاعدة Supabase.</p><span class="badge">Supabase + Vue</span></a>
-        <a class="card" href="shop/prelaunch-accounts.html"><div class="icon">🧪</div><h2>حسابات وضع الاستمرارية</h2><p>إدارة حسابات مساحة PRELAUNCH الداخلية وكلمة المرور وPIN بدون تغيير بيانات التشغيل الأخرى.</p><span class="badge">CONTINUITY</span></a>
+        <a class="card" href="shop/prelaunch-accounts.html"><div class="icon">🧪</div><h2>حسابات وضع الاستمرارية</h2><p>إدارة حسابات مساحة وضع الاستمرارية وكلمة المرور وPIN بدون تغيير بيانات النظام الرئيسي.</p><span class="badge">CONTINUITY</span></a>
         <a class="card" href="shop/cash.html"><div class="icon">💵</div><h2>أماكن الأموال</h2><p>متابعة السيولة حسب مكانها: الكيس، الخزنة، عند شخص، البنك، أو قيد التحويل.</p><span class="badge">السيولة الآن</span></a>
         <a class="card" href="notes/"><div class="icon">📝</div><h2>صندوق الملاحظات</h2><p>سجّل الملاحظات والصور بدل واتساب، وصنّفها وانسخها للذكاء الاصطناعي.</p><span class="badge">للإدارة</span></a>
         <a id="ownerAccessAdminCard" class="card" href="access-admin/"><div class="icon">🔐</div><h2>طلبات دخول الأدوات</h2><p>قبول أو رفض أجهزة العملاء، تحديد مدة الجلسة، وإلغاؤها فورًا عند الحاجة.</p><span class="badge">Owner • Cloudflare + D1</span></a>
@@ -79,8 +79,8 @@
     </div>
 
     <div id="prelaunchAdminTools" hidden>
-      <h2 class="section-title">وضع الاستمرارية — إدارة</h2><section class="grid">
-        <a class="card" href="shop/"><div class="icon">🧾</div><h2>حساب المحل</h2><p>نفس واجهة المحل، لكن الحساب مرتبط بمساحة PRELAUNCH المستقلة.</p><span class="badge">بيانات مستقلة</span></a>
+      <h2 class="section-title">مدير · وضع الاستمرارية</h2><section class="grid">
+        <a class="card" href="shop/"><div class="icon">🧾</div><h2>حساب المحل</h2><p>نفس واجهة المحل، لكن الحساب مرتبط بمساحة وضع الاستمرارية المستقلة.</p><span class="badge">بيانات مستقلة</span></a>
         <a class="card" href="shop/prelaunch-accounts.html"><div class="icon">👥</div><h2>حسابات وضع الاستمرارية</h2><p>تغيير اسم المستخدم وكلمة المرور وPIN وتفعيل حسابات المساحة فقط.</p><span class="badge">إدارة مساحة</span></a>
       </section>
     </div>
@@ -139,11 +139,11 @@
     $('prelaunchAdminTools').hidden=true;
     $('githubLink').hidden=worker;
     const ownerAccess=$('ownerAccessAdminCard');if(ownerAccess)ownerAccess.hidden=newMode!=='admin';
-    if(newMode==='admin')$('sessionMode').textContent='دخول الإدارة';
-    if(newMode==='emergency')$('sessionMode').textContent='دخول استرجاع — Admin محلي';
-    if(newMode==='worker')$('sessionMode').textContent='عامل: '+(localStorage.getItem(WORKER_NICKNAME_KEY)||'مستخدم');
-    if(newMode==='prelaunch_admin')$('sessionMode').textContent='وضع الاستمرارية — إدارة: '+(localStorage.getItem(WORKER_NICKNAME_KEY)||'إدارة');
-    if(newMode==='prelaunch_worker')$('sessionMode').textContent='وضع الاستمرارية — عامل: '+(localStorage.getItem(WORKER_NICKNAME_KEY)||'عامل');
+    if(newMode==='admin')$('sessionMode').textContent='المالك · النظام الرئيسي';
+    if(newMode==='emergency')$('sessionMode').textContent='المالك · استرجاع محلي';
+    if(newMode==='worker')$('sessionMode').textContent='عامل · النظام الرئيسي: '+(localStorage.getItem(WORKER_NICKNAME_KEY)||'مستخدم');
+    if(newMode==='prelaunch_admin')$('sessionMode').textContent='مدير · وضع الاستمرارية: '+(localStorage.getItem(WORKER_NICKNAME_KEY)||'مدير');
+    if(newMode==='prelaunch_worker')$('sessionMode').textContent='عامل · وضع الاستمرارية: '+(localStorage.getItem(WORKER_NICKNAME_KEY)||'عامل');
     updateExpiryText();
   }
   function showLogin(){mode='none';expiry=0;$('dashboard').hidden=true;$('loginView').hidden=false;$('loginForm').hidden=false;$('pinBox').hidden=true;$('password').value='';$('password').type='password';$('togglePassword').textContent='إظهار';hideRecovery();}
