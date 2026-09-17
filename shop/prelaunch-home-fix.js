@@ -17,11 +17,11 @@
     document.documentElement.classList.toggle('mt-worker-mode',!isAdmin);
     document.documentElement.classList.toggle('mt-prelaunch-admin',isAdmin);
     document.querySelectorAll('.shell-role-badge').forEach(el=>el.textContent=isAdmin?'إدارة':'عامل');
-    document.querySelectorAll('.shell-identity').forEach(el=>el.textContent=(ctx.nickname||'PRELAUNCH')+' — قبل الانطلاق');
+    document.querySelectorAll('.shell-identity').forEach(el=>el.textContent=(ctx.nickname||(isAdmin?'مدير':'عامل'))+' · وضع الاستمرارية');
     const heading=document.querySelector('.mt-page-heading h1');if(heading)heading.textContent=isAdmin?'الرئيسية':'رئيسية العامل';
-    const sub=document.querySelector('.mt-page-heading p');if(sub)sub.textContent=isAdmin?'إدارة PRELAUNCH ومتابعة الفروع من نفس الواجهة.':'أهم عمليات المحل أمامك مباشرة، والباقي من «المزيد».';
-    $('modeBadge')&&( $('modeBadge').textContent=isAdmin?'إدارة قبل الانطلاق':'عامل قبل الانطلاق' );
-    $('heroSub')&&( $('heroSub').textContent=isAdmin?'إدارة PRELAUNCH — اختر الفرع وتابع العمل.':'أهم معلومات محلّك أمامك، وبقية العمليات من التشغيل اليومي.' );
+    const sub=document.querySelector('.mt-page-heading p');if(sub)sub.textContent=isAdmin?'مدير وضع الاستمرارية؛ اختر المخزن وتابع العمل من نفس الواجهة.':'أهم عمليات المحل أمامك مباشرة، والباقي من «المزيد».';
+    $('modeBadge')&&( $('modeBadge').textContent=isAdmin?'مدير · وضع الاستمرارية':'عامل · وضع الاستمرارية' );
+    $('heroSub')&&( $('heroSub').textContent=isAdmin?'مدير · وضع الاستمرارية — اختر المخزن وتابع العمل.':'أهم معلومات محلّك أمامك، وبقية العمليات من التشغيل اليومي.' );
     addRouteButton(isAdmin);
     if(window.ShopShell?.mountRoleNavigation)window.ShopShell.mountRoleNavigation({role:isAdmin?'admin':'worker',permissions:{sell:!!ctx.can_sell,purchase:!!ctx.can_purchase,view_stock:!!ctx.can_view_stock,inventory:!!ctx.can_inventory,manage_products:!!ctx.can_manage_products,view_sales:!!ctx.can_view_sales,record_money:!!ctx.can_record_money,transfer:!!branch.can_transfer}},'index');
   };
