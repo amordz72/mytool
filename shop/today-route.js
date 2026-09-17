@@ -270,6 +270,15 @@ function pendingBadge(row) {
   return `<span class="sync-badge ${blocked ? 'blocked' : ''}">${blocked ? 'يحتاج مراجعة' : 'معلّق للمزامنة'}</span>`;
 }
 
+function dedupeRenderedCards(root) {
+  const seen = new Set();
+  root.querySelectorAll(':scope > .item[data-id]').forEach(card => {
+    const key = String(card.dataset.id || '');
+    if (seen.has(key)) card.remove();
+    else seen.add(key);
+  });
+}
+
 function render() {
   const root = $('items');
   $('allCount').textContent = rows.length;
@@ -292,6 +301,8 @@ function render() {
     const adminActions = me.account_role === 'workspace_admin' ? '<button class="btn danger" data-del>حذف</button>' : '';
     return `<section class="item ${row.status === 'done' ? 'done' : ''}" data-id="${row.id}"><div class="head"><div><div class="name">${index + 1}. ${esc(row.shop_name)}</div><div class="meta">${me.account_role === 'workspace_admin' && row.assigned_name ? esc(row.assigned_name) + ' · ' : ''}<span class="${cls(row.status)}">${label(row.status)}</span>${row.party_name ? ' · مربوط: ' + esc(row.party_name) : ''} ${pendingBadge(row)}</div></div></div>${row.notes ? `<div class="note">${esc(row.notes)}</div>` : ''}${moneyBlock(row)}${adminExpected(row)}${workerCollect(row)}<div class="actions">${workerActions}${adminActions}</div></section>`;
   }).join('');
+
+  dedupeRenderedCards(root);
 
   root.querySelectorAll('[data-s]').forEach(button => {
     button.onclick = () => setStatus(Number(button.closest('[data-id]').dataset.id), button.dataset.s);
@@ -521,6 +532,9 @@ window.addEventListener('online', () => {
   void flushQueue(false);
 });
 window.addEventListener('offline', () => stat('انقطع الاتصال. يمكنك متابعة الجولة؛ العمليات الجديدة ستُحفظ محليًا.', 'warn'));
+window.addEventListener('pageshow', event => {
+  if (event.persisted && rows.length) render();
+});
 setInterval(() => {
   if (navigator.onLine && currentQueue().length) void flushQueue(false);
 }, 30000);
