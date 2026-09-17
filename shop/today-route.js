@@ -248,8 +248,9 @@ function moneyBlock(row) {
   const received = money(row.received_amount);
   if (me.account_role === 'worker') {
     const local = queuedAmount(row.id);
+    const expectedToday = row.expected_amount == null ? 'غير محدد' : money(row.expected_amount);
     const localLine = local > 0 ? `<div><small>معلّق للمزامنة</small><b>${money(local)}</b></div>` : '';
-    return `<div class="money worker-money"><div><small>مسجل على الخادم</small><b>${received}</b></div>${localLine}</div>`;
+    return `<div class="money worker-money"><div><small>المتوقع اليوم</small><b>${expectedToday}</b></div><div><small>مسجل على الخادم</small><b>${received}</b></div>${localLine}</div>`;
   }
   const expected = row.expected_amount == null ? 'غير محدد' : money(row.expected_amount);
   const remaining = row.expected_amount == null ? '—' : money(row.remaining_amount);
@@ -364,6 +365,17 @@ function openCompleteDialog(id) {
   $('completeShopName').textContent = row.shop_name;
   $('completeAmount').value = '0';
   $('completeNote').value = row.completion_note || '';
+
+  if (row.expected_amount == null) {
+    $('completeExpected').hidden = true;
+    $('completeExpectedValue').textContent = '';
+    $('completeUseExpected').dataset.amount = '';
+  } else {
+    const expected = Number(row.expected_amount || 0);
+    $('completeExpected').hidden = false;
+    $('completeExpectedValue').textContent = money(expected);
+    $('completeUseExpected').dataset.amount = String(expected);
+  }
 
   if (row.party_id) {
     $('completeLinkHint').hidden = true;
@@ -653,6 +665,10 @@ $('day').onchange = load;
 $('syncNow').onclick = () => void flushQueue(true);
 $('completeCancel').onclick = closeCompleteDialog;
 $('completeSave').onclick = () => void completeVisit();
+$('completeUseExpected').onclick = () => {
+  const amount = Number($('completeUseExpected').dataset.amount || 0);
+  if (Number.isFinite(amount) && amount >= 0) $('completeAmount').value = String(amount);
+};
 $('completeDialog').onclick = event => {
   if (event.target === $('completeDialog')) closeCompleteDialog();
 };
