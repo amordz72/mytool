@@ -3,8 +3,7 @@
   'use strict';
   if(document.body?.dataset?.screen!=='index')return;
   const token=localStorage.getItem('mytool_shop_worker_token')||'';
-  const workspace=localStorage.getItem('mytool_workspace_code')||'';
-  if(!token||workspace!=='PRELAUNCH'||!window.ShopApiConfig)return;
+  if(!token||!window.ShopApiConfig)return;
   const {url,key}=window.ShopApiConfig;
   const headers={apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'};
   const rpc=async(name,body)=>{const r=await fetch(url+'/rest/v1/rpc/'+name,{method:'POST',headers,body:JSON.stringify(body||{})});if(!r.ok)throw new Error(await r.text()||name);return r.status===204?null:r.json()};
@@ -43,7 +42,9 @@
   async function run(){
     try{
       const [ctxRows,branch]=await Promise.all([rpc('worker_get_context',{p_session_token:token}),rpc('worker_get_branch_context',{p_session_token:token})]);
-      const ctx=Array.isArray(ctxRows)?ctxRows[0]:null;if(!ctx||!branch)return;
+      const ctx=Array.isArray(ctxRows)?ctxRows[0]:null;if(!ctx||!branch||branch.workspace_code!=='PRELAUNCH')return;
+      localStorage.setItem('mytool_workspace_code',branch.workspace_code);
+      localStorage.setItem('mytool_workspace_role',branch.account_role||'worker');
       const isAdmin=branch.account_role==='workspace_admin';setCommon(ctx,branch,isAdmin);
       if(!isAdmin)return;
       const branches=Array.isArray(branch.branches)?branch.branches:[];if(!branches.length)return;
