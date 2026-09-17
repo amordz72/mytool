@@ -34,7 +34,7 @@
   function list(context,placement){return routes.filter(route=>(!placement||route.placement.includes(placement))&&allowed(route,context));}
   function get(id){return routes.find(route=>route.id===id)||null}
   function daily(context){return routes.filter(route=>route.daily===true&&allowed(route,context)).sort((a,b)=>(a.dailyOrder||999)-(b.dailyOrder||999));}
-  function esc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
+  function esc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function renderDailyActions(target,context){const root=typeof target==='string'?document.getElementById(target):target;if(!root)return 0;const items=daily(context);root.innerHTML=items.map(route=>'<a class="action" href="'+esc(route.path)+'"><div class="ico">'+esc(route.icon)+'</div><strong>'+esc(route.shortLabel||route.label)+'</strong><span>'+esc(route.dailyDesc||route.label)+'</span></a>').join('');return items.length;}
 
   const ADMIN_BRANCH_KEY='mytool_admin_branch_id';
