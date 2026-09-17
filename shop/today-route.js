@@ -17,6 +17,7 @@ let rows = [];
 let syncing = false;
 let completingTaskId = null;
 let routeDraft = [];
+let routeDraftEditIndex = null;
 
 $('day').value = today();
 
@@ -201,7 +202,7 @@ async function identify() {
   const isAdmin = me.account_role === 'workspace_admin';
   $('subtitle').textContent = isAdmin
     ? 'أنشئ جولة العامل وتابع التنفيذ والاستلام.'
-    : 'المحلات المطلوبة منك اليوم؛ سجل ما استلمته فعليًا دون عرض تقدير الإدارة.';
+    : 'المحلات المطلوبة منك اليوم؛ يظهر لك المتوقع اليوم فقط دون عرض كامل دين العميل.';
   if (!isAdmin) {
     $('expectedSum').closest('.pill').hidden = true;
     $('remainingSum').closest('.pill').hidden = true;
@@ -256,7 +257,7 @@ function moneyBlock(row) {
   const expected = row.expected_amount == null ? 'غير محدد' : money(row.expected_amount);
   const remaining = row.expected_amount == null ? '—' : money(row.remaining_amount);
   const extra = Number(row.extra_amount || 0);
-  return `<div class="money"><div><small>تقدير الإدارة</small><b>${expected}</b></div><div><small>المستلم</small><b>${received}</b></div><div><small>${extra > 0 ? 'زيادة تحتاج مراجعة' : 'الباقي التقديري'}</small><b>${extra > 0 ? money(extra) : remaining}</b></div></div>`;
+  return `<div class="money"><div><small>المتوقع اليوم</small><b>${expected}</b></div><div><small>المستلم</small><b>${received}</b></div><div><small>${extra > 0 ? 'زيادة تحتاج مراجعة' : 'الباقي التقديري'}</small><b>${extra > 0 ? money(extra) : remaining}</b></div></div>`;
 }
 
 function workerLinkNotice(row) {
@@ -665,12 +666,33 @@ function renderRouteDraft() {
   if (!root) return;
   root.innerHTML = routeDraft.map((item, index) => {
     const amount = item.expected == null ? 'متوقع غير محدد' : 'متوقع: ' + money(item.expected);
-    return `<div class="route-draft-row"><div><div class="draft-name">${esc(item.name)}</div><div class="draft-amount">${amount}</div></div><span>#${index + 1}</span><button class="btn danger" type="button" data-draft-remove="${index}">حذف</button></div>`;
+    return `<div class="route-draft-row"><span class="draft-order">#${index + 1}</span><div><div class="draft-name">${esc(item.name)}</div><div class="draft-amount">${amount}</div></div><div class="route-draft-actions"><button class="icon-btn edit" type="button" data-draft-edit="${index}" aria-label="تعديل" title="تعديل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn delete" type="button" data-draft-remove="${index}" aria-label="حذف" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg></button></div></div>`;
   }).join('');
   $('confirmRouteBtn').hidden = routeDraft.length === 0;
+  root.querySelectorAll('[data-draft-edit]').forEach(button => {
+    button.onclick = () => {
+      const index = Number(button.dataset.draftEdit);
+      const item = routeDraft[index];
+      if (!item) return;
+      routeDraftEditIndex = index;
+      $('draftShopName').value = item.name;
+      $('draftExpected').value = item.expected == null ? '' : String(item.expected);
+      $('draftAddBtn').textContent = 'حفظ التعديل';
+      $('draftShopName').focus();
+    };
+  });
   root.querySelectorAll('[data-draft-remove]').forEach(button => {
     button.onclick = () => {
-      routeDraft.splice(Number(button.dataset.draftRemove), 1);
+      const index = Number(button.dataset.draftRemove);
+      routeDraft.splice(index, 1);
+      if (routeDraftEditIndex === index) {
+        routeDraftEditIndex = null;
+        $('draftShopName').value = '';
+        $('draftExpected').value = '';
+        $('draftAddBtn').textContent = 'إضافة للقائمة';
+      } else if (routeDraftEditIndex != null && routeDraftEditIndex > index) {
+        routeDraftEditIndex -= 1;
+      }
       renderRouteDraft();
     };
   });
@@ -688,12 +710,19 @@ function addRouteDraftItem() {
     if (!Number.isFinite(expected) || expected < 0) return stat('راجع المبلغ المتوقع.', 'err');
   }
 
-  routeDraft.push({ name, expected });
+  if (routeDraftEditIndex == null) {
+    routeDraft.push({ name, expected });
+    stat('أضيف المحل للقائمة. أكمل ثم اضغط «تأكيد الجولة».', 'ok');
+  } else {
+    routeDraft[routeDraftEditIndex] = { name, expected };
+    routeDraftEditIndex = null;
+    $('draftAddBtn').textContent = 'إضافة للقائمة';
+    stat('تم تعديل العنصر في القائمة.', 'ok');
+  }
   $('draftShopName').value = '';
   $('draftExpected').value = '';
   renderRouteDraft();
   $('draftShopName').focus();
-  stat('أضيف المحل للقائمة. أكمل ثم اضغط «تأكيد الجولة».', 'ok');
 }
 
 $('draftAddBtn').onclick = addRouteDraftItem;
