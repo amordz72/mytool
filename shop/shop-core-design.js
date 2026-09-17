@@ -52,7 +52,7 @@
   function enhanceHome(){
     const hero=document.querySelector('.dash-hero');if(!hero)return false;
     const title=prelaunchAdmin?'الرئيسية':(workerActive?'رئيسية العامل':'الرئيسية');
-    const subtitle=prelaunchAdmin?'إدارة PRELAUNCH ومتابعة الفروع من نفس الواجهة.':(workerActive?'أهم عمليات المحل أمامك مباشرة، والباقي من «المزيد».':'ملخص سريع للمحل والعمليات الأساسية.');
+    const subtitle=prelaunchAdmin?'مدير وضع الاستمرارية؛ اختر المخزن وتابع العمل من نفس الواجهة.':(workerActive?'أهم عمليات المحل أمامك مباشرة، والباقي من «المزيد».':'ملخص سريع للمحل والعمليات الأساسية.');
     addHeading(hero,title,subtitle,'MyTool');
     return true;
   }
