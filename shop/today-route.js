@@ -16,6 +16,7 @@ let me = null;
 let rows = [];
 let syncing = false;
 let completingTaskId = null;
+let routeDraft = [];
 
 $('day').value = today();
 
@@ -659,22 +660,81 @@ async function del(id) {
   await load();
 }
 
-$('addBtn').onclick = async () => {
-  if (!navigator.onLine) return stat('إضافة جولة جديدة تحتاج اتصالًا. القائمة الحالية فقط تعمل محليًا.', 'err');
-  const lines = $('lines').value.trim();
-  if (!lines) return stat('ألصق أسماء المحلات أولًا.', 'err');
+function renderRouteDraft() {
+  const root = $('draftList');
+  if (!root) return;
+  root.innerHTML = routeDraft.map((item, index) => {
+    const amount = item.expected == null ? 'متوقع غير محدد' : 'متوقع: ' + money(item.expected);
+    return `<div class="route-draft-row"><div><div class="draft-name">${esc(item.name)}</div><div class="draft-amount">${amount}</div></div><span>#${index + 1}</span><button class="btn danger" type="button" data-draft-remove="${index}">حذف</button></div>`;
+  }).join('');
+  $('confirmRouteBtn').hidden = routeDraft.length === 0;
+  root.querySelectorAll('[data-draft-remove]').forEach(button => {
+    button.onclick = () => {
+      routeDraft.splice(Number(button.dataset.draftRemove), 1);
+      renderRouteDraft();
+    };
+  });
+}
+
+function addRouteDraftItem() {
+  const name = $('draftShopName').value.trim();
+  const rawExpected = $('draftExpected').value.trim();
+  if (!name) return stat('اكتب اسم المحل.', 'err');
+  if (/[|\n\r]/.test(name)) return stat('اسم المحل لا يجب أن يحتوي على | أو سطر جديد.', 'err');
+
+  let expected = null;
+  if (rawExpected !== '') {
+    expected = Number(rawExpected);
+    if (!Number.isFinite(expected) || expected < 0) return stat('راجع المبلغ المتوقع.', 'err');
+  }
+
+  routeDraft.push({ name, expected });
+  $('draftShopName').value = '';
+  $('draftExpected').value = '';
+  renderRouteDraft();
+  $('draftShopName').focus();
+  stat('أضيف المحل للقائمة. أكمل ثم اضغط «تأكيد الجولة».', 'ok');
+}
+
+$('draftAddBtn').onclick = addRouteDraftItem;
+$('draftShopName').addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    addRouteDraftItem();
+  }
+});
+$('draftExpected').addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    addRouteDraftItem();
+  }
+});
+
+$('confirmRouteBtn').onclick = async () => {
+  if (!navigator.onLine) return stat('تأكيد الجولة يحتاج اتصالًا. القائمة ما زالت أمامك ولم تُرسل.', 'err');
+  if (!routeDraft.length) return stat('أضف محلًا واحدًا على الأقل.', 'err');
+
   const worker = Number($('worker').value || 0);
-  stat('جاري إضافة الجولة…');
+  const lines = routeDraft.map(item =>
+    item.expected == null ? item.name : item.name + ' | ' + item.expected
+  ).join('\n');
+
+  $('confirmRouteBtn').disabled = true;
+  stat('جاري تأكيد الجولة…');
   const response = await s.rpc('workspace_admin_add_visit_tasks_v2', {
     p_session_token: token,
     p_lines: lines,
     p_visit_date: $('day').value || today(),
     p_assigned_worker_id: worker || null
   });
-  if (response.error) return stat('تعذر الإضافة: ' + safeError(response.error), 'err');
-  $('lines').value = '';
+  $('confirmRouteBtn').disabled = false;
+  if (response.error) return stat('تعذر تأكيد الجولة: ' + safeError(response.error), 'err');
+
+  const added = Number(response.data || routeDraft.length);
+  routeDraft = [];
+  renderRouteDraft();
   await load();
-  stat('تمت إضافة ' + response.data + ' محل/محلات للجولة.', 'ok');
+  stat('تم تأكيد الجولة وإضافة ' + added + ' محل/محلات.', 'ok');
 };
 
 $('day').onchange = load;
