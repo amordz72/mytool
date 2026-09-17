@@ -3,8 +3,9 @@
   'use strict';
   if(document.body?.dataset?.screen!=='index')return;
   const token=localStorage.getItem('mytool_shop_worker_token')||'';
-  if(!token||!window.ShopApiConfig)return;
-  const {url,key}=window.ShopApiConfig;
+  if(!token)return;
+  const api=window.ShopApiConfig||{url:'https://wqyebqzbbpohbnznqdjj.supabase.co',key:'sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj'};
+  const {url,key}=api;
   const headers={apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'};
   const rpc=async(name,body)=>{const r=await fetch(url+'/rest/v1/rpc/'+name,{method:'POST',headers,body:JSON.stringify(body||{})});if(!r.ok)throw new Error(await r.text()||name);return r.status===204?null:r.json()};
   const $=id=>document.getElementById(id);
