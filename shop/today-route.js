@@ -16,6 +16,8 @@ let me = null;
 let rows = [];
 let syncing = false;
 let completingTaskId = null;
+let completionMode = 'worker';
+let completionRequestKey = null;
 let routeDraft = [];
 let routeDraftEditIndex = null;
 
@@ -91,7 +93,11 @@ function pendingForTask(taskId) {
 
 function queuedAmount(taskId) {
   return pendingForTask(taskId)
-    .filter(item => item.kind === 'collect' || (item.kind === 'complete' && item.has_money))
+    .filter(item =>
+      item.kind === 'collect'
+      || item.kind === 'admin_receive'
+      || (item.kind === 'complete' && item.has_money)
+    )
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 }
 
@@ -102,7 +108,7 @@ function renderSyncState() {
   const blocked = list.filter(item => item.state === 'blocked').length;
   $('syncCount').textContent = list.length;
   $('syncBlocked').textContent = blocked;
-  box.hidden = !me || me.account_role !== 'worker' || (navigator.onLine && list.length === 0 && !syncing);
+  box.hidden = !me || (navigator.onLine && list.length === 0 && !syncing);
   box.classList.toggle('has-pending', list.length > 0);
   box.classList.toggle('has-blocked', blocked > 0);
   $('syncNow').disabled = syncing || !list.length;
@@ -181,6 +187,11 @@ function applyQueuedStateLocally() {
       row.status = 'done';
       row.completion_note = item.notes || null;
     }
+    if (item.kind === 'admin_receive') {
+      row.status = 'done';
+      row.completed_source = 'admin_receipt';
+      row.completion_note = item.notes || null;
+    }
   }
 }
 
@@ -257,7 +268,9 @@ function moneyBlock(row) {
   const expected = row.expected_amount == null ? 'غير محدد' : money(row.expected_amount);
   const remaining = row.expected_amount == null ? '—' : money(row.remaining_amount);
   const extra = Number(row.extra_amount || 0);
-  return `<div class="money"><div><small>المتوقع اليوم</small><b>${expected}</b></div><div><small>المستلم</small><b>${received}</b></div><div><small>${extra > 0 ? 'زيادة تحتاج مراجعة' : 'الباقي التقديري'}</small><b>${extra > 0 ? money(extra) : remaining}</b></div></div>`;
+  const local = queuedAmount(row.id);
+  const localLine = local > 0 ? `<div><small>معلّق للمزامنة</small><b>${money(local)}</b></div>` : '';
+  return `<div class="money"><div><small>المتوقع اليوم</small><b>${expected}</b></div><div><small>المستلم</small><b>${received}</b></div><div><small>${extra > 0 ? 'زيادة تحتاج مراجعة' : 'الباقي التقديري'}</small><b>${extra > 0 ? money(extra) : remaining}</b></div>${localLine}</div>`;
 }
 
 function workerLinkNotice(row) {
@@ -265,9 +278,13 @@ function workerLinkNotice(row) {
   return '<div class="warnbox">هذا الاسم غير مربوط بدليل العملاء. يمكنك إتمام الزيارة وتسجيل المبلغ؛ سيُحفظ مؤقتًا باسم المحل حتى تربطه الإدارة لاحقًا.</div>';
 }
 
-function adminExpected(row) {
+function adminVisitEdit(row) {
   if (me.account_role !== 'workspace_admin') return '';
-  return `<div class="admin-expected"><div class="field"><label>تعديل المتوقع</label><input data-expected="${row.id}" type="number" min="0" step="0.01" value="${row.expected_amount == null ? '' : Number(row.expected_amount)}" placeholder="غير محدد"></div><button class="btn secondary" data-save-expected="${row.id}" type="button">حفظ المتوقع</button></div>`;
+  return `<div class="admin-visit-edit" data-admin-edit-panel="${row.id}" hidden>
+    <div class="field"><label>اسم المحل</label><input data-admin-name="${row.id}" type="text" value="${esc(row.shop_name)}"></div>
+    <div class="field"><label>المتوقع اليوم</label><input data-admin-expected="${row.id}" type="number" min="0" step="0.01" value="${row.expected_amount == null ? '' : Number(row.expected_amount)}" placeholder="غير محدد"></div>
+    <button class="btn secondary" data-admin-save="${row.id}" type="button">حفظ التعديل</button>
+  </div>`;
 }
 
 function pendingBadge(row) {
@@ -300,13 +317,21 @@ function renderDoneSection(doneRows) {
     const unlinked = !row.party_id && Number(row.received_amount || 0) > 0
       ? '<div class="warnbox">الاستلام محفوظ باسم المحل وغير مربوط بحساب بعد.</div>'
       : '';
-    const reopen = (me.account_role === 'worker' || me.account_role === 'workspace_admin')
+    const receivedByAdmin = row.completed_source === 'admin_receipt';
+    const reopen = !receivedByAdmin && (me.account_role === 'worker' || me.account_role === 'workspace_admin')
       ? `<div class="actions"><button class="btn secondary" data-reopen="${row.id}" type="button">إرجاع للزيارات</button></div>`
       : '';
-    return `<div class="done-card" data-done-id="${row.id}"><div class="head"><div><div class="name">${esc(row.shop_name)}</div><div class="meta"><span class="done-label">تمت الزيارة</span> ${pendingBadge(row)}</div></div></div>${moneyBlock(row)}${note}${unlinked}${reopen}</div>`;
+    const completionLabel = receivedByAdmin ? 'استلمت الإدارة' : 'تمت الزيارة';
+    const adminExtra = me.account_role === 'workspace_admin'
+      ? `<div class="actions"><button class="btn secondary" data-admin-extra="${row.id}" type="button">استلام إضافي</button></div>`
+      : '';
+    return `<div class="done-card" data-done-id="${row.id}"><div class="head"><div><div class="name">${esc(row.shop_name)}</div><div class="meta"><span class="done-label">${completionLabel}</span> ${pendingBadge(row)}</div></div></div>${moneyBlock(row)}${note}${unlinked}${reopen}${adminExtra}</div>`;
   }).join('');
   root.querySelectorAll('[data-reopen]').forEach(button => {
     button.onclick = () => reopenVisit(Number(button.dataset.reopen));
+  });
+  root.querySelectorAll('[data-admin-extra]').forEach(button => {
+    button.onclick = () => openCompleteDialog(Number(button.dataset.adminExtra), 'admin');
   });
 }
 
@@ -337,15 +362,31 @@ function render() {
           : '<button class="btn secondary" data-s="pending" type="button">إرجاع</button>')
       : '';
     const adminActions = me.account_role === 'workspace_admin'
-      ? '<button class="btn danger" data-del type="button">حذف</button>'
+      ? `<div class="admin-tools">
+          <button class="icon-btn edit" data-admin-edit="${row.id}" type="button" aria-label="تعديل" title="تعديل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="btn" data-admin-receive="${row.id}" type="button">استلام الإدارة</button>
+          <button class="icon-btn delete" data-del type="button" aria-label="حذف" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg></button>
+        </div>`
       : '';
-    return `<section class="item" data-id="${row.id}"><div class="head"><div><div class="name">${index + 1}. ${esc(row.shop_name)}</div><div class="meta">${me.account_role === 'workspace_admin' && row.assigned_name ? esc(row.assigned_name) + ' · ' : ''}<span class="${cls(row.status)}">${label(row.status)}</span>${row.party_name ? ' · مربوط: ' + esc(row.party_name) : ''} ${pendingBadge(row)}</div></div></div>${row.notes ? `<div class="note">${esc(row.notes)}</div>` : ''}${moneyBlock(row)}${adminExpected(row)}${workerLinkNotice(row)}<div class="actions">${workerActions}${adminActions}</div></section>`;
+    return `<section class="item" data-id="${row.id}"><div class="head"><div><div class="name">${index + 1}. ${esc(row.shop_name)}</div><div class="meta">${me.account_role === 'workspace_admin' && row.assigned_name ? esc(row.assigned_name) + ' · ' : ''}<span class="${cls(row.status)}">${label(row.status)}</span>${row.party_name ? ' · مربوط: ' + esc(row.party_name) : ''} ${pendingBadge(row)}</div></div></div>${row.notes ? `<div class="note">${esc(row.notes)}</div>` : ''}${moneyBlock(row)}${adminVisitEdit(row)}${workerLinkNotice(row)}<div class="actions">${workerActions}${adminActions}</div></section>`;
   }).join('');
 
   dedupeRenderedCards(root);
 
   root.querySelectorAll('[data-complete]').forEach(button => {
-    button.onclick = () => openCompleteDialog(Number(button.dataset.complete));
+    button.onclick = () => openCompleteDialog(Number(button.dataset.complete), 'worker');
+  });
+  root.querySelectorAll('[data-admin-receive]').forEach(button => {
+    button.onclick = () => openCompleteDialog(Number(button.dataset.adminReceive), 'admin');
+  });
+  root.querySelectorAll('[data-admin-edit]').forEach(button => {
+    button.onclick = () => {
+      const panel = document.querySelector('[data-admin-edit-panel="' + button.dataset.adminEdit + '"]');
+      if (panel) panel.hidden = !panel.hidden;
+    };
+  });
+  root.querySelectorAll('[data-admin-save]').forEach(button => {
+    button.onclick = () => void saveAdminVisit(Number(button.dataset.adminSave));
   });
   root.querySelectorAll('[data-s]').forEach(button => {
     button.onclick = () => setStatus(Number(button.closest('[data-id]').dataset.id), button.dataset.s);
@@ -353,17 +394,20 @@ function render() {
   root.querySelectorAll('[data-del]').forEach(button => {
     button.onclick = () => del(Number(button.closest('[data-id]').dataset.id));
   });
-  root.querySelectorAll('[data-save-expected]').forEach(button => {
-    button.onclick = () => saveExpected(Number(button.dataset.saveExpected));
-  });
+
 }
 
-function openCompleteDialog(id) {
-  if (me.account_role !== 'worker') return;
+function openCompleteDialog(id, mode = 'worker') {
+  if (mode === 'worker' && me.account_role !== 'worker') return;
+  if (mode === 'admin' && me.account_role !== 'workspace_admin') return;
   const row = rows.find(item => Number(item.id) === Number(id));
   if (!row) return stat('تعذر العثور على الزيارة.', 'err');
 
   completingTaskId = id;
+  completionMode = mode;
+  completionRequestKey = mode === 'admin' ? crypto.randomUUID() : null;
+  $('completeTitle').textContent = mode === 'admin' ? 'استلام الإدارة' : 'إتمام الزيارة';
+  $('completeSave').textContent = mode === 'admin' ? 'حفظ الاستلام' : 'حفظ وإتمام';
   $('completeShopName').textContent = row.shop_name;
   $('completeAmount').value = '0';
   $('completeNote').value = row.completion_note || '';
@@ -395,6 +439,8 @@ function closeCompleteDialog() {
   $('completeDialog').hidden = true;
   document.body.classList.remove('dialog-open');
   completingTaskId = null;
+  completionMode = 'worker';
+  completionRequestKey = null;
 }
 
 async function completeVisit() {
@@ -412,6 +458,42 @@ async function completeVisit() {
   const hasMoney = amount > 0;
   const note = $('completeNote').value.trim() || null;
   const taskId = completingTaskId;
+
+  if (completionMode === 'admin') {
+    if (!hasMoney) return stat('أدخل مبلغ الاستلام.', 'err');
+
+    const requestKey = completionRequestKey || crypto.randomUUID();
+    completionRequestKey = requestKey;
+    const item = {
+      local_id: crypto.randomUUID(),
+      owner: ownerKey(),
+      kind: 'admin_receive',
+      task_id: taskId,
+      amount,
+      notes: note,
+      request_key: requestKey,
+      created_at: new Date().toISOString(),
+      state: 'pending',
+      last_error: ''
+    };
+
+    upsertQueueItem(item);
+    row.status = 'done';
+    row.completed_source = 'admin_receipt';
+    row.completion_note = note;
+    saveRouteCache();
+    closeCompleteDialog();
+    render();
+
+    if (!navigator.onLine) {
+      stat('تم حفظ استلام الإدارة محليًا وسيُزامن عند رجوع الإنترنت.', 'warn');
+      return;
+    }
+
+    stat('جاري مزامنة استلام الإدارة…');
+    await flushQueue(false);
+    return;
+  }
   const item = {
     local_id: crypto.randomUUID(),
     owner: ownerKey(),
@@ -444,16 +526,27 @@ async function completeVisit() {
   await flushQueue(false);
 }
 
-async function saveExpected(id) {
-  if (!navigator.onLine) return stat('تعديل المتوقع يحتاج اتصالًا. لم يتم حفظ أي تغيير.', 'err');
-  const input = document.querySelector('[data-expected="' + id + '"]');
-  const raw = input?.value.trim() || '';
-  const amount = raw === '' ? null : Number(raw);
-  if (amount !== null && (!Number.isFinite(amount) || amount < 0)) return stat('راجع المبلغ المتوقع.', 'err');
-  stat('جاري حفظ المتوقع…');
-  const response = await s.rpc('workspace_admin_set_visit_expected', { p_session_token: token, p_task_id: id, p_expected_amount: amount });
-  if (response.error) return stat('تعذر حفظ المتوقع: ' + safeError(response.error), 'err');
+async function saveAdminVisit(id) {
+  if (!navigator.onLine) return stat('تعديل الزيارة يحتاج اتصالًا.', 'err');
+  const nameInput = document.querySelector('[data-admin-name="' + id + '"]');
+  const expectedInput = document.querySelector('[data-admin-expected="' + id + '"]');
+  const name = nameInput?.value.trim() || '';
+  const rawExpected = expectedInput?.value.trim() || '';
+  const expected = rawExpected === '' ? null : Number(rawExpected);
+
+  if (!name) return stat('اكتب اسم المحل.', 'err');
+  if (expected !== null && (!Number.isFinite(expected) || expected < 0)) return stat('راجع المبلغ المتوقع.', 'err');
+
+  stat('جاري حفظ تعديل الزيارة…');
+  const response = await s.rpc('workspace_admin_update_visit_task', {
+    p_session_token: token,
+    p_task_id: id,
+    p_shop_name: name,
+    p_expected_amount: expected
+  });
+  if (response.error) return stat('تعذر حفظ التعديل: ' + safeError(response.error), 'err');
   await load();
+  stat('تم تعديل الزيارة.', 'ok');
 }
 
 async function syncItem(item) {
@@ -480,6 +573,17 @@ async function syncItem(item) {
     if (response.error) throw response.error;
     return;
   }
+  if (item.kind === 'admin_receive') {
+    const response = await s.rpc('workspace_admin_receive_visit_safe', {
+      p_session_token: token,
+      p_task_id: item.task_id,
+      p_amount: Number(item.amount),
+      p_notes: item.notes || null,
+      p_request_key: item.request_key
+    });
+    if (response.error) throw response.error;
+    return;
+  }
   if (item.kind === 'status') {
     const response = await s.rpc('workspace_visit_set_status', {
       p_session_token: token,
@@ -493,7 +597,7 @@ async function syncItem(item) {
 }
 
 async function flushQueue(manual = false) {
-  if (syncing || !me || me.account_role !== 'worker') return;
+  if (syncing || !me) return;
   const list = currentQueue();
   if (!list.length) return renderSyncState();
   if (!navigator.onLine) {
@@ -791,6 +895,27 @@ window.addEventListener('pageshow', event => {
 setInterval(() => {
   if (navigator.onLine && currentQueue().length) void flushQueue(false);
 }, 30000);
+
+async function refreshWorkerRouteSilently() {
+  if (!navigator.onLine || !me || me.account_role !== 'worker' || document.hidden) return;
+  if (currentQueue().length || !$('completeDialog').hidden) return;
+  const response = await s.rpc('workspace_visit_list_v2', {
+    p_session_token: token,
+    p_visit_date: $('day').value || today()
+  });
+  if (response.error) return;
+  rows = Array.isArray(response.data) ? response.data : [];
+  saveRouteCache();
+  render();
+}
+
+setInterval(() => {
+  void refreshWorkerRouteSilently();
+}, 10000);
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) void refreshWorkerRouteSilently();
+});
 
 (async () => {
   try {
