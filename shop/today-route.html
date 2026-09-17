@@ -27,13 +27,11 @@
   <div class="complete-panel" role="dialog" aria-modal="true" aria-labelledby="completeTitle">
     <h3 id="completeTitle">إتمام الزيارة</h3>
     <div id="completeShopName" class="complete-shop"></div>
-    <div class="complete-question">هل استلمت مالًا؟</div>
-    <div class="complete-choice"><button id="completeNoMoney" class="btn secondary" type="button">لا</button><button id="completeYesMoney" class="btn secondary" type="button">نعم</button></div>
-    <div id="completeMoneyFields" class="complete-money" hidden><div class="field"><label>المبلغ المستلم فعليًا</label><input id="completeAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="أدخل المبلغ"></div></div>
+    <div class="complete-money"><div class="field"><label>المبلغ المستلم فعليًا</label><input id="completeAmount" type="number" min="0" step="0.01" inputmode="decimal" value="0"></div><div class="hint">اتركه 0 إذا لم تستلم مالًا.</div></div>
     <div class="field" style="margin-top:10px"><label>ملاحظة</label><textarea id="completeNote" placeholder="اختياري"></textarea></div>
     <div id="completeLinkHint" class="warnbox complete-link" hidden></div>
     <div class="complete-actions"><button id="completeCancel" class="btn secondary" type="button">إلغاء</button><button id="completeSave" class="btn" type="button">حفظ وإتمام</button></div>
   </div>
 </div>
-<script type="module" src="today-route.js?v=20260917-complete-1"></script>
+<script type="module" src="today-route.js?v=20260917-complete-2"></script>
 </body></html>
