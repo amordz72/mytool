@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2ea8e6">
+<title>مراقب مخزون البطاقات - MyTool</title>
+<style>
+:root{--o:#f47700;--b:#2ea8e6;--t:#163047;--m:#61778a;--l:#d7e5ee;--g:#0f9f6e;--r:#d84c4c;--a:#d88600;--soft:#f6fbff}
+*{box-sizing:border-box}body{margin:0;padding:8px;font-family:Arial,Tahoma,sans-serif;color:var(--t);background:linear-gradient(135deg,#fff7ef,#eef9ff)}
+.wrap{max-width:980px;margin:auto}.toplinks{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px}.back{display:block;text-decoration:none;color:var(--t);font-weight:bold;background:#fff;border:1px solid var(--l);border-radius:10px;padding:10px 12px;text-align:center}
+.app{background:#fff;border:1px solid var(--l);border-radius:20px;overflow:hidden;box-shadow:0 8px 24px #16304718}.head{padding:14px 16px;color:#fff;background:linear-gradient(135deg,var(--o),#7fd3ff)}.head h1{font-size:20px;margin:0}.head p{margin:4px 0 0;font-size:12px;line-height:1.6}
+.body{padding:12px}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:5px;border:1px solid var(--l);border-radius:13px;background:#f5f9fc;margin-bottom:10px}.tab{border:0;border-radius:9px;padding:10px 4px;background:transparent;font-weight:bold;color:var(--t);cursor:pointer}.tab.on{color:#fff;background:linear-gradient(135deg,var(--o),var(--b))}
+.panel[hidden]{display:none!important}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.kpi{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fbfdff}.kpi small{display:block;color:var(--m);font-size:11px}.kpi b{display:block;font-size:20px;margin-top:4px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.field{border:1px solid var(--l);border-radius:12px;padding:9px;background:#fbfdff}.field label{display:block;font-size:11px;color:var(--m);margin-bottom:5px}.field select,.field input{width:100%;border:1px solid var(--l);border-radius:9px;padding:9px;background:#fff;font:inherit}
+.note{font-size:12px;color:var(--m);background:#f7fbfe;border-radius:10px;padding:9px;margin-bottom:10px;line-height:1.7}.status{min-height:22px;margin-top:8px;font-size:13px;font-weight:bold}.ok{color:var(--g)}.bad{color:var(--r)}.warn{color:var(--a)}
+.cards{display:grid;gap:8px}.product{border:1px solid var(--l);border-radius:14px;padding:11px;background:#fff}.productHead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.product h3{font-size:15px;margin:0}.pill{font-size:11px;border-radius:99px;padding:4px 8px;font-weight:bold;white-space:nowrap}.pill.buy{background:#fff0f0;color:var(--r)}.pill.watch{background:#fff7e8;color:#a35a00}.pill.okay{background:#eafaf4;color:#087855}.pill.none{background:#eef4f8;color:#607587}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:9px}.metric{background:#f7fbfe;border-radius:9px;padding:7px;text-align:center}.metric small{display:block;color:var(--m);font-size:10px}.metric b{font-size:13px}
+.buyBox{margin-top:8px;padding:8px;border-radius:9px;background:#fff8ed;font-size:12px}.buyBox strong{font-size:15px}.empty{padding:18px;text-align:center;color:var(--m);border:1px dashed var(--l);border-radius:12px}
+textarea{width:100%;min-height:210px;border:1px solid var(--l);border-radius:12px;padding:10px;font:13px/1.7 monospace;direction:ltr;text-align:left;resize:vertical}.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.btn{border:0;border-radius:10px;padding:11px 12px;font-weight:bold;color:#fff;background:linear-gradient(135deg,var(--o),var(--b));cursor:pointer}.btn.secondary{background:#fff;color:#14729f;border:1px solid #bfe3f6}.btn.danger{background:#fff;color:var(--r);border:1px solid #f3b7b7}
+.importHelp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.help{border:1px solid var(--l);border-radius:12px;padding:9px;background:#fbfdff}.help b{font-size:13px}.help small{display:block;color:var(--m);line-height:1.6;margin-top:4px}
+.historyList{display:grid;gap:6px}.day{display:flex;justify-content:space-between;gap:8px;align-items:center;border:1px solid var(--l);border-radius:10px;padding:9px;background:#fbfdff}.day small{color:var(--m)}.sectionTitle{font-size:15px;margin:14px 0 8px}.dataInfo{font-size:11px;color:var(--m);margin-top:7px;line-height:1.6}
+@media(max-width:680px){.summary{grid-template-columns:1fr 1fr}.controls,.importHelp{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metrics .metric:last-child{grid-column:1/-1}.actions{grid-template-columns:1fr}.toplinks{grid-template-columns:1fr}.body{padding:9px}}
+</style>
+<script src="../auth-guard.js" data-access="admin"></script>
+</head>
+<body><main class="wrap">
+<div class="toplinks"><a class="back" href="./">← معالج البطاقات</a><a class="back" href="settings.html">⚙️ إعدادات البطاقات</a></div>
+<section class="app">
+<header class="head"><h1>📦 مراقب مخزون البطاقات</h1><p>يحوّل نص «المخزن» و«مداخيل المنتجات» إلى قرار شراء مبني على أيام العمل النشطة.</p></header>
+<div class="body">
+<nav class="tabs"><button class="tab on" data-tab="today">اليوم</button><button class="tab" data-tab="import">استيراد</button><button class="tab" data-tab="history">التاريخ</button></nav>
+
+<section id="today" class="panel">
+<div class="summary">
+<div class="kpi"><small>الأيام النشطة المسجلة</small><b id="activeDaysKpi">0</b></div>
+<div class="kpi"><small>عمليات البيع المحفوظة</small><b id="salesKpi">0</b></div>
+<div class="kpi"><small>البطاقات المتبقية</small><b id="stockKpi">0</b></div>
+<div class="kpi"><small>منتجات تحتاج شراء الآن</small><b id="buyKpi">0</b></div>
+</div>
+<div class="controls">
+<div class="field"><label for="windowDays">الحساب حسب آخر أيام عمل نشطة</label><select id="windowDays"><option value="7">7 أيام نشطة</option><option value="14">14 يومًا نشطًا</option><option value="30">30 يومًا نشطًا</option><option value="0">كل الأيام المسجلة</option></select></div>
+<div class="field"><label for="goalDays">الهدف: مخزون يكفي كم يوم عمل نشط؟</label><input id="goalDays" type="number" min="1" max="60" inputmode="numeric" value="7"></div>
+</div>
+<div id="todayNote" class="note"></div>
+<div id="products" class="cards"></div>
+</section>
+
+<section id="import" class="panel" hidden>
+<div class="importHelp">
+<div class="help"><b>استيراد المخزن</b><small>ألصق صفحة «المخزن / آخر العمليات». يمكن لصق الصفحة 1 ثم الصفحة 2؛ نفس دفعة الرفع تُحدَّث بدل تكرارها.</small></div>
+<div class="help"><b>استيراد المبيعات</b><small>ألصق صفحة «مداخيل المنتجات». يمكن إعادة لصق نفس الصفحة يوميًا؛ العمليات القديمة لا تُحسب مرتين.</small></div>
+</div>
+<textarea id="raw" placeholder="ألصق النص المنسوخ من تهنى باي هنا..."></textarea>
+<div class="actions"><button id="importStock" class="btn">📦 استيراد المخزن</button><button id="importSales" class="btn">🧾 استيراد المبيعات</button></div>
+<div id="importStatus" class="status"></div>
+<div class="dataInfo">لا تُحفظ أكواد البطاقات أو أسماء الزبائن. في المبيعات تُحفظ فقط بصمة منع التكرار + المنتج + التاريخ والوقت. البيانات في هذه النسخة محفوظة محليًا على هذا المتصفح.</div>
+</section>
+
+<section id="history" class="panel" hidden>
+<div class="note" id="historyNote"></div>
+<h2 class="sectionTitle">الأيام النشطة</h2>
+<div id="historyList" class="historyList"></div>
+<h2 class="sectionTitle">إدارة البيانات</h2>
+<div class="actions"><button id="exportData" class="btn secondary">نسخ نسخة احتياطية JSON</button><button id="clearData" class="btn danger">حذف بيانات هذه الأداة</button></div>
+<div id="historyStatus" class="status"></div>
+</section>
+</div></section></main>
+
+<script>
+(() => {
+'use strict';
+const STORAGE_KEY='mytool.cards.stockAdvisor.v1';
+const $=id=>document.getElementById(id);
+const dateRx=/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/;
+const moneyRx=/^[\d.,]+\s*دج$/i;
+const intRx=/^\d+$/;
+let state=loadState();
+
+function baseState(){return{version:1,batches:[],sales:[],windowDays:7,goalDays:7,lastStockImport:null,lastSalesImport:null}}
+function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return baseState();const x=JSON.parse(raw);return{...baseState(),...x,batches:Array.isArray(x.batches)?x.batches:[],sales:Array.isArray(x.sales)?x.sales:[]}}catch(_e){return baseState()}}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function linesOf(raw){return String(raw||'').split(/\r\n|\n|\r/).map(x=>x.trim()).filter(Boolean)}
+function productName(raw){
+  const s=String(raw||'').trim().replace(/\s+/g,' ');
+  let m=s.match(/^game\s+free\s*fire\s+(\d+)$/i)||s.match(/^game\s+freefire\s+(\d+)$/i); if(m)return `Free Fire ${m[1]}`;
+  m=s.match(/^game\s+pubgm?\s+(\d+)$/i); if(m)return `PUBG ${m[1]}`;
+  m=s.match(/^(ADSL|4G|Mobilis|Ooredoo|Djezzy|Forfait)\s+(\d+)$/i);
+  if(m){const map={adsl:'ADSL','4g':'4G',mobilis:'Mobilis',ooredoo:'Ooredoo',djezzy:'Djezzy',forfait:'Forfait'};return `${map[m[1].toLowerCase()]} ${m[2]}`}
+  return '';
+}
+function splitTs(ts){const [date,time]=ts.split(/\s+/);return{date,time}}
+function batchKey(product,ts,initial){return `${product}|${ts}|${initial}`}
+function fallbackHash(text){let h=2166136261;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}return `f${(h>>>0).toString(16)}`}
+async function digest(text){try{if(globalThis.crypto?.subtle){const data=new TextEncoder().encode(text);const out=await crypto.subtle.digest('SHA-256',data);return Array.from(new Uint8Array(out)).map(b=>b.toString(16).padStart(2,'0')).join('')}}catch(_e){}return fallbackHash(text)}
+
+function parseStock(raw){
+  const lines=linesOf(raw),rows=[];
+  for(let i=4;i<lines.length;i++){
+    if(!dateRx.test(lines[i]))continue;
+    const product=productName(lines[i-4]);
+    if(!product||!moneyRx.test(lines[i-3])||!intRx.test(lines[i-2])||!intRx.test(lines[i-1]))continue;
+    const initial=Number(lines[i-2]),remaining=Number(lines[i-1]);
+    if(remaining<0||initial<0||remaining>initial)continue;
+    rows.push({key:batchKey(product,lines[i],initial),product,initial,remaining,ts:lines[i]});
+  }
+  return rows;
+}
+
+async function parseSales(raw){
+  const lines=linesOf(raw),rows=[];
+  for(let i=5;i<lines.length;i++){
+    if(!dateRx.test(lines[i]))continue;
+    const product=productName(lines[i-4]);
+    if(!product||!moneyRx.test(lines[i-3])||!moneyRx.test(lines[i-2])||!moneyRx.test(lines[i-1]))continue;
+    const fingerprint=[lines[i-5],lines[i-4],lines[i-3],lines[i-2],lines[i-1],lines[i]].join('|');
+    const id=await digest(fingerprint);
+    const {date,time}=splitTs(lines[i]);
+    rows.push({id,product,date,time});
+  }
+  return rows;
+}
+
+function stockByProduct(){
+  const map=new Map();
+  for(const b of state.batches){map.set(b.product,(map.get(b.product)||0)+Number(b.remaining||0))}
+  return map;
+}
+function activeDates(){
+  return [...new Set(state.sales.map(x=>x.date).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+}
+function selectedDates(){
+  const all=activeDates(),n=Number(state.windowDays||0);
+  return n>0?all.slice(0,n):all;
+}
+function analysisRows(){
+  const dates=selectedDates(),set=new Set(dates),den=dates.length;
+  const sold=new Map();
+  for(const s of state.sales){if(set.has(s.date))sold.set(s.product,(sold.get(s.product)||0)+1)}
+  const stock=stockByProduct();
+  const names=[...new Set([...stock.keys(),...sold.keys()])];
+  return names.map(product=>{
+    const remaining=stock.get(product)||0,count=sold.get(product)||0,avg=den?count/den:0;
+    const days=avg>0?remaining/avg:null;
+    const buy=avg>0?Math.max(0,Math.ceil(avg*Number(state.goalDays||7)-remaining)):0;
+    let status='none',label='لا توجد بيانات بيع';
+    if(avg>0&&days<3){status='buy';label='اشترِ الآن'}
+    else if(avg>0&&days<=5){status='watch';label='راقب'}
+    else if(avg>0){status='okay';label='كافٍ'}
+    return{product,remaining,count,avg,days,buy,status,label}
+  }).sort((a,b)=>{
+    const rank={buy:0,watch:1,okay:2,none:3};
+    return rank[a.status]-rank[b.status]||(a.days??9999)-(b.days??9999)||a.product.localeCompare(b.product);
+  });
+}
+function fmt(n,d=1){return Number(n||0).toLocaleString('ar-DZ',{maximumFractionDigits:d})}
+function daysText(v){if(v===null)return '—';if(v>99)return '+99';return fmt(v,1)}
+function render(){
+  $('windowDays').value=String(state.windowDays);
+  $('goalDays').value=String(state.goalDays);
+  const dates=selectedDates(),rows=analysisRows(),stock=stockByProduct();
+  $('activeDaysKpi').textContent=activeDates().length;
+  $('salesKpi').textContent=state.sales.length;
+  $('stockKpi').textContent=[...stock.values()].reduce((a,b)=>a+b,0);
+  $('buyKpi').textContent=rows.filter(x=>x.status==='buy').length;
+  $('todayNote').textContent=dates.length
+    ? `الحساب الحالي يستخدم ${dates.length} يوم عمل نشط من ${dates[dates.length-1]} إلى ${dates[0]}. المتوسط = عدد المبيعات ÷ الأيام التي حدثت فيها أي عملية بيع على المنصة.`
+    : 'لم تُستورد مبيعات بعد. استورد «مداخيل المنتجات» حتى نحسب أيام العمل النشطة ومتوسط الاستهلاك.';
+  $('products').innerHTML=rows.length?rows.map(r=>`
+    <article class="product">
+      <div class="productHead"><h3>${esc(r.product)}</h3><span class="pill ${r.status}">${r.label}</span></div>
+      <div class="metrics">
+        <div class="metric"><small>المتبقي</small><b>${fmt(r.remaining,0)}</b></div>
+        <div class="metric"><small>باع في الفترة</small><b>${fmt(r.count,0)}</b></div>
+        <div class="metric"><small>لكل يوم نشط</small><b>${r.avg?fmt(r.avg,2):'—'}</b></div>
+        <div class="metric"><small>يكفي أيام</small><b>${daysText(r.days)}</b></div>
+        <div class="metric"><small>هدف المخزون</small><b>${fmt(state.goalDays,0)} أيام</b></div>
+      </div>
+      <div class="buyBox">${r.avg?`الشراء المقترح للوصول إلى هدف ${fmt(state.goalDays,0)} أيام نشطة: <strong>${fmt(r.buy,0)}</strong> بطاقة.`:'لا توجد مبيعات كافية لهذا المنتج لحساب شراء مقترح.'}</div>
+    </article>`).join(''):'<div class="empty">لا توجد بيانات بعد. افتح «استيراد» والصق بيانات تهنى باي.</div>';
+  renderHistory();
+}
+function renderHistory(){
+  const days=activeDates(),counts=new Map();for(const s of state.sales)counts.set(s.date,(counts.get(s.date)||0)+1);
+  $('historyNote').textContent=`دفعات المخزن المعروفة: ${state.batches.length}. آخر استيراد مخزن: ${state.lastStockImport||'—'}. آخر استيراد مبيعات: ${state.lastSalesImport||'—'}.`;
+  $('historyList').innerHTML=days.length?days.map(d=>`<div class="day"><b>${esc(d)}</b><small>${counts.get(d)||0} عملية بيع</small></div>`).join(''):'<div class="empty">لا توجد أيام نشطة مسجلة.</div>';
+}
+function setImportStatus(text,type='ok'){$('importStatus').className=`status ${type}`;$('importStatus').textContent=text}
+function setHistoryStatus(text,type='ok'){$('historyStatus').className=`status ${type}`;$('historyStatus').textContent=text}
+function nowLabel(){return new Date().toLocaleString('ar-DZ')}
+
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===btn));
+  document.querySelectorAll('.panel').forEach(x=>x.hidden=x.id!==btn.dataset.tab);
+}));
+$('windowDays').addEventListener('change',()=>{state.windowDays=Number($('windowDays').value);save();render()});
+$('goalDays').addEventListener('change',()=>{let n=Math.max(1,Math.min(60,Number($('goalDays').value)||7));state.goalDays=n;save();render()});
+
+$('importStock').addEventListener('click',()=>{
+  const rows=parseStock($('raw').value);
+  if(!rows.length){setImportStatus('لم أتعرف على صفوف مخزون. تأكد أنك نسخت جدول «المخزن / آخر العمليات» كاملًا.','bad');return}
+  const map=new Map(state.batches.map(x=>[x.key,x]));
+  let added=0,updated=0;
+  for(const r of rows){if(map.has(r.key)){const old=map.get(r.key);if(old.remaining!==r.remaining){map.set(r.key,r);updated++}}else{map.set(r.key,r);added++}}
+  state.batches=[...map.values()];
+  state.lastStockImport=nowLabel();save();render();
+  setImportStatus(`تمت قراءة ${rows.length} دفعة: ${added} جديدة، ${updated} تم تحديث المتبقي فيها. إجمالي الدفعات المعروفة الآن ${state.batches.length}.`,'ok');
+});
+
+$('importSales').addEventListener('click',async()=>{
+  $('importSales').disabled=true;setImportStatus('جاري قراءة العمليات ومنع التكرار...','warn');
+  try{
+    const rows=await parseSales($('raw').value);
+    if(!rows.length){setImportStatus('لم أتعرف على عمليات بيع. تأكد أنك نسخت جدول «مداخيل المنتجات» كاملًا.','bad');return}
+    const ids=new Set(state.sales.map(x=>x.id));let added=0,duplicates=0;
+    for(const r of rows){if(ids.has(r.id)){duplicates++;continue}state.sales.push(r);ids.add(r.id);added++}
+    state.sales.sort((a,b)=>(b.date+' '+b.time).localeCompare(a.date+' '+a.time));
+    state.lastSalesImport=nowLabel();save();render();
+    setImportStatus(`تمت قراءة ${rows.length} عملية: أضيفت ${added} جديدة، وتم تجاهل ${duplicates} مكررة. الأيام النشطة المسجلة: ${activeDates().length}.`,'ok');
+  }finally{$('importSales').disabled=false}
+});
+
+$('clearData').addEventListener('click',()=>{
+  if(!confirm('حذف كل بيانات مراقب مخزون البطاقات من هذا المتصفح؟'))return;
+  state=baseState();save();render();setHistoryStatus('تم حذف بيانات هذه الأداة.','ok');
+});
+$('exportData').addEventListener('click',async()=>{
+  const data=JSON.stringify(state,null,2);
+  try{await navigator.clipboard.writeText(data);setHistoryStatus('تم نسخ النسخة الاحتياطية JSON.','ok')}
+  catch(_e){setHistoryStatus('تعذر النسخ التلقائي. استخدم متصفحًا يسمح بالحافظة.','bad')}
+});
+render();
+})();
+</script>
+</body></html>
