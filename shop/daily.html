@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0f766e">
   <title>التشغيل اليومي — MyTool</title>
   <style>
-    :root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--main2:#14b8a6;--danger:#b91c1c}
+    :root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--danger:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
     main{max-width:760px;margin:auto;padding:10px 10px 110px}.hidden{display:none!important}
     .message{padding:10px 12px;border-radius:12px;background:#eff6ff;color:#1d4ed8;margin-bottom:10px;font-size:13px}.message.error{background:#fff1f2;color:var(--danger)}
@@ -16,15 +16,15 @@
     .back-home{display:block;margin-top:12px;text-align:center;padding:11px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--main);text-decoration:none;font-weight:900;font-size:13px}
     @media(max-width:430px){main{padding:8px 8px 105px}.action{min-height:100px;padding:12px}.action strong{font-size:16px}.grid{gap:8px}}
   </style>
-  <link rel="stylesheet" href="shop-common.css?v=20260916-1915">
-  <script src="shop-routes.js?v=20260917-today-route"></script>
-  <script src="shop-shell.js?v=20260916-1915"></script>
+  <link rel="stylesheet" href="shop-common.css?v=20260917-daily-template-1">
+  <script src="shop-routes.js?v=20260917-daily-template-1"></script>
+  <script src="shop-shell.js?v=20260917-daily-template-1"></script>
 </head>
 <body data-screen="daily">
 <main>
   <div id="sharedDailyTop"></div>
   <div id="message" class="message">جاري تجهيز العمليات المسموحة…</div>
-  <section class="hero"><h2>التشغيل اليومي</h2><p>اختر العملية التي تحتاجها. الرئيسية تبقى مستقلة وموحدة لكل الحسابات.</p></section>
+  <section class="hero"><h2>التشغيل اليومي</h2><p>العمليات تأتي من القالب المشترك حسب الحساب والصلاحيات.</p></section>
   <div id="actions" class="grid"></div>
   <a class="back-home" href="index.html">العودة إلى الرئيسية</a>
 </main>
@@ -38,30 +38,10 @@ const supabase=createClient(SUPABASE_URL,SUPABASE_KEY)
 const TOKEN='mytool_shop_worker_token',EXPIRES='mytool_shop_worker_expires_at',NICK='mytool_shop_worker_nickname',ADMIN_EXPIRES='mytool_admin_expires_at'
 const $=id=>document.getElementById(id)
 
-const actions=[
-  {href:'sale.html',icon:'＋',title:'بيع',desc:'تسجيل بيع سريع',permission:'sell'},
-  {href:'purchase.html',icon:'⇩',title:'مشتريات',desc:'إدخال سلعة للمخزون',permission:'purchase'},
-  {href:'inventory-count.html',icon:'✓',title:'جرد',desc:'عد فعلي وتصحيح موثق',permission:'inventory'},
-  {href:'stock.html',icon:'▦',title:'المخزون',desc:'عرض كميات المخازن',permission:'view_stock'},
-  {href:'transfers.html',icon:'⇄',title:'تحويلات',desc:'سلع ونقد بين الفروع',permission:'transfer'},
-  {href:'today-route.html',icon:'⌖',title:'جولة اليوم',desc:'المتوقع والمستلم والباقي لكل محل',permission:'record_money',prelaunchOnly:true},
-  {href:'cash-receipts.html',icon:'⇩',title:'استلام مال',desc:'تسجيل المال المستلم من عميل أو محل',permission:'record_money'},
-  {href:'shift-close.html',icon:'✓',title:'إغلاق الوردية',desc:'عد النقد وإرساله للمراجعة',permission:'record_money'},
-  {href:'daily-report.html',icon:'▥',title:'تقرير اليوم',desc:'مبيعات العمال وآخر العمليات',adminOnly:true},
-  {href:'cash-close.html',icon:'✓',title:'إغلاق الكيس',desc:'عد النقد ومقارنة المتوقع بالفعلي',adminOnly:true}
-]
-
-function escapeHtml(value){return String(value).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
 function render(perms,role,identity){
-  const isPrelaunch=localStorage.getItem('mytool_workspace_code')==='PRELAUNCH'
-  const visible=actions.filter(a=>{
-    if(a.prelaunchOnly&&!isPrelaunch)return false
-    return role==='admin'?true:(!a.adminOnly&&perms[a.permission]===true)
-  })
-  const unique=[...new Map(visible.map(a=>[a.href,a])).values()]
-  $('actions').innerHTML=unique.map(a=>'<a class="action" href="'+a.href+'"><div class="ico">'+a.icon+'</div><strong>'+escapeHtml(a.title)+'</strong><span>'+escapeHtml(a.desc)+'</span></a>').join('')
   ShopShell.mountDailyTop('sharedDailyTop')
   ShopShell.mountRoleNavigation({role,permissions:perms},'daily')
+  ShopRoutes.renderDailyActions('actions',{role,permissions:perms})
   const identityEl=$('identity');if(identityEl)identityEl.textContent=identity
   $('message').classList.add('hidden')
 }
@@ -79,7 +59,8 @@ async function init(){
       const branchName=branches.find(x=>Number(x.id)===Number(branch.default_branch_id))?.name||'مخزن العامل'
       const nickname=ctx.nickname||localStorage.getItem(NICK)||'العامل'
       const perms={sell:!!ctx.can_sell,purchase:!!ctx.can_purchase,inventory:!!ctx.can_inventory,view_stock:!!ctx.can_view_stock,transfer:!!branch.can_transfer,record_money:!!ctx.can_record_money,view_sales:!!ctx.can_view_sales}
-      render(perms,'worker',nickname+' — '+branchName)
+      const prelaunchAdmin=localStorage.getItem('mytool_workspace_code')==='PRELAUNCH'&&localStorage.getItem('mytool_workspace_role')==='workspace_admin'
+      render(perms,prelaunchAdmin?'admin':'worker',prelaunchAdmin?'حساب الإدارة — قبل الانطلاق':nickname+' — '+branchName)
       return
     }
 
