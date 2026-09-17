@@ -298,13 +298,13 @@ function renderDoneSection(doneRows) {
     const unlinked = !row.party_id && Number(row.received_amount || 0) > 0
       ? '<div class="warnbox">الاستلام محفوظ باسم المحل وغير مربوط بحساب بعد.</div>'
       : '';
-    const reopen = me.account_role === 'worker'
+    const reopen = (me.account_role === 'worker' || me.account_role === 'workspace_admin')
       ? `<div class="actions"><button class="btn secondary" data-reopen="${row.id}" type="button">إرجاع للزيارات</button></div>`
       : '';
     return `<div class="done-card" data-done-id="${row.id}"><div class="head"><div><div class="name">${esc(row.shop_name)}</div><div class="meta"><span class="done-label">تمت الزيارة</span> ${pendingBadge(row)}</div></div></div>${moneyBlock(row)}${note}${unlinked}${reopen}</div>`;
   }).join('');
   root.querySelectorAll('[data-reopen]').forEach(button => {
-    button.onclick = () => setStatus(Number(button.dataset.reopen), 'pending');
+    button.onclick = () => reopenVisit(Number(button.dataset.reopen));
   });
 }
 
@@ -590,6 +590,22 @@ async function collect(id) {
     if (button) button.disabled = false;
     render();
   }
+}
+
+async function reopenVisit(id) {
+  if (me.account_role === 'workspace_admin') {
+    if (!navigator.onLine) return stat('إرجاع الزيارة من الإدارة يحتاج اتصالًا.', 'err');
+    stat('جاري إرجاع الزيارة…');
+    const response = await s.rpc('workspace_visit_set_status', {
+      p_session_token: token,
+      p_task_id: id,
+      p_status: 'pending'
+    });
+    if (response.error) return stat('تعذر إرجاع الزيارة: ' + safeError(response.error), 'err');
+    await load();
+    return stat('تم إرجاع الزيارة إلى القائمة.', 'ok');
+  }
+  return setStatus(id, 'pending');
 }
 
 async function setStatus(id, status) {
