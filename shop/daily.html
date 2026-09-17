@@ -17,7 +17,7 @@
     @media(max-width:430px){main{padding:8px 8px 105px}.action{min-height:100px;padding:12px}.action strong{font-size:16px}.grid{gap:8px}}
   </style>
   <link rel="stylesheet" href="shop-common.css?v=20260916-1915">
-  <script src="shop-routes.js?v=20260916-1915"></script>
+  <script src="shop-routes.js?v=20260917-today-route"></script>
   <script src="shop-shell.js?v=20260916-1915"></script>
 </head>
 <body data-screen="daily">
@@ -44,6 +44,7 @@ const actions=[
   {href:'inventory-count.html',icon:'✓',title:'جرد',desc:'عد فعلي وتصحيح موثق',permission:'inventory'},
   {href:'stock.html',icon:'▦',title:'المخزون',desc:'عرض كميات المخازن',permission:'view_stock'},
   {href:'transfers.html',icon:'⇄',title:'تحويلات',desc:'سلع ونقد بين الفروع',permission:'transfer'},
+  {href:'today-route.html',icon:'⌖',title:'جولة اليوم',desc:'المتوقع والمستلم والباقي لكل محل',permission:'record_money',prelaunchOnly:true},
   {href:'cash-receipts.html',icon:'⇩',title:'استلام مال',desc:'تسجيل المال المستلم من عميل أو محل',permission:'record_money'},
   {href:'shift-close.html',icon:'✓',title:'إغلاق الوردية',desc:'عد النقد وإرساله للمراجعة',permission:'record_money'},
   {href:'daily-report.html',icon:'▥',title:'تقرير اليوم',desc:'مبيعات العمال وآخر العمليات',adminOnly:true},
@@ -52,7 +53,11 @@ const actions=[
 
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
 function render(perms,role,identity){
-  const visible=actions.filter(a=>role==='admin'?true:(!a.adminOnly&&perms[a.permission]===true))
+  const isPrelaunch=localStorage.getItem('mytool_workspace_code')==='PRELAUNCH'
+  const visible=actions.filter(a=>{
+    if(a.prelaunchOnly&&!isPrelaunch)return false
+    return role==='admin'?true:(!a.adminOnly&&perms[a.permission]===true)
+  })
   const unique=[...new Map(visible.map(a=>[a.href,a])).values()]
   $('actions').innerHTML=unique.map(a=>'<a class="action" href="'+a.href+'"><div class="ico">'+a.icon+'</div><strong>'+escapeHtml(a.title)+'</strong><span>'+escapeHtml(a.desc)+'</span></a>').join('')
   ShopShell.mountDailyTop('sharedDailyTop')
