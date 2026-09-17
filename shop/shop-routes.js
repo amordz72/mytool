@@ -1,28 +1,30 @@
-/* MyTool route registry — the only source for shared navigation. */
+/* MyTool route registry — the only source for shared navigation and daily operation cards. */
 (function(){
   'use strict';
   const groups=Object.freeze({general:'عام',operations:'التشغيل اليومي',inventory:'المخزون والجرد',money:'الأموال',admin:'الإدارة'});
   const routes=[
     {id:'index',group:'general',label:'لوحة التحكم',shortLabel:'الرئيسية',path:'index.html',type:'shared',roles:['admin','worker'],placement:['drawer','top'],icon:'⌂'},
     {id:'daily',group:'general',label:'التشغيل اليومي',shortLabel:'التشغيل',path:'daily.html',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'▤'},
-    {id:'today-route',group:'operations',label:'جولة اليوم',shortLabel:'الجولة',path:'today-route.html',type:'worker',roles:['admin','worker'],permission:'record_money',prelaunchOnly:true,placement:['drawer'],icon:'⌖'},
-    {id:'sale',group:'operations',label:'تسجيل بيع',shortLabel:'بيع',path:'sale.html',type:'worker',roles:['admin','worker'],permission:'sell',placement:['drawer','top'],icon:'＋'},
-    {id:'purchase',group:'operations',label:'المشتريات',shortLabel:'مشتريات',path:'purchase.html',type:'worker',roles:['admin','worker'],permission:'purchase',placement:['drawer','top'],icon:'⇩'},
+    {id:'today-route',group:'operations',label:'جولة اليوم',shortLabel:'الجولة',path:'today-route.html',type:'worker',roles:['admin','worker'],permission:'record_money',prelaunchOnly:true,placement:['drawer'],icon:'⌖',daily:true,dailyOrder:60,dailyDesc:'المتوقع والمستلم والباقي لكل محل'},
+    {id:'sale',group:'operations',label:'تسجيل بيع',shortLabel:'بيع',path:'sale.html',type:'worker',roles:['admin','worker'],permission:'sell',placement:['drawer','top'],icon:'＋',daily:true,dailyOrder:10,dailyDesc:'تسجيل بيع سريع'},
+    {id:'purchase',group:'operations',label:'المشتريات',shortLabel:'مشتريات',path:'purchase.html',type:'worker',roles:['admin','worker'],permission:'purchase',placement:['drawer','top'],icon:'⇩',daily:true,dailyOrder:20,dailyDesc:'إدخال سلعة للمخزون'},
     {id:'corrections',group:'operations',label:'تصحيح العمليات',shortLabel:'تصحيح',path:'corrections.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'↶'},
-    {id:'stock',group:'inventory',label:'المخزون',shortLabel:'المخزون',path:'stock.html',type:'worker',roles:['admin','worker'],permission:'view_stock',placement:['drawer','top'],icon:'▦'},
+    {id:'stock',group:'inventory',label:'المخزون',shortLabel:'المخزون',path:'stock.html',type:'worker',roles:['admin','worker'],permission:'view_stock',placement:['drawer','top'],icon:'▦',daily:true,dailyOrder:40,dailyDesc:'عرض كميات المخازن'},
     {id:'products',group:'inventory',label:'المنتجات',shortLabel:'المنتجات',path:'products.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'◇'},
     {id:'catalog',group:'inventory',label:'تصنيفات المنتجات',shortLabel:'التصنيفات',path:'catalog.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'▤'},
     {id:'barcodes',group:'inventory',label:'الباركود والملصقات',shortLabel:'باركود',path:'barcodes.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'▥'},
     {id:'pricing',group:'inventory',label:'سياسة الأسعار',shortLabel:'الأسعار',path:'pricing-policy.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'دج'},
-    {id:'inventory',group:'inventory',label:'الجرد',shortLabel:'الجرد',path:'inventory-count.html',type:'worker',roles:['admin','worker'],permission:'inventory',placement:['drawer'],icon:'✓'},
+    {id:'inventory',group:'inventory',label:'الجرد',shortLabel:'الجرد',path:'inventory-count.html',type:'worker',roles:['admin','worker'],permission:'inventory',placement:['drawer'],icon:'✓',daily:true,dailyOrder:30,dailyDesc:'عد فعلي وتصحيح موثق'},
     {id:'physical',group:'inventory',label:'الجرد الفعلي',shortLabel:'جرد فعلي',path:'physical-inventory.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'✓'},
     {id:'opening',group:'inventory',label:'الجرد الافتتاحي',shortLabel:'جرد افتتاحي',path:'opening-stock.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'◉'},
-    {id:'transfers',group:'operations',label:'التحويلات',shortLabel:'تحويلات',path:'transfers.html',type:'worker',roles:['admin','worker'],permission:'transfer',placement:['drawer'],icon:'⇄'},
+    {id:'transfers',group:'operations',label:'التحويلات',shortLabel:'تحويلات',path:'transfers.html',type:'worker',roles:['admin','worker'],permission:'transfer',placement:['drawer'],icon:'⇄',daily:true,dailyOrder:50,dailyDesc:'سلع ونقد بين الفروع'},
     {id:'money',group:'money',label:'أماكن الأموال',shortLabel:'الأموال',path:'money.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'دج'},
-    {id:'cash-receipts',group:'money',label:'استلام أموال',shortLabel:'استلام مال',path:'cash-receipts.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'⇩'},
+    {id:'cash-receipts',group:'money',label:'استلام أموال',shortLabel:'استلام مال',path:'cash-receipts.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'⇩',daily:true,dailyOrder:70,dailyDesc:'تسجيل المال المستلم من عميل أو محل'},
     {id:'expected-money',group:'money',label:'الفيرسمون المتوقع',shortLabel:'فيرسمون',path:'expected-money.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'◷'},
-    {id:'shift-close',group:'money',label:'إغلاق الوردية',shortLabel:'إغلاق وردية',path:'shift-close.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'✓'},
+    {id:'shift-close',group:'money',label:'إغلاق الوردية',shortLabel:'إغلاق وردية',path:'shift-close.html',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'✓',daily:true,dailyOrder:80,dailyDesc:'عد النقد وإرساله للمراجعة'},
     {id:'cash',group:'money',label:'الصندوق',shortLabel:'الصندوق',path:'cash.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'▣'},
+    {id:'daily-report',group:'operations',label:'تقرير اليوم',shortLabel:'تقرير اليوم',path:'daily-report.html',type:'admin',roles:['admin'],placement:[],icon:'▥',daily:true,dailyOrder:90,dailyDesc:'مبيعات العمال وآخر العمليات'},
+    {id:'cash-close',group:'money',label:'إغلاق الكيس',shortLabel:'إغلاق الكيس',path:'cash-close.html',type:'admin',roles:['admin'],placement:[],icon:'✓',daily:true,dailyOrder:100,dailyDesc:'عد النقد ومقارنة المتوقع بالفعلي'},
     {id:'users',group:'admin',label:'المستخدمون',shortLabel:'المستخدمون',path:'users.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'♙'},
     {id:'settings',group:'admin',label:'الإعدادات',shortLabel:'الإعدادات',path:'settings.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'⚙'},
     {id:'notes',group:'general',label:'صندوق الملاحظات',shortLabel:'الملاحظات',path:'../notes/',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'📝'},
@@ -31,6 +33,9 @@
   function allowed(route,context){const role=context?.role||'admin';if(route.prelaunchOnly&&localStorage.getItem('mytool_workspace_code')!=='PRELAUNCH')return false;if(!route.roles.includes(role))return false;if(role==='admin'||!route.permission)return true;const permissions=context?.permissions||{};return permissions[route.permission]===true||permissions['can_'+route.permission]===true;}
   function list(context,placement){return routes.filter(route=>(!placement||route.placement.includes(placement))&&allowed(route,context));}
   function get(id){return routes.find(route=>route.id===id)||null}
+  function daily(context){return routes.filter(route=>route.daily===true&&allowed(route,context)).sort((a,b)=>(a.dailyOrder||999)-(b.dailyOrder||999));}
+  function esc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
+  function renderDailyActions(target,context){const root=typeof target==='string'?document.getElementById(target):target;if(!root)return 0;const items=daily(context);root.innerHTML=items.map(route=>'<a class="action" href="'+esc(route.path)+'"><div class="ico">'+esc(route.icon)+'</div><strong>'+esc(route.shortLabel||route.label)+'</strong><span>'+esc(route.dailyDesc||route.label)+'</span></a>').join('');return items.length;}
 
   const ADMIN_BRANCH_KEY='mytool_admin_branch_id';
   const BRANCH_SELECT_IDS=['saleBranch','purchaseBranch','stockBranch','inventoryBranch','transferSource','branchSelect'];
@@ -50,5 +55,5 @@
   watchAdminBranchContext();
   const loadExtras=()=>{loadPricingAccess();loadInventoryPricingButton();loadWorkerMoneyShortcut();loadCoreDesign();};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadExtras,{once:true});else loadExtras();
-  window.ShopRoutes=Object.freeze({groups,all:Object.freeze(routes.map(Object.freeze)),list,get,allowed,applySavedAdminBranch});
+  window.ShopRoutes=Object.freeze({groups,all:Object.freeze(routes.map(Object.freeze)),list,get,allowed,daily,renderDailyActions,applySavedAdminBranch});
 })();
