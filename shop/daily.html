@@ -60,13 +60,13 @@ async function init(){
       const nickname=ctx.nickname||localStorage.getItem(NICK)||'العامل'
       const perms={sell:!!ctx.can_sell,purchase:!!ctx.can_purchase,inventory:!!ctx.can_inventory,view_stock:!!ctx.can_view_stock,transfer:!!branch.can_transfer,record_money:!!ctx.can_record_money,view_sales:!!ctx.can_view_sales}
       const prelaunchAdmin=localStorage.getItem('mytool_workspace_code')==='PRELAUNCH'&&localStorage.getItem('mytool_workspace_role')==='workspace_admin'
-      render(perms,prelaunchAdmin?'admin':'worker',prelaunchAdmin?'حساب الإدارة — قبل الانطلاق':nickname+' — '+branchName)
+      render(perms,prelaunchAdmin?'admin':'worker',prelaunchAdmin?'مدير · وضع الاستمرارية':nickname+' — '+branchName)
       return
     }
 
     const {data}=await supabase.auth.getSession(),adminExp=Number(localStorage.getItem(ADMIN_EXPIRES)||0)
     if(!data?.session||adminExp<=now){location.replace('../');return}
-    render({},'admin','حساب الإدارة')
+    render({},'admin','المالك · النظام الرئيسي')
   }catch(error){
     $('message').textContent='تعذر فتح التشغيل اليومي: '+(error?.message||'خطأ غير معروف')
     $('message').className='message error'
