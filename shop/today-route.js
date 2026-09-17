@@ -16,7 +16,6 @@ let me = null;
 let rows = [];
 let syncing = false;
 let completingTaskId = null;
-let completionHasMoney = null;
 
 $('day').value = today();
 
@@ -356,34 +355,22 @@ function render() {
   });
 }
 
-function setCompletionChoice(hasMoney) {
-  completionHasMoney = hasMoney;
-  $('completeYesMoney').classList.toggle('active', hasMoney === true);
-  $('completeNoMoney').classList.toggle('active', hasMoney === false);
-  $('completeMoneyFields').hidden = hasMoney !== true;
-  if (hasMoney !== true) $('completeAmount').value = '';
-}
-
 function openCompleteDialog(id) {
   if (me.account_role !== 'worker') return;
   const row = rows.find(item => Number(item.id) === Number(id));
   if (!row) return stat('تعذر العثور على الزيارة.', 'err');
 
   completingTaskId = id;
-  completionHasMoney = null;
   $('completeShopName').textContent = row.shop_name;
-  $('completeAmount').value = '';
+  $('completeAmount').value = '0';
   $('completeNote').value = row.completion_note || '';
-  $('completeYesMoney').classList.remove('active');
-  $('completeNoMoney').classList.remove('active');
-  $('completeMoneyFields').hidden = true;
 
   if (row.party_id) {
     $('completeLinkHint').hidden = true;
     $('completeLinkHint').textContent = '';
   } else {
     $('completeLinkHint').hidden = false;
-    $('completeLinkHint').textContent = 'إذا اخترت «نعم»، سيُحفظ المبلغ مؤقتًا باسم هذا المحل حتى تربطه الإدارة بحساب العميل الصحيح.';
+    $('completeLinkHint').textContent = 'إذا سجلت مبلغًا أكبر من 0، سيُحفظ مؤقتًا باسم هذا المحل حتى تربطه الإدارة بحساب العميل الصحيح.';
   }
 
   $('completeDialog').hidden = false;
@@ -394,21 +381,21 @@ function closeCompleteDialog() {
   $('completeDialog').hidden = true;
   document.body.classList.remove('dialog-open');
   completingTaskId = null;
-  completionHasMoney = null;
 }
 
 async function completeVisit() {
   if (completingTaskId == null) return;
-  if (completionHasMoney === null) return stat('اختر هل استلمت مالًا أم لا.', 'err');
 
   const row = rows.find(item => Number(item.id) === Number(completingTaskId));
   if (!row) return stat('تعذر العثور على الزيارة.', 'err');
 
-  const amount = completionHasMoney ? Number($('completeAmount').value) : null;
-  if (completionHasMoney && (!Number.isFinite(amount) || amount <= 0)) {
-    return stat('أدخل المبلغ الذي استلمته فعليًا.', 'err');
+  const rawAmount = $('completeAmount').value.trim();
+  const amount = rawAmount === '' ? 0 : Number(rawAmount);
+  if (!Number.isFinite(amount) || amount < 0) {
+    return stat('راجع المبلغ المستلم.', 'err');
   }
 
+  const hasMoney = amount > 0;
   const note = $('completeNote').value.trim() || null;
   const taskId = completingTaskId;
   const item = {
@@ -416,8 +403,8 @@ async function completeVisit() {
     owner: ownerKey(),
     kind: 'complete',
     task_id: taskId,
-    has_money: completionHasMoney,
-    amount,
+    has_money: hasMoney,
+    amount: hasMoney ? amount : 0,
     notes: note,
     request_key: crypto.randomUUID(),
     created_at: new Date().toISOString(),
@@ -433,9 +420,9 @@ async function completeVisit() {
   render();
 
   if (!navigator.onLine) {
-    stat(completionHasMoney
+    stat(hasMoney
       ? 'تم حفظ الزيارة والمبلغ محليًا، وسيُزامنان معًا عند رجوع الإنترنت.'
-      : 'تم حفظ إتمام الزيارة محليًا، وسيُزامن عند رجوع الإنترنت.', 'warn');
+      : 'تم حفظ إتمام الزيارة بقيمة 0 محليًا، وسيُزامن عند رجوع الإنترنت.', 'warn');
     return;
   }
 
@@ -664,8 +651,6 @@ $('addBtn').onclick = async () => {
 
 $('day').onchange = load;
 $('syncNow').onclick = () => void flushQueue(true);
-$('completeNoMoney').onclick = () => setCompletionChoice(false);
-$('completeYesMoney').onclick = () => setCompletionChoice(true);
 $('completeCancel').onclick = closeCompleteDialog;
 $('completeSave').onclick = () => void completeVisit();
 $('completeDialog').onclick = event => {
