@@ -1,4 +1,4 @@
-/* MyTool Notes #22 — edit an existing note without changing its ID or images. */
+/* MyTool Notes #22 — edit an existing note without changing its ID or images. Local-first compatible. */
 (() => {
   'use strict';
 
@@ -11,6 +11,8 @@
 
   function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function options(map,current){return Object.entries(map).map(([value,label])=>'<option value="'+esc(value)+'" '+(value===current?'selected':'')+'>'+esc(label)+'</option>').join('')}
+  function localStore(){return window.MyToolNotesLocal||null}
+  function displayId(note){return note?.remote_id||note?.id||('محلي-'+String(note?.client_uuid||'').slice(0,8))}
 
   function ensureStyles(){
     if(document.getElementById('mytool-note-edit-style'))return;
@@ -42,14 +44,41 @@
     el.classList.toggle('error',!!error);
   }
 
-  async function openEditor(article,id,trigger){
-    const existing=article.querySelector('.note-edit-panel');
-    if(existing){existing.remove();trigger.textContent='تعديل';return}
+  async function loadNote(ref){
+    const store=localStore();
+    if(store&&ref.key){
+      const local=await store.getNote(ref.key);
+      if(local)return {note:local,mode:'local',key:ref.key};
+    }
+    if(!ref.remoteId)throw new Error('NOTE_NOT_FOUND');
+    const c=await getClient();
+    const {data,error}=await c.from('mytool_notes').select('id,client_uuid,body,note_type,priority,status,project_area,ai_request,created_at,updated_at').eq('id',ref.remoteId).single();
+    if(error||!data)throw new Error(error?.message||'NOTE_NOT_FOUND');
+    return {note:data,mode:'remote',key:ref.key||null};
+  }
+
+  async function saveLocal(existing,key,payload){
+    const store=localStore();
+    if(!store||!key)return false;
+    const nextState=existing.remote_id?'pending_update':'pending';
+    await store.putNote({...existing,...payload,key,updated_at:new Date().toISOString(),sync_state:nextState,sync_error:null});
+    return true;
+  }
+
+  async function saveRemote(id,payload){
+    if(!id)throw new Error('NOTE_ID_MISSING');
+    const c=await getClient();
+    const {error}=await c.from('mytool_notes').update({...payload,updated_at:new Date().toISOString()}).eq('id',id);
+    if(error)throw error;
+  }
+
+  async function openEditor(article,ref,trigger){
+    const existingPanel=article.querySelector('.note-edit-panel');
+    if(existingPanel){existingPanel.remove();trigger.textContent='تعديل';return}
     trigger.disabled=true;trigger.textContent='…';
     try{
-      const c=await getClient();
-      const {data,error}=await c.from('mytool_notes').select('id,body,note_type,priority,project_area,ai_request').eq('id',id).single();
-      if(error||!data)throw new Error(error?.message||'NOTE_NOT_FOUND');
+      const loaded=await loadNote(ref);
+      const data=loaded.note;
       const panel=document.createElement('div');
       panel.className='note-edit-panel';
       panel.innerHTML='<div class="note-edit-grid">'+
@@ -58,7 +87,7 @@
         '<label>الأولوية<select class="edit-priority">'+options(PRIORITIES,data.priority)+'</select></label>'+
         '<label>القسم<select class="edit-area">'+options(AREAS,data.project_area)+'</select></label>'+
         '<label>المطلوب من الذكاء الاصطناعي<input class="edit-ai" maxlength="2000" value="'+esc(data.ai_request||'')+'"></label>'+
-        '</div><div class="note-edit-help">يبقى رقم الملاحظة نفسه، والصور الحالية لا تُحذف ولا تُعاد إنشاؤها.</div>'+
+        '</div><div class="note-edit-help">يبقى رقم الملاحظة نفسه، والصور الحالية لا تُحذف ولا تُعاد إنشاؤها. في وضع Local‑First يُحفظ التعديل على الجهاز أولًا ثم تتم مزامنته.</div>'+
         '<div class="note-edit-actions"><button type="button" class="primary note-edit-save">حفظ التعديل</button><button type="button" class="outline note-edit-cancel">إلغاء</button></div><div class="note-edit-message"></div>';
       const actions=article.querySelector('.actions');
       if(actions)article.insertBefore(panel,actions);else article.appendChild(panel);
@@ -73,14 +102,16 @@
           note_type:panel.querySelector('.edit-type').value,
           priority:panel.querySelector('.edit-priority').value,
           project_area:panel.querySelector('.edit-area').value,
-          ai_request:panel.querySelector('.edit-ai').value.trim()||null,
-          updated_at:new Date().toISOString()
+          ai_request:panel.querySelector('.edit-ai').value.trim()||null
         };
-        const {error:updateError}=await c.from('mytool_notes').update(payload).eq('id',id);
-        if(updateError){save.disabled=false;setMessage(panel,'تعذر حفظ التعديل: '+updateError.message,true);return}
-        setMessage(panel,'تم حفظ الملاحظة #'+id+'.');
-        try{sessionStorage.setItem('mytool_notes_edit_flash','#'+id+' تم تعديله')}catch(_e){}
-        setTimeout(()=>location.reload(),350);
+        try{
+          const savedLocally=loaded.mode==='local'&&loaded.key?await saveLocal(data,loaded.key,payload):false;
+          if(!savedLocally)await saveRemote(data.remote_id||data.id||ref.remoteId,payload);
+          const label=displayId(data);
+          setMessage(panel,'تم حفظ الملاحظة #'+label+'.');
+          try{sessionStorage.setItem('mytool_notes_edit_flash','#'+label+' تم تعديله')}catch(_e){}
+          setTimeout(()=>location.reload(),350);
+        }catch(error){save.disabled=false;setMessage(panel,'تعذر حفظ التعديل: '+(error?.message||error),true)}
       };
       panel.querySelector('.edit-body')?.focus();
     }catch(error){
@@ -96,16 +127,19 @@
   function enhanceArticle(article){
     if(article.dataset.noteEditReady==='1')return;
     const pick=article.querySelector('.pick');
-    const id=Number(pick?.value||0);
+    const key=article.dataset.noteKey||'';
+    const numericValue=Number(pick?.value||0);
+    const remoteId=Number.isFinite(numericValue)&&numericValue>0?numericValue:0;
     const actions=article.querySelector('.actions');
-    if(!id||!actions)return;
+    if((!key&&!remoteId)||!actions)return;
     article.dataset.noteEditReady='1';
     const button=document.createElement('button');
     button.type='button';
     button.className='outline note-edit-trigger note-tool';
     button.textContent='تعديل';
-    button.dataset.id=String(id);
-    button.onclick=()=>openEditor(article,id,button);
+    if(remoteId)button.dataset.id=String(remoteId);
+    if(key)button.dataset.key=key;
+    button.onclick=()=>openEditor(article,{key,remoteId},button);
     const archive=actions.querySelector('.archive');
     if(archive)actions.insertBefore(button,archive);else actions.appendChild(button);
   }
