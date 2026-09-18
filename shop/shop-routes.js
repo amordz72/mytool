@@ -5,7 +5,7 @@
   const routes=[
     {id:'index',group:'general',label:'لوحة التحكم',shortLabel:'الرئيسية',path:'index.html',type:'shared',roles:['admin','worker'],placement:['drawer','top'],icon:'⌂'},
     {id:'daily',group:'general',label:'التشغيل اليومي',shortLabel:'التشغيل',path:'daily.html',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'▤'},
-    {id:'today-route',group:'operations',label:'جولة اليوم',shortLabel:'الجولة',path:'today-route.html?v=20260918-customer-links-2',type:'worker',roles:['admin','worker'],permission:'record_money',prelaunchOnly:true,placement:['drawer'],icon:'⌖',daily:true,dailyOrder:60,dailyDesc:'المتوقع والمستلم والباقي لكل محل'},
+    {id:'today-route',group:'operations',label:'جولة اليوم',shortLabel:'الجولة',path:'today-route.html?v=20260918-canonical-route-2',type:'worker',roles:['admin','worker'],permission:'record_money',prelaunchOnly:true,placement:['drawer'],icon:'⌖',daily:true,dailyOrder:60,dailyDesc:'المتوقع والمستلم والباقي لكل محل'},
     {id:'sale',group:'operations',label:'تسجيل بيع',shortLabel:'بيع',path:'sale.html',type:'worker',roles:['admin','worker'],permission:'sell',placement:['drawer','top'],icon:'＋',daily:true,dailyOrder:10,dailyDesc:'تسجيل بيع سريع'},
     {id:'purchase',group:'operations',label:'المشتريات',shortLabel:'مشتريات',path:'purchase.html',type:'worker',roles:['admin','worker'],permission:'purchase',placement:['drawer','top'],icon:'⇩',daily:true,dailyOrder:20,dailyDesc:'إدخال سلعة للمخزون'},
     {id:'corrections',group:'operations',label:'تصحيح العمليات',shortLabel:'تصحيح',path:'corrections.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'↶'},
