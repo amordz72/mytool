@@ -8,6 +8,15 @@
 <title>المحطات — MyTool</title>
 <link rel="stylesheet" href="../ui/template-v1.css">
 <link rel="stylesheet" href="../mytool-bottom-nav.css">
+<style>
+[hidden]{display:none!important}
+.pilot-form{margin-top:12px;padding:14px;border:1px solid #d8e8f5;border-radius:16px;background:#f8fbfe}
+.pilot-form h3{margin:0 0 5px;font-size:15px}
+.pilot-form p{margin:0 0 10px;color:#6b7f93;font-size:11px;line-height:1.5}
+.pilot-amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
+.pilot-job{margin:8px 0;padding:11px 12px;border:1px solid #e2ebf2;border-radius:14px;background:#fff}
+.pilot-job strong{font-size:13px}
+</style>
 <script src="../auth-guard.js?v=20260918-real-local-1" data-access="admin"></script>
 </head>
 <body class="mt-app" data-mytool-app="access-admin">
@@ -68,6 +77,17 @@
   </div>
 </div>
 
+<section class="mt-card">
+  <div class="mt-section-head" style="margin:0 0 8px">
+    <div class="mt-section-copy">
+      <h2>آخر عمليات Flexy التجريبية</h2>
+      <p>تتحدث تلقائيًا أثناء التنفيذ.</p>
+    </div>
+    <span id="jobCount" class="mt-chip muted">0</span>
+  </div>
+  <div id="pilotJobs"><div class="mt-meta">لا توجد عمليات بعد.</div></div>
+</section>
+
 </main>
 
 <script type="module">
@@ -79,6 +99,8 @@ const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let stations=[];
 let hardwareByStation={};
+let recentJobs=[];
+let jobPollTimer=null;
 
 function escapeHtml(value){
   return String(value??'').replace(/[&<>"']/g,c=>({
@@ -205,6 +227,26 @@ function hardwareSection(row){
   }).join('');
 }
 
+function pilotSection(row){
+  const items=hardwareByStation[row.station_uuid]||[];
+  const ready=String(row.status||'').toLowerCase()==='approved'
+    && row.online
+    && items.some(item=>item.sim_uuid&&item.has_pin);
+
+  if(!ready)return '';
+
+  return '<form class="pilot-form flexy-pilot" data-station-uuid="'+escapeHtml(row.station_uuid)+'">'+
+    '<h3>أول Flexy حقيقية — AutoMix Pilot</h3>'+
+    '<p>أدخل رقم الزبون ثم اختر 50 أو 100 أو 500. قبل إنشاء العملية سيظهر تأكيد أخير.</p>'+
+    '<label class="mt-search"><input name="phone" inputmode="numeric" maxlength="10" placeholder="رقم الزبون 10 أرقام" autocomplete="off"></label>'+
+    '<div class="pilot-amounts">'+
+      '<button class="mt-btn secondary pilot-amount" type="button" data-amount="50">50</button>'+
+      '<button class="mt-btn secondary pilot-amount" type="button" data-amount="100">100</button>'+
+      '<button class="mt-btn secondary pilot-amount" type="button" data-amount="500">500</button>'+
+    '</div>'+
+  '</form>';
+}
+
 function stationCard(row){
   const meta=statusMeta(row);
   const shortUuid=String(row.station_uuid||'').slice(0,8);
@@ -241,6 +283,7 @@ function stationCard(row){
       '</div>'+
       action+
       hardwareSection(row)+
+      pilotSection(row)+
       '<details>'+
         '<summary class="mt-detail-row"><span>تفاصيل تقنية</span><span>⌄</span></summary>'+
         '<div class="mt-meta">Station UUID: '+escapeHtml(row.station_uuid||'—')+
@@ -299,6 +342,50 @@ function bindActions(){
     });
   });
 
+  document.querySelectorAll('.flexy-pilot').forEach(form=>{
+    form.querySelectorAll('.pilot-amount').forEach(button=>{
+      button.addEventListener('click',async()=>{
+        const phone=String(new FormData(form).get('phone')||'').replace(/\D/g,'');
+        const amount=Number(button.dataset.amount||0);
+        const stationUuid=form.dataset.stationUuid;
+
+        if(!/^0[5-7][0-9]{8}$/.test(phone)){
+          showMessage('رقم الزبون غير صحيح','اكتب رقمًا جزائريًا من 10 أرقام.','danger');
+          return;
+        }
+
+        if(![50,100,500].includes(amount))return;
+
+        const confirmed=window.confirm('تأكيد عملية Flexy حقيقية\n\nالرقم: '+phone+'\nالمبلغ: '+amount+' دج\n\nهل تريد إرسال العملية الآن؟');
+        if(!confirmed)return;
+
+        form.querySelectorAll('button').forEach(b=>b.disabled=true);
+        hideMessage();
+
+        try{
+          const {data,error}=await supabase.rpc('station_connect_admin_create_pilot_job',{
+            p_phone:phone,
+            p_amount:amount,
+            p_station_uuid:stationUuid
+          });
+          if(error)throw error;
+
+          const job=Array.isArray(data)?data[0]:null;
+          showMessage('تم إرسال العملية','Job: '+String(job?.job_uuid||'queued')+' — Agent سيستلمها خلال ثوانٍ.');
+          await loadRecentJobs();
+        }catch(error){
+          const message=String(error?.message||'حدث خطأ غير متوقع.');
+          const friendly=message.includes('NO_READY_ONLINE_STATION')
+            ?'المحطة أو المودم ليسا جاهزين الآن. تأكد أن Agent ONLINE وأن PIN محفوظ.'
+            :message;
+          showMessage('تعذر إرسال Flexy',friendly,'danger');
+        }finally{
+          form.querySelectorAll('button').forEach(b=>b.disabled=false);
+        }
+      });
+    });
+  });
+
   document.querySelectorAll('.sim-settings').forEach(form=>{
     form.addEventListener('submit',async event=>{
       event.preventDefault();
@@ -339,6 +426,58 @@ function bindActions(){
       }
     });
   });
+}
+
+function jobStatusMeta(status){
+  const value=String(status||'').toLowerCase();
+  if(value==='success')return {label:'نجحت',cls:'success'};
+  if(value==='failed')return {label:'فشلت',cls:'danger'};
+  if(value==='review')return {label:'تحتاج مراجعة',cls:'warning'};
+  if(value==='unavailable')return {label:'العرض غير متاح',cls:'warning'};
+  if(value==='claimed')return {label:'قيد التنفيذ',cls:'primary'};
+  return {label:'في الانتظار',cls:'muted'};
+}
+
+function renderRecentJobs(){
+  $('jobCount').textContent=String(recentJobs.length);
+  if(!recentJobs.length){
+    $('pilotJobs').innerHTML='<div class="mt-meta">لا توجد عمليات بعد.</div>';
+    return;
+  }
+
+  $('pilotJobs').innerHTML=recentJobs.slice(0,8).map(job=>{
+    const meta=jobStatusMeta(job.status);
+    const result=job.result_text
+      ?'<div class="mt-meta" style="margin-top:5px">'+escapeHtml(job.result_text)+'</div>'
+      :'';
+    const family=job.family?' — '+escapeHtml(job.family):'';
+    return '<div class="pilot-job">'+
+      '<div class="mt-row">'+
+        '<div><strong>'+escapeHtml(job.phone)+' — '+escapeHtml(job.amount)+' دج</strong>'+
+          '<div class="mt-meta">'+escapeHtml(fmtDate(job.created_at))+family+'</div></div>'+
+        '<span class="mt-chip '+meta.cls+'">'+escapeHtml(meta.label)+'</span>'+
+      '</div>'+result+
+    '</div>';
+  }).join('');
+}
+
+function scheduleJobPoll(){
+  if(jobPollTimer){
+    clearTimeout(jobPollTimer);
+    jobPollTimer=null;
+  }
+  const active=recentJobs.some(job=>['queued','claimed'].includes(String(job.status||'').toLowerCase()));
+  if(active){
+    jobPollTimer=setTimeout(()=>loadRecentJobs().catch(()=>{}),2000);
+  }
+}
+
+async function loadRecentJobs(){
+  const result=await supabase.rpc('station_connect_admin_recent_jobs',{p_limit:8});
+  if(result.error)throw result.error;
+  recentJobs=Array.isArray(result.data)?result.data:[];
+  renderRecentJobs();
+  scheduleJobPoll();
 }
 
 function render(){
@@ -390,6 +529,7 @@ async function loadStations(clearMessage=true){
     stations=Array.isArray(result.data)?result.data:[];
     await loadHardware();
     render();
+    await loadRecentJobs();
   }catch(error){
     stations=[];
     $('stationCount').textContent='0';
