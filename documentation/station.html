@@ -9,6 +9,52 @@
 </section>
 
 <section class="card">
+  <h2>لماذا أنشأنا Station Connect؟</h2>
+  <p>بدأت المشكلة قبل Station Connect: أردنا تجربة Flexy من موقع أونلاين، بينما المودم USB موجود على كمبيوتر Windows داخل المحل. الموقع وحده لا يستطيع الوصول مباشرة إلى هذا المودم المحلي.</p>
+  <div class="flow">Internet Website
+      X
+لا يصل مباشرة إلى
+      X
+USB Modem on Windows</div>
+  <p>الحل الحاسم لم يكن البحث فقط عن استضافة أقوى، بل فصل المسؤوليات:</p>
+  <div class="flow">Online Server
+      ↑
+      | HTTPS / WebSocket outbound
+      |
+Windows Agent
+      |
+      v
+Local USB Modem</div>
+  <div class="callout"><b>القاعدة:</b> السيرفر لا يدخل إلى كمبيوتر المحل. الكمبيوتر نفسه يفتح الاتصال إلى السيرفر، ثم ينفذ العمل محليًا ويرجع النتيجة.</div>
+</section>
+
+<section class="card">
+  <h2>لماذا فصلناه عن MyTool وSupabase؟</h2>
+  <p>حتى لا يصبح برنامج الكمبيوتر مربوطًا بموقع واحد أو Framework واحد. Agent يعرف عقدًا ثابتًا وعنوانًا واحدًا فقط:</p>
+  <div class="code">SERVER_URL=https://.../station-gateway</div>
+  <div class="flow">Station Agent
+      |
+      | Stable Contract
+      v
+SERVER_URL
+   ├─ Supabase الآن
+   ├─ Laravel لاحقًا
+   └─ أي Server Provider آخر</div>
+  <p>إذا تغير السيرفر مستقبلًا نحافظ على Contract ونغير الرابط، بدل إعادة كتابة منطق Windows والمودم.</p>
+</section>
+
+<section class="card">
+  <h2>المرجع الذي يمنعنا من العودة لنفس الدوامة</h2>
+  <p>من الآن لا نعتمد على المحادثة وحدها. نفس المشروع موثق في ثلاث طبقات:</p>
+  <div class="table-wrap"><table><tbody>
+    <tr><th>Developer</th><td><b>لماذا؟</b> القرار، أصل المشكلة، السبب، الأخطاء السابقة والقواعد المعمارية.</td></tr>
+    <tr><th>Project Repository</th><td><b>ماذا يعمل فعلًا؟</b> الكود، Contract، STATUS، NEXT-STEP وتعليمات التشغيل.</td></tr>
+    <tr><th>Web Documentation</th><td><b>كيف أفهمه وأشغله؟</b> الخريطة البصرية والخطوات من GitHub حتى ONLINE/OFFLINE.</td></tr>
+  </tbody></table></div>
+  <div class="callout">إذا ضاع السياق لاحقًا: <b>الموقع لا يتصل بالمودم؛ Windows Agent يتصل بالسيرفر Outbound عبر Contract ثابت.</b></div>
+</section>
+
+<section class="card">
   <h2>الخريطة الحالية</h2>
   <div class="flow">GitHub: amordz72/station-connect
         ↓
