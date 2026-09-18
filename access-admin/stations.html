@@ -80,6 +80,31 @@
 <section class="mt-card">
   <div class="mt-section-head" style="margin:0 0 8px">
     <div class="mt-section-copy">
+      <h2>بطاقات شحن Mobilis</h2>
+      <p>إضافة للمخزون فقط. لا يتم شحن أي بطاقة عند الإضافة.</p>
+    </div>
+    <span id="rechargeCardCount" class="mt-chip muted">0</span>
+  </div>
+  <form id="rechargeCardForm">
+    <div style="display:grid;grid-template-columns:1.3fr .7fr 1fr;gap:8px">
+      <label class="mt-search"><input name="code" autocomplete="off" placeholder="كود البطاقة"></label>
+      <label class="mt-search"><input name="amount" inputmode="numeric" type="number" min="1" step="1" placeholder="القيمة"></label>
+      <label class="mt-search"><select name="source" style="width:100%;border:0;outline:0;background:transparent;font:inherit" required>
+        <option value="">اختر المصدر</option>
+        <option value="aladdin_telegram">بوت تيليجرام علاء الدين</option>
+        <option value="hanii_rohek">هني روحك</option>
+        <option value="wafferli">وفرلي</option>
+        <option value="digital_home">ديجيتال هوم</option>
+      </select></label>
+    </div>
+    <div class="mt-actions"><button id="addRechargeCardBtn" class="mt-btn primary" type="submit">إضافة البطاقة</button></div>
+  </form>
+  <div id="rechargeCards"><div class="mt-meta">لا توجد بطاقات مضافة.</div></div>
+</section>
+
+<section class="mt-card">
+  <div class="mt-section-head" style="margin:0 0 8px">
+    <div class="mt-section-copy">
       <h2>آخر عمليات Flexy التجريبية</h2>
       <p>تتحدث تلقائيًا أثناء التنفيذ.</p>
     </div>
@@ -100,6 +125,7 @@ const $=id=>document.getElementById(id);
 let stations=[];
 let hardwareByStation={};
 let recentJobs=[];
+let rechargeCards=[];
 let jobPollTimer=null;
 
 function escapeHtml(value){
@@ -486,6 +512,33 @@ function bindActions(){
   });
 }
 
+
+function renderRechargeCards(){
+  $('rechargeCardCount').textContent=String(rechargeCards.length);
+  if(!rechargeCards.length){
+    $('rechargeCards').innerHTML='<div class="mt-meta">لا توجد بطاقات مضافة.</div>';
+    return;
+  }
+  $('rechargeCards').innerHTML=rechargeCards.slice(0,10).map(card=>{
+    const label=card.status==='ready'?'جاهزة':card.status==='used'?'مستعملة':'فشلت';
+    const cls=card.status==='ready'?'primary':card.status==='used'?'success':'danger';
+    return '<div class="pilot-job">'+
+      '<div class="mt-row">'+
+        '<div><strong>'+escapeHtml(card.amount)+' دج — '+escapeHtml(card.source_label)+'</strong>'+
+        '<div class="mt-meta">'+escapeHtml(card.masked_code)+' · '+escapeHtml(fmtDate(card.created_at))+'</div></div>'+
+        '<span class="mt-chip '+cls+'">'+escapeHtml(label)+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+async function loadRechargeCards(){
+  const result=await supabase.rpc('station_connect_admin_recharge_cards',{p_limit:20});
+  if(result.error)throw result.error;
+  rechargeCards=Array.isArray(result.data)?result.data:[];
+  renderRechargeCards();
+}
+
 function jobStatusMeta(status){
   const value=String(status||'').toLowerCase();
   if(value==='success')return {label:'نجحت',cls:'success'};
@@ -587,7 +640,7 @@ async function loadStations(clearMessage=true){
     stations=Array.isArray(result.data)?result.data:[];
     await loadHardware();
     render();
-    await loadRecentJobs();
+    await Promise.all([loadRecentJobs(),loadRechargeCards()]);
   }catch(error){
     stations=[];
     $('stationCount').textContent='0';
@@ -599,6 +652,43 @@ async function loadStations(clearMessage=true){
     button.textContent='تحديث';
   }
 }
+
+$('rechargeCardForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const form=event.currentTarget;
+  const button=$('addRechargeCardBtn');
+  const data=new FormData(form);
+  const code=String(data.get('code')||'').trim();
+  const amount=Number(data.get('amount')||0);
+  const source=String(data.get('source')||'').trim();
+
+  if(!code||!Number.isFinite(amount)||amount<=0||!source){
+    showMessage('راجع بيانات البطاقة','اكتب الكود والقيمة واختر المصدر.','danger');
+    return;
+  }
+
+  button.disabled=true;
+  button.textContent='جاري الإضافة…';
+  hideMessage();
+
+  try{
+    const {error}=await supabase.rpc('station_connect_admin_add_recharge_card',{
+      p_code:code,
+      p_amount:Math.trunc(amount),
+      p_source_code:source
+    });
+    if(error)throw error;
+    form.reset();
+    await loadRechargeCards();
+    showMessage('تمت إضافة البطاقة','حُفظت في جدول البطاقات فقط ولم يتم شحنها.');
+  }catch(error){
+    const msg=String(error?.message||'حدث خطأ غير متوقع.');
+    showMessage('تعذر إضافة البطاقة',msg.includes('CARD_ALREADY_EXISTS')?'هذه البطاقة مسجلة من قبل.':msg,'danger');
+  }finally{
+    button.disabled=false;
+    button.textContent='إضافة البطاقة';
+  }
+});
 
 $('stationSearch').addEventListener('input',applySearch);
 $('refreshBtn').addEventListener('click',()=>loadStations(true));
