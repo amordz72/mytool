@@ -23,7 +23,12 @@ function platformLabel(v){
   return ({tehna_pay:'تهنى باي',hanii_rohek:'هني روحك',other:'منصة أخرى'}[v]||v||'مصدر');
 }
 function statusLabel(v){
-  return ({linked:'مربوط',unlinked:'غير مربوط',pending_review:'بانتظار الموافقة',conflict:'تعارض'}[v]||v);
+  return ({linked:'مسجل في MyTool',unlinked:'غير مسجل',pending_review:'بانتظار الموافقة',conflict:'تعارض'}[v]||v);
+}
+function partyAccountCount(partyId){
+  const id=Number(partyId||0);
+  if(!id)return 0;
+  return sources.filter(x=>Number(x.linked_party_id||0)===id).length;
 }
 function safeError(error){
   return String(error?.message||error||'خطأ غير معروف').replace(/(eyJ[a-zA-Z0-9._-]{20,}|sb_[a-zA-Z0-9_-]{20,})/g,'[محجوب]');
@@ -155,8 +160,11 @@ function renderSources(){
 
   $('sources').innerHTML=chunk.map(s=>{
     const name=s.display_name||[s.first_name,s.last_name].filter(Boolean).join(' ')||s.username;
+    const linkedCount=partyAccountCount(s.linked_party_id);
     const linkedLine=s.link_status==='linked'
-      ? '<div class="linked-line">مربوط بـ '+esc(s.linked_party_name||('عميل #'+s.linked_party_id))+'</div>'
+      ? '<div class="linked-line">'+(linkedCount>1
+          ? 'مجمّع تحت العميل «'+esc(s.linked_party_name||('عميل #'+s.linked_party_id))+'» · '+linkedCount+' حسابات'
+          : 'هوية MyTool: '+esc(s.linked_party_name||('عميل #'+s.linked_party_id)))+'</div>'
       : '';
     const unlink=s.link_status==='linked'&&s.link_id
       ? '<button class="icon-btn btn danger" data-unlink="'+s.link_id+'" data-source="'+s.id+'" type="button" title="فك الربط" aria-label="فك الربط"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></button>'
@@ -168,7 +176,7 @@ function renderSources(){
     const checked=selectedSources.has(Number(s.id));
     return '<div class="source-card'+(checked?' selected':'')+'" data-source-card="'+s.id+'">'+
       '<div class="source-top"><label class="source-select"><input type="checkbox" data-select-source="'+s.id+'" '+(checked?'checked':'')+'><span><div class="name">'+esc(name)+'</div><div class="username">'+esc(s.username)+'</div></span></label>'+
-      '<div class="badges"><span class="badge platform">'+esc(platformLabel(s.platform_key))+'</span><span class="badge '+esc(s.link_status)+'">'+esc(statusLabel(s.link_status))+'</span></div></div>'+
+      '<div class="badges"><span class="badge platform">'+esc(platformLabel(s.platform_key))+'</span><span class="badge '+esc(s.link_status)+'">'+esc(s.link_status==='linked'&&partyAccountCount(s.linked_party_id)>1?'مجمّع '+partyAccountCount(s.linked_party_id)+' حسابات':statusLabel(s.link_status))+'</span></div></div>'+
       (contactLine(s)?'<div class="meta">'+contactLine(s)+'</div>':'')+
       linkedLine+
       primaryActions+manualBox+
