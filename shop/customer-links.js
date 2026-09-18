@@ -22,6 +22,21 @@ function msg(text,kind='info'){
 function platformLabel(v){
   return ({tehna_pay:'تهنى باي',hanii_rohek:'هني روحك',other:'منصة أخرى'}[v]||v||'مصدر');
 }
+async function sha256File(file){
+  const bytes=await file.arrayBuffer();
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function registerSourceImport(platform,file){
+  const hash=await sha256File(file);
+  const {data,error}=await adminRpc(
+    'admin_customer_register_source_import',
+    'workspace_admin_register_source_import',
+    {p_platform_key:platform,p_file_name:file.name,p_file_sha256:hash}
+  );
+  if(error)throw error;
+  return data;
+}
 function statusLabel(v){
   return ({linked:'مسجل في MyTool',unlinked:'غير مسجل',pending_review:'بانتظار الموافقة',conflict:'تعارض'}[v]||v);
 }
@@ -167,7 +182,7 @@ function renderSources(){
           : 'هوية MyTool: '+esc(s.linked_party_name||('عميل #'+s.linked_party_id)))+'</div>'
       : '';
     const unlink=s.link_status==='linked'&&s.link_id
-      ? '<button class="icon-btn btn danger" data-unlink="'+s.link_id+'" data-source="'+s.id+'" type="button" title="فك الربط" aria-label="فك الربط"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></button>'
+      ? '<button class="btn danger" data-unlink="'+s.link_id+'" data-source="'+s.id+'" type="button">إلغاء الربط</button>'
       : '';
     const manualBox='<div class="link-controls" data-manual-link-box="'+s.id+'" hidden><div class="field"><label>اختر العميل الموحد</label><select data-party-select="'+s.id+'">'+partyOptions(s.linked_party_id)+'</select></div><button class="btn secondary" data-link="'+s.id+'" type="button">حفظ الربط</button></div>';
     const primaryActions=s.link_status==='linked'
@@ -354,7 +369,7 @@ async function linkSource(sourceId){
   if(data?.status==='conflict'){
     const ok=await askConfirm(
       'هذا المستخدم مربوط مسبقًا',
-      'المستخدم مربوط حاليًا بـ «'+(data.existing_party_name||('عميل #'+data.existing_party_id))+'». هل تريد فك الربط السابق ونقله للعميل المختار؟',
+      'المستخدم مربوط حاليًا بـ «'+(data.existing_party_name||('عميل #'+data.existing_party_id))+'». هل تريد إلغاء الربط السابق ونقله للعميل المختار؟',
       'فك ونقل الربط'
     );
     if(!ok)return msg('لم يتم تغيير الربط.','info');
@@ -377,14 +392,14 @@ async function createFromSource(sourceId){
   await load();msg('تم إنشاء العميل وربط الحساب.','ok');
 }
 async function unlinkSource(linkId){
-  if(!navigator.onLine)return msg('فك الربط يحتاج اتصالًا.','warn');
-  const ok=await askConfirm('فك الربط','سيبقى تاريخ الربط محفوظًا ويمكن إعادة الربط لاحقًا. هل تريد المتابعة؟','فك الربط');
+  if(!navigator.onLine)return msg('إلغاء الربط يحتاج اتصالًا.','warn');
+  const ok=await askConfirm('إلغاء الربط','سيبقى تاريخ الربط محفوظًا ويمكن إعادة الربط لاحقًا. هل تريد المتابعة؟','إلغاء الربط');
   if(!ok)return;
   const {error}=await adminRpc('admin_customer_unlink_platform_account_safe','workspace_admin_unlink_platform_account_safe',{
     p_link_id:linkId,p_reason:'فك من شاشة إدارة ربط العملاء'
   });
-  if(error)return msg('تعذر فك الربط: '+safeError(error),'error');
-  await load();msg('تم فك الربط مع الاحتفاظ بالتاريخ.','ok');
+  if(error)return msg('تعذر إلغاء الربط: '+safeError(error),'error');
+  await load();msg('تم إلغاء الربط مع الاحتفاظ بالتاريخ.','ok');
 }
 async function saveParty(id){
   if(!navigator.onLine)return msg('تعديل العميل يحتاج اتصالًا.','warn');
@@ -496,9 +511,15 @@ async function importSources(){
   const file=$('sourceFile').files?.[0];
   if(!file)return msg('اختر ملف CSV أو XLSX أولًا.','error');
   const platform=$('importPlatform').value;
-  $('importBtn').disabled=true;msg('جاري قراءة الملف…');
+  $('importBtn').disabled=true;msg('جاري التحقق من الملف…');
   try{
     const accounts=await parseImportFile(file);
+    const registration=await registerSourceImport(platform,file);
+    if(registration?.status==='wrong_platform'){
+      const existing=platformLabel(registration.existing_platform_key);
+      const requested=platformLabel(registration.requested_platform_key);
+      throw new Error('هذا الملف سبق تحميله لمنصة «'+existing+'» ولا يمكن تحميله مرة أخرى كمنصة «'+requested+'».');
+    }
     if(!accounts.length)throw new Error('لم أجد حسابات صالحة في الملف.');
     let processed=0,inserted=0,updated=0;
     for(let i=0;i<accounts.length;i+=150){
@@ -518,7 +539,8 @@ async function importSources(){
     if(boot?.error){
       msg('تم تحديث '+processed+' حساب. بقيت بعض حالات الربط للمراجعة، ولم تتوقف الصفحة.','warn');
     }else{
-      msg('تم تحديث '+processed+' حساب؛ ربط أولي تلقائي '+Number(boot?.created||0)+'، وبانتظار مراجعة دمج '+Number(smart?.pending||0)+'.','ok');
+      const repeat=registration?.status==='same_platform'?' · إعادة تحديث لنفس المصدر':'';
+      msg('تم تحديث '+processed+' حساب؛ ربط أولي تلقائي '+Number(boot?.created||0)+'، وبانتظار مراجعة دمج '+Number(smart?.pending||0)+repeat+'.','ok');
     }
   }catch(error){
     msg('تعذر الاستيراد: '+safeError(error),'error');
