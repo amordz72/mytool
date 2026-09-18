@@ -78,6 +78,7 @@ const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let stations=[];
+let hardwareByStation={};
 
 function escapeHtml(value){
   return String(value??'').replace(/[&<>"']/g,c=>({
@@ -155,6 +156,55 @@ function hideMessage(){
   $('pageMessage').hidden=true;
 }
 
+function hardwareSection(row){
+  const items=hardwareByStation[row.station_uuid]||[];
+
+  if(row.status!=='approved'){
+    return '';
+  }
+
+  if(!items.length){
+    return '<div class="mt-alert warning">'+
+      '<div class="mt-alert-icon" aria-hidden="true">📡</div>'+
+      '<div class="mt-alert-copy"><h3>المودم لم يُسجّل بعد</h3>'+
+      '<p>بعد تحديث وتشغيل Agent الجديد سيقرأ IMEI وبيانات الشريحة تلقائيًا ويظهرها هنا.</p></div></div>';
+  }
+
+  return items.map(item=>{
+    const simUuid=item.sim_uuid||'';
+    const numberValue=item.msisdn||'';
+    const pinLabel=item.has_pin?'PIN محفوظ':'PIN غير محفوظ';
+    const identity=[
+      item.imei?'IMEI: '+escapeHtml(item.imei):'',
+      item.serial_number?'Serial: '+escapeHtml(item.serial_number):'',
+      item.iccid?'ICCID: '+escapeHtml(item.iccid):'',
+      item.imsi?'IMSI: '+escapeHtml(item.imsi):''
+    ].filter(Boolean).join('<br>');
+
+    if(!simUuid){
+      return '<div class="mt-alert warning"><div class="mt-alert-icon">📱</div><div class="mt-alert-copy">'+
+        '<h3>تم اكتشاف المودم</h3><p>بانتظار اكتشاف الشريحة من Agent.</p></div></div>';
+    }
+
+    return '<div class="mt-detail-row"><span>المودم والشريحة</span><span>'+escapeHtml(pinLabel)+'</span></div>'+
+      '<div class="mt-meta" style="margin:10px 0">'+(identity||'هوية الشريحة الجزئية محفوظة')+
+        '<br>HiLink: '+escapeHtml(item.modem_ip||'—')+
+        '<br>نوع الشريحة: '+escapeHtml(item.sim_type||'mobilis-sama')+
+      '</div>'+
+      '<form class="sim-settings" data-sim-uuid="'+escapeHtml(simUuid)+'">'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">'+
+          '<label class="mt-search"><input name="msisdn" inputmode="numeric" maxlength="10" placeholder="رقم الشريحة 10 أرقام" value="'+escapeHtml(numberValue)+'"></label>'+
+          '<label class="mt-search"><input name="service_pin" type="password" inputmode="numeric" maxlength="8" placeholder="'+escapeHtml(pinLabel)+'" autocomplete="new-password"></label>'+
+        '</div>'+
+        '<label class="mt-search" style="margin-top:8px"><select name="sim_type" style="width:100%;border:0;outline:0;background:transparent;font:inherit">'+
+          '<option value="mobilis-sama" '+(item.sim_type==='mobilis-sama'?'selected':'')+'>Mobilis SAMA</option>'+
+          '<option value="mobilis-arsselli" '+(item.sim_type==='mobilis-arsselli'?'selected':'')+'>Mobilis Arsselli</option>'+
+        '</select></label>'+
+        '<div class="mt-actions"><button class="mt-btn primary save-sim" type="submit">حفظ بيانات الشريحة</button></div>'+
+      '</form>';
+  }).join('');
+}
+
 function stationCard(row){
   const meta=statusMeta(row);
   const shortUuid=String(row.station_uuid||'').slice(0,8);
@@ -190,6 +240,7 @@ function stationCard(row){
         '</div>'+
       '</div>'+
       action+
+      hardwareSection(row)+
       '<details>'+
         '<summary class="mt-detail-row"><span>تفاصيل تقنية</span><span>⌄</span></summary>'+
         '<div class="mt-meta">Station UUID: '+escapeHtml(row.station_uuid||'—')+
