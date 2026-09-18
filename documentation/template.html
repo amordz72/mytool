@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Template V1 — MyTool</title>
+<link rel="stylesheet" href="../ui/template-v1.css">
+<script src="../auth-guard.js" data-access="admin"></script>
+<style>
+.mt-demo-note{font-size:11px;color:var(--mt-muted);margin:0 0 10px}
+.mt-brand{display:flex;align-items:center;gap:9px}.mt-brand-mark{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--mt-primary),#2fb6c7);display:grid;place-items:center;color:#fff;font-weight:900;font-size:22px}.mt-brand strong{display:block;font-size:20px}.mt-brand small,.mt-user small{color:var(--mt-muted);font-size:10px}.mt-user{display:flex;align-items:center;gap:8px}.mt-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#d9ecff,#6ca8df);color:#fff;font-weight:900}.mt-user strong{display:block;font-size:12px}.mt-page-title{display:flex;align-items:center;gap:10px}.mt-page-icon{width:48px;height:48px;border-radius:16px;background:var(--mt-primary-soft);display:grid;place-items:center;color:var(--mt-primary);font-size:22px}.mt-page-title h1{margin:0;font-size:27px}.mt-page-title p{margin:5px 0 0;color:var(--mt-muted);font-size:12px}.mt-search{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--mt-line);border-radius:16px;padding:11px 13px}.mt-search input{border:0;outline:0;background:transparent;width:100%;font:inherit}.mt-section-head h2{margin:0;font-size:19px}.mt-section-head p{margin:4px 0 0;color:var(--mt-muted);font-size:11px}.mt-thumb{width:64px;height:64px;flex:0 0 64px;border-radius:16px;background:linear-gradient(135deg,#f3f8fc,#e7f1f8);display:grid;place-items:center;font-size:30px;border:1px solid #e6eef5}.mt-row-main{min-width:0;display:flex;align-items:center;gap:12px}.mt-row h3{margin:0 0 5px;font-size:16px}.mt-meta{color:var(--mt-muted);font-size:11px;line-height:1.6}.mt-detail-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border-radius:13px;background:#f6f9fc;color:#49657c;font-size:11px;font-weight:800}.mt-doc-link{display:inline-flex;text-decoration:none;margin-bottom:10px;color:var(--mt-primary);font-weight:900;font-size:12px}
+</style>
+</head>
+<body class="mt-app">
+<main class="mt-shell">
+<a class="mt-doc-link" href="./">← الرجوع إلى مخطط المشاريع</a>
+<p class="mt-demo-note">Template V1 — معاينة مرجعية فقط، لا تنفذ أي عملية.</p>
+
+<header class="mt-topbar">
+  <div class="mt-brand"><div class="mt-brand-mark">M</div><div><strong>MyTool</strong><small>أدوات أكثر · إنجاز أكبر</small></div></div>
+  <div class="mt-user"><div><strong>مدير النظام</strong><small>مسؤول</small></div><div class="mt-avatar">A</div></div>
+</header>
+
+<section class="mt-page-head">
+  <div class="mt-page-title"><div class="mt-page-icon">⌁</div><div><h1>المحطات</h1><p>إدارة ومتابعة أجهزة Flexy في مكان واحد</p></div></div>
+  <button class="mt-btn secondary" type="button" disabled>قائمة</button>
+</section>
+
+<div class="mt-search"><span>⌕</span><input value="" placeholder="ابحث عن محطة..." disabled></div>
+
+<div class="mt-section-head"><div><h2>مكونات القالب</h2><p>هذه العناصر هي التي تعاد في كل شاشة، وليس CSS جديد لكل صفحة.</p></div><span class="mt-chip primary">Template V1</span></div>
+
+<article class="mt-card">
+  <div class="mt-row">
+    <div class="mt-row-main"><div class="mt-thumb">🖥️</div><div><h3>Station 01</h3><div class="mt-meta">آخر اتصال منذ 18 ثانية<br>2 مودم · 2 شريحة</div></div></div>
+    <div><span class="mt-chip success">● ONLINE</span><span class="mt-chip primary">موثوق</span></div>
+  </div>
+  <div class="mt-detail-row"><span>تفاصيل تقنية</span><span>⌄</span></div>
+</article>
+
+<article class="mt-card">
+  <div class="mt-row">
+    <div class="mt-row-main"><div class="mt-thumb">🔌</div><div><h3>Huawei USB — Arsselli</h3><div class="mt-meta">Adapter جديد بعد نقل USB</div></div></div>
+    <span class="mt-chip warning">REVIEW</span>
+  </div>
+</article>
+
+<div class="mt-alert warning"><div>⚠️</div><div><strong>تنبيه مهم</strong><br><span style="font-size:11px;color:#5d7182">المورد في REVIEW لا يدخل التنفيذ المالي حتى التحقق.</span></div></div>
+
+<div class="mt-row" style="margin-top:14px">
+  <button class="mt-btn primary" type="button" disabled>الإجراء الرئيسي</button>
+  <button class="mt-btn secondary" type="button" disabled>إجراء ثانوي</button>
+</div>
+</main>
+
+<nav class="mt-bottom-nav" aria-label="Template navigation">
+<a href="../"><span>⌂</span>الرئيسية</a>
+<a href="../flexy/"><span>⚡</span>فليكسي</a>
+<a class="active" href="#"><span>⌖</span>المحطات</a>
+<a href="../shop/"><span>▣</span>المحل</a>
+<a href="../"><span>🧰</span>الأدوات</a>
+</nav>
+</body></html>
