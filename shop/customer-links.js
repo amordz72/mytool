@@ -1,7 +1,6 @@
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 const supabase=createClient(window.ShopApiConfig.url,window.ShopApiConfig.key);
-const TOKEN='mytool_shop_worker_token';
 const CACHE='mytool_customer_linking_service_cache_v1';
 const DIRECTORY_CACHE='mytool_customer_directory_cache_v1';
 const PAGE_SIZE=15;
@@ -9,7 +8,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=v=>String(v??'').trim().toLowerCase();
 
-let token='',me=null,sources=[],parties=[],suggestions=[],page=1;
+let me=null,sources=[],parties=[],suggestions=[],page=1;
 let confirmResolve=null;
 
 function msg(text,kind='info'){
@@ -197,18 +196,16 @@ function renderAll(){
   renderMetrics();renderSuggestions();renderSources();renderParties();renderConnectivity();
 }
 async function identify(){
-  token=localStorage.getItem(TOKEN)||'';
-  if(!token)throw new Error('NO_SESSION');
   if(!navigator.onLine){
     ShopShell.mountRoleNavigation({role:'admin',permissions:{}},'customer-links');
     return;
   }
-  const {data,error}=await supabase.rpc('workspace_session_status',{p_session_token:token});
-  if(error||!data?.length)throw error||new Error('NO_SESSION');
-  me=data[0];
-  if(me.account_role!=='workspace_admin')throw new Error('ADMIN_REQUIRED');
+  const {data,error}=await supabase.auth.getSession();
+  if(error)throw error;
+  if(!data?.session)throw new Error('NO_SESSION');
+  me={account_role:'workspace_admin',nickname:'الإدارة'};
   ShopShell.mountRoleNavigation({role:'admin',permissions:{can_record_money:true}},'customer-links');
-  document.querySelectorAll('.shell-identity').forEach(el=>el.textContent=(me.nickname||'الإدارة')+' · ربط العملاء');
+  document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='حساب الإدارة · ربط العملاء');
 }
 async function load(){
   if(!navigator.onLine){
@@ -217,8 +214,8 @@ async function load(){
   }
   msg('جاري تحميل دليل الربط…');
   const [a,b]=await Promise.all([
-    supabase.rpc('workspace_admin_list_customer_linking',{p_session_token:token}),
-    supabase.rpc('workspace_admin_list_link_suggestions',{p_session_token:token,p_status:null})
+    supabase.rpc('admin_customer_list_linking'),
+    supabase.rpc('admin_customer_list_link_suggestions',{p_status:null})
   ]);
   if(a.error)throw a.error;
   if(b.error)throw b.error;
@@ -234,8 +231,8 @@ async function linkSource(sourceId){
   const partyId=Number(sel?.value||0);
   if(!partyId)return msg('اختر العميل الموحد أولًا.','error');
   msg('جاري حفظ الربط…');
-  let {data,error}=await supabase.rpc('workspace_admin_link_source_account_safe',{
-    p_session_token:token,p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:false,p_reason:null
+  let {data,error}=await supabase.rpc('admin_customer_link_source_account_safe',{
+    p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:false,p_reason:null
   });
   if(error)return msg('تعذر الربط: '+safeError(error),'error');
   if(data?.status==='conflict'){
@@ -245,8 +242,8 @@ async function linkSource(sourceId){
       'فك ونقل الربط'
     );
     if(!ok)return msg('لم يتم تغيير الربط.','info');
-    ({data,error}=await supabase.rpc('workspace_admin_link_source_account_safe',{
-      p_session_token:token,p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:true,p_reason:'نقل الربط من شاشة إدارة ربط العملاء'
+    ({data,error}=await supabase.rpc('admin_customer_link_source_account_safe',{
+      p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:true,p_reason:'نقل الربط من شاشة إدارة ربط العملاء'
     }));
     if(error)return msg('تعذر نقل الربط: '+safeError(error),'error');
   }
@@ -257,8 +254,8 @@ async function createFromSource(sourceId){
   const source=sources.find(x=>Number(x.id)===Number(sourceId));
   const ok=await askConfirm('إنشاء عميل موحد','إنشاء عميل MyTool باسم «'+(source?.display_name||source?.username||'الحساب')+'» وربط هذا الحساب به؟','إنشاء وربط');
   if(!ok)return;
-  const {error}=await supabase.rpc('workspace_admin_create_party_from_source',{
-    p_session_token:token,p_source_account_id:sourceId,p_display_name:null
+  const {error}=await supabase.rpc('admin_customer_create_party_from_source',{
+    p_source_account_id:sourceId,p_display_name:null
   });
   if(error)return msg('تعذر إنشاء العميل: '+safeError(error),'error');
   await load();msg('تم إنشاء العميل وربط الحساب.','ok');
@@ -267,8 +264,8 @@ async function unlinkSource(linkId){
   if(!navigator.onLine)return msg('فك الربط يحتاج اتصالًا.','warn');
   const ok=await askConfirm('فك الربط','سيبقى تاريخ الربط محفوظًا ويمكن إعادة الربط لاحقًا. هل تريد المتابعة؟','فك الربط');
   if(!ok)return;
-  const {error}=await supabase.rpc('workspace_admin_unlink_platform_account_safe',{
-    p_session_token:token,p_link_id:linkId,p_reason:'فك من شاشة إدارة ربط العملاء'
+  const {error}=await supabase.rpc('admin_customer_unlink_platform_account_safe',{
+    p_link_id:linkId,p_reason:'فك من شاشة إدارة ربط العملاء'
   });
   if(error)return msg('تعذر فك الربط: '+safeError(error),'error');
   await load();msg('تم فك الربط مع الاحتفاظ بالتاريخ.','ok');
@@ -279,16 +276,16 @@ async function saveParty(id){
   const phone=document.querySelector('[data-party-phone="'+id+'"]')?.value.trim()||null;
   const email=document.querySelector('[data-party-email="'+id+'"]')?.value.trim()||null;
   if(!name)return msg('اسم العميل مطلوب.','error');
-  const {error}=await supabase.rpc('workspace_admin_update_canonical_party',{
-    p_session_token:token,p_party_id:id,p_display_name:name,p_phone:phone,p_email:email
+  const {error}=await supabase.rpc('admin_customer_update_canonical',{
+    p_party_id:id,p_display_name:name,p_phone:phone,p_email:email
   });
   if(error)return msg('تعذر تعديل العميل: '+safeError(error),'error');
   await load();msg('تم تعديل العميل الموحد.','ok');
 }
 async function reviewSuggestion(id,action){
   if(!navigator.onLine)return msg('مراجعة الاقتراح تحتاج اتصالًا.','warn');
-  const {data,error}=await supabase.rpc('workspace_admin_review_link_suggestion',{
-    p_session_token:token,p_suggestion_id:id,p_action:action
+  const {data,error}=await supabase.rpc('admin_customer_review_link_suggestion',{
+    p_suggestion_id:id,p_action:action
   });
   if(error)return msg('تعذر مراجعة الاقتراح: '+safeError(error),'error');
   if(data?.status==='conflict'){
@@ -300,7 +297,7 @@ async function reviewSuggestion(id,action){
 async function generateSuggestions(){
   if(!navigator.onLine)return msg('الاقتراح الذكي يحتاج اتصالًا.','warn');
   $('smartBtn').disabled=true;msg('جاري فحص الهواتف والبريد وأسماء المستخدمين…');
-  const {data,error}=await supabase.rpc('workspace_admin_generate_link_suggestions',{p_session_token:token});
+  const {data,error}=await supabase.rpc('admin_customer_generate_link_suggestions');
   $('smartBtn').disabled=false;
   if(error)return msg('تعذر إنشاء الاقتراحات: '+safeError(error),'error');
   await load();
@@ -383,8 +380,8 @@ async function importSources(){
     let processed=0,inserted=0,updated=0;
     for(let i=0;i<accounts.length;i+=150){
       const chunk=accounts.slice(i,i+150);
-      const {data,error}=await supabase.rpc('workspace_admin_upsert_source_accounts',{
-        p_session_token:token,p_platform_key:platform,p_accounts:chunk
+      const {data,error}=await supabase.rpc('admin_customer_upsert_source_accounts',{
+        p_platform_key:platform,p_accounts:chunk
       });
       if(error)throw error;
       processed+=Number(data?.processed||chunk.length);
@@ -404,8 +401,8 @@ async function createManual(){
   if(!navigator.onLine)return msg('إنشاء العميل يحتاج اتصالًا.','warn');
   const name=$('manualName').value.trim(),phone=$('manualPhone').value.trim()||null,email=$('manualEmail').value.trim()||null;
   if(!name)return msg('اكتب اسم العميل.','error');
-  const {error}=await supabase.rpc('workspace_admin_create_canonical_party_v2',{
-    p_session_token:token,p_display_name:name,p_phone:phone,p_email:email,p_party_type:'shop'
+  const {error}=await supabase.rpc('admin_customer_create_canonical',{
+    p_display_name:name,p_phone:phone,p_email:email,p_party_type:'shop'
   });
   if(error)return msg('تعذر إنشاء العميل: '+safeError(error),'error');
   $('manualName').value='';$('manualPhone').value='';$('manualEmail').value='';$('manualBox').hidden=true;
