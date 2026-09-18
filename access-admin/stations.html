@@ -25,6 +25,8 @@
 .discovery-offer.selected{background:#e8f3ff;box-shadow:inset 0 0 0 2px #2580d8}
 .discovery-offer .pick-mark{display:none;font-weight:900;color:#2580d8;margin-inline-start:6px}
 .discovery-offer.selected .pick-mark{display:inline}
+.discovery-offer .execute-check-wrap{display:inline-flex;align-items:center;gap:6px;margin-inline-start:8px;font-size:11px;color:#5f7488}
+.discovery-offer .execute-check{width:18px;height:18px;accent-color:#2580d8;cursor:pointer}
 .pilot-job{margin:8px 0;padding:11px 12px;border:1px solid #e2ebf2;border-radius:14px;background:#fff}
 .pilot-job strong{font-size:13px}
 </style>
@@ -290,6 +292,7 @@ function renderDiscoveryOffers(form,job,source='network'){
           'data-amount="'+escapeHtml(item.amount??'')+'" '+
           'data-label="'+escapeHtml(item.label||((item.amount??'')+' دج'))+'">'+
           '<span><span class="pick-mark">✓</span>'+escapeHtml(item.label||((item.amount??'')+' دج'))+'</span>'+
+          '<span class="execute-check-wrap"><input class="execute-check" type="checkbox" aria-label="اختيار للتنفيذ"><span>للتنفيذ</span></span>'+
           '<strong>'+escapeHtml(item.amount??'—')+' دج</strong>'+
         '</div>'
       ).join('')+
@@ -299,8 +302,14 @@ function renderDiscoveryOffers(form,job,source='network'){
 
   box.querySelectorAll('.discovery-offer').forEach(row=>{
     const selectRow=()=>{
-      box.querySelectorAll('.discovery-offer').forEach(x=>x.classList.remove('selected'));
+      box.querySelectorAll('.discovery-offer').forEach(x=>{
+        x.classList.remove('selected');
+        const check=x.querySelector('.execute-check');
+        if(check)check.checked=false;
+      });
       row.classList.add('selected');
+      const currentCheck=row.querySelector('.execute-check');
+      if(currentCheck)currentCheck.checked=true;
 
       const amountInput=form.querySelector('input[name="amount"]');
       const selected={
@@ -326,6 +335,22 @@ function renderDiscoveryOffers(form,job,source='network'){
           (selected.amount?' — '+selected.amount+' دج':'')
       );
     };
+
+    const executeCheck=row.querySelector('.execute-check');
+    if(executeCheck){
+      executeCheck.addEventListener('click',event=>{
+        event.stopPropagation();
+        if(executeCheck.checked){
+          selectRow();
+        }else{
+          row.classList.remove('selected');
+          form.dataset.selectedFamily='';
+          form.dataset.selectedNetworkIndex='';
+          form.dataset.selectedAmount='';
+          form.dataset.selectedLabel='';
+        }
+      });
+    }
 
     row.addEventListener('click',selectRow);
     row.addEventListener('keydown',event=>{
