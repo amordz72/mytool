@@ -5,7 +5,7 @@
   const routes=[
     {id:'index',group:'general',label:'لوحة التحكم',shortLabel:'الرئيسية',path:'index.html',type:'shared',roles:['admin','worker'],placement:['drawer','top'],icon:'⌂'},
     {id:'daily',group:'general',label:'التشغيل اليومي',shortLabel:'التشغيل',path:'daily.html',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'▤'},
-    {id:'today-route',group:'operations',label:'جولة اليوم',shortLabel:'الجولة',path:'today-route.html?v=20260918-canonical-route-2',type:'worker',roles:['admin','worker'],permission:'record_money',prelaunchOnly:true,placement:['drawer'],icon:'⌖',daily:true,dailyOrder:60,dailyDesc:'المتوقع والمستلم والباقي لكل محل'},
+    {id:'today-route',group:'operations',label:'جولة اليوم',shortLabel:'الجولة',path:'today-route.html?v=20260918-canonical-route-2',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'⌖',daily:true,dailyOrder:60,dailyDesc:'المتوقع والمستلم والباقي لكل محل'},
     {id:'sale',group:'operations',label:'تسجيل بيع',shortLabel:'بيع',path:'sale.html',type:'worker',roles:['admin','worker'],permission:'sell',placement:['drawer','top'],icon:'＋',daily:true,dailyOrder:10,dailyDesc:'تسجيل بيع سريع'},
     {id:'purchase',group:'operations',label:'المشتريات',shortLabel:'مشتريات',path:'purchase.html',type:'worker',roles:['admin','worker'],permission:'purchase',placement:['drawer','top'],icon:'⇩',daily:true,dailyOrder:20,dailyDesc:'إدخال سلعة للمخزون'},
     {id:'corrections',group:'operations',label:'تصحيح العمليات',shortLabel:'تصحيح',path:'corrections.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'↶'},
@@ -31,7 +31,7 @@
     {id:'notes',group:'general',label:'صندوق الملاحظات',shortLabel:'الملاحظات',path:'../notes/',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'📝'},
     {id:'mytool',group:'general',label:'رئيسية MyTool',shortLabel:'MyTool',path:'../',type:'external',roles:['admin'],placement:['drawer'],icon:'↩'}
   ];
-  function allowed(route,context){const role=context?.role||'admin';if(route.prelaunchOnly&&localStorage.getItem('mytool_workspace_code')!=='PRELAUNCH')return false;if(!route.roles.includes(role))return false;if(role==='admin'||!route.permission)return true;const permissions=context?.permissions||{};return permissions[route.permission]===true||permissions['can_'+route.permission]===true;}
+  function allowed(route,context){const role=context?.role||'admin';if(!route.roles.includes(role))return false;if(role==='admin'||!route.permission)return true;const permissions=context?.permissions||{};return permissions[route.permission]===true||permissions['can_'+route.permission]===true;}
   function list(context,placement){return routes.filter(route=>(!placement||route.placement.includes(placement))&&allowed(route,context));}
   function get(id){return routes.find(route=>route.id===id)||null}
   function daily(context){return routes.filter(route=>route.daily===true&&allowed(route,context)).sort((a,b)=>(a.dailyOrder||999)-(b.dailyOrder||999));}
@@ -41,7 +41,7 @@
   const ADMIN_BRANCH_KEY='mytool_admin_branch_id';
   const BRANCH_SELECT_IDS=['saleBranch','purchaseBranch','stockBranch','inventoryBranch','transferSource','branchSelect'];
   const LEGACY_BRANCH_CARD_SCREENS=new Set(['sale','purchase','stock','inventory']);
-  function workerOwnsBranchContext(){const prelaunchAdmin=localStorage.getItem('mytool_workspace_code')==='PRELAUNCH'&&localStorage.getItem('mytool_workspace_role')==='workspace_admin';return !!localStorage.getItem('mytool_shop_worker_token')&&!localStorage.getItem('mytool_admin_expires_at')&&!prelaunchAdmin;}
+  function workerOwnsBranchContext(){const localAdmin=localStorage.getItem('mytool_workspace_role')==='workspace_admin';return !!localStorage.getItem('mytool_shop_worker_token')&&!localStorage.getItem('mytool_admin_expires_at')&&!localAdmin;}
   function removeLegacyBranchCard(){const screen=document.body?.dataset?.screen||'';if(!LEGACY_BRANCH_CARD_SCREENS.has(screen))return false;const card=document.getElementById('branchCard');if(!card)return false;card.remove();return true;}
   function isAdminBranchSelect(target){if(!target||target.tagName!=='SELECT')return false;if(BRANCH_SELECT_IDS.includes(target.id))return true;return target.id==='branch'&&document.body?.dataset?.screen==='physical-inventory';}
   function syncBranchButtonState(select){if(!select)return;const box=select.parentNode?.querySelector('.branch-buttons');if(!box)return;const selected=String(select.value);box.querySelectorAll('[data-branch]').forEach(button=>button.classList.toggle('active',String(button.dataset.branch)===selected));}
@@ -52,7 +52,7 @@
   function loadPricingAccess(){const screen=document.body?.dataset?.screen||'';if(!['sale','stock'].includes(screen)||document.querySelector('script[data-pricing-access]'))return;const script=document.createElement('script');script.src='pricing-access.js?v=20260913-1735';script.defer=true;script.dataset.pricingAccess='1';document.head.appendChild(script);}
   function loadInventoryPricingButton(){if(document.body?.dataset?.screen!=='inventory'||document.querySelector('script[data-inventory-pricing-button]'))return;const script=document.createElement('script');script.src='inventory-quick-pricing-button.js?v=20260913-2022';script.defer=true;script.dataset.inventoryPricingButton='1';document.head.appendChild(script);}
   function loadWorkerMoneyShortcut(){if(document.body?.dataset?.screen!=='index'||document.querySelector('script[data-worker-money-shortcut]'))return;const script=document.createElement('script');script.src='worker-money-shortcut.js?v=20260914-001';script.defer=true;script.dataset.workerMoneyShortcut='1';document.head.appendChild(script);}
-  function loadCoreDesign(){const screen=document.body?.dataset?.screen||'';if(!['index','sale','stock'].includes(screen)||document.querySelector('script[data-shop-core-design]'))return;const script=document.createElement('script');script.src='shop-core-design.js?v=20260917-prelaunch-2';script.defer=true;script.dataset.shopCoreDesign='1';document.head.appendChild(script);}
+  function loadCoreDesign(){const screen=document.body?.dataset?.screen||'';if(!['index','sale','stock'].includes(screen)||document.querySelector('script[data-shop-core-design]'))return;const script=document.createElement('script');script.src='shop-core-design.js?v=20260918-real-1';script.defer=true;script.dataset.shopCoreDesign='1';document.head.appendChild(script);}
   watchAdminBranchContext();
   const loadExtras=()=>{loadPricingAccess();loadInventoryPricingButton();loadWorkerMoneyShortcut();loadCoreDesign();};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadExtras,{once:true});else loadExtras();
