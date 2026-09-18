@@ -306,15 +306,15 @@ function renderDiscoveryOffers(form,job,source='network'){
   box.hidden=false;
 
   box.querySelectorAll('.discovery-offer').forEach(row=>{
-    const selectRow=()=>{
+    const selectRow=(forExecution=false)=>{
       box.querySelectorAll('.discovery-offer').forEach(x=>{
         x.classList.remove('selected');
         const check=x.querySelector('.execute-check');
-        if(check)check.checked=false;
+        if(check&&x!==row)check.checked=false;
       });
       row.classList.add('selected');
       const currentCheck=row.querySelector('.execute-check');
-      if(currentCheck)currentCheck.checked=true;
+      if(currentCheck&&forExecution)currentCheck.checked=true;
 
       const amountInput=form.querySelector('input[name="amount"]');
       const selected={
@@ -343,25 +343,95 @@ function renderDiscoveryOffers(form,job,source='network'){
 
     const executeCheck=row.querySelector('.execute-check');
     if(executeCheck){
-      executeCheck.addEventListener('click',event=>{
+      executeCheck.addEventListener('click',async event=>{
         event.stopPropagation();
-        if(executeCheck.checked){
-          selectRow();
-        }else{
-          row.classList.remove('selected');
-          form.dataset.selectedFamily='';
-          form.dataset.selectedNetworkIndex='';
-          form.dataset.selectedAmount='';
-          form.dataset.selectedLabel='';
+
+        if(!executeCheck.checked){
+          return;
+        }
+
+        selectRow(true);
+
+        const phone=String(new FormData(form).get('phone')||'').replace(/\D/g,'');
+        const stationUuid=form.dataset.stationUuid;
+        const family=row.dataset.family||'';
+        const networkIndex=row.dataset.networkIndex||'';
+        const amount=Number(row.dataset.amount||0);
+        const label=row.dataset.label||((amount||'')+' دج');
+
+        if(!/^0[5-7][0-9]{8}$/.test(phone)||!family||!networkIndex||!Number.isFinite(amount)||amount<=0){
+          executeCheck.checked=false;
+          showMessage('تعذر التنفيذ','بيانات الرقم أو العرض غير مكتملة.','danger');
+          return;
+        }
+
+        const station=stations.find(x=>x.station_uuid===stationUuid);
+        const version=String(station?.agent_version||'');
+        const parts=version.split('.').map(Number);
+        const agentReady=parts.length===3&&parts.every(Number.isFinite)
+          && (parts[0]>0||parts[1]>3||(parts[1]===3&&parts[2]>=7));
+        if(!agentReady){
+          executeCheck.checked=false;
+          showMessage('يجب تحديث Agent','تنفيذ العرض المختار يحتاج Agent 0.3.7 أو أحدث.','danger');
+          return;
+        }
+
+        const confirmed=window.confirm(
+          'تأكيد تفعيل عرض\n\n'+
+          'الرقم: '+phone+'\n'+
+          'العرض: '+label+'\n'+
+          'المبلغ: '+amount+' دج\n\n'+
+          'هل تريد الإرسال الآن؟'
+        );
+        if(!confirmed){
+          executeCheck.checked=false;
+          return;
+        }
+
+        executeCheck.disabled=true;
+        hideMessage();
+
+        try{
+          const {data,error}=await supabase.rpc('station_connect_admin_create_offer_execute',{
+            p_phone:phone,
+            p_family:family,
+            p_network_index:networkIndex,
+            p_amount:amount,
+            p_station_uuid:stationUuid
+          });
+          if(error)throw error;
+
+          const job=Array.isArray(data)?data[0]:null;
+          if(!job?.job_uuid)throw new Error('لم يتم إنشاء عملية التنفيذ.');
+
+          showMessage(
+            job.reused?'العملية موجودة بالفعل':'تم تأكيد الإرسال',
+            job.reused
+              ?'وجدنا نفس العملية قيد التنفيذ؛ لن نرسلها مرتين.'
+              :'سيتم تنفيذ العرض المحدد فقط.'
+          );
+
+          await pollOfferExecute(form,job.job_uuid,row,executeCheck);
+        }catch(error){
+          executeCheck.disabled=false;
+          executeCheck.checked=false;
+          const message=String(error?.message||'حدث خطأ غير متوقع.');
+          showMessage(
+            'تعذر تنفيذ العرض',
+            message.includes('OFFER_REFERENCE_NOT_FOUND')
+              ?'العرض المحدد غير موجود في كاتالوج التنفيذ المؤكد.'
+              :message,
+            'danger'
+          );
         }
       });
     }
 
-    row.addEventListener('click',selectRow);
+    row.addEventListener('click',()=>selectRow(false));
     row.addEventListener('keydown',event=>{
       if(event.key==='Enter'||event.key===' '){
         event.preventDefault();
-        selectRow();
+        selectRow(false);
       }
     });
   });
@@ -407,6 +477,57 @@ async function pollOfferDiscovery(form,jobUuid,phone){
 
   offersButton.textContent='العروض';
   showMessage('الاستكشاف ما زال جاريًا','اضغط «العروض» مرة أخرى؛ إذا كانت الجلسة مازالت مفتوحة سيكمل نفس العملية.');
+}
+
+async function pollOfferExecute(form,jobUuid,row,executeCheck){
+  for(let attempt=0;attempt<60;attempt++){
+    const {data,error}=await supabase.rpc('station_connect_admin_offer_execute_job',{
+      p_job_uuid:jobUuid
+    });
+    if(error)throw error;
+
+    const job=Array.isArray(data)?data[0]:null;
+    if(!job)throw new Error('لم نجد عملية التنفيذ على السيرفر.');
+
+    const state=String(job.status||'');
+    if(state==='queued'){
+      showMessage('تم تأكيد الإرسال','العملية في الانتظار وسيستلمها Agent خلال ثوانٍ.');
+    }else if(state==='claimed'){
+      showMessage('جاري تنفيذ العرض','Agent فتح جلسة USSD وينفذ العرض المختار الآن.');
+    }else{
+      executeCheck.disabled=false;
+      if(state!=='success')executeCheck.checked=false;
+
+      const title=state==='success'
+        ?'تم تنفيذ العرض'
+        :state==='failed'
+          ?'فشل تنفيذ العرض'
+          :state==='unavailable'
+            ?'العرض غير متاح'
+            :'النتيجة تحتاج مراجعة';
+
+      showMessage(
+        title,
+        job.result_text||(
+          state==='success'
+            ?'اكتملت العملية.'
+            :'تم حفظ النتيجة في سجل العملية.'
+        ),
+        state==='failed'?'danger':''
+      );
+      await loadRecentJobs().catch(()=>{});
+      return;
+    }
+
+    await new Promise(resolve=>setTimeout(resolve,1000));
+  }
+
+  executeCheck.disabled=false;
+  executeCheck.checked=false;
+  showMessage(
+    'النتيجة غير مؤكدة',
+    'لم تصل نتيجة نهائية في الوقت المتوقع. لا تعاود الإرسال تلقائيًا قبل مراجعة العملية.'
+  );
 }
 
 function hardwareSection(row){
