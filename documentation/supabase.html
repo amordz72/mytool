@@ -1,0 +1,15 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Supabase Gateway — توثيق MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
+<header class="top"><div class="top-inner"><div class="brand"><a href="index.html">🧭 توثيق المشاريع</a><small>Supabase</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a></nav></div></header>
+<main class="wrap"><section class="hero"><h1>Supabase: ما فائدته هنا؟</h1><p>ليس بديلًا عن HiLink أو USSD. دوره باب إنترنت آمن + تخزين الحالة الحية والـJobs حتى MyTool والكمبيوتر يلتقيا في مكان واحد.</p></section>
+<section class="grid"><article class="card"><h3>الموجود الآن</h3><span class="status now">amor-manager</span><ul><li>Project URL: <span dir="ltr">wqyebqzbbpohbnznqdjj.supabase.co</span></li><li>MyTool يعتمد عليه بالفعل.</li><li>Edge Function موجودة حاليًا: <code>upload-product-image</code>.</li></ul></article>
+<article class="card"><h3>الجديد المقترح</h3><span class="status plan">station-gateway</span><p>Function جديدة فقط للمحطات، لا علاقة لها برفع الصور ولا بواجهة المتصفح.</p></article></section>
+<section class="card"><h2>شكل الـFunction المقترح</h2><div class="code">POST /functions/v1/station-gateway/enroll
+GET/POST /functions/v1/station-gateway/status
+POST /functions/v1/station-gateway/heartbeat
+POST /functions/v1/station-gateway/modems/report
+POST /functions/v1/station-gateway/jobs/next
+POST /functions/v1/station-gateway/jobs/{id}/complete</div><p class="muted">قد ننفذها Function واحدة مع routing داخلي أو أكثر من Function؛ القرار النهائي قبل التنفيذ. المهم أن العقد يبقى ثابتًا للـAgent.</p></section>
+<section class="card"><h2>ما الذي يُخزن في DB؟</h2><div class="table-wrap"><table><thead><tr><th>مجموعة</th><th>أمثلة</th><th>لماذا DB؟</th></tr></thead><tbody>
+<tr><td>Stations</td><td>UUID، status، last_seen</td><td>حالة تتغير</td></tr><tr><td>Devices/SIM link</td><td>IMEI، Station، current SIM</td><td>علاقة تشغيلية</td></tr><tr><td>Jobs</td><td>pending/claimed/result</td><td>تنفيذ متزامن وتاريخ</td></tr><tr><td>Events</td><td>raw result / failure / timing</td><td>تتبع وأمان</td></tr>
+</tbody></table></div></section>
+<section class="card"><h2>ما لا نضعه في DB افتراضيًا</h2><p>Catalog Mobilis الثابت، أسماء العروض، الـnetwork indexes المثبتة، وقوالب التنفيذ الثابتة. هذه أنسب كملفات versioned في Git.</p></section></main><script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
