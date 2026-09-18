@@ -298,6 +298,47 @@ function bindActions(){
       }
     });
   });
+
+  document.querySelectorAll('.sim-settings').forEach(form=>{
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();
+      const simUuid=form.dataset.simUuid;
+      const button=form.querySelector('.save-sim');
+      const data=new FormData(form);
+      const msisdn=String(data.get('msisdn')||'').trim();
+      const simType=String(data.get('sim_type')||'').trim();
+      const servicePin=String(data.get('service_pin')||'').trim();
+
+      if(msisdn && !/^0[5-7][0-9]{8}$/.test(msisdn)){
+        showMessage('رقم الشريحة غير صحيح','اكتب رقمًا جزائريًا من 10 أرقام، مثال 06xxxxxxxx.','danger');
+        return;
+      }
+      if(servicePin && !/^[0-9]{4,8}$/.test(servicePin)){
+        showMessage('PIN غير صحيح','PIN يكون من 4 إلى 8 أرقام.','danger');
+        return;
+      }
+
+      button.disabled=true;
+      button.textContent='جاري الحفظ…';
+      hideMessage();
+
+      try{
+        const {error}=await supabase.rpc('station_connect_admin_update_sim',{
+          p_sim_uuid:simUuid,
+          p_msisdn:msisdn||null,
+          p_sim_type:simType||null,
+          p_service_pin:servicePin||null
+        });
+        if(error)throw error;
+        showMessage('تم حفظ الشريحة','الرقم والنوع محفوظان، والـPIN محفوظ مشفّرًا على السيرفر.');
+        await loadStations(false);
+      }catch(error){
+        showMessage('تعذر حفظ الشريحة',error?.message||'حدث خطأ غير متوقع.','danger');
+        button.disabled=false;
+        button.textContent='حفظ بيانات الشريحة';
+      }
+    });
+  });
 }
 
 function render(){
@@ -316,6 +357,21 @@ function render(){
   applySearch();
 }
 
+async function loadHardware(){
+  hardwareByStation={};
+  await Promise.all(stations.map(async station=>{
+    if(String(station.status||'').toLowerCase()!=='approved'){
+      hardwareByStation[station.station_uuid]=[];
+      return;
+    }
+    const result=await supabase.rpc('station_connect_admin_hardware',{
+      p_station_uuid:station.station_uuid
+    });
+    if(result.error)throw result.error;
+    hardwareByStation[station.station_uuid]=Array.isArray(result.data)?result.data:[];
+  }));
+}
+
 async function loadStations(clearMessage=true){
   const button=$('refreshBtn');
   button.disabled=true;
@@ -332,6 +388,7 @@ async function loadStations(clearMessage=true){
     if(result.error)throw result.error;
 
     stations=Array.isArray(result.data)?result.data:[];
+    await loadHardware();
     render();
   }catch(error){
     stations=[];
