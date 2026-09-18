@@ -128,22 +128,26 @@ function renderSources(){
     const linkedLine=s.link_status==='linked'
       ? '<div class="linked-line">مربوط بـ '+esc(s.linked_party_name||('عميل #'+s.linked_party_id))+'</div>'
       : '';
-    const linkButton=s.link_status==='linked'?'تغيير الربط':'ربط';
     const unlink=s.link_status==='linked'&&s.link_id
       ? '<button class="icon-btn btn danger" data-unlink="'+s.link_id+'" data-source="'+s.id+'" type="button" title="فك الربط" aria-label="فك الربط"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></button>'
       : '';
+    const manualBox='<div class="link-controls" data-manual-link-box="'+s.id+'" hidden><div class="field"><label>اختر العميل الموحد</label><select data-party-select="'+s.id+'">'+partyOptions(s.linked_party_id)+'</select></div><button class="btn secondary" data-link="'+s.id+'" type="button">حفظ الربط</button></div>';
+    const primaryActions=s.link_status==='linked'
+      ? '<div class="actions"><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">تغيير الربط يدويًا</button>'+unlink+'</div>'
+      : '<div class="actions"><button class="btn" data-create-source="'+s.id+'" type="button">إنشاء كعميل جديد</button><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">ربط يدوي</button></div>';
     return '<div class="source-card" data-source-card="'+s.id+'">'+
       '<div class="source-top"><div><div class="name">'+esc(name)+'</div><div class="username">'+esc(s.username)+'</div></div>'+
       '<div class="badges"><span class="badge platform">'+esc(platformLabel(s.platform_key))+'</span><span class="badge '+esc(s.link_status)+'">'+esc(statusLabel(s.link_status))+'</span></div></div>'+
       (contactLine(s)?'<div class="meta">'+contactLine(s)+'</div>':'')+
       linkedLine+
-      '<div class="link-controls"><div class="field"><label>العميل الموحد</label><select data-party-select="'+s.id+'">'+partyOptions(s.linked_party_id)+'</select></div>'+
-      '<button class="btn secondary" data-link="'+s.id+'" type="button">'+linkButton+'</button>'+
-      unlink+'</div>'+
-      (s.link_status!=='linked'?'<div class="actions"><button class="btn" data-create-source="'+s.id+'" type="button">إنشاء عميل من هذا الحساب</button></div>':'')+
+      primaryActions+manualBox+
       '</div>';
   }).join('');
 
+  document.querySelectorAll('[data-show-manual-link]').forEach(b=>b.onclick=()=>{
+    const box=document.querySelector('[data-manual-link-box="'+b.dataset.showManualLink+'"]');
+    if(box)box.hidden=!box.hidden;
+  });
   document.querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>linkSource(Number(b.dataset.link)));
   document.querySelectorAll('[data-create-source]').forEach(b=>b.onclick=()=>createFromSource(Number(b.dataset.createSource)));
   document.querySelectorAll('[data-unlink]').forEach(b=>b.onclick=()=>unlinkSource(Number(b.dataset.unlink),Number(b.dataset.source)));
@@ -294,14 +298,21 @@ async function reviewSuggestion(id,action){
   }
   await load();msg(action==='approve'?'تمت الموافقة على الربط.':'تم رفض الاقتراح.','ok');
 }
-async function generateSuggestions(){
-  if(!navigator.onLine)return msg('الاقتراح الذكي يحتاج اتصالًا.','warn');
-  $('smartBtn').disabled=true;msg('جاري فحص الهواتف والبريد وأسماء المستخدمين…');
+async function generateSuggestions({silent=false}={}){
+  if(!navigator.onLine)return null;
+  if($('smartBtn'))$('smartBtn').disabled=true;
+  if(!silent)msg('جاري إعادة فحص الروابط…');
   const {data,error}=await supabase.rpc('admin_customer_generate_link_suggestions');
-  $('smartBtn').disabled=false;
-  if(error)return msg('تعذر إنشاء الاقتراحات: '+safeError(error),'error');
-  await load();
-  msg('تم الفحص: '+Number(data?.pending||0)+' بانتظار الموافقة، '+Number(data?.conflicts||0)+' تعارض.','ok');
+  if($('smartBtn'))$('smartBtn').disabled=false;
+  if(error){
+    if(!silent)msg('تعذر فحص الروابط: '+safeError(error),'error');
+    return null;
+  }
+  if(!silent){
+    await load();
+    msg('تم الفحص: '+Number(data?.pending||0)+' بانتظار الموافقة، '+Number(data?.conflicts||0)+' تعارض.','ok');
+  }
+  return data;
 }
 function parseCsv(text){
   const rows=[];let row=[],field='',quoted=false;
@@ -389,8 +400,9 @@ async function importSources(){
       updated+=Number(data?.updated||0);
     }
     $('sourceFile').value='';
+    const smart=await generateSuggestions({silent:true});
     await load();
-    msg('تم تحديث '+processed+' حساب: جديد '+inserted+'، محدث '+updated+'. لا يوجد ربط تلقائي.','ok');
+    msg('تم تحديث '+processed+' حساب: جديد '+inserted+'، محدث '+updated+'. وفُحصت الروابط تلقائيًا'+(smart?'؛ بانتظار الموافقة '+Number(smart.pending||0)+'.':'') ,'ok');
   }catch(error){
     msg('تعذر الاستيراد: '+safeError(error),'error');
   }finally{
