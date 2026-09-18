@@ -14,6 +14,13 @@
 .pilot-form h3{margin:0 0 5px;font-size:15px}
 .pilot-form p{margin:0 0 10px;color:#6b7f93;font-size:11px;line-height:1.5}
 .pilot-amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
+.flexy-fields{display:grid;grid-template-columns:1.3fr .7fr;gap:8px;margin-top:9px}
+.flexy-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.offer-discovery-results{margin-top:10px;border-top:1px solid #e2ebf2;padding-top:8px}
+.discovery-family{margin:8px 0;padding:9px;border:1px solid #e2ebf2;border-radius:12px;background:#fff}
+.discovery-family h4{margin:0 0 6px;font-size:13px}
+.discovery-offer{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid #f0f3f6;font-size:12px}
+.discovery-offer:first-of-type{border-top:0}
 .pilot-job{margin:8px 0;padding:11px 12px;border:1px solid #e2ebf2;border-radius:14px;background:#fff}
 .pilot-job strong{font-size:13px}
 </style>
@@ -113,8 +120,8 @@
 <section class="mt-card">
   <div class="mt-section-head" style="margin:0 0 8px">
     <div class="mt-section-copy">
-      <h2>آخر عمليات Flexy التجريبية</h2>
-      <p>تتحدث تلقائيًا أثناء التنفيذ.</p>
+      <h2>عمليات AutoMix السابقة</h2>
+      <p>سجل التجارب السابقة فقط؛ زر العروض الحالي لا يستخدم AutoMix.</p>
     </div>
     <span id="jobCount" class="mt-chip muted">0</span>
   </div>
@@ -213,6 +220,83 @@ function hideMessage(){
   $('pageMessage').hidden=true;
 }
 
+
+function renderDiscoveryOffers(form,job){
+  const box=form.querySelector('.offer-discovery-results');
+  const offers=Array.isArray(job?.available_offers)?job.available_offers:[];
+  const status=String(job?.status||'');
+
+  if(!offers.length){
+    box.innerHTML='<div class="mt-meta">'+
+      escapeHtml(job?.result_text||(
+        status==='success'?'اكتمل الاستكشاف بدون عروض مقروءة.':'لم تظهر عروض قابلة للعرض.'
+      ))+
+    '</div>';
+    box.hidden=false;
+    return;
+  }
+
+  const groups=new Map();
+  offers.forEach(offer=>{
+    const family=String(offer.family||'غير مصنف');
+    if(!groups.has(family))groups.set(family,[]);
+    groups.get(family).push(offer);
+  });
+
+  box.innerHTML=[...groups.entries()].map(([family,items])=>{
+    return '<div class="discovery-family">'+
+      '<h4>'+escapeHtml(family)+'</h4>'+
+      items.map(item=>
+        '<div class="discovery-offer">'+
+          '<span>'+escapeHtml(item.label||((item.amount??'')+' دج'))+'</span>'+
+          '<strong>'+escapeHtml(item.amount??'—')+' دج</strong>'+
+        '</div>'
+      ).join('')+
+    '</div>';
+  }).join('');
+  box.hidden=false;
+}
+
+async function pollOfferDiscovery(form,jobUuid,phone){
+  const token=String(Date.now())+'-'+Math.random();
+  form.dataset.discoveryPoll=token;
+  const offersButton=form.querySelector('.flexy-offers');
+
+  for(let attempt=0;attempt<40;attempt++){
+    if(form.dataset.discoveryPoll!==token)return;
+
+    const {data,error}=await supabase.rpc('station_connect_admin_offer_discovery_job',{
+      p_job_uuid:jobUuid
+    });
+    if(error)throw error;
+
+    const job=Array.isArray(data)?data[0]:null;
+    if(!job)throw new Error('لم نجد عملية الاستكشاف على السيرفر.');
+
+    const state=String(job.status||'');
+    if(state==='queued'){
+      offersButton.textContent='العروض — انتظار';
+    }else if(state==='claimed'){
+      offersButton.textContent='العروض — جاري القراءة';
+    }else{
+      offersButton.textContent='العروض';
+      renderDiscoveryOffers(form,job);
+      const prefix=state==='success'
+        ?'اكتمل استكشاف العروض'
+        :state==='unavailable'
+          ?'لم تظهر عروض'
+          :'الاستكشاف يحتاج مراجعة';
+      showMessage(prefix,job.result_text||('الرقم: '+phone),state==='failed'?'danger':'');
+      return;
+    }
+
+    await new Promise(resolve=>setTimeout(resolve,1000));
+  }
+
+  offersButton.textContent='العروض';
+  showMessage('الاستكشاف ما زال جاريًا','اضغط «العروض» مرة أخرى؛ إذا كانت الجلسة مازالت مفتوحة سيكمل نفس العملية.');
+}
+
 function hardwareSection(row){
   const items=hardwareByStation[row.station_uuid]||[];
 
@@ -257,7 +341,9 @@ function hardwareSection(row){
         ?'<div class="mt-alert" style="margin:10px 0">'+
           '<div class="mt-alert-icon" aria-hidden="true">💰</div>'+
           '<div class="mt-alert-copy"><h3>الرصيد: '+escapeHtml(balanceValue)+'</h3>'+
-          '<p>آخر فحص: '+escapeHtml(balanceChecked)+'</p></div>'+
+          '<p>آخر فحص: '+escapeHtml(balanceChecked)+
+          (item.balance_raw?'<br>رد الشبكة: '+escapeHtml(item.balance_raw):'')+
+          '</p></div>'+
           '<button class="mt-btn secondary refresh-balance" type="button" data-sim-uuid="'+escapeHtml(simUuid)+'">تحديث الرصيد</button>'+
         '</div>'
         :'')+
@@ -283,15 +369,18 @@ function pilotSection(row){
 
   if(!ready)return '';
 
-  return '<form class="pilot-form flexy-pilot" data-station-uuid="'+escapeHtml(row.station_uuid)+'">'+
-    '<h3>أول Flexy حقيقية — AutoMix Pilot</h3>'+
-    '<p>أدخل رقم الزبون ثم اختر 50 أو 100 أو 500. قبل إنشاء العملية سيظهر تأكيد أخير.</p>'+
-    '<label class="mt-search"><input name="phone" inputmode="numeric" maxlength="10" placeholder="رقم الزبون 10 أرقام" autocomplete="off"></label>'+
-    '<div class="pilot-amounts">'+
-      '<button class="mt-btn secondary pilot-amount" type="button" data-amount="50">50</button>'+
-      '<button class="mt-btn secondary pilot-amount" type="button" data-amount="100">100</button>'+
-      '<button class="mt-btn secondary pilot-amount" type="button" data-amount="500">500</button>'+
+  return '<form class="pilot-form flexy-live" data-station-uuid="'+escapeHtml(row.station_uuid)+'">'+
+    '<h3>Flexy</h3>'+
+    '<p>العروض = استكشاف حقيقي فقط، بدون AutoMix وبدون تنفيذ مالي.</p>'+
+    '<div class="flexy-fields">'+
+      '<label class="mt-search"><input name="phone" inputmode="numeric" maxlength="10" placeholder="رقم الزبون 10 أرقام" autocomplete="off"></label>'+
+      '<label class="mt-search"><input name="amount" inputmode="numeric" type="number" min="1" step="1" placeholder="المبلغ"></label>'+
     '</div>'+
+    '<div class="flexy-actions">'+
+      '<button class="mt-btn secondary flexy-ordinary" type="button">فليكسي عادي</button>'+
+      '<button class="mt-btn primary flexy-offers" type="button">العروض</button>'+
+    '</div>'+
+    '<div class="offer-discovery-results" hidden></div>'+
   '</form>';
 }
 
@@ -417,8 +506,9 @@ function bindActions(){
             updated=true;
             const value=current.balance_amount!==null&&current.balance_amount!==undefined
               ?Number(current.balance_amount).toLocaleString('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2})+' دج'
-              :(current.balance_raw||'تم استلام الرد الخام');
-            showMessage('تم تحديث الرصيد',String(value));
+              :'غير مقروء';
+            const raw=String(current.balance_raw||'لا يوجد رد نصي من الشبكة.');
+            showMessage('تم تحديث الرصيد','الرصيد: '+value+' — رد الشبكة: '+raw);
             break;
           }
         }
@@ -435,47 +525,65 @@ function bindActions(){
     });
   });
 
-  document.querySelectorAll('.flexy-pilot').forEach(form=>{
-    form.querySelectorAll('.pilot-amount').forEach(button=>{
-      button.addEventListener('click',async()=>{
-        const phone=String(new FormData(form).get('phone')||'').replace(/\D/g,'');
-        const amount=Number(button.dataset.amount||0);
-        const stationUuid=form.dataset.stationUuid;
+  document.querySelectorAll('.flexy-live').forEach(form=>{
+    const ordinary=form.querySelector('.flexy-ordinary');
+    const offers=form.querySelector('.flexy-offers');
 
-        if(!/^0[5-7][0-9]{8}$/.test(phone)){
-          showMessage('رقم الزبون غير صحيح','اكتب رقمًا جزائريًا من 10 أرقام.','danger');
-          return;
-        }
+    ordinary.addEventListener('click',()=>{
+      const data=new FormData(form);
+      const phone=String(data.get('phone')||'').replace(/\D/g,'');
+      const amount=Number(data.get('amount')||0);
 
-        if(![50,100,500].includes(amount))return;
+      if(!/^0[5-7][0-9]{8}$/.test(phone)){
+        showMessage('رقم الزبون غير صحيح','اكتب رقمًا جزائريًا من 10 أرقام.','danger');
+        return;
+      }
+      if(!Number.isFinite(amount)||amount<=0){
+        showMessage('المبلغ غير صحيح','اكتب مبلغ فليكسي العادي أولًا.','danger');
+        return;
+      }
 
-        const confirmed=window.confirm('تأكيد عملية Flexy حقيقية\n\nالرقم: '+phone+'\nالمبلغ: '+amount+' دج\n\nهل تريد إرسال العملية الآن؟');
-        if(!confirmed)return;
+      showMessage('فليكسي عادي','الزر موجود في المسار الصحيح، لكن التنفيذ العادي لم نربطه بعد حتى لا نرسل مسارًا غير مؤكد.');
+    });
 
-        form.querySelectorAll('button').forEach(b=>b.disabled=true);
-        hideMessage();
+    offers.addEventListener('click',async()=>{
+      const phone=String(new FormData(form).get('phone')||'').replace(/\D/g,'');
+      const stationUuid=form.dataset.stationUuid;
 
-        try{
-          const {data,error}=await supabase.rpc('station_connect_admin_create_pilot_job',{
-            p_phone:phone,
-            p_amount:amount,
-            p_station_uuid:stationUuid
-          });
-          if(error)throw error;
+      if(!/^0[5-7][0-9]{8}$/.test(phone)){
+        showMessage('رقم الزبون غير صحيح','اكتب رقمًا جزائريًا من 10 أرقام.','danger');
+        return;
+      }
 
-          const job=Array.isArray(data)?data[0]:null;
-          showMessage('تم إرسال العملية','Job: '+String(job?.job_uuid||'queued')+' — Agent سيستلمها خلال ثوانٍ.');
-          await loadRecentJobs();
-        }catch(error){
-          const message=String(error?.message||'حدث خطأ غير متوقع.');
-          const friendly=message.includes('NO_READY_ONLINE_STATION')
-            ?'المحطة أو المودم ليسا جاهزين الآن. تأكد أن Agent ONLINE وأن PIN محفوظ.'
-            :message;
-          showMessage('تعذر إرسال Flexy',friendly,'danger');
-        }finally{
-          form.querySelectorAll('button').forEach(b=>b.disabled=false);
-        }
-      });
+      hideMessage();
+      offers.textContent='العروض — فتح الجلسة';
+
+      try{
+        const {data,error}=await supabase.rpc('station_connect_admin_create_offer_discovery',{
+          p_phone:phone,
+          p_station_uuid:stationUuid
+        });
+        if(error)throw error;
+
+        const job=Array.isArray(data)?data[0]:null;
+        if(!job?.job_uuid)throw new Error('لم يتم إنشاء عملية الاستكشاف.');
+
+        showMessage(
+          job.reused?'نكمل نفس جلسة العروض':'تم فتح جلسة العروض',
+          job.reused
+            ?'كانت هناك عملية لنفس الرقم مازالت جارية؛ لم ننشئ عملية ثانية.'
+            :'Agent سيقرأ العروض فقط بدون تنفيذ.'
+        );
+
+        await pollOfferDiscovery(form,job.job_uuid,phone);
+      }catch(error){
+        offers.textContent='العروض';
+        const message=String(error?.message||'حدث خطأ غير متوقع.');
+        const friendly=message.includes('NO_READY_ONLINE_STATION')
+          ?'المحطة أو مودم SAMA غير جاهزين الآن.'
+          :message;
+        showMessage('تعذر استكشاف العروض',friendly,'danger');
+      }
     });
   });
 
