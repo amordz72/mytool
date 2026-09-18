@@ -7,6 +7,7 @@ const EXPIRES = 'mytool_shop_worker_expires_at';
 const CACHE_KEY = 'mytool_today_route_cache_v1';
 const IDENTITY_KEY = 'mytool_today_route_identity_v1';
 const QUEUE_KEY = 'mytool_today_route_queue_v1';
+const ROUTE_CUSTOMERS_CACHE = 'mytool_route_customer_directory_v1';
 const $ = id => document.getElementById(id);
 const money = value => new Intl.NumberFormat('ar-DZ', { maximumFractionDigits: 2 }).format(Number(value || 0)) + ' دج';
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -20,6 +21,7 @@ let completionMode = 'worker';
 let completionRequestKey = null;
 let routeDraft = [];
 let routeDraftEditIndex = null;
+let routeCustomers = [];
 
 $('day').value = today();
 
@@ -237,6 +239,75 @@ async function loadWorkers() {
   $('adminAdd').hidden = false;
 }
 
+function customerSearchText(customer) {
+  const accounts=Array.isArray(customer.accounts)?customer.accounts:[];
+  return [
+    customer.display_name,
+    ...(Array.isArray(customer.aliases)?customer.aliases:[]),
+    customer.primary_phone,
+    customer.primary_email,
+    ...accounts.flatMap(a=>[a.platform_key,a.username])
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function saveRouteCustomersCache() {
+  writeJson(ROUTE_CUSTOMERS_CACHE,{saved_at:Date.now(),customers:routeCustomers});
+}
+
+function loadRouteCustomersCache() {
+  const cached=readJson(ROUTE_CUSTOMERS_CACHE,null);
+  if(!cached||!Array.isArray(cached.customers))return false;
+  routeCustomers=cached.customers;
+  return true;
+}
+
+async function loadRouteCustomers() {
+  if (me.account_role !== 'workspace_admin') return;
+  if (!navigator.onLine) {
+    loadRouteCustomersCache();
+    return;
+  }
+  const response=await s.rpc('workspace_admin_list_route_customers',{p_session_token:token});
+  if(response.error)throw response.error;
+  routeCustomers=Array.isArray(response.data)?response.data:[];
+  saveRouteCustomersCache();
+}
+
+function customerAccountLabel(customer){
+  const accounts=Array.isArray(customer.accounts)?customer.accounts:[];
+  return accounts.slice(0,3).map(a=>a.username+' · '+a.platform_key).join(' | ');
+}
+
+function renderCustomerMatches(){
+  const root=$('draftCustomerMatches');
+  if(!root)return;
+  if($('draftUnresolved').checked){root.hidden=true;root.innerHTML='';return}
+  const q=$('draftShopName').value.trim().toLowerCase();
+  if(!q){root.hidden=true;root.innerHTML='';return}
+  const matches=routeCustomers.filter(x=>customerSearchText(x).includes(q)).slice(0,8);
+  if(!matches.length){
+    root.innerHTML='<div class="customer-match"><b>لا يوجد عميل مطابق</b><small>إذا كانت حالة استثنائية فعّل «غير موجود في الدليل».</small></div>';
+    root.hidden=false;
+    return;
+  }
+  root.innerHTML=matches.map(x=>`<button class="customer-match" type="button" data-customer-id="${x.id}"><b>${esc(x.display_name)}</b><small>${esc(customerAccountLabel(x)||x.primary_phone||'MyTool')}</small></button>`).join('');
+  root.hidden=false;
+  root.querySelectorAll('[data-customer-id]').forEach(button=>{
+    button.onclick=()=>selectRouteCustomer(Number(button.dataset.customerId));
+  });
+}
+
+function selectRouteCustomer(id){
+  const customer=routeCustomers.find(x=>Number(x.id)===Number(id));
+  if(!customer)return;
+  $('draftPartyId').value=String(customer.id);
+  $('draftShopName').value=customer.display_name;
+  $('draftUnresolved').checked=false;
+  $('draftCustomerMatches').hidden=true;
+  $('draftCustomerMatches').innerHTML='';
+  $('draftExpected').focus();
+}
+
 async function load() {
   stat('جاري تحميل الجولة…');
   try {
@@ -280,8 +351,12 @@ function workerLinkNotice(row) {
 
 function adminVisitEdit(row) {
   if (me.account_role !== 'workspace_admin') return '';
+  const linked = Boolean(row.party_id);
+  const nameField = linked
+    ? `<div class="field"><label>العميل الموحد</label><input data-admin-name="${row.id}" type="text" value="${esc(row.shop_name)}" readonly><div class="hint">تغيير هوية العميل يتم من «إدارة ربط العملاء».</div></div>`
+    : `<div class="field"><label>الاسم المؤقت</label><input data-admin-name="${row.id}" type="text" value="${esc(row.shop_name)}"><div class="hint">هذه زيارة غير مربوطة بعد.</div></div>`;
   return `<div class="admin-visit-edit" data-admin-edit-panel="${row.id}" hidden>
-    <div class="field"><label>اسم المحل</label><input data-admin-name="${row.id}" type="text" value="${esc(row.shop_name)}"></div>
+    ${nameField}
     <div class="field"><label>المتوقع اليوم</label><input data-admin-expected="${row.id}" type="number" min="0" step="0.01" value="${row.expected_amount == null ? '' : Number(row.expected_amount)}" placeholder="غير محدد"></div>
     <button class="btn secondary" data-admin-save="${row.id}" type="button">حفظ التعديل</button>
   </div>`;
@@ -770,7 +845,10 @@ function renderRouteDraft() {
   if (!root) return;
   root.innerHTML = routeDraft.map((item, index) => {
     const amount = item.expected == null ? 'متوقع غير محدد' : 'متوقع: ' + money(item.expected);
-    return `<div class="route-draft-row"><span class="draft-order">#${index + 1}</span><div><div class="draft-name">${esc(item.name)}</div><div class="draft-amount">${amount}</div></div><div class="route-draft-actions"><button class="icon-btn edit" type="button" data-draft-edit="${index}" aria-label="تعديل" title="تعديل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn delete" type="button" data-draft-remove="${index}" aria-label="حذف" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg></button></div></div>`;
+    const identity = item.unresolved
+      ? '<span class="identity-tag unresolved">غير مربوط مؤقتًا</span>'
+      : '<span class="identity-tag">عميل موحد</span>';
+    return `<div class="route-draft-row"><span class="draft-order">#${index + 1}</span><div><div class="draft-name">${esc(item.name)} ${identity}</div><div class="draft-amount">${amount}</div></div><div class="route-draft-actions"><button class="icon-btn edit" type="button" data-draft-edit="${index}" aria-label="تعديل" title="تعديل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn delete" type="button" data-draft-remove="${index}" aria-label="حذف" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg></button></div></div>`;
   }).join('');
   $('confirmRouteBtn').hidden = routeDraft.length === 0;
   root.querySelectorAll('[data-draft-edit]').forEach(button => {
@@ -780,6 +858,8 @@ function renderRouteDraft() {
       if (!item) return;
       routeDraftEditIndex = index;
       $('draftShopName').value = item.name;
+      $('draftPartyId').value = item.party_id ? String(item.party_id) : '';
+      $('draftUnresolved').checked = Boolean(item.unresolved);
       $('draftExpected').value = item.expected == null ? '' : String(item.expected);
       $('draftAddBtn').textContent = 'حفظ التعديل';
       $('draftShopName').focus();
@@ -792,6 +872,8 @@ function renderRouteDraft() {
       if (routeDraftEditIndex === index) {
         routeDraftEditIndex = null;
         $('draftShopName').value = '';
+        $('draftPartyId').value = '';
+        $('draftUnresolved').checked = false;
         $('draftExpected').value = '';
         $('draftAddBtn').textContent = 'إضافة للقائمة';
       } else if (routeDraftEditIndex != null && routeDraftEditIndex > index) {
@@ -803,10 +885,20 @@ function renderRouteDraft() {
 }
 
 function addRouteDraftItem() {
-  const name = $('draftShopName').value.trim();
+  let name = $('draftShopName').value.trim();
   const rawExpected = $('draftExpected').value.trim();
-  if (!name) return stat('اكتب اسم المحل.', 'err');
-  if (/[|\n\r]/.test(name)) return stat('اسم المحل لا يجب أن يحتوي على | أو سطر جديد.', 'err');
+  const unresolved = $('draftUnresolved').checked;
+  const partyId = Number($('draftPartyId').value || 0) || null;
+
+  if (!name) return stat('اختر العميل أو اكتب اسم الاستثناء.', 'err');
+
+  let selectedCustomer = null;
+  if (!unresolved) {
+    if (!partyId) return stat('اختر العميل من نتائج دليل MyTool. للاسم غير الموجود استخدم الاستثناء المؤقت.', 'err');
+    selectedCustomer = routeCustomers.find(x => Number(x.id) === Number(partyId));
+    if (!selectedCustomer) return stat('هذا العميل غير موجود في دليل MyTool الحالي.', 'err');
+    name = selectedCustomer.display_name;
+  }
 
   let expected = null;
   if (rawExpected !== '') {
@@ -814,22 +906,43 @@ function addRouteDraftItem() {
     if (!Number.isFinite(expected) || expected < 0) return stat('راجع المبلغ المتوقع.', 'err');
   }
 
+  const item = { party_id: unresolved ? null : partyId, name, expected, unresolved };
   if (routeDraftEditIndex == null) {
-    routeDraft.push({ name, expected });
-    stat('أضيف المحل للقائمة. أكمل ثم اضغط «تأكيد الجولة».', 'ok');
+    routeDraft.push(item);
+    stat(unresolved ? 'أضيف كاستثناء مؤقت يحتاج ربطًا لاحقًا.' : 'أضيف العميل الموحد للقائمة.', unresolved ? 'warn' : 'ok');
   } else {
-    routeDraft[routeDraftEditIndex] = { name, expected };
+    routeDraft[routeDraftEditIndex] = item;
     routeDraftEditIndex = null;
     $('draftAddBtn').textContent = 'إضافة للقائمة';
     stat('تم تعديل العنصر في القائمة.', 'ok');
   }
   $('draftShopName').value = '';
+  $('draftPartyId').value = '';
+  $('draftUnresolved').checked = false;
   $('draftExpected').value = '';
+  $('draftCustomerMatches').hidden = true;
+  $('draftCustomerMatches').innerHTML = '';
   renderRouteDraft();
   $('draftShopName').focus();
 }
 
 $('draftAddBtn').onclick = addRouteDraftItem;
+$('draftShopName').addEventListener('input', () => {
+  $('draftPartyId').value = '';
+  renderCustomerMatches();
+});
+$('draftShopName').addEventListener('focus', renderCustomerMatches);
+$('draftUnresolved').addEventListener('change', () => {
+  if ($('draftUnresolved').checked) {
+    $('draftPartyId').value = '';
+    $('draftCustomerMatches').hidden = true;
+  } else {
+    renderCustomerMatches();
+  }
+});
+document.addEventListener('click', event => {
+  if (!event.target.closest('.customer-picker')) $('draftCustomerMatches').hidden = true;
+});
 $('draftShopName').addEventListener('keydown', event => {
   if (event.key === 'Enter') {
     event.preventDefault();
@@ -848,15 +961,18 @@ $('confirmRouteBtn').onclick = async () => {
   if (!routeDraft.length) return stat('أضف محلًا واحدًا على الأقل.', 'err');
 
   const worker = Number($('worker').value || 0);
-  const lines = routeDraft.map(item =>
-    item.expected == null ? item.name : item.name + ' | ' + item.expected
-  ).join('\n');
+  const items = routeDraft.map(item => ({
+    party_id: item.party_id,
+    expected_amount: item.expected,
+    unresolved: Boolean(item.unresolved),
+    unresolved_name: item.unresolved ? item.name : null
+  }));
 
   $('confirmRouteBtn').disabled = true;
   stat('جاري تأكيد الجولة…');
-  const response = await s.rpc('workspace_admin_add_visit_tasks_v2', {
+  const response = await s.rpc('workspace_admin_add_visit_tasks_canonical', {
     p_session_token: token,
-    p_lines: lines,
+    p_items: items,
     p_visit_date: $('day').value || today(),
     p_assigned_worker_id: worker || null
   });
@@ -921,6 +1037,7 @@ document.addEventListener('visibilitychange', () => {
   try {
     await identify();
     await loadWorkers();
+    await loadRouteCustomers();
     await load();
   } catch (error) {
     if (error.message === 'PIN_REQUIRED') stat('افتح MyTool وأدخل PIN اليومي أولًا.', 'err');
