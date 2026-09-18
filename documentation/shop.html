@@ -1,0 +1,107 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>المحل — التوثيق المرئي — MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
+<header class="top"><div class="top-inner"><div class="brand"><a href="index.html">🧭 توثيق المشاريع</a><small>Shop / المحل</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a><a href="shop.html">المحل</a></nav></div></header>
+
+<main class="wrap">
+<section class="hero">
+  <h1>تطبيق المحل — التوثيق المرئي</h1>
+  <p>تجربة لفهم Shop كمنتج واحد بدل استكشاف HTML/JS/SQL صفحة بصفحة. نثبت المنطق والتدفقات بصريًا أولًا، ثم نحول الفروق إلى مهام تنفيذ أصغر وأوضح.</p>
+  <div><span class="status plan">مهمة نشطة</span><span class="status plan">التوثيق الكامل لم يبدأ بعد</span><span class="status now">MyTool نشط</span></div>
+</section>
+
+<section class="card">
+  <h2>لماذا نفعل هذا؟</h2>
+  <div class="flow">كود متفرق + شاشات كثيرة + Supabase + صلاحيات
+                    ↓
+          صعب رؤية التطبيق كاملًا
+                    ↓
+        Visual Logic Documentation
+                    ↓
+       نفهم الدورة قبل تعديل الكود
+                    ↓
+        مهام تنفيذ صغيرة وواضحة</div>
+  <div class="callout">الهدف ليس تصميم واجهة جديدة الآن. الهدف أن يستطيع عمر والـAI رؤية «ما هو تطبيق المحل؟ وكيف يسير يوم العمل؟» في دقائق.</div>
+</section>
+
+<section class="card">
+  <h2>السؤال الأول الذي يجب أن تجيب عنه هذه الصفحة</h2>
+  <p><b>ماذا يحدث من لحظة دخول العامل إلى أن يغلق ورديته وتسلم الإدارة المال؟</b></p>
+  <div class="flow">دخول العامل
+   ↓
+الرئيسية
+   ↓
+بيع / شراء / جرد
+   ↓
+جولة التحصيل
+   ↓
+تسجيل الأموال المستلمة
+   ↓
+إغلاق الوردية
+   ↓
+المبلغ الفعلي
+   ↓
+مراجعة / استلام الإدارة</div>
+  <p class="muted">هذا التدفق بداية للمراجعة، وليس إعلانًا أنه صحيح نهائيًا. تتم مقارنته بالكود الحالي وDeveloper ثم يصححه عمر بصريًا.</p>
+</section>
+
+<section class="grid">
+  <article class="card"><h3>1. تعريف Shop</h3><span class="status plan">مطلوب</span><p>من يستخدمه؟ ما وظيفة العامل؟ ما وظيفة الإدارة؟ وما الذي يعتبر يوم عمل كامل؟</p></article>
+  <article class="card"><h3>2. خريطة Modules</h3><span class="status plan">مطلوب</span><p>المنتجات، المخزون، الشراء، البيع، الجرد، الجولة، الأموال، إغلاق الوردية، الحسابات والإدارة.</p></article>
+  <article class="card"><h3>3. خريطة الأدوار</h3><span class="status plan">مطلوب</span><p>ما الذي يراه Admin؟ ماذا يرى العامل؟ ما الذي يجب أن يبقى محجوبًا؟</p></article>
+  <article class="card"><h3>4. محاكاة الشاشات</h3><span class="status plan">مطلوب</span><p>Wireframe/Mock خفيف يوضح الأزرار والحالات وما يحدث بعد كل ضغط، قبل تعديل شاشة الإنتاج.</p></article>
+</section>
+
+<section class="card">
+  <h2>الحالات التي يجب أن تظهر في المحاكاة</h2>
+  <div class="table-wrap"><table><tbody>
+    <tr><th>Empty</th><td>كيف تبدو الشاشة عندما لا توجد بيانات؟</td></tr>
+    <tr><th>Loading</th><td>ماذا يرى المستخدم أثناء جلب البيانات؟</td></tr>
+    <tr><th>Success</th><td>ما الدليل الواضح أن العملية نجحت؟</td></tr>
+    <tr><th>Error</th><td>أين تظهر المشكلة وما الذي يمكن فعله بعدها؟</td></tr>
+    <tr><th>Offline / Pending</th><td>ماذا يحدث إذا تعذر الحفظ أو الاتصال؟</td></tr>
+    <tr><th>Permission</th><td>ما الذي لا يجب أن يظهر أو يعمل حسب الدور؟</td></tr>
+    <tr><th>Real / Demo</th><td>كيف نمنع اختلاط البيانات الحقيقية بالتجريبية؟</td></tr>
+  </tbody></table></div>
+</section>
+
+<section class="card">
+  <h2>ربط المرئي بالحقيقة</h2>
+  <p>كل جزء سنوثقه يجب أن يشير إلى الحقيقة التنفيذية بدل أن يصبح رسمًا منفصلًا:</p>
+  <div class="flow">Visual Flow
+   ├─ Production Screen
+   ├─ Module / File
+   ├─ RPC / Table عند الحاجة
+   ├─ Developer Decision
+   └─ Status: موجود / جزئي / مخطط / REVIEW</div>
+</section>
+
+<section class="card">
+  <h2>طريقة العمل المقترحة</h2>
+  <ol>
+    <li>نقرأ الكود والقرارات الحالية لدورة واحدة فقط.</li>
+    <li>نرسمها بصريًا بدون تعديل الإنتاج.</li>
+    <li>يعرضها عمر على الهاتف ويراجع هل تمثل عمل المحل الحقيقي.</li>
+    <li>نصحح الخريطة.</li>
+    <li>بعد اعتمادها فقط نخرج Bugs/Tasks صغيرة للتنفيذ.</li>
+    <li>بعد التنفيذ نحدث التوثيق المرئي حتى يبقى مرجعًا حيًا.</li>
+  </ol>
+</section>
+
+<section class="card">
+  <h2>حالة المهمة</h2>
+  <div class="table-wrap"><table><tbody>
+    <tr><th>Developer Task</th><td><code>tasks/mytool-shop-visual-documentation-2026-09-18.md</code></td></tr>
+    <tr><th>MyTool Dev Task</th><td>GitHub Issue #1 — توثيق مرئي لمنطق تطبيق المحل قبل التوسع في التنفيذ.</td></tr>
+    <tr><th>البداية</th><td>Shop Daily Flow: من دخول العامل حتى إغلاق الوردية وتسليم المال.</td></tr>
+    <tr><th>التنفيذ</th><td>لم يبدأ بعد. هذه الصفحة تثبت المهمة والمنهج فقط.</td></tr>
+  </tbody></table></div>
+  <div class="links">
+    <a href="https://github.com/amordz72/mytool-dev/issues/1" target="_blank" rel="noopener">فتح مهمة MyTool على GitHub ←</a>
+  </div>
+</section>
+
+<section class="card">
+  <h2>قاعدة للمستقبل</h2>
+  <div class="callout">عند إنشاء تطبيق أو خدمة جديدة، يذكّر الـAI عمر مبكرًا بخيار التوثيق المرئي للمنطق والتدفقات إذا كان سيقلل الاستكشاف والخلط. لا ننتظر حتى يكبر المشروع ويصبح فهمه من الكود صعبًا.</div>
+</section>
+</main>
+<script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
