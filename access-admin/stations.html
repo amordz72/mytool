@@ -19,7 +19,7 @@
     <div class="mt-brand-copy"><strong>MyTool</strong><small>إدارة النظام</small></div>
   </div>
   <div class="mt-user">
-    <div class="mt-user-copy"><strong>مدير النظام</strong><small>قراءة فقط</small></div>
+    <div class="mt-user-copy"><strong>مدير النظام</strong><small>Station Connect</small></div>
     <div class="mt-avatar" aria-hidden="true">A</div>
   </div>
 </header>
@@ -29,117 +29,274 @@
     <div class="mt-page-icon" aria-hidden="true">⌖</div>
     <div class="mt-page-copy">
       <h1>المحطات</h1>
-      <p>متابعة الكمبيوتر والمودمات والشرائح المرتبطة بخدمة Flexy.</p>
+      <p>اعتماد أجهزة Windows ومتابعة اتصالها الحقيقي بالسيرفر.</p>
     </div>
   </div>
-  <a class="mt-btn secondary mt-page-action" href="./">الإدارة</a>
+  <button id="refreshBtn" class="mt-btn secondary mt-page-action" type="button">تحديث</button>
 </section>
 
 <label class="mt-search">
   <span class="mt-search-icon" aria-hidden="true">⌕</span>
-  <input id="stationSearch" placeholder="ابحث عن محطة أو مودم أو شريحة..." autocomplete="off">
+  <input id="stationSearch" placeholder="ابحث باسم الكمبيوتر..." autocomplete="off">
 </label>
 
 <div class="mt-section-head">
   <div class="mt-section-copy">
-    <h2>الحالة الحالية</h2>
-    <p>بيانات مرجعية مؤقتًا إلى أن نربط Station Gateway.</p>
+    <h2>المحطات الحالية</h2>
+    <p>ONLINE يعني أن آخر Heartbeat وصل خلال 90 ثانية.</p>
   </div>
-  <span class="mt-chip muted">READ ONLY</span>
+  <span id="stationCount" class="mt-chip muted">0</span>
 </div>
 
-<div class="mt-alert warning">
+<div id="pageMessage" class="mt-alert" hidden>
   <div class="mt-alert-icon" aria-hidden="true">ℹ️</div>
   <div class="mt-alert-copy">
-    <h3>لا يوجد تنفيذ مالي هنا</h3>
-    <p>أي مورد في REVIEW يبقى خارج التنفيذ حتى التحقق من Station والمودم وAdapter/Mapping.</p>
+    <h3 id="pageMessageTitle"></h3>
+    <p id="pageMessageText"></p>
   </div>
 </div>
 
 <section id="stationList" aria-label="قائمة المحطات">
-  <article class="mt-card station-entry" data-search="station 01 محطة 01 online trusted sama arsselli huawei e3531">
-    <div class="mt-row">
-      <div class="mt-row-main">
-        <div class="mt-thumb" aria-hidden="true">🖥️</div>
-        <div class="mt-row-copy">
-          <h3>Station 01</h3>
-          <div class="mt-meta">آخر اتصال: منذ 18 ثانية<br>2 مودم · 2 شريحة</div>
-        </div>
-      </div>
-      <div class="mt-status-stack">
-        <span class="mt-chip success">● ONLINE</span>
-        <span class="mt-chip primary">موثوق</span>
-      </div>
-    </div>
-
-    <div class="mt-section-head">
-      <div class="mt-section-copy"><h2>المودمات</h2><p>الموارد المرتبطة بهذه المحطة.</p></div>
-      <span class="mt-chip muted">2</span>
-    </div>
-
-    <article class="mt-card" data-search="huawei e3531 sama ready hilink 192.168.86.1 mobilis">
-      <div class="mt-row">
-        <div class="mt-row-main">
-          <div class="mt-thumb" aria-hidden="true">USB</div>
-          <div class="mt-row-copy">
-            <h3>Huawei E3531 — SAMA</h3>
-            <div class="mt-meta">HiLink · 192.168.86.1<br>Mobilis SAMA</div>
-          </div>
-        </div>
-        <div class="mt-status-stack"><span class="mt-chip success">READY</span></div>
-      </div>
-      <details>
-        <summary class="mt-detail-row"><span>تفاصيل تقنية</span><span>⌄</span></summary>
-        <div class="mt-meta">Adapter: Remote NDIS معروف<br>Mapping: معتمد لهذه المحطة<br>IMEI/Serial يظهران عند الربط الفعلي.</div>
-      </details>
-    </article>
-
-    <article class="mt-card" data-search="huawei e3531 arsselli review usb adapter mapping mobilis">
-      <div class="mt-row">
-        <div class="mt-row-main">
-          <div class="mt-thumb" aria-hidden="true">USB</div>
-          <div class="mt-row-copy">
-            <h3>Huawei E3531 — Arsselli</h3>
-            <div class="mt-meta">Mobilis Arsselli<br>Adapter جديد بعد نقل USB</div>
-          </div>
-        </div>
-        <div class="mt-status-stack"><span class="mt-chip warning">REVIEW</span></div>
-      </div>
-      <div class="mt-alert warning">
-        <div class="mt-alert-icon" aria-hidden="true">⚠️</div>
-        <div class="mt-alert-copy"><h3>التنفيذ المالي محجوب</h3><p>يجب التحقق من Adapter/IPv4 وربطه بنفس المودم قبل READY.</p></div>
-      </div>
-      <details>
-        <summary class="mt-detail-row"><span>تفاصيل تقنية</span><span>⌄</span></summary>
-        <div class="mt-meta">اسم Adapter وinterfaceIndex ليسا هوية ثابتة.<br>هوية المودم تعتمد IMEI ثم Serial.</div>
-      </details>
-    </article>
-  </article>
+  <div class="mt-card"><div class="mt-meta">جاري تحميل المحطات…</div></div>
 </section>
 
 <div id="emptyState" class="mt-alert" hidden>
-  <div class="mt-alert-icon" aria-hidden="true">⌕</div>
-  <div class="mt-alert-copy"><h3>لا توجد نتيجة</h3><p>غيّر كلمة البحث وحاول مرة أخرى.</p></div>
+  <div class="mt-alert-icon" aria-hidden="true">🖥️</div>
+  <div class="mt-alert-copy">
+    <h3>لا توجد محطات</h3>
+    <p id="emptyText">عند تشغيل Station Agent لأول مرة سيظهر الكمبيوتر هنا بحالة انتظار الاعتماد.</p>
+  </div>
 </div>
 
 </main>
 
-<script>
-(() => {
-  const input=document.getElementById('stationSearch');
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
+const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let stations=[];
+
+function escapeHtml(value){
+  return String(value??'').replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function statusMeta(row){
+  const status=String(row.status||'').toLowerCase();
+
+  if(status==='pending') return {
+    statusLabel:'بانتظار الاعتماد',
+    statusClass:'warning',
+    connectionLabel:'PENDING',
+    connectionClass:'warning'
+  };
+
+  if(status==='approved') return {
+    statusLabel:'موثوق',
+    statusClass:'primary',
+    connectionLabel:row.online?'● ONLINE':'○ OFFLINE',
+    connectionClass:row.online?'success':'muted'
+  };
+
+  if(status==='suspended') return {
+    statusLabel:'موقوف',
+    statusClass:'warning',
+    connectionLabel:'SUSPENDED',
+    connectionClass:'warning'
+  };
+
+  if(status==='revoked') return {
+    statusLabel:'ملغي',
+    statusClass:'danger',
+    connectionLabel:'REVOKED',
+    connectionClass:'danger'
+  };
+
+  return {
+    statusLabel:status||'غير معروف',
+    statusClass:'muted',
+    connectionLabel:'UNKNOWN',
+    connectionClass:'muted'
+  };
+}
+
+function fmtDate(value){
+  if(!value) return 'لم يتصل بعد';
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleString('ar-DZ',{dateStyle:'short',timeStyle:'short'});
+}
+
+function relativeSeen(value){
+  if(!value) return 'لم يصل Heartbeat بعد';
+  const ms=Date.now()-new Date(value).getTime();
+  if(!Number.isFinite(ms)) return '—';
+  const seconds=Math.max(0,Math.floor(ms/1000));
+  if(seconds<60) return 'منذ '+seconds+' ثانية';
+  const minutes=Math.floor(seconds/60);
+  if(minutes<60) return 'منذ '+minutes+' دقيقة';
+  const hours=Math.floor(minutes/60);
+  return 'منذ '+hours+' ساعة';
+}
+
+function showMessage(title,text,type=''){
+  const box=$('pageMessage');
+  box.className='mt-alert'+(type?' '+type:'');
+  $('pageMessageTitle').textContent=title;
+  $('pageMessageText').textContent=text;
+  box.hidden=false;
+}
+
+function hideMessage(){
+  $('pageMessage').hidden=true;
+}
+
+function stationCard(row){
+  const meta=statusMeta(row);
+  const shortUuid=String(row.station_uuid||'').slice(0,8);
+  let action='';
+
+  if(row.status==='pending'){
+    action=
+      '<div class="mt-alert warning">'+
+        '<div class="mt-alert-icon" aria-hidden="true">⚠️</div>'+
+        '<div class="mt-alert-copy">'+
+          '<h3>كمبيوتر جديد ينتظر قرارك</h3>'+
+          '<p>لن يرسل Heartbeat معتمد ولن يدخل أي تنفيذ حساس قبل الاعتماد.</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="mt-actions">'+
+        '<button class="mt-btn primary approve-station" type="button">اعتماد الكمبيوتر</button>'+
+      '</div>';
+  }
+
+  return ''+
+    '<article class="mt-card station-entry" data-search="'+escapeHtml((row.computer_name||'')+' '+(row.status||'')+' '+shortUuid)+'" data-station-uuid="'+escapeHtml(row.station_uuid)+'">'+
+      '<div class="mt-row">'+
+        '<div class="mt-row-main">'+
+          '<div class="mt-thumb" aria-hidden="true">🖥️</div>'+
+          '<div class="mt-row-copy">'+
+            '<h3>'+escapeHtml(row.computer_name||'Windows Station')+'</h3>'+
+            '<div class="mt-meta">آخر اتصال: '+escapeHtml(relativeSeen(row.last_seen_at))+'<br>Agent: '+escapeHtml(row.agent_version||'—')+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="mt-status-stack">'+
+          '<span class="mt-chip '+meta.connectionClass+'">'+escapeHtml(meta.connectionLabel)+'</span>'+
+          '<span class="mt-chip '+meta.statusClass+'">'+escapeHtml(meta.statusLabel)+'</span>'+
+        '</div>'+
+      '</div>'+
+      action+
+      '<details>'+
+        '<summary class="mt-detail-row"><span>تفاصيل تقنية</span><span>⌄</span></summary>'+
+        '<div class="mt-meta">Station UUID: '+escapeHtml(row.station_uuid||'—')+
+          '<br>أُنشئت: '+escapeHtml(fmtDate(row.created_at))+
+          '<br>آخر Heartbeat: '+escapeHtml(fmtDate(row.last_seen_at))+
+        '</div>'+
+      '</details>'+
+    '</article>';
+}
+
+function applySearch(){
+  const q=$('stationSearch').value.trim().toLowerCase();
   const cards=[...document.querySelectorAll('.station-entry')];
-  const empty=document.getElementById('emptyState');
-  input?.addEventListener('input',()=>{
-    const q=input.value.trim().toLowerCase();
-    let visible=0;
-    cards.forEach(card=>{
-      const ok=!q||String(card.dataset.search||'').toLowerCase().includes(q)||card.textContent.toLowerCase().includes(q);
-      card.hidden=!ok;
-      if(ok)visible++;
-    });
-    empty.hidden=visible!==0;
+  let visible=0;
+
+  cards.forEach(card=>{
+    const ok=!q||String(card.dataset.search||'').toLowerCase().includes(q)||card.textContent.toLowerCase().includes(q);
+    card.hidden=!ok;
+    if(ok)visible++;
   });
-})();
+
+  if(stations.length){
+    $('emptyState').hidden=visible!==0;
+    $('emptyText').textContent=visible===0
+      ?'لا توجد محطة تطابق البحث.'
+      :'عند تشغيل Station Agent لأول مرة سيظهر الكمبيوتر هنا بحالة انتظار الاعتماد.';
+  }
+}
+
+function bindActions(){
+  document.querySelectorAll('.approve-station').forEach(button=>{
+    button.addEventListener('click',async()=>{
+      const card=button.closest('[data-station-uuid]');
+      const uuid=card?.dataset?.stationUuid;
+      if(!uuid)return;
+
+      button.disabled=true;
+      button.textContent='جاري الاعتماد…';
+      hideMessage();
+
+      try{
+        const {error}=await supabase.rpc('station_connect_admin_set_status',{
+          p_station_uuid:uuid,
+          p_status:'approved'
+        });
+
+        if(error)throw error;
+
+        showMessage('تم اعتماد الكمبيوتر','سيبدأ Agent بإرسال Heartbeat عند فحص الحالة التالي.');
+        await loadStations(false);
+      }catch(error){
+        showMessage('تعذر اعتماد الكمبيوتر',error?.message||'حدث خطأ غير متوقع.','danger');
+        button.disabled=false;
+        button.textContent='اعتماد الكمبيوتر';
+      }
+    });
+  });
+}
+
+function render(){
+  $('stationCount').textContent=String(stations.length);
+
+  if(!stations.length){
+    $('stationList').innerHTML='';
+    $('emptyState').hidden=false;
+    $('emptyText').textContent='عند تشغيل Station Agent لأول مرة سيظهر الكمبيوتر هنا بحالة انتظار الاعتماد.';
+    return;
+  }
+
+  $('emptyState').hidden=true;
+  $('stationList').innerHTML=stations.map(stationCard).join('');
+  bindActions();
+  applySearch();
+}
+
+async function loadStations(clearMessage=true){
+  const button=$('refreshBtn');
+  button.disabled=true;
+  button.textContent='جاري التحديث…';
+  if(clearMessage)hideMessage();
+
+  try{
+    const auth=await supabase.auth.getSession();
+    if(!auth.data.session){
+      throw new Error('جلسة Supabase للإدارة غير متاحة. سجّل الدخول من رئيسية MyTool ثم أعد فتح الصفحة.');
+    }
+
+    const result=await supabase.rpc('station_connect_admin_list');
+    if(result.error)throw result.error;
+
+    stations=Array.isArray(result.data)?result.data:[];
+    render();
+  }catch(error){
+    stations=[];
+    $('stationCount').textContent='0';
+    $('stationList').innerHTML='';
+    $('emptyState').hidden=true;
+    showMessage('تعذر تحميل المحطات',error?.message||'حدث خطأ غير متوقع.','danger');
+  }finally{
+    button.disabled=false;
+    button.textContent='تحديث';
+  }
+}
+
+$('stationSearch').addEventListener('input',applySearch);
+$('refreshBtn').addEventListener('click',()=>loadStations(true));
+loadStations(true);
 </script>
 <script src="../ui/template-v1.js"></script>
 <script src="../mytool-bottom-nav.js" data-root="../" data-app="access-admin"></script>
