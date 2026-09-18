@@ -326,7 +326,10 @@ async function mergeSelectedSources(){
 async function autoBootstrap(platform=null){
   if(!navigator.onLine)return null;
   const {data,error}=await adminRpc('admin_customer_auto_bootstrap_sources','workspace_admin_auto_bootstrap_sources',{p_platform_key:platform});
-  if(error)throw error;
+  if(error){
+    console.warn('customer auto bootstrap skipped:', safeError(error));
+    return {created:0,skipped:0,error:safeError(error)};
+  }
   return data;
 }
 
@@ -504,7 +507,11 @@ async function importSources(){
     const boot=await autoBootstrap(platform);
     const smart=await generateSuggestions({silent:true});
     await load();
-    msg('تم تحديث '+processed+' حساب؛ ربط أولي تلقائي '+Number(boot?.created||0)+'، وبانتظار مراجعة دمج '+Number(smart?.pending||0)+'.','ok');
+    if(boot?.error){
+      msg('تم تحديث '+processed+' حساب. بقيت بعض حالات الربط للمراجعة، ولم تتوقف الصفحة.','warn');
+    }else{
+      msg('تم تحديث '+processed+' حساب؛ ربط أولي تلقائي '+Number(boot?.created||0)+'، وبانتظار مراجعة دمج '+Number(smart?.pending||0)+'.','ok');
+    }
   }catch(error){
     msg('تعذر الاستيراد: '+safeError(error),'error');
   }finally{
@@ -541,12 +548,14 @@ window.addEventListener('offline',()=>{renderConnectivity();msg('انقطع ال
 (async()=>{
   try{
     await identify();
+    let bootstrapResult=null;
     if(navigator.onLine){
       msg('جاري تجهيز الربط الأولي تلقائيًا…');
-      await autoBootstrap(null);
+      bootstrapResult=await autoBootstrap(null);
       await generateSuggestions({silent:true});
     }
     await load();
+    if(bootstrapResult?.error)msg('تم فتح الصفحة. توجد حالة ربط تحتاج مراجعة، لكن بقية البيانات متاحة.','warn');
   }catch(error){
     if(!navigator.onLine&&loadCache())return;
     if(error?.message==='ADMIN_REQUIRED')msg('هذه الصفحة للإدارة فقط.','error');
