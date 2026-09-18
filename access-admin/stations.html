@@ -541,18 +541,23 @@ function renderRechargeCards(){
             :status==='review'
               ?{label:'تحتاج مراجعة',cls:'warning'}
               :{label:'فشلت',cls:'danger'};
+    const attempts=Number(card.attempt_count||0);
+    const maxAttempts=Number(card.max_attempts||3);
     const result=card.result_text
       ?'<div class="mt-meta" style="margin-top:8px"><strong>رد الشبكة:</strong> '+escapeHtml(card.result_text)+'</div>'
       :'';
     const action=status==='ready'
       ?'<button class="mt-btn primary recharge-now" type="button" data-card-uuid="'+escapeHtml(card.card_uuid)+'">شحن</button>'
-      :'';
+      :status==='review'&&attempts<maxAttempts
+        ?'<button class="mt-btn warning retry-recharge" type="button" data-card-uuid="'+escapeHtml(card.card_uuid)+'">إعادة المحاولة</button>'
+        :'';
     return '<div class="pilot-job">'+
       '<div class="mt-row">'+
         '<div><strong>'+escapeHtml(card.amount)+' دج — '+escapeHtml(card.source_label)+'</strong>'+
         '<div class="mt-meta">'+escapeHtml(card.masked_code)+' · '+escapeHtml(fmtDate(card.created_at))+'</div></div>'+
         '<span class="mt-chip '+meta.cls+'">'+escapeHtml(meta.label)+'</span>'+
       '</div>'+
+      '<div class="mt-meta" style="margin-top:5px">المحاولات: '+attempts+'/'+maxAttempts+'</div>'+
       (action?'<div class="mt-actions">'+action+'</div>':'')+
       result+
     '</div>';
@@ -560,6 +565,8 @@ function renderRechargeCards(){
 }
 
 async function loadRechargeCards(){
+  const reconcile=await supabase.rpc('station_connect_admin_reconcile_recharge',{p_timeout_seconds:90});
+  if(reconcile.error)throw reconcile.error;
   const result=await supabase.rpc('station_connect_admin_recharge_cards',{p_limit:20});
   if(result.error)throw result.error;
   rechargeCards=Array.isArray(result.data)?result.data:[];
@@ -713,19 +720,27 @@ async function loadStations(clearMessage=true){
 }
 
 $('rechargeCards').addEventListener('click',async event=>{
-  const button=event.target.closest('.recharge-now');
+  const button=event.target.closest('.recharge-now,.retry-recharge');
   if(!button)return;
 
   const cardUuid=button.dataset.cardUuid;
   const card=rechargeCards.find(x=>x.card_uuid===cardUuid);
-  if(!card||card.status!=='ready')return;
+  if(!card)return;
 
+  const isRetry=button.classList.contains('retry-recharge');
+  if((!isRetry&&card.status!=='ready')||(isRetry&&card.status!=='review'))return;
+
+  const attempts=Number(card.attempt_count||0);
+  const maxAttempts=Number(card.max_attempts||3);
   const confirmed=window.confirm(
-    'شحن بطاقة Mobilis الآن؟\n\n'+
+    (isRetry?'إعادة محاولة شحن البطاقة؟':'شحن بطاقة Mobilis الآن؟')+'\n\n'+
     'القيمة: '+card.amount+' دج\n'+
     'المصدر: '+card.source_label+'\n'+
-    'الكود: '+card.masked_code+'\n\n'+
-    'سيتم إرسال البطاقة إلى شريحة SAMA عبر *111*.'
+    'الكود: '+card.masked_code+'\n'+
+    'المحاولة: '+(attempts+1)+' من '+maxAttempts+'\n\n'+
+    (isRetry
+      ?'النتيجة السابقة غير مؤكدة. ستُعاد المحاولة يدويًا مرة واحدة.'
+      :'سيتم إرسال البطاقة إلى شريحة SAMA عبر *111*.')
   );
   if(!confirmed)return;
 
@@ -734,13 +749,12 @@ $('rechargeCards').addEventListener('click',async event=>{
   hideMessage();
 
   try{
-    const {error}=await supabase.rpc('station_connect_admin_queue_recharge_card',{
-      p_card_uuid:cardUuid
-    });
+    const rpcName=isRetry?'station_connect_admin_retry_recharge_card':'station_connect_admin_queue_recharge_card';
+    const {error}=await supabase.rpc(rpcName,{p_card_uuid:cardUuid});
     if(error)throw error;
 
     await loadRechargeCards();
-    showMessage('تم إرسال البطاقة','Agent سيشحن البطاقة الآن وينتظر رد الشبكة.');
+    showMessage(isRetry?'تمت إعادة المحاولة':'تم إرسال البطاقة','Agent سينفذ المحاولة وينتظر رد الشبكة.');
 
     for(let attempt=0;attempt<20;attempt++){
       await new Promise(resolve=>setTimeout(resolve,1500));
@@ -759,10 +773,13 @@ $('rechargeCards').addEventListener('click',async event=>{
       }
     }
 
-    showMessage('العملية ما زالت قيد الانتظار','الجدول سيعرض النتيجة عند وصولها من Agent.');
+    showMessage('النتيجة غير مؤكدة','إذا لم تصل نتيجة، ستتحول العملية إلى «مراجعة» ولن يعاد إرسالها تلقائيًا.');
   }catch(error){
     const msg=String(error?.message||'حدث خطأ غير متوقع.');
-    showMessage('تعذر إرسال البطاقة',msg,'danger');
+    const friendly=msg.includes('RECHARGE_ATTEMPT_LIMIT')
+      ?'وصلت البطاقة إلى الحد الأقصى: 3 محاولات.'
+      :msg;
+    showMessage('تعذر إرسال البطاقة',friendly,'danger');
     await loadRechargeCards().catch(()=>{});
   }
 });
