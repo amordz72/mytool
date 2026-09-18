@@ -90,6 +90,33 @@
         <div v-else class="muted" style="margin-top:12px">لا توجد حسابات خدام بعد.</div>
       </section>
 
+      <section v-if="authV2Enabled" id="trustedDevices" class="card content-card">
+        <div class="section-kicker">الدخول الجديد</div>
+        <h2>الأجهزة الموثوقة</h2>
+        <p class="muted">هذه اللوحة تجريبية قبل التحويل النهائي. قبول أو إلغاء جهاز يتطلب جلسة إدارة مع MFA مستوى AAL2.</p>
+        <div class="worker-actions" style="margin-bottom:12px">
+          <button class="btn secondary" @click="loadDeviceRequests" :disabled="deviceBusy">{{ deviceBusy ? 'جاري التحديث…' : 'تحديث الطلبات' }}</button>
+        </div>
+        <div v-if="deviceMessage" class="muted" style="margin-bottom:10px">{{ deviceMessage }}</div>
+
+        <div class="worker-list" v-if="deviceRequests.length">
+          <div class="worker-row" v-for="d in deviceRequests" :key="d.trust_id">
+            <div class="worker-meta">
+              <h3>{{ d.nickname }} · {{ d.status }}</h3>
+              <small>{{ d.device_label || 'جهاز بدون اسم' }}</small>
+              <div class="muted" style="margin-top:6px;word-break:break-word">{{ d.platform_hint || 'لا توجد معلومات إضافية' }}</div>
+              <div class="muted" style="margin-top:6px">طلب: {{ new Date(d.requested_at).toLocaleString('ar-DZ') }}</div>
+            </div>
+            <div class="worker-actions">
+              <button v-if="d.status==='pending'" class="btn" @click="reviewDeviceRequest(d,'approve')" :disabled="deviceBusy">اعتماد 30 يومًا</button>
+              <button v-if="d.status==='pending'" class="btn secondary" @click="reviewDeviceRequest(d,'reject')" :disabled="deviceBusy">رفض</button>
+              <button v-if="d.status==='trusted'" class="btn danger" @click="revokeTrustedDevice(d)" :disabled="deviceBusy">إلغاء الثقة</button>
+            </div>
+          </div>
+        </div>
+        <div v-else class="muted">لا توجد طلبات أجهزة في هذه الواجهة الآن.</div>
+      </section>
+
 
     </template>
 
@@ -134,6 +161,8 @@
     const workerForm=ref({username:'',nickname:'',phone:'',password:'',staff_id:'',is_test:false,can_sell:true,can_view_stock:true,can_inventory:false,can_manage_products:false,can_view_sales:false,can_record_money:false})
     const adminSessionHours=ref(clampHours(localStorage.getItem(ADMIN_SESSION_HOURS_KEY)||24))
     const adminDataMode=ref(localStorage.getItem(ADMIN_DATA_MODE_KEY)==='test'?'test':'real')
+    const authV2Enabled=new URLSearchParams(location.search).get('authv2')==='1'
+    const deviceRequests=ref([]),deviceBusy=ref(false),deviceMessage=ref('')
 
     const userMode=computed(()=>session.value?'admin':(workerToken.value?'worker':'none'))
     const isLoggedIn=computed(()=>userMode.value!=='none')
@@ -479,6 +508,62 @@
       notify('تم حفظ مدة جلسة الإدارة: '+adminSessionHours.value+' ساعة.')
     }
 
+    async function loadDeviceRequests(){
+      if(!authV2Enabled||userMode.value!=='admin')return
+      deviceBusy.value=true;deviceMessage.value=''
+      try{
+        const {data,error}=await supabase.rpc('core_admin_list_device_requests')
+        if(error)throw error
+        deviceRequests.value=data||[]
+        if(!deviceRequests.value.length)deviceMessage.value='لا توجد طلبات أجهزة حديثة.'
+      }catch(error){
+        const text=String(error?.message||error||'')
+        deviceMessage.value=text.includes('MFA_REQUIRED')
+          ?'يلزم تفعيل/تأكيد MFA للإدارة قبل إدارة الأجهزة.'
+          :'تعذر تحميل طلبات الأجهزة: '+text
+      }finally{deviceBusy.value=false}
+    }
+
+    async function reviewDeviceRequest(device,action){
+      if(!authV2Enabled||userMode.value!=='admin'||!device?.trust_id)return
+      deviceBusy.value=true;deviceMessage.value=''
+      try{
+        const {error}=await supabase.rpc('core_admin_review_device_request',{
+          p_trust_id:device.trust_id,
+          p_action:action,
+          p_trusted_days:30,
+          p_reason:null
+        })
+        if(error)throw error
+        deviceMessage.value=action==='approve'?'تم اعتماد الجهاز.':'تم رفض طلب الجهاز.'
+        await loadDeviceRequests()
+      }catch(error){
+        const text=String(error?.message||error||'')
+        deviceMessage.value=text.includes('MFA_REQUIRED')
+          ?'يلزم MFA AAL2 قبل اعتماد أو رفض الأجهزة.'
+          :'تعذر تحديث طلب الجهاز: '+text
+      }finally{deviceBusy.value=false}
+    }
+
+    async function revokeTrustedDevice(device){
+      if(!authV2Enabled||userMode.value!=='admin'||!device?.trust_id)return
+      deviceBusy.value=true;deviceMessage.value=''
+      try{
+        const {error}=await supabase.rpc('core_admin_revoke_device',{
+          p_trust_id:device.trust_id,
+          p_reason:'revoked_from_users_page'
+        })
+        if(error)throw error
+        deviceMessage.value='تم إلغاء ثقة الجهاز وإنهاء جلساته المرتبطة.'
+        await loadDeviceRequests()
+      }catch(error){
+        const text=String(error?.message||error||'')
+        deviceMessage.value=text.includes('MFA_REQUIRED')
+          ?'يلزم MFA AAL2 قبل إلغاء ثقة الجهاز.'
+          :'تعذر إلغاء ثقة الجهاز: '+text
+      }finally{deviceBusy.value=false}
+    }
+
     onMounted(async()=>{
       if(!storedWorkerToken)clearWorkerSession()
       const {data}=await supabase.auth.getSession();session.value=data.session
@@ -492,11 +577,12 @@
       if(!isLoggedIn.value){window.location.replace('../');return}
       if(userMode.value==='worker'){window.location.replace('daily.html');return}
       await loadAll()
+      if(authV2Enabled)await loadDeviceRequests()
       supabase.auth.onAuthStateChange((_event,newSession)=>{session.value=newSession;if(newSession)clearWorkerSession()})
       setInterval(enforceTimeout,30000)
     })
 
-    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,workerPermissions,message,messageType,staff,products,inventory,adminWorkers,todaySales,sale,workerForm,adminSessionHours,adminDataMode,inventoryTab,sidebarOpen,newProductName,newProductImage,newProductImageName,newProductImageKey,productNames,imageUploading,imageHistory,physicalCounts,physicalReason,physicalResult,physicalResultType,userMode,isLoggedIn,stockUnits,lowStockCount,outOfStockCount,todaySalesCount,todayRevenue,countedItems,totalCountDifference,money,signed,difference,can,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale,openPhysicalCount,resetPhysicalCount,selectNewProductImage,addProduct,renameProduct,uploadProductImage,restoreProductImage,applyPhysicalCount,createWorker,saveWorkerPermissions,toggleWorker,deleteWorker,setAdminDataMode,saveAdminSessionHours}
+    return{session,loading,busy,loginMode,email,password,workerUsername,workerPassword,workerNickname,workerPermissions,message,messageType,staff,products,inventory,adminWorkers,todaySales,sale,workerForm,adminSessionHours,adminDataMode,inventoryTab,sidebarOpen,newProductName,newProductImage,newProductImageName,newProductImageKey,productNames,imageUploading,imageHistory,physicalCounts,physicalReason,physicalResult,physicalResultType,userMode,isLoggedIn,stockUnits,lowStockCount,outOfStockCount,todaySalesCount,todayRevenue,countedItems,totalCountDifference,money,signed,difference,can,setLoginMode,adminLogin,workerLogin,logout,loadAll,saveSale,openPhysicalCount,resetPhysicalCount,selectNewProductImage,addProduct,renameProduct,uploadProductImage,restoreProductImage,applyPhysicalCount,createWorker,saveWorkerPermissions,toggleWorker,deleteWorker,setAdminDataMode,saveAdminSessionHours,authV2Enabled,deviceRequests,deviceBusy,deviceMessage,loadDeviceRequests,reviewDeviceRequest,revokeTrustedDevice}
   }}).mount('#app')
 </script>
 </body>
