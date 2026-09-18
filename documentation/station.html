@@ -1,0 +1,27 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Windows Station — توثيق MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
+<header class="top"><div class="top-inner"><div class="brand"><a href="index.html">🧭 توثيق المشاريع</a><small>Windows Station</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a></nav></div></header>
+<main class="wrap"><section class="hero"><h1>Station: البرنامج الموجود على الكمبيوتر</h1><p>لا نبدأه من الصفر. نجمع هوية واتصال الـStation من TehnaPay Connect مع قلب المودم/USSD من Tehna Connect Core.</p></section>
+<section class="card"><h2>الدورة</h2><div class="flow">Start
+ ↓
+load/create identity
+ ↓
+Enroll → Pending
+ ↓
+Admin approves in MyTool
+ ↓
+Heartbeat
+ ↓
+ONLINE
+ ↓
+Claim Job
+ ↓
+verify approved Station/Adapter/Modem
+ ↓
+execute local HiLink/USSD
+ ↓
+Complete Job</div></section>
+<section class="grid"><article class="card"><h3>هوية الكمبيوتر</h3><span class="status reuse">من tehnapay-connect</span><ul><li>stable UUID</li><li>random secret</li><li>MachineGuid → SHA-256</li><li>DPAPI لحماية secret محليًا</li></ul></article>
+<article class="card"><h3>قلب المودم</h3><span class="status reuse">من tehna-connect-core</span><ul><li>Adapters</li><li>HiLink API</li><li>IMEI/Serial</li><li>USSD start/reply/cancel</li></ul></article>
+<article class="card"><h3>حماية IP</h3><span class="status reuse">Network IP Watcher</span><p>Adapter جديد أو Mapping غير محسوم = REVIEW. لا تنفيذ مالي حتى التحقق.</p></article>
+<article class="card"><h3>واجهة الكمبيوتر</h3><span class="status plan">بسيطة</span><p>ليست Filament ولا Laravel UI. نحتاج فقط حالة Station، المودمات، الأخطاء، والتفاصيل التقنية عند الطلب.</p></article></section>
+<section class="card"><h2>قاعدة USB القديمة</h2><div class="callout">اسم Ethernet وinterfaceIndex ليسا هوية ثابتة. عند نقل USB قد يتغير Adapter. المودم يثبت بالـIMEI/Serial، ثم نتحقق من Mapping وIPv4 قبل التنفيذ.</div></section></main><script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
