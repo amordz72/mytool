@@ -33,6 +33,15 @@
 .discovery-offer .execute-check:checked + .execute-switch::after{transform:translateX(-18px)}
 .discovery-offer.selected .execute-check-wrap{color:#2580d8;font-weight:700}
 .pilot-job{margin:8px 0;padding:11px 12px;border:1px solid #e2ebf2;border-radius:14px;background:#fff}
+.offer-confirm-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:3000;display:flex;align-items:center;justify-content:center;padding:18px}
+.offer-confirm-card{width:min(420px,100%);background:#fff;border-radius:18px;padding:24px 20px;box-shadow:0 20px 60px rgba(15,23,42,.28);text-align:center}
+.offer-confirm-icon{width:72px;height:72px;border:3px solid #f2ba78;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:42px;color:#e89d45}
+.offer-confirm-card h3{margin:0 0 10px;font-size:24px;color:#44515f}
+.offer-confirm-card p{margin:0 0 18px;color:#68788a;line-height:1.7}
+.offer-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.offer-confirm-actions button{min-height:46px;border-radius:10px;font-weight:800;border:1px solid #d8e2ec}
+.offer-confirm-send{background:#2580d8!important;color:#fff;border-color:#2580d8!important}
+.offer-confirm-cancel{background:#fff!important;color:#b84d4d;border-color:#d96c6c!important}
 .pilot-job strong{font-size:13px}
 </style>
 <script src="../auth-guard.js?v=20260918-real-local-1" data-access="admin"></script>
@@ -140,6 +149,18 @@
 </section>
 
 </main>
+
+<div id="offerConfirm" class="offer-confirm-backdrop" hidden>
+  <div class="offer-confirm-card" role="dialog" aria-modal="true" aria-labelledby="offerConfirmTitle">
+    <div class="offer-confirm-icon">!</div>
+    <h3 id="offerConfirmTitle">تأكيد تفعيل عرض</h3>
+    <p id="offerConfirmText"></p>
+    <div class="offer-confirm-actions">
+      <button id="offerConfirmSend" class="offer-confirm-send" type="button">إرسال</button>
+      <button id="offerConfirmCancel" class="offer-confirm-cancel" type="button">إلغاء</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -262,6 +283,33 @@ function hideMessage(){
 }
 
 
+function confirmOfferExecution({phone,label,amount}){
+  return new Promise(resolve=>{
+    const backdrop=$('offerConfirm');
+    const text=$('offerConfirmText');
+    const send=$('offerConfirmSend');
+    const cancel=$('offerConfirmCancel');
+
+    text.textContent='الرقم: '+phone+' — العرض: '+label+' — '+amount+' دج';
+    backdrop.hidden=false;
+
+    const done=value=>{
+      backdrop.hidden=true;
+      send.onclick=null;
+      cancel.onclick=null;
+      backdrop.onclick=null;
+      resolve(value);
+    };
+
+    send.onclick=()=>done(true);
+    cancel.onclick=()=>done(false);
+    backdrop.onclick=event=>{
+      if(event.target===backdrop)done(false);
+    };
+  });
+}
+
+
 function renderDiscoveryOffers(form,job,source='network'){
   const box=form.querySelector('.offer-discovery-results');
   const offers=Array.isArray(job?.available_offers)?job.available_offers:[];
@@ -376,13 +424,11 @@ function renderDiscoveryOffers(form,job,source='network'){
           return;
         }
 
-        const confirmed=window.confirm(
-          'تأكيد تفعيل عرض\n\n'+
-          'الرقم: '+phone+'\n'+
-          'العرض: '+label+'\n'+
-          'المبلغ: '+amount+' دج\n\n'+
-          'هل تريد الإرسال الآن؟'
-        );
+        const confirmed=await confirmOfferExecution({
+          phone,
+          label,
+          amount
+        });
         if(!confirmed){
           executeCheck.checked=false;
           return;
