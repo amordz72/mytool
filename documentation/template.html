@@ -6,9 +6,10 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Template V1 — MyTool</title>
 <link rel="stylesheet" href="../ui/template-v1.css">
+<link rel="stylesheet" href="../mytool-bottom-nav.css">
 <script src="../auth-guard.js" data-access="admin"></script>
 </head>
-<body class="mt-app">
+<body class="mt-app" data-mytool-app="documentation">
 <main class="mt-shell">
 
 <header class="mt-topbar" aria-label="الشريط العلوي">
@@ -104,12 +105,6 @@
 </div>
 </main>
 
-<nav class="mt-bottom-nav" aria-label="التنقل الرئيسي">
-  <a href="../"><span>⌂</span>الرئيسية</a>
-  <a href="../flexy/"><span>⚡</span>فليكسي</a>
-  <a class="active" href="#"><span>⌖</span>المحطات</a>
-  <a href="../shop/"><span>▣</span>المحل</a>
-  <a href="../"><span>🧰</span>الأدوات</a>
-</nav>
+<script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script>
 </body>
 </html>
