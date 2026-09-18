@@ -50,7 +50,7 @@ function safeError(error){
 }
 
 async function adminRpc(ownerName,workspaceName,params={}){
-  if(adminMode==='workspace'){
+  if(adminMode==='local'){
     return supabase.rpc(workspaceName,{p_session_token:workspaceToken,...params});
   }
   return supabase.rpc(ownerName,params);
@@ -265,21 +265,19 @@ async function identify(){
   workspaceToken=localStorage.getItem(WORKER_TOKEN)||'';
   const workerExp=Number(localStorage.getItem(WORKER_EXPIRES)||0);
   const workspaceRole=localStorage.getItem(WORKSPACE_ROLE)||'';
-  const workspaceCode=localStorage.getItem(WORKSPACE_CODE)||'';
-
-  if(workspaceToken&&workerExp>now&&workspaceRole==='workspace_admin'&&workspaceCode==='PRELAUNCH'){
+  if(workspaceToken&&workerExp>now&&workspaceRole==='workspace_admin'){
     if(!navigator.onLine){
-      adminMode='workspace';
-      me={account_role:'workspace_admin',nickname:localStorage.getItem('mytool_shop_worker_nickname')||'إدارة الاستمرارية'};
+      adminMode='local';
+      me={account_role:'workspace_admin',nickname:localStorage.getItem('mytool_shop_worker_nickname')||'مدير محلي'};
       ShopShell.mountRoleNavigation({role:'admin',permissions:{can_record_money:true}},'customer-links');
       return;
     }
     const st=await supabase.rpc('workspace_session_status',{p_session_token:workspaceToken});
     if(!st.error&&st.data?.length&&st.data[0].account_role==='workspace_admin'){
-      adminMode='workspace';
+      adminMode='local';
       me=st.data[0];
       ShopShell.mountRoleNavigation({role:'admin',permissions:{can_record_money:true}},'customer-links');
-      document.querySelectorAll('.shell-identity').forEach(el=>el.textContent=(me.nickname||'إدارة الاستمرارية')+' · ربط العملاء');
+      document.querySelectorAll('.shell-identity').forEach(el=>el.textContent=(me.nickname||'مدير محلي')+' · ربط العملاء');
       return;
     }
   }
