@@ -28,6 +28,7 @@
   <div id="loginView" class="login-wrap" hidden>
     <section class="login-card">
       <h1>MyTool</h1>
+      <div id="authV2Badge" class="badge" hidden>🔐 تجربة Auth V2</div>
       <p id="loginIntro">سجّل الدخول للوصول إلى الأدوات المسموح بها.</p>
       <form id="loginForm">
         <div class="field"><label for="identity">اسم المستخدم أو البريد الإلكتروني</label><input id="identity" autocomplete="username" required></div>
@@ -135,6 +136,8 @@
   let supabase=null,mode='none',expiry=0,pendingDeviceRequestToken='',pendingDeviceIdentity='',mfaFactorId='',mfaEnrollment=false;
   const AUTH_V2_FLAG=Boolean(window.MyToolDeviceAuth?.v2Enabled?.());
   if(AUTH_V2_FLAG){
+    const badge=document.getElementById('authV2Badge');
+    if(badge)badge.hidden=false;
     const usersCard=document.getElementById('usersAdminCard');
     if(usersCard)usersCard.href='shop/users.html?authv2=1';
   }
