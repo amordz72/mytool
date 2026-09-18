@@ -24,7 +24,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
 .offline-note{font-size:11px;color:#9a3412;margin-top:6px}
 @media(max-width:760px){.page{padding:8px 8px 105px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.toolbar,.filters,.manual-grid,.party-edit,.bulk-bar{grid-template-columns:1fr}.link-controls{grid-template-columns:1fr auto auto}.suggestion-pair{grid-template-columns:1fr}.arrow{text-align:center}.party-grid{grid-template-columns:1fr}.card{padding:11px}.source-card,.suggestion,.party-card{padding:10px}}
 </style>
-<script src="shop-routes.js?v=20260918-file-guard-1"></script>
+<script src="shop-routes.js?v=20260918-source-shape-core-1"></script>
 <script src="shop-shell.js?v=20260918-customer-links-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -48,7 +48,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </section>
 
   <section class="card">
-    <div class="section-head"><div><h2>تحميل / تحديث المصادر</h2><div class="muted">الملف لا يُحفظ في GitHub. نفس الملف لا يمكن نسبه لمنصتين مختلفتين، وبعد التحديث يفحص MyTool الروابط تلقائيًا.</div></div></div>
+    <div class="section-head"><div><h2>تحميل / تحديث المصادر</h2><div class="muted">الملف لا يُحفظ في GitHub. MyTool يتحقق من بصمة الملف وشكل بياناته حتى لا يُنسب ملف هني روحك لتهنى باي أو العكس.</div></div></div>
     <div class="toolbar">
       <div class="field"><label>المنصة</label><select id="importPlatform"><option value="tehna_pay">تهنى باي</option><option value="hanii_rohek">هني روحك</option><option value="other">منصة أخرى</option></select></div>
       <div class="field"><label>CSV / XLSX</label><input id="sourceFile" class="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
@@ -110,6 +110,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260918-file-guard-1"></script>
+<script type="module" src="customer-links.js?v=20260918-source-shape-core-1"></script>
 </body>
 </html>
