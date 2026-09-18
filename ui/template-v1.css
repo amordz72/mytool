@@ -43,6 +43,9 @@ body.mt-app{
 
 /* App shell */
 .mt-topbar{
+  position:sticky;
+  top:0;
+  z-index:40;
   width:100%;
   min-width:0;
   display:flex;
@@ -51,6 +54,18 @@ body.mt-app{
   gap:12px;
   padding:12px 2px 14px;
   border-bottom:1px solid rgba(226,235,242,.9);
+  background:rgba(245,249,252,.96);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  transform:translateY(0);
+  transition:transform .2s ease,box-shadow .2s ease,background-color .2s ease;
+  will-change:transform;
+}
+.mt-topbar.is-scrolled{
+  box-shadow:0 8px 20px rgba(28,65,96,.08);
+}
+.mt-topbar.is-hidden{
+  transform:translateY(calc(-100% - 8px));
 }
 .mt-brand,.mt-user{
   min-width:0;
