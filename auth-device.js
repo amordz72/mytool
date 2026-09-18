@@ -104,7 +104,16 @@
   }
 
   function v2Enabled() {
-    return new URLSearchParams(location.search).get('authv2') === '1';
+    const value = new URLSearchParams(location.search).get('authv2');
+    if (value === '1') {
+      sessionStorage.setItem('mytool_auth_v2_preview', '1');
+      return true;
+    }
+    if (value === '0') {
+      sessionStorage.removeItem('mytool_auth_v2_preview');
+      return false;
+    }
+    return sessionStorage.getItem('mytool_auth_v2_preview') === '1';
   }
 
   window.MyToolDeviceAuth = Object.freeze({
