@@ -100,6 +100,14 @@
     <div class="mt-actions"><button id="addRechargeCardBtn" class="mt-btn primary" type="submit">إضافة البطاقة</button></div>
   </form>
   <div id="rechargeCards"><div class="mt-meta">لا توجد بطاقات مضافة.</div></div>
+
+  <div class="mt-section-head" style="margin:16px 0 8px">
+    <div class="mt-section-copy">
+      <h3>سجل ردود الشحن</h3>
+      <p>كل محاولة تُحفظ. الردود المؤكدة فقط تُعلَّم كمرجع ثابت.</p>
+    </div>
+  </div>
+  <div id="rechargeAttempts"><div class="mt-meta">لا توجد محاولات شحن بعد.</div></div>
 </section>
 
 <section class="mt-card">
@@ -126,6 +134,7 @@ let stations=[];
 let hardwareByStation={};
 let recentJobs=[];
 let rechargeCards=[];
+let rechargeAttempts=[];
 let jobPollTimer=null;
 
 function escapeHtml(value){
@@ -557,6 +566,38 @@ async function loadRechargeCards(){
   renderRechargeCards();
 }
 
+
+function renderRechargeAttempts(){
+  if(!rechargeAttempts.length){
+    $('rechargeAttempts').innerHTML='<div class="mt-meta">لا توجد محاولات شحن بعد.</div>';
+    return;
+  }
+
+  $('rechargeAttempts').innerHTML=rechargeAttempts.slice(0,10).map(item=>{
+    const status=String(item.result_status||'');
+    const cls=status==='success'?'success':status==='failed'?'danger':'warning';
+    const label=status==='success'?'نجاح':status==='failed'?'فشل':'مراجعة';
+    const ref=item.is_confirmed_reference
+      ?'<span class="mt-chip success">مرجع مؤكد</span>'
+      :'<span class="mt-chip muted">رد مسجل فقط</span>';
+    return '<div class="pilot-job">'+
+      '<div class="mt-row">'+
+        '<div><strong>'+escapeHtml(item.amount)+' دج — '+escapeHtml(item.source_label)+'</strong>'+
+          '<div class="mt-meta">'+escapeHtml(item.masked_code)+' · '+escapeHtml(fmtDate(item.created_at))+'</div></div>'+
+        '<div class="mt-status-stack"><span class="mt-chip '+cls+'">'+label+'</span>'+ref+'</div>'+
+      '</div>'+
+      '<div class="mt-meta" style="margin-top:7px">'+escapeHtml(item.response_text||'لا يوجد رد نصي')+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+async function loadRechargeAttempts(){
+  const result=await supabase.rpc('station_connect_admin_recharge_attempts',{p_limit:20});
+  if(result.error)throw result.error;
+  rechargeAttempts=Array.isArray(result.data)?result.data:[];
+  renderRechargeAttempts();
+}
+
 function jobStatusMeta(status){
   const value=String(status||'').toLowerCase();
   if(value==='success')return {label:'نجحت',cls:'success'};
@@ -658,7 +699,7 @@ async function loadStations(clearMessage=true){
     stations=Array.isArray(result.data)?result.data:[];
     await loadHardware();
     render();
-    await Promise.all([loadRecentJobs(),loadRechargeCards()]);
+    await Promise.all([loadRecentJobs(),loadRechargeCards(),loadRechargeAttempts()]);
   }catch(error){
     stations=[];
     $('stationCount').textContent='0';
@@ -707,6 +748,7 @@ $('rechargeCards').addEventListener('click',async event=>{
       const current=rechargeCards.find(x=>x.card_uuid===cardUuid);
       if(current&&!['queued','processing'].includes(String(current.status||''))){
         const answer=current.result_text||'لم يصل رد نصي من الشبكة.';
+        await loadRechargeAttempts().catch(()=>{});
         showMessage(
           current.status==='used'?'تم شحن البطاقة':
           current.status==='failed'?'فشل شحن البطاقة':'النتيجة تحتاج مراجعة',
