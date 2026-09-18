@@ -25,7 +25,7 @@
     {id:'cash',group:'money',label:'الصندوق',shortLabel:'الصندوق',path:'cash.html',type:'admin',roles:['admin'],placement:['drawer'],icon:'▣'},
     {id:'daily-report',group:'operations',label:'تقرير اليوم',shortLabel:'تقرير اليوم',path:'daily-report.html',type:'admin',roles:['admin'],placement:[],icon:'▥',daily:true,dailyOrder:90,dailyDesc:'مبيعات العمال وآخر العمليات'},
     {id:'cash-close',group:'money',label:'إغلاق الكيس',shortLabel:'إغلاق الكيس',path:'cash-close.html',type:'admin',roles:['admin'],placement:[],icon:'✓',daily:true,dailyOrder:100,dailyDesc:'عد النقد ومقارنة المتوقع بالفعلي'},
-    {id:'customer-links',group:'admin',label:'إدارة ربط العملاء',shortLabel:'ربط العملاء',path:'customer-links.html?v=20260918-auto-bootstrap-bulk-1',type:'admin',roles:['admin'],placement:['drawer'],icon:'⇆'},
+    {id:'customer-links',group:'admin',label:'إدارة ربط العملاء',shortLabel:'ربط العملاء',path:'customer-links.html?v=20260918-dual-admin-1',type:'admin',roles:['admin'],placement:['drawer'],icon:'⇆'},
     {id:'users',group:'admin',label:'المستخدمون',shortLabel:'المستخدمون',path:'users.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'♙'},
     {id:'settings',group:'admin',label:'الإعدادات',shortLabel:'الإعدادات',path:'settings.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'⚙'},
     {id:'notes',group:'general',label:'صندوق الملاحظات',shortLabel:'الملاحظات',path:'../notes/',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'📝'},
