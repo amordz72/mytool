@@ -1,109 +1,200 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Windows Station — توثيق MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
-<header class="top"><div class="top-inner"><div class="brand"><a href="index.html">🧭 توثيق المشاريع</a><small>Windows Station</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a></nav></div></header>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Station Connect — توثيق MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
+<header class="top"><div class="top-inner"><div class="brand"><a href="index.html">🧭 توثيق المشاريع</a><small>Station Connect</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a></nav></div></header>
+
 <main class="wrap">
-<section class="hero"><h1>Wireframe شاشة Station</h1><p>هذه معاينة تصميم فقط وليست شاشة تشغيل حقيقية. الهدف تثبيت ما يظهر فورًا وما نخفيه، قبل كتابة صفحة Stations الحقيقية داخل MyTool.</p><div><span class="status plan">Wireframe فقط</span><span class="status reuse">يعتمد المنطق السابق</span></div></section>
+<section class="hero">
+  <h1>Station Connect — من GitHub إلى ONLINE</h1>
+  <p>هذه الصفحة هي الدليل التشغيلي الكامل للكمبيوتر الحقيقي: تنزيل المشروع، الإعداد، الفحص، التشغيل، الاعتماد من MyTool، اختبار ONLINE/OFFLINE، التحديث لاحقًا، واستكشاف الأخطاء.</p>
+  <div><span class="status now">مطبق الآن</span><span class="status now">Server V1 يعمل</span><span class="status plan">مودم/USSD لاحقًا</span></div>
+</section>
 
 <section class="card">
-<h2>Screen Brief</h2>
-<div class="table-wrap"><table><tbody>
-<tr><th>المستخدم</th><td>الإدارة فقط.</td></tr>
-<tr><th>المهمة الأساسية</th><td>معرفة هل الكمبيوتر صالح للتنفيذ، وما هي المودمات والشرائح المرتبطة به.</td></tr>
-<tr><th>يظهر فورًا</th><td>اسم Station، Trusted/Review، Online/Offline، آخر اتصال، عدد المودمات، حالة كل مودم والشريحة.</td></tr>
-<tr><th>يُخفى</th><td>UUID الكامل، Fingerprint، IMEI/ICCID الكامل، Interface details، Logs.</td></tr>
-<tr><th>الإجراءات</th><td>تحديث، مراجعة Mapping عند وجود REVIEW، فتح التفاصيل التقنية.</td></tr>
-</tbody></table></div>
-</section>
-
-<section class="card"><h2>المعاينة على الهاتف</h2>
-<div class="wireframe" aria-label="Wireframe لشاشة Station">
-  <div class="wf-screen">
-    <div class="wf-head">
-      <div><div class="wf-title">المحطات</div><div class="wf-sub">إدارة أجهزة Flexy</div></div>
-      <button class="wf-menu" type="button" disabled aria-label="قائمة">☰</button>
-    </div>
-
-    <div class="wf-summary">
-      <div class="wf-summary-row">
-        <div><div class="wf-name">Station 01</div><div class="wf-meta">آخر اتصال: منذ 18 ثانية</div></div>
-        <div class="wf-badges"><span class="wf-badge ok">● ONLINE</span><span class="wf-badge info">✓ TRUSTED</span></div>
-      </div>
-      <div class="wf-meta">2 مودم • 2 شريحة • Agent v0.x</div>
-    </div>
-
-    <div class="wf-section">
-      <div class="wf-section-title"><span>المودمات</span><span class="wf-count">2</span></div>
-
-      <article class="wf-device">
-        <div class="wf-device-top">
-          <div><div class="wf-device-name">Huawei 1 — SAMA</div><div class="wf-device-sub">192.168.86.1 • Adapter OK</div></div>
-          <span class="wf-badge ok">جاهز</span>
-        </div>
-        <div class="wf-sim"><div><strong>Mobilis SAMA</strong><br><small>الشريحة معروفة ومربوطة</small></div><span class="wf-badge info">SIM OK</span></div>
-        <details class="wf-details"><summary>تفاصيل تقنية</summary><div class="wf-tech">IMEI: 86••••••••••01
-Serial: ••••A1
-ICCID: 89••••••••••44
-Adapter identity: verified
-IPv4 mapping: approved</div></details>
-      </article>
-
-      <article class="wf-device review">
-        <div class="wf-device-top">
-          <div><div class="wf-device-name">Huawei 2 — Arsselli</div><div class="wf-device-sub">Adapter جديد بعد تغيير USB</div></div>
-          <span class="wf-badge review">REVIEW</span>
-        </div>
-        <div class="wf-sim"><div><strong>Mobilis Arsselli</strong><br><small>IMEI معروف، Mapping يحتاج تحقق</small></div><span class="wf-badge review">موقوف</span></div>
-        <details class="wf-details"><summary>سبب REVIEW</summary><div class="wf-tech">Known modem IMEI: matched
-Current adapter: changed
-Current IPv4: not approved yet
-Financial execution: BLOCKED</div></details>
-      </article>
-    </div>
-
-    <div class="wf-alert"><strong>تنبيه:</strong> المودم الثاني لن يدخل أي تنفيذ مالي حتى يتم التحقق من Adapter وIPv4 Mapping. لا يوجد اختيار تلقائي لمودم آخر.</div>
-
-    <div class="wf-actions">
-      <button class="wf-btn primary" type="button" disabled>تحديث الحالة</button>
-      <button class="wf-btn" type="button" disabled>مراجعة المودم المعلّق</button>
-    </div>
-  </div>
-</div>
-<div class="callout">المعاينة تستعمل بيانات وهمية فقط. لا يوجد IMEI أو ICCID حقيقي داخل التوثيق.</div>
-</section>
-
-<section class="card"><h2>الحالات التي يجب أن تدعمها الشاشة</h2>
-<div class="wf-states">
-<div class="wf-state"><strong>🟢 ONLINE</strong>Trusted + Heartbeat حديث + لا مشكلة تمنع التنفيذ.</div>
-<div class="wf-state"><strong>🟠 REVIEW</strong>Station أو Modem معروف لكن Adapter/Mapping يحتاج قرارًا.</div>
-<div class="wf-state"><strong>⚪ OFFLINE</strong>Heartbeat قديم أو Agent غير متصل.</div>
-</div>
-</section>
-
-<section class="card"><h2>الدورة خلف هذه الشاشة</h2><div class="flow">Start
- ↓
-load/create identity
- ↓
-Enroll → Pending
- ↓
-Admin approves in MyTool
- ↓
+  <h2>الخريطة الحالية</h2>
+  <div class="flow">GitHub: amordz72/station-connect
+        ↓
+Windows PC
+C:\MyTool\station-connect\agent
+        ↓ HTTPS
+SERVER_URL
+        ↓
+Supabase Edge Function: station-gateway
+        ↓
+Station = PENDING
+        ↓
+MyTool → الإدارة → المحطات → اعتماد
+        ↓
 Heartbeat
+        ↓
+ONLINE / OFFLINE</div>
+</section>
+
+<section class="card">
+  <h2>قبل البداية</h2>
+  <div class="table-wrap"><table><tbody>
+    <tr><th>النظام</th><td>Windows 10 أو Windows 11.</td></tr>
+    <tr><th>Node.js</th><td>الإصدار 22 أو أحدث.</td></tr>
+    <tr><th>Git</th><td>مطلوب لتنزيل المشروع والتحديث لاحقًا.</td></tr>
+    <tr><th>GitHub</th><td>الحساب يجب أن يملك وصولًا إلى المستودع الخاص <code>amordz72/station-connect</code>.</td></tr>
+    <tr><th>الإنترنت</th><td>الكمبيوتر يحتاج اتصالًا خارجيًا بالسيرفر. لا نفتح Port عام على Windows.</td></tr>
+  </tbody></table></div>
+</section>
+
+<section class="card">
+  <h2>1. تنزيل المشروع من GitHub</h2>
+  <p>المكان المقترح على الكمبيوتر:</p>
+  <div class="code">C:\MyTool\station-connect</div>
+  <p>PowerShell أو CMD:</p>
+  <div class="code">cd C:\MyTool
+git clone https://github.com/amordz72/station-connect.git
+cd station-connect\agent</div>
+  <div class="callout">إذا طلب GitHub تسجيل الدخول لأن المستودع Private، أكمل تسجيل الدخول ثم أعد أمر <b>git clone</b>.</div>
+</section>
+
+<section class="card">
+  <h2>2. إعداد Agent</h2>
+  <p>انسخ ملف الإعداد النموذجي إلى <code>.env</code>.</p>
+  <h3>PowerShell</h3>
+  <div class="code">Copy-Item .env.example .env</div>
+  <h3>CMD</h3>
+  <div class="code">copy .env.example .env</div>
+  <p>القيمة الحالية للسيرفر:</p>
+  <div class="code">SERVER_URL=https://wqyebqzbbpohbnznqdjj.supabase.co/functions/v1/station-gateway
+HEARTBEAT_MS=30000
+STATUS_MS=30000
+REQUEST_TIMEOUT_MS=10000</div>
+  <div class="callout"><b>قاعدة ثابتة:</b> إذا نقلنا السيرفر مستقبلًا نغيّر <code>SERVER_URL</code> فقط، ما دام Contract V1 نفسه محفوظًا.</div>
+</section>
+
+<section class="card">
+  <h2>3. فحص Agent قبل التشغيل</h2>
+  <div class="code">npm run check</div>
+  <p>النتيجة المطلوبة: ينتهي الفحص بدون Syntax Error.</p>
+</section>
+
+<section class="card">
+  <h2>4. تشغيل Agent</h2>
+  <div class="code">npm start</div>
+  <p>في أول تشغيل فقط يقوم Agent بهذه الخطوات:</p>
+  <ol>
+    <li>إنشاء Station UUID ثابت.</li>
+    <li>إنشاء Secret عشوائي.</li>
+    <li>حماية Secret محليًا بـWindows DPAPI.</li>
+    <li>قراءة MachineGuid محليًا وتحويله إلى SHA-256 قبل الإرسال.</li>
+    <li>إرسال Enroll إلى السيرفر.</li>
+    <li>السيرفر ينشئ الكمبيوتر بحالة <b>PENDING</b>.</li>
+  </ol>
+  <div class="callout">لا تغلق نافذة Agent أثناء الاختبار الأول.</div>
+</section>
+
+<section class="card">
+  <h2>5. اعتماد الكمبيوتر من MyTool</h2>
+  <p>افتح شاشة المحطات:</p>
+  <div class="code">https://amordz72.github.io/mytool/access-admin/stations.html</div>
+  <p>المتوقع:</p>
+  <ul>
+    <li>يظهر اسم الكمبيوتر الحقيقي.</li>
+    <li>الحالة: <b>PENDING / بانتظار الاعتماد</b>.</li>
+    <li>يظهر زر <b>اعتماد الكمبيوتر</b>.</li>
+  </ul>
+  <p>اضغط <b>اعتماد الكمبيوتر</b>.</p>
+</section>
+
+<section class="card">
+  <h2>6. التأكد من ONLINE</h2>
+  <p>بعد الاعتماد، Agent يفحص الحالة دوريًا ثم يرسل Heartbeat.</p>
+  <div class="flow">Agent
+ ↓
+status = approved
+ ↓
+heartbeat
+ ↓
+server updates last_seen_at
+ ↓
+MyTool
+موثوق + ONLINE</div>
+  <p>يمكن الضغط على <b>تحديث</b> في شاشة المحطات لمشاهدة الحالة فورًا.</p>
+</section>
+
+<section class="card">
+  <h2>7. اختبار OFFLINE</h2>
+  <ol>
+    <li>بعد نجاح ONLINE، أوقف Agent بواسطة <code>Ctrl+C</code>.</li>
+    <li>انتظر أكثر من 90 ثانية.</li>
+    <li>اضغط تحديث في MyTool.</li>
+    <li>يجب أن تبقى المحطة <b>موثوقة</b> لكن تصبح <b>OFFLINE</b>.</li>
+  </ol>
+  <div class="callout">ONLINE ليست قيمة محفوظة ثابتة. تحسب من <code>approved + last_seen_at حديث</code>.</div>
+</section>
+
+<section class="card">
+  <h2>8. تشغيله مرة أخرى</h2>
+  <div class="code">cd C:\MyTool\station-connect\agent
+npm start</div>
+  <p>المطلوب: يستخدم نفس Station UUID ونفس الهوية المحمية، ولا ينشئ Station جديدة.</p>
+</section>
+
+<section class="card">
+  <h2>9. تحديث المشروع لاحقًا من GitHub</h2>
+  <p>أوقف Agent أولًا، ثم:</p>
+  <div class="code">cd C:\MyTool\station-connect
+git pull
+cd agent
+npm run check
+npm start</div>
+  <div class="callout">إذا أضفنا Dependencies مستقبلًا، ننفذ <code>npm install</code> بعد <code>git pull</code>.</div>
+</section>
+
+<section class="card">
+  <h2>10. ما لا نفعله الآن</h2>
+  <ul>
+    <li>لا Windows Service قبل نجاح الاختبار اليدوي.</li>
+    <li>لا ربط مودم.</li>
+    <li>لا HiLink.</li>
+    <li>لا USSD.</li>
+    <li>لا Flexy Job.</li>
+  </ul>
+  <p>بوابة الانتقال هي نجاح:</p>
+  <div class="flow">PENDING
+ ↓
+APPROVED
  ↓
 ONLINE
  ↓
-report modem / adapter state
+OFFLINE test
  ↓
-verify approved mapping
- ↓
-READY or REVIEW
- ↓
-only READY resources can claim financial Job</div></section>
-
-<section class="grid">
-<article class="card"><h3>هوية الكمبيوتر</h3><span class="status reuse">من tehnapay-connect</span><ul><li>stable UUID</li><li>random secret</li><li>MachineGuid → SHA-256</li><li>DPAPI لحماية secret محليًا</li></ul></article>
-<article class="card"><h3>قلب المودم</h3><span class="status reuse">من tehna-connect-core</span><ul><li>Adapters</li><li>HiLink API</li><li>IMEI/Serial</li><li>USSD start/reply/cancel</li></ul></article>
-<article class="card"><h3>حماية IP</h3><span class="status reuse">Network IP Watcher</span><p>Adapter جديد أو Mapping غير محسوم = REVIEW. لا تنفيذ مالي حتى التحقق.</p></article>
-<article class="card"><h3>واجهة الإنتاج لاحقًا</h3><span class="status plan">داخل MyTool Template</span><p>نأخذ هذا الترتيب فقط ونبنيه بالمكونات المشتركة، بدون Filament وبدون Dashboard تقني مزدحم.</p></article>
+نبدأ المرحلة التالية</div>
 </section>
 
-<section class="card"><h2>قاعدة USB القديمة</h2><div class="callout">اسم Ethernet وinterfaceIndex ليسا هوية ثابتة. عند نقل USB قد يتغير Adapter. المودم يثبت بالـIMEI/Serial، ثم نتحقق من Mapping وIPv4 قبل التنفيذ.</div></section>
-</main><script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
+<section class="card">
+  <h2>11. استكشاف الأخطاء</h2>
+  <div class="table-wrap"><table><tbody>
+    <tr><th>SERVER_URL is required</th><td>ملف <code>.env</code> غير موجود أو لا يحتوي SERVER_URL.</td></tr>
+    <tr><th>Station server is unavailable</th><td>تحقق من الإنترنت، SERVER_URL، وحالة <code>station-gateway</code>.</td></tr>
+    <tr><th>Station identity recovery is required</th><td>يوجد installation marker لكن ملف الهوية مفقود/تالف. لا تحذف السجل ولا تنشئ هوية جديدة يدويًا قبل مراجعة الحالة.</td></tr>
+    <tr><th>بقيت PENDING</th><td>افتح MyTool → المحطات واضغط اعتماد الكمبيوتر.</td></tr>
+    <tr><th>APPROVED لكنه OFFLINE</th><td>تأكد أن Agent يعمل وابحث في الشاشة عن <code>status: approved</code> ثم <code>heartbeat: ok</code>.</td></tr>
+  </tbody></table></div>
+</section>
+
+<section class="card">
+  <h2>12. قواعد الأمان</h2>
+  <ul>
+    <li>لا تنشر <code>agent/data/identity.json</code>.</li>
+    <li>لا ترسل Station Secret في رسالة أو Screenshot.</li>
+    <li>لا يخرج MachineGuid الخام من Windows.</li>
+    <li>لا تنسخ هوية Station من كمبيوتر إلى آخر.</li>
+    <li>الكمبيوتر يتصل Outbound فقط؛ لا Port عام على Windows.</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>بعد نجاح الاختبار</h2>
+  <p>الخطوة التالية بعد نجاح الكمبيوتر الحقيقي ستكون ربط طبقة المودم والـAdapter/HiLink، مع الحفاظ على قاعدة REVIEW عند تغير USB أو Adapter Mapping.</p>
+  <div class="links">
+    <a href="../access-admin/stations.html">فتح شاشة المحطات الحقيقية ←</a>
+    <a href="core.html">الكود الذي سنعيد استخدامه للمودم ←</a>
+    <a href="server.html">مراجعة معمارية السيرفر ←</a>
+  </div>
+</section>
+</main>
+<script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
