@@ -25,8 +25,13 @@
 .discovery-offer.selected{background:#e8f3ff;box-shadow:inset 0 0 0 2px #2580d8}
 .discovery-offer .pick-mark{display:none;font-weight:900;color:#2580d8;margin-inline-start:6px}
 .discovery-offer.selected .pick-mark{display:inline}
-.discovery-offer .execute-check-wrap{display:inline-flex;align-items:center;gap:6px;margin-inline-start:8px;font-size:11px;color:#5f7488}
-.discovery-offer .execute-check{width:18px;height:18px;accent-color:#2580d8;cursor:pointer}
+.discovery-offer .execute-check-wrap{display:inline-flex;align-items:center;gap:6px;margin-inline-start:8px;font-size:11px;color:#5f7488;cursor:pointer}
+.discovery-offer .execute-check{position:absolute;opacity:0;pointer-events:none}
+.discovery-offer .execute-switch{position:relative;width:42px;height:24px;border-radius:999px;background:#cfd8e3;box-shadow:inset 0 0 0 1px #bcc7d2;transition:.18s;flex:0 0 auto}
+.discovery-offer .execute-switch::after{content:'';position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:.18s}
+.discovery-offer .execute-check:checked + .execute-switch{background:#2580d8;box-shadow:inset 0 0 0 1px #2580d8}
+.discovery-offer .execute-check:checked + .execute-switch::after{transform:translateX(-18px)}
+.discovery-offer.selected .execute-check-wrap{color:#2580d8;font-weight:700}
 .pilot-job{margin:8px 0;padding:11px 12px;border:1px solid #e2ebf2;border-radius:14px;background:#fff}
 .pilot-job strong{font-size:13px}
 </style>
@@ -292,7 +297,7 @@ function renderDiscoveryOffers(form,job,source='network'){
           'data-amount="'+escapeHtml(item.amount??'')+'" '+
           'data-label="'+escapeHtml(item.label||((item.amount??'')+' دج'))+'">'+
           '<span><span class="pick-mark">✓</span>'+escapeHtml(item.label||((item.amount??'')+' دج'))+'</span>'+
-          '<span class="execute-check-wrap"><input class="execute-check" type="checkbox" aria-label="اختيار للتنفيذ"><span>للتنفيذ</span></span>'+
+          '<label class="execute-check-wrap"><input class="execute-check" type="checkbox" aria-label="اختيار للتنفيذ"><span class="execute-switch" aria-hidden="true"></span><span>للتنفيذ</span></label>'+
           '<strong>'+escapeHtml(item.amount??'—')+' دج</strong>'+
         '</div>'
       ).join('')+
