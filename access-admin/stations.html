@@ -457,6 +457,8 @@ function renderDiscoveryOffers(form,job,source='network'){
               :'سيتم تنفيذ العرض المحدد فقط.'
           );
 
+          resetFlexyFormAfterExecution(form,executeCheck);
+          await loadRecentJobs().catch(()=>{});
           await pollOfferExecute(form,job.job_uuid,row,executeCheck);
         }catch(error){
           executeCheck.disabled=false;
@@ -525,6 +527,34 @@ async function pollOfferDiscovery(form,jobUuid,phone){
   showMessage('الاستكشاف ما زال جاريًا','اضغط «العروض» مرة أخرى؛ إذا كانت الجلسة مازالت مفتوحة سيكمل نفس العملية.');
 }
 
+function resetFlexyFormAfterExecution(form,executeCheck){
+  const phoneInput=form.querySelector('input[name="phone"]');
+  const amountInput=form.querySelector('input[name="amount"]');
+  const resultsBox=form.querySelector('.offer-discovery-results');
+  const offersButton=form.querySelector('.flexy-offers');
+
+  if(phoneInput)phoneInput.value='';
+  if(amountInput)amountInput.value='';
+
+  form.dataset.selectedFamily='';
+  form.dataset.selectedNetworkIndex='';
+  form.dataset.selectedAmount='';
+  form.dataset.selectedLabel='';
+  form.dataset.discoveryPoll='';
+
+  if(executeCheck){
+    executeCheck.checked=false;
+    executeCheck.disabled=false;
+  }
+
+  if(resultsBox){
+    resultsBox.hidden=true;
+    resultsBox.innerHTML='';
+  }
+
+  if(offersButton)offersButton.textContent='العروض';
+}
+
 async function pollOfferExecute(form,jobUuid,row,executeCheck){
   for(let attempt=0;attempt<60;attempt++){
     const {data,error}=await supabase.rpc('station_connect_admin_offer_execute_job',{
@@ -541,8 +571,7 @@ async function pollOfferExecute(form,jobUuid,row,executeCheck){
     }else if(state==='claimed'){
       showMessage('جاري تنفيذ العرض','Agent فتح جلسة USSD وينفذ العرض المختار الآن.');
     }else{
-      executeCheck.disabled=false;
-      if(state!=='success')executeCheck.checked=false;
+      resetFlexyFormAfterExecution(form,executeCheck);
 
       const title=state==='success'
         ?'تم تنفيذ العرض'
@@ -568,8 +597,7 @@ async function pollOfferExecute(form,jobUuid,row,executeCheck){
     await new Promise(resolve=>setTimeout(resolve,1000));
   }
 
-  executeCheck.disabled=false;
-  executeCheck.checked=false;
+  resetFlexyFormAfterExecution(form,executeCheck);
   showMessage(
     'النتيجة غير مؤكدة',
     'لم تصل نتيجة نهائية في الوقت المتوقع. لا تعاود الإرسال تلقائيًا قبل مراجعة العملية.'
