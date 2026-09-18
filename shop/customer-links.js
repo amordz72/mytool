@@ -4,11 +4,13 @@ const supabase=createClient(window.ShopApiConfig.url,window.ShopApiConfig.key);
 const CACHE='mytool_customer_linking_service_cache_v1';
 const DIRECTORY_CACHE='mytool_customer_directory_cache_v1';
 const PAGE_SIZE=15;
+const WORKER_TOKEN='mytool_shop_worker_token',WORKER_EXPIRES='mytool_shop_worker_expires_at',WORKSPACE_ROLE='mytool_workspace_role',WORKSPACE_CODE='mytool_workspace_code',ADMIN_EXPIRES='mytool_admin_expires_at';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=v=>String(v??'').trim().toLowerCase();
 
 let me=null,sources=[],parties=[],suggestions=[],page=1;
+let adminMode='none',workspaceToken='';
 let confirmResolve=null;
 const selectedSources=new Set();
 let currentPageIds=[];
@@ -25,6 +27,13 @@ function statusLabel(v){
 }
 function safeError(error){
   return String(error?.message||error||'خطأ غير معروف').replace(/(eyJ[a-zA-Z0-9._-]{20,}|sb_[a-zA-Z0-9_-]{20,})/g,'[محجوب]');
+}
+
+async function adminRpc(ownerName,workspaceName,params={}){
+  if(adminMode==='workspace'){
+    return supabase.rpc(workspaceName,{p_session_token:workspaceToken,...params});
+  }
+  return supabase.rpc(ownerName,params);
 }
 function saveCache(){
   const payload={saved_at:Date.now(),sources,parties,suggestions};
@@ -229,16 +238,43 @@ function renderAll(){
   renderMetrics();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();
 }
 async function identify(){
-  if(!navigator.onLine){
-    ShopShell.mountRoleNavigation({role:'admin',permissions:{}},'customer-links');
-    return;
+  const now=Date.now();
+  workspaceToken=localStorage.getItem(WORKER_TOKEN)||'';
+  const workerExp=Number(localStorage.getItem(WORKER_EXPIRES)||0);
+  const workspaceRole=localStorage.getItem(WORKSPACE_ROLE)||'';
+  const workspaceCode=localStorage.getItem(WORKSPACE_CODE)||'';
+
+  if(workspaceToken&&workerExp>now&&workspaceRole==='workspace_admin'&&workspaceCode==='PRELAUNCH'){
+    if(!navigator.onLine){
+      adminMode='workspace';
+      me={account_role:'workspace_admin',nickname:localStorage.getItem('mytool_shop_worker_nickname')||'إدارة الاستمرارية'};
+      ShopShell.mountRoleNavigation({role:'admin',permissions:{can_record_money:true}},'customer-links');
+      return;
+    }
+    const st=await supabase.rpc('workspace_session_status',{p_session_token:workspaceToken});
+    if(!st.error&&st.data?.length&&st.data[0].account_role==='workspace_admin'){
+      adminMode='workspace';
+      me=st.data[0];
+      ShopShell.mountRoleNavigation({role:'admin',permissions:{can_record_money:true}},'customer-links');
+      document.querySelectorAll('.shell-identity').forEach(el=>el.textContent=(me.nickname||'إدارة الاستمرارية')+' · ربط العملاء');
+      return;
+    }
   }
+
+  if(!navigator.onLine)throw new Error('NO_SESSION');
+
   const {data,error}=await supabase.auth.getSession();
   if(error)throw error;
-  if(!data?.session)throw new Error('NO_SESSION');
-  me={account_role:'workspace_admin',nickname:'الإدارة'};
-  ShopShell.mountRoleNavigation({role:'admin',permissions:{can_record_money:true}},'customer-links');
-  document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='حساب الإدارة · ربط العملاء');
+  const adminExp=Number(localStorage.getItem(ADMIN_EXPIRES)||0);
+  if(data?.session&&adminExp>now){
+    adminMode='owner';
+    me={account_role:'workspace_admin',nickname:'المالك'};
+    ShopShell.mountRoleNavigation({role:'admin',permissions:{can_record_money:true}},'customer-links');
+    document.querySelectorAll('.shell-identity').forEach(el=>el.textContent='المالك · ربط العملاء');
+    return;
+  }
+
+  throw new Error('NO_SESSION');
 }
 async function load(){
   if(!navigator.onLine){
@@ -247,8 +283,8 @@ async function load(){
   }
   msg('جاري تحميل دليل الربط…');
   const [a,b]=await Promise.all([
-    supabase.rpc('admin_customer_list_linking'),
-    supabase.rpc('admin_customer_list_link_suggestions',{p_status:null})
+    adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
+    adminRpc('admin_customer_list_link_suggestions','workspace_admin_list_link_suggestions',{p_status:null})
   ]);
   if(a.error)throw a.error;
   if(b.error)throw b.error;
@@ -274,7 +310,7 @@ async function mergeSelectedSources(){
   if(!ok)return;
 
   $('mergeSelected').disabled=true;
-  const {data,error}=await supabase.rpc('admin_customer_merge_selected_sources',{
+  const {data,error}=await adminRpc('admin_customer_merge_selected_sources','workspace_admin_merge_selected_sources',{
     p_source_account_ids:ids,
     p_target_party_id:target
   });
@@ -289,7 +325,7 @@ async function mergeSelectedSources(){
 
 async function autoBootstrap(platform=null){
   if(!navigator.onLine)return null;
-  const {data,error}=await supabase.rpc('admin_customer_auto_bootstrap_sources',{p_platform_key:platform});
+  const {data,error}=await adminRpc('admin_customer_auto_bootstrap_sources','workspace_admin_auto_bootstrap_sources',{p_platform_key:platform});
   if(error)throw error;
   return data;
 }
@@ -300,7 +336,7 @@ async function linkSource(sourceId){
   const partyId=Number(sel?.value||0);
   if(!partyId)return msg('اختر العميل الموحد أولًا.','error');
   msg('جاري حفظ الربط…');
-  let {data,error}=await supabase.rpc('admin_customer_link_source_account_safe',{
+  let {data,error}=await adminRpc('admin_customer_link_source_account_safe','workspace_admin_link_source_account_safe',{
     p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:false,p_reason:null
   });
   if(error)return msg('تعذر الربط: '+safeError(error),'error');
@@ -311,7 +347,7 @@ async function linkSource(sourceId){
       'فك ونقل الربط'
     );
     if(!ok)return msg('لم يتم تغيير الربط.','info');
-    ({data,error}=await supabase.rpc('admin_customer_link_source_account_safe',{
+    ({data,error}=await adminRpc('admin_customer_link_source_account_safe','workspace_admin_link_source_account_safe',{
       p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:true,p_reason:'نقل الربط من شاشة إدارة ربط العملاء'
     }));
     if(error)return msg('تعذر نقل الربط: '+safeError(error),'error');
@@ -323,7 +359,7 @@ async function createFromSource(sourceId){
   const source=sources.find(x=>Number(x.id)===Number(sourceId));
   const ok=await askConfirm('إنشاء عميل موحد','إنشاء عميل MyTool باسم «'+(source?.display_name||source?.username||'الحساب')+'» وربط هذا الحساب به؟','إنشاء وربط');
   if(!ok)return;
-  const {error}=await supabase.rpc('admin_customer_create_party_from_source',{
+  const {error}=await adminRpc('admin_customer_create_party_from_source','workspace_admin_create_party_from_source',{
     p_source_account_id:sourceId,p_display_name:null
   });
   if(error)return msg('تعذر إنشاء العميل: '+safeError(error),'error');
@@ -333,7 +369,7 @@ async function unlinkSource(linkId){
   if(!navigator.onLine)return msg('فك الربط يحتاج اتصالًا.','warn');
   const ok=await askConfirm('فك الربط','سيبقى تاريخ الربط محفوظًا ويمكن إعادة الربط لاحقًا. هل تريد المتابعة؟','فك الربط');
   if(!ok)return;
-  const {error}=await supabase.rpc('admin_customer_unlink_platform_account_safe',{
+  const {error}=await adminRpc('admin_customer_unlink_platform_account_safe','workspace_admin_unlink_platform_account_safe',{
     p_link_id:linkId,p_reason:'فك من شاشة إدارة ربط العملاء'
   });
   if(error)return msg('تعذر فك الربط: '+safeError(error),'error');
@@ -345,7 +381,7 @@ async function saveParty(id){
   const phone=document.querySelector('[data-party-phone="'+id+'"]')?.value.trim()||null;
   const email=document.querySelector('[data-party-email="'+id+'"]')?.value.trim()||null;
   if(!name)return msg('اسم العميل مطلوب.','error');
-  const {error}=await supabase.rpc('admin_customer_update_canonical',{
+  const {error}=await adminRpc('admin_customer_update_canonical','workspace_admin_update_canonical_party',{
     p_party_id:id,p_display_name:name,p_phone:phone,p_email:email
   });
   if(error)return msg('تعذر تعديل العميل: '+safeError(error),'error');
@@ -353,7 +389,7 @@ async function saveParty(id){
 }
 async function reviewSuggestion(id,action){
   if(!navigator.onLine)return msg('مراجعة الاقتراح تحتاج اتصالًا.','warn');
-  const {data,error}=await supabase.rpc('admin_customer_review_link_suggestion',{
+  const {data,error}=await adminRpc('admin_customer_review_link_suggestion','workspace_admin_review_link_suggestion',{
     p_suggestion_id:id,p_action:action
   });
   if(error)return msg('تعذر مراجعة الاقتراح: '+safeError(error),'error');
@@ -367,7 +403,7 @@ async function generateSuggestions({silent=false}={}){
   if(!navigator.onLine)return null;
   if($('smartBtn'))$('smartBtn').disabled=true;
   if(!silent)msg('جاري إعادة فحص الروابط…');
-  const {data,error}=await supabase.rpc('admin_customer_generate_link_suggestions');
+  const {data,error}=await adminRpc('admin_customer_generate_link_suggestions','workspace_admin_generate_link_suggestions');
   if($('smartBtn'))$('smartBtn').disabled=false;
   if(error){
     if(!silent)msg('تعذر فحص الروابط: '+safeError(error),'error');
@@ -456,7 +492,7 @@ async function importSources(){
     let processed=0,inserted=0,updated=0;
     for(let i=0;i<accounts.length;i+=150){
       const chunk=accounts.slice(i,i+150);
-      const {data,error}=await supabase.rpc('admin_customer_upsert_source_accounts',{
+      const {data,error}=await adminRpc('admin_customer_upsert_source_accounts','workspace_admin_upsert_source_accounts',{
         p_platform_key:platform,p_accounts:chunk
       });
       if(error)throw error;
@@ -479,7 +515,7 @@ async function createManual(){
   if(!navigator.onLine)return msg('إنشاء العميل يحتاج اتصالًا.','warn');
   const name=$('manualName').value.trim(),phone=$('manualPhone').value.trim()||null,email=$('manualEmail').value.trim()||null;
   if(!name)return msg('اكتب اسم العميل.','error');
-  const {error}=await supabase.rpc('admin_customer_create_canonical',{
+  const {error}=await adminRpc('admin_customer_create_canonical','workspace_admin_create_canonical_party_v2',{
     p_display_name:name,p_phone:phone,p_email:email,p_party_type:'shop'
   });
   if(error)return msg('تعذر إنشاء العميل: '+safeError(error),'error');
