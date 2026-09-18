@@ -83,7 +83,7 @@
     </div>
   </article>
   <article class="card">
-    <h2>TARGET — المقصود للمراجعة</h2>
+    <h2>OPTION — بديل أبسط للمقارنة فقط</h2>
     <div class="mini-flow">
       <div class="node target">دخول العامل</div>
       <div class="arrow">↓</div>
@@ -91,7 +91,7 @@
       <div class="arrow">↓</div>
       <div class="node target">تنفيذ المهمة<small>أقل تنقل ممكن، مع نفس Shell والخروج والفرع الثابت.</small></div>
     </div>
-    <div class="callout">هذه الجهة ليست منفذة بعد. هي فرق مرئي واضح حتى يعتمد عمر التدفق قبل تعديل التشغيل.</div>
+    <div class="callout">هذا ليس إصلاحًا مطلوبًا ولا دليلًا أن الموجود خطأ. هو بديل UX للمقارنة فقط، ويبقى غير معتمد حتى يحكم عمر عليه.</div>
   </article>
 </section>
 
@@ -230,12 +230,12 @@
 </section>
 
 <section id="review" class="card">
-  <h2>8. فروق مكتشفة — لا تُصلح قبل مراجعة عمر</h2>
+  <h2>8. نقاط للمراجعة — ليست أخطاء مؤكدة</h2>
   <div class="review-list">
-    <div class="review-item"><strong>R1 — طبقات كثيرة قبل عمل العامل</strong><p>الكود الحالي: Login → MyTool Root → Shop Dashboard → Daily. الهدف المرئي المقترح: Login → Worker Daily Home. يحتاج قرارًا نهائيًا قبل Redirect أو دمج الشاشات.</p></div>
-    <div class="review-item"><strong>R2 — أثر Workspace/Continuity قديم في بعض المسارات</strong><p>قرار Developer الأحدث يقول REAL/DEMO فقط والاستمرارية طبقة لا Workspace مستقل. لكن <code>shift-close.html</code> ما زال يستدعي <code>workspace_session_status</code> ويحتوي رسالة «وضع الاستمرارية». يحتاج Audit قبل الحذف لأن المسار مالي.</p></div>
-    <div class="review-item"><strong>R3 — Cash Receipts وShift Close مترابطان لكن يجب ألا يتكررا محاسبيًا</strong><p>استلامات العامل تظهر ضمن سياق إغلاقه، بينما الاعتماد الإداري يحدث المطابقة. أي إصلاح لاحق يجب أن يمنع مضاعفة نفس المال بين «استلام» و«إغلاق».</p></div>
-    <div class="review-item"><strong>R4 — Worker Home وAdmin Home لا يلزم أن يكون محتواهما متطابقًا</strong><p>Shell واحد نعم؛ لكن الهدف مختلف: العامل يحتاج تنفيذًا سريعًا، والإدارة تحتاج ملخصًا ورقابة. هذا فرق منتج، وليس خطأ تصميم بحد ذاته.</p></div>
+    <div class="review-item"><strong>R1 — المسار الحالي يعمل / خيار تبسيط فقط</strong><p>الحالي: Login → MyTool Root → Shop Dashboard → Daily، وهو مسار موجود ويعمل وليس Bug مثبتًا. البديل Login → Worker Daily Home مجرد خيار UX للمقارنة، ولا Redirect أو حذف شاشة قبل قرار عمر.</p></div>
+    <div class="review-item"><strong>R2 — Technical Audit، وليس Bug مؤكدًا</strong><p>قرار Developer الأحدث يقول REAL/DEMO فقط والاستمرارية طبقة لا Workspace مستقل. لكن <code>shift-close.html</code> ما زال يستدعي <code>workspace_session_status</code> ويحتوي رسالة «وضع الاستمرارية». هذا يحتاج Audit لفهم السبب الحالي قبل أي حذف لأن المسار مالي.</p></div>
+    <div class="review-item"><strong>R3 — قاعدة محاسبية يجب التحقق منها</strong><p>استلامات العامل تظهر ضمن سياق إغلاقه، بينما الاعتماد الإداري يحدث المطابقة. المطلوب أولًا إثبات أن نفس المال لا يُضاعف بين «استلام» و«إغلاق»؛ لا نفترض وجود خطأ قبل الفحص.</p></div>
+    <div class="review-item"><strong>R4 — قرار تصميم، وليس إصلاحًا</strong><p>Shell واحد نعم؛ لكن الهدف مختلف: العامل يحتاج تنفيذًا سريعًا، والإدارة تحتاج ملخصًا ورقابة. اختلاف محتوى Home قد يكون مقصودًا ولا يعد خطأ بحد ذاته.</p></div>
   </div>
 </section>
 
