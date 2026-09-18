@@ -466,11 +466,30 @@ function firstValue(obj,names){
   }
   return '';
 }
+function detectPlatformFromMatrix(matrix,headerIndex,headers){
+  const h=new Set(headers.map(norm));
+  const roleIndex=headers.findIndex(v=>norm(v)==='الدور'||norm(v)==='role');
+  const sampleRoles=roleIndex>=0
+    ? matrix.slice(headerIndex+1,Math.min(matrix.length,headerIndex+20)).map(r=>String(r?.[roleIndex]??'').trim()).filter(Boolean)
+    : [];
+
+  const haniiMarkers=['معرف الشبكة','اسم المحل','الحد الأقصى للديون','تاريخ الإنشاء'];
+  const haniiHits=haniiMarkers.filter(x=>h.has(norm(x))).length;
+  if(haniiHits>=2)return 'hanii_rohek';
+
+  const tehnaCore=['اسم المستخدم','الدور','حالة الحساب','رصيد','ديون','ارباح'];
+  const tehnaHits=tehnaCore.filter(x=>h.has(norm(x))).length;
+  const hasTehnaRole=sampleRoles.some(v=>/^ROLE_/i.test(v));
+  if(tehnaHits>=5&&hasTehnaRole&&!h.has(norm('اسم المحل')))return 'tehna_pay';
+
+  return null;
+}
 function rowsToAccounts(matrix){
   const headerIndex=matrix.findIndex(r=>Array.isArray(r)&&r.some(v=>norm(v)==='اسم المستخدم'||norm(v)==='username'));
   if(headerIndex<0)throw new Error('لم أجد عمود اسم المستخدم.');
   const headers=matrix[headerIndex].map(v=>String(v??'').trim());
-  return matrix.slice(headerIndex+1).filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()!=='')).map(row=>{
+  const detectedPlatform=detectPlatformFromMatrix(matrix,headerIndex,headers);
+  const accounts=matrix.slice(headerIndex+1).filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()!=='')).map(row=>{
     const obj={};headers.forEach((h,i)=>{if(h)obj[h]=row[i]??''});
     const username=firstValue(obj,['اسم المستخدم','username','user']);
     if(!username)return null;
@@ -492,6 +511,7 @@ function rowsToAccounts(matrix){
       source_status:status||null,source_updated_at:updated||null,active:!disabled,raw_data:obj
     };
   }).filter(Boolean);
+  return {accounts,detectedPlatform,headers};
 }
 async function parseImportFile(file){
   const ext=(file.name.split('.').pop()||'').toLowerCase();
@@ -513,7 +533,13 @@ async function importSources(){
   const platform=$('importPlatform').value;
   $('importBtn').disabled=true;msg('جاري التحقق من الملف…');
   try{
-    const accounts=await parseImportFile(file);
+    const parsed=await parseImportFile(file);
+    const accounts=parsed.accounts;
+    if(parsed.detectedPlatform&&parsed.detectedPlatform!==platform){
+      throw new Error(
+        'شكل هذا الملف يخص «'+platformLabel(parsed.detectedPlatform)+'» وليس «'+platformLabel(platform)+'». غيّر المنصة قبل التحديث.'
+      );
+    }
     const registration=await registerSourceImport(platform,file);
     if(registration?.status==='wrong_platform'){
       const existing=platformLabel(registration.existing_platform_key);
