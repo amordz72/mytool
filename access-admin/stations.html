@@ -120,8 +120,8 @@
 <section class="mt-card">
   <div class="mt-section-head" style="margin:0 0 8px">
     <div class="mt-section-copy">
-      <h2>عمليات AutoMix السابقة</h2>
-      <p>سجل التجارب السابقة فقط؛ زر العروض الحالي لا يستخدم AutoMix.</p>
+      <h2>عمليات Flexy السابقة</h2>
+      <p>سجل العمليات السابقة. زر «العروض» الحالي لا يستخدم AutoMix.</p>
     </div>
     <span id="jobCount" class="mt-chip muted">0</span>
   </div>
@@ -143,6 +143,36 @@ let recentJobs=[];
 let rechargeCards=[];
 let rechargeAttempts=[];
 let jobPollTimer=null;
+const OFFER_CACHE_KEY='mytool.flexy.offers.v1';
+
+function readOfferCache(){
+  try{
+    const raw=localStorage.getItem(OFFER_CACHE_KEY);
+    const parsed=raw?JSON.parse(raw):{};
+    return parsed&&typeof parsed==='object'?parsed:{};
+  }catch{
+    return {};
+  }
+}
+
+function cachedOffersForPhone(phone){
+  const cache=readOfferCache();
+  const row=cache[String(phone||'')];
+  if(!row||!Array.isArray(row.offers)||!row.offers.length)return null;
+  return row;
+}
+
+function saveOffersLocally(phone,offers){
+  if(!phone||!Array.isArray(offers)||!offers.length)return;
+  try{
+    const cache=readOfferCache();
+    cache[phone]={
+      offers,
+      saved_at:new Date().toISOString()
+    };
+    localStorage.setItem(OFFER_CACHE_KEY,JSON.stringify(cache));
+  }catch{}
+}
 
 function escapeHtml(value){
   return String(value??'').replace(/[&<>"']/g,c=>({
@@ -221,7 +251,7 @@ function hideMessage(){
 }
 
 
-function renderDiscoveryOffers(form,job){
+function renderDiscoveryOffers(form,job,source='network'){
   const box=form.querySelector('.offer-discovery-results');
   const offers=Array.isArray(job?.available_offers)?job.available_offers:[];
   const status=String(job?.status||'');
@@ -243,7 +273,10 @@ function renderDiscoveryOffers(form,job){
     groups.get(family).push(offer);
   });
 
-  box.innerHTML=[...groups.entries()].map(([family,items])=>{
+  const sourceLabel=source==='local'
+    ?'<div class="mt-meta" style="margin-bottom:6px">محفوظ محليًا على هذا الجهاز</div>'
+    :'';
+  box.innerHTML=sourceLabel+[...groups.entries()].map(([family,items])=>{
     return '<div class="discovery-family">'+
       '<h4>'+escapeHtml(family)+'</h4>'+
       items.map(item=>
@@ -280,7 +313,9 @@ async function pollOfferDiscovery(form,jobUuid,phone){
       offersButton.textContent='العروض — جاري القراءة';
     }else{
       offersButton.textContent='العروض';
-      renderDiscoveryOffers(form,job);
+      const discoveredOffers=Array.isArray(job.available_offers)?job.available_offers:[];
+      if(discoveredOffers.length)saveOffersLocally(phone,discoveredOffers);
+      renderDiscoveryOffers(form,job,'network');
       const prefix=state==='success'
         ?'اكتمل استكشاف العروض'
         :state==='unavailable'
@@ -528,6 +563,30 @@ function bindActions(){
   document.querySelectorAll('.flexy-live').forEach(form=>{
     const ordinary=form.querySelector('.flexy-ordinary');
     const offers=form.querySelector('.flexy-offers');
+    const phoneInput=form.querySelector('input[name="phone"]');
+    const resultsBox=form.querySelector('.offer-discovery-results');
+
+    phoneInput.addEventListener('input',()=>{
+      const phone=String(phoneInput.value||'').replace(/\D/g,'').slice(0,10);
+      if(phone.length!==10){
+        resultsBox.hidden=true;
+        resultsBox.innerHTML='';
+        return;
+      }
+
+      const cached=cachedOffersForPhone(phone);
+      if(!cached){
+        resultsBox.hidden=true;
+        resultsBox.innerHTML='';
+        return;
+      }
+
+      renderDiscoveryOffers(form,{
+        status:'success',
+        available_offers:cached.offers,
+        result_text:''
+      },'local');
+    });
 
     ordinary.addEventListener('click',()=>{
       const data=new FormData(form);
@@ -572,7 +631,7 @@ function bindActions(){
           job.reused?'نكمل نفس جلسة العروض':'تم فتح جلسة العروض',
           job.reused
             ?'كانت هناك عملية لنفس الرقم مازالت جارية؛ لم ننشئ عملية ثانية.'
-            :'Agent سيقرأ العروض فقط بدون تنفيذ.'
+            :'Agent سيقرأ العروض فقط. عند اكتمالها تُحفظ محليًا على هذا الجهاز.'
         );
 
         await pollOfferDiscovery(form,job.job_uuid,phone);
