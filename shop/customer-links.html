@@ -48,12 +48,12 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </section>
 
   <section class="card">
-    <div class="section-head"><div><h2>تحميل / تحديث المصادر</h2><div class="muted">الملف لا يُحفظ في GitHub؛ تُقرأ الحسابات ثم تُرسل البيانات المنظمة إلى MyTool.</div></div></div>
+    <div class="section-head"><div><h2>تحميل / تحديث المصادر</h2><div class="muted">الملف لا يُحفظ في GitHub؛ بعد التحديث يفحص MyTool الروابط تلقائيًا ويضع المرشحين بانتظار موافقتك.</div></div></div>
     <div class="toolbar">
       <div class="field"><label>المنصة</label><select id="importPlatform"><option value="tehna_pay">تهنى باي</option><option value="hanii_rohek">هني روحك</option><option value="other">منصة أخرى</option></select></div>
       <div class="field"><label>CSV / XLSX</label><input id="sourceFile" class="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
       <button id="importBtn" class="btn" type="button">تحديث المصادر</button>
-      <button id="smartBtn" class="btn secondary" type="button">اقتراح روابط ذكية</button>
+      <button id="smartBtn" class="btn secondary" type="button">إعادة الفحص</button>
     </div>
     <div id="offlineNote" class="offline-note" hidden>أنت Offline: القائمة المحفوظة متاحة، لكن الربط والاستيراد يحتاجان اتصالًا.</div>
   </section>
@@ -100,6 +100,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260918-admin-auth-2"></script>
+<script type="module" src="customer-links.js?v=20260918-auto-suggest-1"></script>
 </body>
 </html>
