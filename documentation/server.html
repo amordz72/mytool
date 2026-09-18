@@ -1,0 +1,27 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>السيرفر والاتصال — توثيق MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
+<header class="top"><div class="top-inner"><div class="brand"><a href="index.html">🧭 توثيق المشاريع</a><small>السيرفر والاتصال</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a></nav></div></header>
+<main class="wrap"><section class="hero"><h1>من يتصل بمن؟</h1><p>الكمبيوتر يفتح اتصالًا للخارج. لا نفتح Port في Windows ولا يحاول Supabase الوصول إلى localhost.</p></section>
+<section class="card"><h2>الحالة القديمة داخل Tehna Connect Core</h2><span class="status now">موجود الآن في الكود القديم</span><div class="flow">Laravel local
+    │ AGENT_BASE_URL
+    ▼
+http://127.0.0.1:8787
+    ▼
+Node Agent
+    ▼
+HiLink / USSD</div><p>هذا مناسب للتطوير المحلي، لكنه ليس مسار الإنترنت النهائي المقترح.</p></section>
+<section class="card"><h2>المسار المقترح</h2><span class="status plan">مخطط</span><div class="flow">MyTool
+  │
+  ▼
+Supabase / station-gateway
+  ▲
+  │ HTTPS outbound
+  ▼
+Windows Station
+  │
+  ├─ identity / heartbeat / jobs
+  └─ local core → adapter → HiLink → USSD</div><div class="callout">127.0.0.1 يبقى محليًا فقط. الـStation نفسه هو الذي يستطيع الوصول له، وليس Supabase.</div></section>
+<section class="card"><h2>العناوين</h2><div class="table-wrap"><table><thead><tr><th>العنوان</th><th>الاستعمال</th><th>الحالة</th></tr></thead><tbody>
+<tr><td dir="ltr">http://127.0.0.1:8787</td><td>Agent المحلي في tehna-connect-core</td><td><span class="status now">موجود</span></td></tr>
+<tr><td dir="ltr">https://wqyebqzbbpohbnznqdjj.supabase.co</td><td>مشروع Supabase الحالي لـMyTool</td><td><span class="status now">موجود</span></td></tr>
+<tr><td dir="ltr">.../functions/v1/station-gateway</td><td>باب Station الخارجي</td><td><span class="status plan">لم ينشأ بعد</span></td></tr>
+</tbody></table></div></section></main><script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
