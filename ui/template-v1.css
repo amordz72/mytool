@@ -37,7 +37,7 @@ body.mt-app{
   max-width:760px;
   min-width:0;
   margin:0 auto;
-  padding:10px 14px 96px;
+  padding:10px 14px 18px;
 }
 .mt-shell>*{min-width:0;max-width:100%}
 
@@ -370,47 +370,8 @@ body.mt-app{
 .mt-btn.ghost{border:1px solid var(--mt-line);background:#fff;color:#46627a}
 .mt-btn:disabled{opacity:.8}
 
-/* Mobile navigation */
-.mt-bottom-nav{
-  position:fixed;
-  z-index:50;
-  left:50%;
-  right:auto;
-  bottom:8px;
-  transform:translateX(-50%);
-  width:min(720px,calc(100vw - 18px));
-  max-width:720px;
-  display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:4px;
-  padding:7px;
-  border:1px solid var(--mt-line);
-  border-radius:20px;
-  background:rgba(255,255,255,.97);
-  box-shadow:0 10px 28px rgba(26,64,96,.15);
-  backdrop-filter:blur(14px);
-}
-.mt-bottom-nav a{
-  min-width:0;
-  min-height:52px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:3px;
-  overflow:hidden;
-  border-radius:14px;
-  color:#61788d;
-  text-decoration:none;
-  font-size:10px;
-  font-weight:800;
-  white-space:nowrap;
-}
-.mt-bottom-nav a span{font-size:19px;line-height:1}
-.mt-bottom-nav a.active{background:var(--mt-primary-soft);color:var(--mt-primary)}
-
 @media(max-width:600px){
-  .mt-shell{padding:6px 10px 90px}
+  .mt-shell{padding:6px 10px 12px}
   .mt-topbar{gap:8px;padding:9px 0 11px}
   .mt-brand{gap:7px}
   .mt-brand-mark{width:40px;height:40px;flex-basis:40px;border-radius:13px;font-size:20px}
@@ -434,7 +395,6 @@ body.mt-app{
   .mt-row{align-items:flex-start}
   .mt-status-stack{max-width:120px}
   .mt-actions{display:grid;grid-template-columns:1fr 1fr}
-  .mt-bottom-nav{width:calc(100vw - 12px);bottom:6px;padding:6px}
 }
 
 @media(max-width:390px){
