@@ -19,8 +19,12 @@
 .offer-discovery-results{margin-top:10px;border-top:1px solid #e2ebf2;padding-top:8px}
 .discovery-family{margin:8px 0;padding:9px;border:1px solid #e2ebf2;border-radius:12px;background:#fff}
 .discovery-family h4{margin:0 0 6px;font-size:13px}
-.discovery-offer{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid #f0f3f6;font-size:12px}
+.discovery-offer{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-top:1px solid #f0f3f6;font-size:12px;cursor:pointer;border-radius:10px;transition:.15s}
 .discovery-offer:first-of-type{border-top:0}
+.discovery-offer:hover,.discovery-offer:focus{background:#f3f8ff;outline:none}
+.discovery-offer.selected{background:#e8f3ff;box-shadow:inset 0 0 0 2px #2580d8}
+.discovery-offer .pick-mark{display:none;font-weight:900;color:#2580d8;margin-inline-start:6px}
+.discovery-offer.selected .pick-mark{display:inline}
 .pilot-job{margin:8px 0;padding:11px 12px;border:1px solid #e2ebf2;border-radius:14px;background:#fff}
 .pilot-job strong{font-size:13px}
 </style>
@@ -280,14 +284,57 @@ function renderDiscoveryOffers(form,job,source='network'){
     return '<div class="discovery-family">'+
       '<h4>'+escapeHtml(family)+'</h4>'+
       items.map(item=>
-        '<div class="discovery-offer">'+
-          '<span>'+escapeHtml(item.label||((item.amount??'')+' دج'))+'</span>'+
+        '<div class="discovery-offer" role="button" tabindex="0" '+
+          'data-family="'+escapeHtml(item.family||family)+'" '+
+          'data-network-index="'+escapeHtml(item.index??'')+'" '+
+          'data-amount="'+escapeHtml(item.amount??'')+'" '+
+          'data-label="'+escapeHtml(item.label||((item.amount??'')+' دج'))+'">'+
+          '<span><span class="pick-mark">✓</span>'+escapeHtml(item.label||((item.amount??'')+' دج'))+'</span>'+
           '<strong>'+escapeHtml(item.amount??'—')+' دج</strong>'+
         '</div>'
       ).join('')+
     '</div>';
   }).join('');
   box.hidden=false;
+
+  box.querySelectorAll('.discovery-offer').forEach(row=>{
+    const selectRow=()=>{
+      box.querySelectorAll('.discovery-offer').forEach(x=>x.classList.remove('selected'));
+      row.classList.add('selected');
+
+      const amountInput=form.querySelector('input[name="amount"]');
+      const selected={
+        family:row.dataset.family||'',
+        network_index:row.dataset.networkIndex||'',
+        amount:Number(row.dataset.amount||0)||null,
+        label:row.dataset.label||''
+      };
+
+      form.dataset.selectedFamily=selected.family;
+      form.dataset.selectedNetworkIndex=selected.network_index;
+      form.dataset.selectedAmount=selected.amount??'';
+      form.dataset.selectedLabel=selected.label;
+
+      if(amountInput&&selected.amount){
+        amountInput.value=String(selected.amount);
+      }
+
+      showMessage(
+        'تم اختيار العرض',
+        selected.label+
+          (selected.network_index?' — Index: '+selected.network_index:'')+
+          (selected.amount?' — '+selected.amount+' دج':'')
+      );
+    };
+
+    row.addEventListener('click',selectRow);
+    row.addEventListener('keydown',event=>{
+      if(event.key==='Enter'||event.key===' '){
+        event.preventDefault();
+        selectRow();
+      }
+    });
+  });
 }
 
 async function pollOfferDiscovery(form,jobUuid,phone){
@@ -567,6 +614,10 @@ function bindActions(){
     const resultsBox=form.querySelector('.offer-discovery-results');
 
     phoneInput.addEventListener('input',()=>{
+      form.dataset.selectedFamily='';
+      form.dataset.selectedNetworkIndex='';
+      form.dataset.selectedAmount='';
+      form.dataset.selectedLabel='';
       const phone=String(phoneInput.value||'').replace(/\D/g,'').slice(0,10);
       if(phone.length!==10){
         resultsBox.hidden=true;
