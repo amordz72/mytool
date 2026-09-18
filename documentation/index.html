@@ -1,0 +1,28 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>توثيق المشاريع — MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
+<header class="top"><div class="top-inner"><div class="brand"><a href="../">🧭 توثيق المشاريع</a><small>خريطة مرئية للمعمارية والكود</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a></nav></div></header>
+<main class="wrap"><section class="hero"><h1>مخطط Flexy داخل MyTool</h1><p>هذه الصفحات لا تنفذ شيئًا ماليًا. هدفها أن نرى التصميم الحقيقي قبل البرمجة، ونعرف أين توجد كل وظيفة وما الذي هو موجود أو معاد استخدامه أو مخطط.</p><div><span class="status now">موجود الآن</span><span class="status reuse">إعادة استخدام</span><span class="status plan">مخطط</span></div></section>
+<section class="card"><h2>الخريطة العامة</h2><div class="flow">MyTool UI
+   │
+   │ create/view jobs
+   ▼
+Supabase
+   ├─ Database: stations / devices / jobs / events
+   └─ Edge Function: station-gateway
+             ▲
+             │ HTTPS outbound
+             ▼
+Trusted Windows Station
+   ├─ identity + heartbeat + job client
+   ├─ adapter / HiLink / USSD core
+   └─ Network IP Watcher safety
+             │
+             ▼
+          Modem / SIM</div></section>
+<section class="grid">
+<article class="card"><h3>MyTool</h3><span class="status now">موجود الآن</span><p>الواجهة المركزية. نضيف داخلها Flexy وStations بدون إنشاء موقع إدارة جديد.</p><a href="server.html">كيف تتصل الأجزاء ←</a></article>
+<article class="card"><h3>Supabase</h3><span class="status now">موجود</span><span class="status plan">station-gateway جديد</span><p>يصبح باب الإنترنت المؤقت/المركزي للـStation ويحفظ الحالة المتغيرة والـJobs.</p><a href="supabase.html">تفاصيل البوابة ←</a></article>
+<article class="card"><h3>Windows Station</h3><span class="status reuse">إعادة استخدام</span><p>هوية الكمبيوتر + الاتصال الخارجي + قلب HiLink/USSD. لا Laravel محلي مطلوب في التصميم النهائي المقترح.</p><a href="station.html">تفاصيل Station ←</a></article>
+<article class="card"><h3>Catalog</h3><span class="status plan">ملفات ثابتة</span><p>العروض والـnetwork index وقواعد التنفيذ المثبتة تحفظ كملفات versioned بدل جداول غير ضرورية.</p><a href="catalog.html">تفاصيل الكتالوج ←</a></article>
+</section>
+<section class="card"><h2>قاعدة العمل</h2><div class="callout">MyTool يبقى المسار الرئيسي. Flexy مسار دراسة وتصميم موازٍ. هذه الأداة تساعدنا نراجع المخطط بصريًا قبل نقل أي منطق للإنتاج.</div></section></main>
+<script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
