@@ -1,30 +1,17 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>توثيق المشاريع — MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
-<header class="top"><div class="top-inner"><div class="brand"><a href="../">🧭 توثيق المشاريع</a><small>خريطة مرئية للمعمارية والكود</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a></nav></div></header>
-<main class="wrap"><section class="hero"><h1>مخطط Flexy داخل MyTool</h1><p>هذه الصفحات لا تنفذ شيئًا ماليًا. هدفها أن نرى التصميم الحقيقي قبل البرمجة، ونعرف أين توجد كل وظيفة وما الذي هو موجود أو معاد استخدامه أو مخطط.</p><div><span class="status now">موجود الآن</span><span class="status reuse">إعادة استخدام</span><span class="status plan">مخطط</span></div></section>
-<section class="card"><h2>الخريطة العامة</h2><div class="flow">MyTool UI
-   │
-   │ create/view jobs
-   ▼
-Supabase
-   ├─ Database: stations / devices / jobs / events
-   └─ Edge Function: station-gateway
-             ▲
-             │ HTTPS outbound
-             ▼
-Trusted Windows Station
-   ├─ identity + heartbeat + job client
-   ├─ adapter / HiLink / USSD core
-   └─ Network IP Watcher safety
-             │
-             ▼
-          Modem / SIM</div></section>
-<section class="grid">
-<article class="card"><h3>MyTool</h3><span class="status now">موجود الآن</span><p>الواجهة المركزية. نضيف داخلها Flexy وStations بدون إنشاء موقع إدارة جديد.</p><a href="server.html">كيف تتصل الأجزاء ←</a></article>
-<article class="card"><h3>Template V1</h3><span class="status plan">مرجع بصري معتمد</span><p>القالب المشترك الجديد: Header، Cards، Status Chips، Alerts، Buttons وBottom Navigation.</p><a href="template.html">فتح معاينة القالب ←</a></article>
-<article class="card"><h3>Supabase</h3><span class="status now">موجود</span><span class="status plan">station-gateway جديد</span><p>يصبح باب الإنترنت المؤقت/المركزي للـStation ويحفظ الحالة المتغيرة والـJobs.</p><a href="supabase.html">تفاصيل البوابة ←</a></article>
-<article class="card"><h3>Station Connect</h3><span class="status now">مطبق الآن</span><p>المرجع من أصل المعضلة: لماذا الموقع لا يصل للمودم مباشرة، كيف يفصل Agent عن السيرفر، ثم خطوات GitHub → PENDING → ONLINE/OFFLINE.</p><a href="station.html">فتح المرجع الكامل ←</a></article>
-<article class="card"><h3>Catalog</h3><span class="status plan">ملفات ثابتة</span><p>العروض والـnetwork index وقواعد التنفيذ المثبتة تحفظ كملفات versioned بدل جداول غير ضرورية.</p><a href="catalog.html">تفاصيل الكتالوج ←</a></article>
-<article class="card"><h3>Shop — توثيق مرئي</h3><span class="status now">Visual V1 مبني</span><span class="status warn">مراجعة عمر</span><p>دورة العامل والإدارة والمال والإغلاق موثقة بصريًا ومربوطة بالشاشات الحقيقية، مع فصل واضح بين الواقع الحالي والتدفق المقترح قبل أي إصلاح تشغيلي.</p><a href="shop.html">فتح توثيق المحل V1 ←</a></article>
-</section>
-<section class="card"><h2>قاعدة العمل</h2><div class="callout">MyTool يبقى المسار الرئيسي. Flexy مسار دراسة وتصميم موازٍ. هذه الأداة تساعدنا نراجع المخطط بصريًا قبل نقل أي منطق للإنتاج.</div></section></main>
-<script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>توثيق MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation"><header class="top"><div class="top-inner"><div class="brand"><a href="../">🧭 توثيق MyTool</a><small>الرئيسية المركزية للتوثيق</small></div></div></header><main class="wrap"><section class="hero"><h1>رئيسية التوثيق</h1><p>هنا تبدأ فقط. كل مشروع أو Module يفتح نافذة توثيق خاصة به، ثم كل ميزة داخله لها صفحة مستقلة وحالة مستقلة.</p><div><span class="status now">Documentation Home</span><span class="status reuse">Feature-based</span></div></section><section class="grid">
+<article class="card"><h3>Shop / المحل</h3><span class="status now">نشط</span><p>توثيق كل ميزة في Shop: الحالة، العامل، البيع، الشراء، الجرد، الأموال، الإغلاق والإدارة.</p><a href="shop/">فتح توثيق Shop ←</a></article>
+<article class="card"><h3>Station Connect</h3><span class="status now">مرجع موجود</span><p>من GitHub والتثبيت حتى Agent وPENDING/ONLINE/OFFLINE.</p><a href="station.html">فتح Station ←</a></article>
+<article class="card"><h3>Server / الاتصال</h3><p>كيف تتصل أجزاء السيرفر والعميل والخدمات.</p><a href="server.html">فتح السيرفر ←</a></article>
+<article class="card"><h3>Supabase</h3><p>بوابة البيانات والخدمات المشتركة.</p><a href="supabase.html">فتح Supabase ←</a></article>
+<article class="card"><h3>Core</h3><p>الكود والمنطق المشترك القابل لإعادة الاستخدام.</p><a href="core.html">فتح Core ←</a></article>
+<article class="card"><h3>Catalog / التنفيذ</h3><p>الكتالوج وقواعد التنفيذ المثبتة.</p><a href="catalog.html">فتح Catalog ←</a></article>
+<article class="card"><h3>Template</h3><p>مرجع القالب المشترك والتنقل والحالات البصرية.</p><a href="template.html">فتح Template ←</a></article>
+</section><section class="card"><h2>قاعدة التوثيق</h2><div class="flow">Documentation Home
+  ↓
+Module Hub
+  ↓
+Feature Documentation
+  ├─ Current Status
+  ├─ Flow
+  ├─ Source
+  └─ Review / Decision</div><div class="callout">لا نجمع كل تفاصيل المشروع في صفحة طويلة واحدة. الصفحة الرئيسية فهرس، والميزة هي وحدة التوثيق الأساسية.</div></section></main><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
