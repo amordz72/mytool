@@ -161,7 +161,7 @@
     const workerForm=ref({username:'',nickname:'',phone:'',password:'',staff_id:'',is_test:false,can_sell:true,can_view_stock:true,can_inventory:false,can_manage_products:false,can_view_sales:false,can_record_money:false})
     const adminSessionHours=ref(clampHours(localStorage.getItem(ADMIN_SESSION_HOURS_KEY)||24))
     const adminDataMode=ref(localStorage.getItem(ADMIN_DATA_MODE_KEY)==='test'?'test':'real')
-    const authV2Enabled=new URLSearchParams(location.search).get('authv2')==='1'
+    const authV2Enabled=new URLSearchParams(location.search).get('authv2')==='1'||sessionStorage.getItem('mytool_auth_v2_preview')==='1'
     const deviceRequests=ref([]),deviceBusy=ref(false),deviceMessage=ref('')
 
     const userMode=computed(()=>session.value?'admin':(workerToken.value?'worker':'none'))
