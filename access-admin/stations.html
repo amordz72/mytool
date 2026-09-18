@@ -196,6 +196,11 @@ function hardwareSection(row){
     const simUuid=item.sim_uuid||'';
     const numberValue=item.msisdn||'';
     const pinLabel=item.has_pin?'PIN محفوظ':'PIN غير محفوظ';
+    const balanceKnown=item.balance_amount!==null&&item.balance_amount!==undefined&&item.balance_amount!=='';
+    const balanceValue=balanceKnown
+      ?Number(item.balance_amount).toLocaleString('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2})+' دج'
+      :(item.balance_raw?String(item.balance_raw):'لم يُفحص بعد');
+    const balanceChecked=item.balance_checked_at?fmtDate(item.balance_checked_at):'—';
     const identity=[
       item.imei?'IMEI: '+escapeHtml(item.imei):'',
       item.serial_number?'Serial: '+escapeHtml(item.serial_number):'',
@@ -213,6 +218,14 @@ function hardwareSection(row){
         '<br>HiLink: '+escapeHtml(item.modem_ip||'—')+
         '<br>نوع الشريحة: '+escapeHtml(item.sim_type||'mobilis-sama')+
       '</div>'+
+      (item.sim_type==='mobilis-sama'
+        ?'<div class="mt-alert" style="margin:10px 0">'+
+          '<div class="mt-alert-icon" aria-hidden="true">💰</div>'+
+          '<div class="mt-alert-copy"><h3>الرصيد: '+escapeHtml(balanceValue)+'</h3>'+
+          '<p>آخر فحص: '+escapeHtml(balanceChecked)+'</p></div>'+
+          '<button class="mt-btn secondary refresh-balance" type="button" data-sim-uuid="'+escapeHtml(simUuid)+'">تحديث الرصيد</button>'+
+        '</div>'
+        :'')+
       '<form class="sim-settings" data-sim-uuid="'+escapeHtml(simUuid)+'">'+
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">'+
           '<label class="mt-search"><input name="msisdn" inputmode="numeric" maxlength="10" placeholder="رقم الشريحة 10 أرقام" value="'+escapeHtml(numberValue)+'"></label>'+
@@ -231,7 +244,7 @@ function pilotSection(row){
   const items=hardwareByStation[row.station_uuid]||[];
   const ready=String(row.status||'').toLowerCase()==='approved'
     && row.online
-    && items.some(item=>item.sim_uuid&&item.has_pin);
+    && items.some(item=>item.sim_uuid&&item.sim_type==='mobilis-sama'&&item.has_pin);
 
   if(!ready)return '';
 
@@ -338,6 +351,51 @@ function bindActions(){
         showMessage('تعذر اعتماد الكمبيوتر',error?.message||'حدث خطأ غير متوقع.','danger');
         button.disabled=false;
         button.textContent='اعتماد الكمبيوتر';
+      }
+    });
+  });
+
+  document.querySelectorAll('.refresh-balance').forEach(button=>{
+    button.addEventListener('click',async()=>{
+      const simUuid=button.dataset.simUuid;
+      if(!simUuid)return;
+      const stationCard=button.closest('[data-station-uuid]');
+      const stationUuid=stationCard?.dataset?.stationUuid;
+      const before=(hardwareByStation[stationUuid]||[]).find(x=>x.sim_uuid===simUuid)?.balance_checked_at||null;
+
+      button.disabled=true;
+      button.textContent='جاري الفحص…';
+      hideMessage();
+
+      try{
+        const {error}=await supabase.rpc('station_connect_admin_queue_balance',{p_sim_uuid:simUuid});
+        if(error)throw error;
+        showMessage('تم طلب الرصيد','Agent سيقرأ رصيد SAMA الآن عبر *222#.');
+
+        let updated=false;
+        for(let attempt=0;attempt<12;attempt++){
+          await new Promise(resolve=>setTimeout(resolve,1500));
+          await loadHardware();
+          const current=(hardwareByStation[stationUuid]||[]).find(x=>x.sim_uuid===simUuid);
+          if(current?.balance_checked_at && current.balance_checked_at!==before){
+            render();
+            updated=true;
+            const value=current.balance_amount!==null&&current.balance_amount!==undefined
+              ?Number(current.balance_amount).toLocaleString('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2})+' دج'
+              :(current.balance_raw||'تم استلام الرد الخام');
+            showMessage('تم تحديث الرصيد',String(value));
+            break;
+          }
+        }
+
+        if(!updated){
+          render();
+          showMessage('الطلب ما زال قيد التنفيذ','اضغط تحديث بعد لحظات إذا لم يظهر الرصيد.');
+        }
+      }catch(error){
+        showMessage('تعذر فحص الرصيد',error?.message||'حدث خطأ غير متوقع.','danger');
+        button.disabled=false;
+        button.textContent='تحديث الرصيد';
       }
     });
   });
