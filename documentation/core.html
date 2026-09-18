@@ -1,0 +1,13 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>خريطة الكود — توثيق MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
+<header class="top"><div class="top-inner"><div class="brand"><a href="index.html">🧭 توثيق المشاريع</a><small>الكود المعاد استخدامه</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a></nav></div></header>
+<main class="wrap"><section class="hero"><h1>من أين نأخذ كل وظيفة؟</h1><p>الهدف أن لا نعيد كتابة الأشياء التي اختبرناها أو صممناها سابقًا.</p></section>
+<section class="card"><div class="table-wrap"><table><thead><tr><th>الوظيفة</th><th>المصدر</th><th>ملف/مسار مهم</th><th>ماذا نفعل؟</th></tr></thead><tbody>
+<tr><td>UUID/Secret/DPAPI/Fingerprint</td><td>tehnapay-connect</td><td dir="ltr">apps/agent/src/identity.js</td><td><span class="status reuse">نقل/تكييف</span></td></tr>
+<tr><td>Enroll/Status/Heartbeat</td><td>tehnapay-connect</td><td dir="ltr">station-runtime.js + laravel-client.js</td><td><span class="status reuse">نغير endpoint</span></td></tr>
+<tr><td>Adapters</td><td>tehna-connect-core</td><td dir="ltr">core/agent/src/adapters.js</td><td><span class="status reuse">إعادة استخدام</span></td></tr>
+<tr><td>HiLink probe</td><td>tehna-connect-core</td><td dir="ltr">core/agent/src/chain.js + hilink.js</td><td><span class="status reuse">إعادة استخدام</span></td></tr>
+<tr><td>USSD session</td><td>tehna-connect-core</td><td dir="ltr">core/agent/src/ussd.js</td><td><span class="status reuse">إعادة استخدام</span></td></tr>
+<tr><td>Windows IPv4 safety</td><td>network-ip-watcher</td><td dir="ltr">mapping + status contract</td><td><span class="status reuse">ربط لاحق</span></td></tr>
+<tr><td>واجهة الإدارة</td><td>MyTool</td><td dir="ltr">Shared Template / Stations</td><td><span class="status plan">واجهة جديدة</span></td></tr>
+</tbody></table></div></section>
+<section class="card"><h2>ما لا ننقله</h2><ul><li>لا ننقل واجهات Laravel/Filament القديمة.</li><li>لا ننقل قواعد بيانات Catalog كاملة إذا كانت القيم ثابتة.</li><li>لا نعيد تسمية أو نسخ مشروع Core كامل فقط للحصول على أربع ملفات منطقية.</li><li>لا نسمح للـAgent باتخاذ قرارات أسعار أو Routing تجاري.</li></ul></section></main><script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
