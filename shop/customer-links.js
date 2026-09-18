@@ -10,6 +10,8 @@ const norm=v=>String(v??'').trim().toLowerCase();
 
 let me=null,sources=[],parties=[],suggestions=[],page=1;
 let confirmResolve=null;
+const selectedSources=new Set();
+let currentPageIds=[];
 
 function msg(text,kind='info'){
   $('message').textContent=text;
@@ -107,6 +109,24 @@ function renderMetrics(){
   $('mLinked').textContent=sources.filter(x=>x.link_status==='linked').length;
   $('mConflict').textContent=sources.filter(x=>x.link_status==='conflict').length;
 }
+function renderBulk(){
+  for(const id of [...selectedSources]){
+    if(!sources.some(s=>Number(s.id)===Number(id)))selectedSources.delete(id);
+  }
+  const selected=sources.filter(s=>selectedSources.has(Number(s.id)));
+  $('selectedCount').textContent=selected.length+' محدد';
+  $('bulkBar').hidden=selected.length<2;
+
+  const seen=new Set();
+  const options=['<option value="">أول حساب محدد</option>'];
+  for(const s of selected){
+    const pid=Number(s.linked_party_id||0);
+    if(!pid||seen.has(pid))continue;
+    seen.add(pid);
+    options.push('<option value="'+pid+'">'+esc(s.linked_party_name||('عميل #'+pid))+'</option>');
+  }
+  $('bulkTarget').innerHTML=options.join('');
+}
 function renderSources(){
   const list=filteredSources();
   const pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
@@ -114,6 +134,7 @@ function renderSources(){
   if(page<1)page=1;
   const start=(page-1)*PAGE_SIZE;
   const chunk=list.slice(start,start+PAGE_SIZE);
+  currentPageIds=chunk.map(x=>Number(x.id));
   $('pageText').textContent='صفحة '+page+' من '+pages+' · '+list.length+' حساب';
   $('prevPage').disabled=page<=1;
   $('nextPage').disabled=page>=pages;
@@ -135,8 +156,9 @@ function renderSources(){
     const primaryActions=s.link_status==='linked'
       ? '<div class="actions"><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">تغيير الربط يدويًا</button>'+unlink+'</div>'
       : '<div class="actions"><button class="btn" data-create-source="'+s.id+'" type="button">إنشاء كعميل جديد</button><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">ربط يدوي</button></div>';
-    return '<div class="source-card" data-source-card="'+s.id+'">'+
-      '<div class="source-top"><div><div class="name">'+esc(name)+'</div><div class="username">'+esc(s.username)+'</div></div>'+
+    const checked=selectedSources.has(Number(s.id));
+    return '<div class="source-card'+(checked?' selected':'')+'" data-source-card="'+s.id+'">'+
+      '<div class="source-top"><label class="source-select"><input type="checkbox" data-select-source="'+s.id+'" '+(checked?'checked':'')+'><span><div class="name">'+esc(name)+'</div><div class="username">'+esc(s.username)+'</div></span></label>'+
       '<div class="badges"><span class="badge platform">'+esc(platformLabel(s.platform_key))+'</span><span class="badge '+esc(s.link_status)+'">'+esc(statusLabel(s.link_status))+'</span></div></div>'+
       (contactLine(s)?'<div class="meta">'+contactLine(s)+'</div>':'')+
       linkedLine+
@@ -144,6 +166,13 @@ function renderSources(){
       '</div>';
   }).join('');
 
+  document.querySelectorAll('[data-select-source]').forEach(input=>input.onchange=()=>{
+    const id=Number(input.dataset.selectSource);
+    if(input.checked)selectedSources.add(id);else selectedSources.delete(id);
+    const card=document.querySelector('[data-source-card="'+id+'"]');
+    if(card)card.classList.toggle('selected',input.checked);
+    renderBulk();
+  });
   document.querySelectorAll('[data-show-manual-link]').forEach(b=>b.onclick=()=>{
     const box=document.querySelector('[data-manual-link-box="'+b.dataset.showManualLink+'"]');
     if(box)box.hidden=!box.hidden;
@@ -197,7 +226,7 @@ function renderParties(){
   document.querySelectorAll('[data-party-save]').forEach(b=>b.onclick=()=>saveParty(Number(b.dataset.partySave)));
 }
 function renderAll(){
-  renderMetrics();renderSuggestions();renderSources();renderParties();renderConnectivity();
+  renderMetrics();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();
 }
 async function identify(){
   if(!navigator.onLine){
@@ -229,6 +258,42 @@ async function load(){
   saveCache();renderAll();
   msg('تم تحديث دليل العملاء والروابط.','ok');
 }
+async function mergeSelectedSources(){
+  if(!navigator.onLine)return msg('الدمج يحتاج اتصالًا.','warn');
+  const ids=[...selectedSources];
+  if(ids.length<2)return msg('حدد حسابين على الأقل.','error');
+  const target=Number($('bulkTarget').value||0)||null;
+  const selected=sources.filter(s=>selectedSources.has(Number(s.id)));
+  const names=selected.slice(0,4).map(s=>s.display_name||s.username).join('، ');
+  const more=selected.length>4?' +'+(selected.length-4)+' أخرى':'';
+  const ok=await askConfirm(
+    'دمج '+selected.length+' حساب',
+    'سيتم اعتبار الحسابات المحددة لنفس العميل. '+names+more+'. يمكن تعديل الروابط لاحقًا من سجل الربط.',
+    'دمج المحدد'
+  );
+  if(!ok)return;
+
+  $('mergeSelected').disabled=true;
+  const {data,error}=await supabase.rpc('admin_customer_merge_selected_sources',{
+    p_source_account_ids:ids,
+    p_target_party_id:target
+  });
+  $('mergeSelected').disabled=false;
+  if(error)return msg('تعذر الدمج: '+safeError(error),'error');
+
+  selectedSources.clear();
+  await generateSuggestions({silent:true});
+  await load();
+  msg('تم دمج '+Number(data?.selected||ids.length)+' حساب تحت «'+(data?.target_party_name||'العميل الموحد')+'».','ok');
+}
+
+async function autoBootstrap(platform=null){
+  if(!navigator.onLine)return null;
+  const {data,error}=await supabase.rpc('admin_customer_auto_bootstrap_sources',{p_platform_key:platform});
+  if(error)throw error;
+  return data;
+}
+
 async function linkSource(sourceId){
   if(!navigator.onLine)return msg('الربط يحتاج اتصالًا.','warn');
   const sel=document.querySelector('[data-party-select="'+sourceId+'"]');
@@ -400,9 +465,10 @@ async function importSources(){
       updated+=Number(data?.updated||0);
     }
     $('sourceFile').value='';
+    const boot=await autoBootstrap(platform);
     const smart=await generateSuggestions({silent:true});
     await load();
-    msg('تم تحديث '+processed+' حساب: جديد '+inserted+'، محدث '+updated+'. وفُحصت الروابط تلقائيًا'+(smart?'؛ بانتظار الموافقة '+Number(smart.pending||0)+'.':'') ,'ok');
+    msg('تم تحديث '+processed+' حساب؛ ربط أولي تلقائي '+Number(boot?.created||0)+'، وبانتظار مراجعة دمج '+Number(smart?.pending||0)+'.','ok');
   }catch(error){
     msg('تعذر الاستيراد: '+safeError(error),'error');
   }finally{
@@ -422,6 +488,9 @@ async function createManual(){
 }
 
 $('toggleManual').onclick=()=>{$('manualBox').hidden=!$('manualBox').hidden};
+$('selectPage').onclick=()=>{currentPageIds.forEach(id=>selectedSources.add(id));renderSources();renderBulk()};
+$('clearSelected').onclick=()=>{selectedSources.clear();renderSources();renderBulk()};
+$('mergeSelected').onclick=mergeSelectedSources;
 $('manualSave').onclick=createManual;
 $('importBtn').onclick=importSources;
 $('smartBtn').onclick=generateSuggestions;
@@ -436,6 +505,11 @@ window.addEventListener('offline',()=>{renderConnectivity();msg('انقطع ال
 (async()=>{
   try{
     await identify();
+    if(navigator.onLine){
+      msg('جاري تجهيز الربط الأولي تلقائيًا…');
+      await autoBootstrap(null);
+      await generateSuggestions({silent:true});
+    }
     await load();
   }catch(error){
     if(!navigator.onLine&&loadCache())return;
