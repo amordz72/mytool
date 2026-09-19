@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f5f9fc">
+<title>سجل USB والأجهزة — MyTool</title>
+<link rel="stylesheet" href="../ui/template-v1.css">
+<link rel="stylesheet" href="../mytool-bottom-nav.css">
+<style>
+[hidden]{display:none!important}
+.device-grid{display:grid;gap:10px}
+.device-actions{display:flex;gap:8px;flex-wrap:wrap}
+.device-id{direction:ltr;text-align:right;word-break:break-all}
+.device-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
+.device-summary .mt-card{padding:12px;text-align:center}
+.device-summary strong{display:block;font-size:20px}
+.device-summary span{font-size:11px;color:#6b7f93}
+@media(max-width:680px){.device-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.device-summary .mt-card{padding:9px 5px}.device-summary strong{font-size:18px}.device-actions .mt-btn{flex:1}}
+</style>
+<script src="../auth-guard.js?v=20260919-personal-persist1" data-access="admin"></script>
+</head>
+<body class="mt-app" data-mytool-app="access-admin">
+<main class="mt-shell">
+<header class="mt-topbar">
+  <div class="mt-brand"><div class="mt-brand-mark">M</div><div class="mt-brand-copy"><strong>MyTool</strong><small>إدارة النظام</small></div></div>
+  <div class="mt-user"><div class="mt-user-copy"><strong>مدير النظام</strong><small>USB / Modem Registry</small></div><div class="mt-avatar">A</div></div>
+</header>
+
+<section class="mt-page-head">
+  <div class="mt-page-title"><div class="mt-page-icon">🔌</div><div class="mt-page-copy"><h1>سجل USB والأجهزة</h1><p>مرجع سريع: أي مودم مربوط بأي Station وأي شريحة.</p></div></div>
+  <button id="refreshBtn" class="mt-btn secondary mt-page-action" type="button">تحديث</button>
+</section>
+
+<div class="device-actions">
+  <a class="mt-btn secondary" href="stations.html">المحطات</a>
+  <a class="mt-btn secondary" href="sims.html">سجل الشرائح</a>
+</div>
+
+<label class="mt-search" style="margin-top:12px">
+  <span class="mt-search-icon">⌕</span>
+  <input id="deviceSearch" placeholder="ابحث: Station، USB، IMEI، Serial، رقم الشريحة..." autocomplete="off">
+</label>
+
+<div class="device-summary">
+  <div class="mt-card"><strong id="deviceCount">0</strong><span>USB / Modem</span></div>
+  <div class="mt-card"><strong id="stationCount">0</strong><span>Stations</span></div>
+  <div class="mt-card"><strong id="linkedSimCount">0</strong><span>شرائح مربوطة</span></div>
+</div>
+
+<div id="pageMessage" class="mt-alert" hidden><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3 id="messageTitle"></h3><p id="messageText"></p></div></div>
+
+<section id="deviceList" class="device-grid"><div class="mt-card"><div class="mt-meta">جاري تحميل الأجهزة…</div></div></section>
+<div id="emptyState" class="mt-alert" hidden><div class="mt-alert-icon">🔌</div><div class="mt-alert-copy"><h3>لا توجد أجهزة مطابقة</h3><p>شغّل Station Agent أو غيّر عبارة البحث.</p></div></div>
+</main>
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
+const $=id=>document.getElementById(id);
+let stations=[],devices=[];
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function msg(title,text,type=''){const box=$('pageMessage');box.className='mt-alert'+(type?' '+type:'');$('messageTitle').textContent=title;$('messageText').textContent=text;box.hidden=false;}
+function clearMsg(){$('pageMessage').hidden=true;}
+function kindLabel(v){const x=String(v||'').toLowerCase();if(x==='mobilis-sama')return 'Mobilis SAMA';if(x==='mobilis-arsselli')return 'Mobilis Arsselli';return v||'غير محدد';}
+function stationStatus(row){if(String(row.status||'').toLowerCase()!=='approved')return 'غير معتمد';return row.online?'ONLINE':'OFFLINE';}
+
+async function requireAdmin(){
+  const {data}=await supabase.auth.getSession();
+  if(!data.session)throw new Error('جلسة الإدارة غير متاحة. افتح MyTool وسجّل دخول الإدارة.');
+}
+
+async function load(){
+  const btn=$('refreshBtn');btn.disabled=true;clearMsg();
+  try{
+    await requireAdmin();
+    const stationResult=await supabase.rpc('station_connect_admin_list');
+    if(stationResult.error)throw stationResult.error;
+    stations=Array.isArray(stationResult.data)?stationResult.data:[];
+    const groups=await Promise.all(stations.map(async station=>{
+      if(String(station.status||'').toLowerCase()!=='approved')return [];
+      const hardware=await supabase.rpc('station_connect_admin_hardware',{p_station_uuid:station.station_uuid});
+      if(hardware.error)throw hardware.error;
+      return (Array.isArray(hardware.data)?hardware.data:[]).map((item,index)=>({...item,_station:station,_index:index}));
+    }));
+    devices=groups.flat();
+    render();
+  }catch(e){
+    stations=[];devices=[];render();
+    msg('تعذر تحميل سجل الأجهزة',e?.message||'حدث خطأ غير متوقع.','danger');
+  }finally{btn.disabled=false;}
+}
+
+function card(item){
+  const station=item._station||{};
+  const title=item.device_name||item.imei||item.serial_number||item.modem_ip||'USB Modem';
+  const simNumber=item.msisdn||'بدون رقم';
+  const simType=kindLabel(item.sim_type);
+  const ids=[
+    item.imei?'IMEI: '+item.imei:'',
+    item.serial_number?'Serial: '+item.serial_number:'',
+    item.modem_ip?'IP: '+item.modem_ip:'',
+    item.iccid?'ICCID: '+item.iccid:'',
+    item.imsi?'IMSI: '+item.imsi:''
+  ].filter(Boolean);
+  const search=[
+    title,station.computer_name,station.station_uuid,stationStatus(station),
+    item.imei,item.serial_number,item.modem_ip,item.iccid,item.imsi,item.msisdn,item.sim_type
+  ].filter(Boolean).join(' ').toLowerCase();
+  return '<article class="mt-card device-entry" data-search="'+esc(search)+'">'+
+    '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">🔌</div><div class="mt-row-copy">'+
+      '<h3>'+esc(title)+'</h3>'+
+      '<div class="mt-meta">Station: '+esc(station.computer_name||'—')+' · '+esc(stationStatus(station))+
+      '<br>الشريحة: '+esc(simNumber)+' · '+esc(simType)+'</div>'+
+    '</div></div><span class="mt-chip '+(station.online?'success':'muted')+'">'+esc(station.online?'ONLINE':'OFFLINE')+'</span></div>'+
+    (ids.length?'<div class="mt-meta device-id" style="margin-top:9px">'+ids.map(esc).join('<br>')+'</div>':'')+
+  '</article>';
+}
+
+function render(){
+  $('deviceCount').textContent=String(devices.length);
+  $('stationCount').textContent=String(stations.filter(s=>String(s.status||'').toLowerCase()==='approved').length);
+  $('linkedSimCount').textContent=String(devices.filter(d=>d.sim_uuid||d.msisdn).length);
+  $('deviceList').innerHTML=devices.map(card).join('');
+  applySearch();
+}
+
+function applySearch(){
+  const q=$('deviceSearch').value.trim().toLowerCase();let visible=0;
+  document.querySelectorAll('.device-entry').forEach(el=>{const ok=!q||(el.dataset.search||'').includes(q)||el.textContent.toLowerCase().includes(q);el.hidden=!ok;if(ok)visible++;});
+  $('emptyState').hidden=visible!==0;
+}
+
+$('deviceSearch').addEventListener('input',applySearch);
+$('refreshBtn').addEventListener('click',load);
+load();
+</script>
+<script src="../ui/template-v1.js"></script>
+<script src="../mytool-bottom-nav.js" data-root="../" data-app="access-admin"></script>
+</body>
+</html>
