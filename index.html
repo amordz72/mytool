@@ -83,7 +83,11 @@
 
   <main id="dashboard" class="app" hidden>
     <div class="sessionbar"><div><span class="mode" id="sessionMode"></span><div class="small" id="sessionExpiry"></div></div><button id="logoutBtn" class="btn danger" type="button">خروج</button></div>
-    <section class="hero"><h1>MyTool</h1><p id="welcomeText">أدوات العمل اليومية في مكان واحد.</p></section>
+    <div class="dashboard-controls">
+      <button id="dashboardOrderBtn" class="btn secondary" type="button">تعديل الترتيب</button>
+      <button id="dashboardOrderResetBtn" class="btn secondary" type="button" hidden>الترتيب الافتراضي</button>
+      <span id="dashboardOrderHint" class="small" hidden>↑ ↓ يحفظ الترتيب تلقائيًا على هذا الجهاز.</span>
+    </div>
 
     <div id="adminTools">
       <h2 class="section-title">البرامج الأساسية</h2><section class="grid core-grid" data-dashboard-section="core">
@@ -99,7 +103,8 @@
         <a id="usersAdminCard" class="card" href="shop/users.html"><div class="icon">👥</div><h2>المستخدمون</h2><p>إدارة حسابات العامل والدخول المحلي وصلاحيات المحل من نفس النظام الحقيقي.</p><span class="badge">REAL</span></a>
         <a class="card" href="shop/cash.html"><div class="icon">💵</div><h2>أماكن الأموال</h2><p>متابعة السيولة حسب مكانها: الكيس، الخزنة، عند شخص، البنك، أو قيد التحويل.</p><span class="badge">السيولة الآن</span></a>
         <a class="card" href="documentation/"><div class="icon">🧭</div><h2>مخطط المشاريع</h2><p>Documentation مرئية لمعمارية MyTool وFlexy والمراجع المرتبطة.</p><span class="badge">قراءة فقط</span></a>
-        <a class="card" href="access-admin/stations.html"><div class="icon">🖥️</div><h2>المحطات</h2><p>اعتماد أجهزة Windows ومتابعة حالة اتصال Station Agent.</p><span class="badge">Flexy</span></a>\n        <a class="card" href="access-admin/devices.html"><div class="icon">🔌</div><h2>سجل USB والأجهزة</h2><p>اعرف عدد المودمات وكل USB مربوط بأي Station وأي شريحة وابحث عنه بسرعة.</p><span class="badge">USB / Modem</span></a>
+        <a class="card" href="access-admin/stations.html"><div class="icon">🖥️</div><h2>المحطات</h2><p>اعتماد أجهزة Windows ومتابعة حالة اتصال Station Agent.</p><span class="badge">Flexy</span></a>
+        <a class="card" href="access-admin/devices.html"><div class="icon">🔌</div><h2>سجل USB والأجهزة</h2><p>اعرف عدد المودمات وكل USB مربوط بأي Station وأي شريحة وابحث عنه بسرعة.</p><span class="badge">USB / Modem</span></a>
         <a class="card" href="access-admin/sims.html"><div class="icon">📶</div><h2>سجل الشرائح</h2><p>مرجع أرقام الشرائح وصاحبها وحالتها وربطها بالمحطات والمودمات.</p><span class="badge">Flexy</span></a>
         <a id="ownerAccessAdminCard" class="card" href="access-admin/"><div class="icon">🔐</div><h2>الجلسات والأجهزة</h2><p>طلبات الدخول والجلسات الحالية والأجهزة الشخصية المعتمدة.</p><span class="badge">Owner</span></a>
       </section>
@@ -462,6 +467,7 @@
 })();
 </script>
 <script src="tools-access.js?v=20260919-tools-resume2"></script>
-<script src="tools-home.js?v=20260919-dashboard1"></script>\n<script src="dashboard-order.js?v=20260919-order1"></script>
+<script src="tools-home.js?v=20260919-dashboard1"></script>
+<script src="dashboard-order.js?v=20260919-order2"></script>
 </body>
 </html>
