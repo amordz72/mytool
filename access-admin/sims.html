@@ -15,11 +15,11 @@
 .sim-form textarea{min-height:84px;resize:vertical}
 .sim-form .wide{grid-column:1/-1}
 .sim-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.sim-grid{display:grid;gap:10px}
+.sim-grid{display:grid;gap:14px}.sim-group{display:grid;gap:8px}.sim-group-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px}.sim-group-head h3{margin:0;font-size:15px}.sim-group-list{display:grid;gap:10px}.sim-search-wrap{margin:0 0 12px}.sim-search-help{margin:6px 2px 0;font-size:11px;color:#6b7280;line-height:1.55}
 .sim-pin{font-family:monospace;direction:ltr;font-weight:900;letter-spacing:1px}
 @media(max-width:680px){.sim-form{grid-template-columns:1fr}.sim-form .wide{grid-column:auto}}
 </style>
-<script src="../auth-guard.js?v=20260918-real-local-1" data-access="admin"></script>
+<script src="../auth-guard.js?v=20260919-personal-persist1" data-access="admin"></script>
 </head>
 <body class="mt-app" data-mytool-app="access-admin">
 <main class="mt-shell">
@@ -34,6 +34,22 @@
 </section>
 
 <div id="pageMessage" class="mt-alert" hidden><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3 id="messageTitle"></h3><p id="messageText"></p></div></div>
+
+<div class="sim-search-wrap">
+  <label class="mt-search">
+    <span class="mt-search-icon">⌕</span>
+    <input id="simSearch" inputmode="tel" placeholder="ابحث برقم الشريحة مباشرة..." autocomplete="off">
+  </label>
+  <div class="sim-search-help">يقبل الرقم حتى لو كتبته بفراغات أو بصيغة +213. ويمكن أيضًا البحث بالاسم أو النوع.</div>
+</div>
+
+<div class="mt-section-head">
+  <div class="mt-section-copy"><h2>الشرائح الحالية</h2><p>مرتبة تلقائيًا: النشطة ← الاحتياطية ← المتوقفة.</p></div>
+  <span id="simCount" class="mt-chip muted">0</span>
+</div>
+
+<section id="simList" class="sim-grid"><div class="mt-card"><div class="mt-meta">جاري التحميل…</div></div></section>
+<div id="emptyState" class="mt-alert" hidden><div class="mt-alert-icon">📶</div><div class="mt-alert-copy"><h3>لا توجد نتيجة</h3><p>جرّب رقمًا آخر أو أضف شريحة جديدة من النموذج بالأسفل.</p></div></div>
 
 <section class="mt-card">
   <h2 id="formTitle">إضافة شريحة</h2>
@@ -84,19 +100,6 @@
     <p class="mt-meta">الـPIN يحفظ مشفّرًا في Supabase Vault. عند تعديل شريحة وترك PIN فارغًا يبقى PIN القديم كما هو.</p>
   </form>
 </section>
-
-<label class="mt-search">
-  <span class="mt-search-icon">⌕</span>
-  <input id="simSearch" placeholder="ابحث بالرقم أو الاسم أو النوع..." autocomplete="off">
-</label>
-
-<div class="mt-section-head">
-  <div class="mt-section-copy"><h2>الشرائح الحالية</h2><p>الأنواع المعتمدة الآن: Mobilis / Djezzy / Ooredoo / Sama.</p></div>
-  <span id="simCount" class="mt-chip muted">0</span>
-</div>
-
-<section id="simList" class="sim-grid"><div class="mt-card"><div class="mt-meta">جاري التحميل…</div></div></section>
-<div id="emptyState" class="mt-alert" hidden><div class="mt-alert-icon">📶</div><div class="mt-alert-copy"><h3>لا توجد شرائح</h3><p>أضف أول شريحة من النموذج أعلاه.</p></div></div>
 </main>
 
 <script type="module">
@@ -107,11 +110,15 @@ let rows=[],stations=[],modems=[];
 
 const KIND={mobilis:'Mobilis',djezzy:'Djezzy',ooredoo:'Ooredoo',sama:'Sama'};
 const STATUS={active:'نشطة',spare:'احتياطية',stopped:'متوقفة'};
+const STATUS_ORDER={active:0,spare:1,stopped:2};
+const STATUS_CLASS={active:'success',spare:'muted',stopped:'danger'};
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function msg(title,text,type=''){const box=$('pageMessage');box.className='mt-alert'+(type?' '+type:'');$('messageTitle').textContent=title;$('messageText').textContent=text;box.hidden=false;}
 function clearMsg(){$('pageMessage').hidden=true;}
 function fmtDate(v){if(!v)return '—';const d=new Date(v+'T00:00:00');return Number.isNaN(d.getTime())?v:d.toLocaleDateString('ar-DZ');}
+function normPhone(v){let s=String(v||'').replace(/\D/g,'');if(s.startsWith('213'))s='0'+s.slice(3);return s;}
+function sortRows(list){return [...list].sort((a,b)=>(STATUS_ORDER[a.status]??9)-(STATUS_ORDER[b.status]??9)||String(a.sim_kind||'').localeCompare(String(b.sim_kind||''))||String(a.msisdn||'').localeCompare(String(b.msisdn||'')));}
 
 async function requireAdmin(){
   const {data}=await supabase.auth.getSession();
@@ -146,7 +153,7 @@ function resetForm(){
 }
 
 function card(r){
-  const search=[r.sim_kind,r.msisdn,r.owner_name,r.station_name,r.modem_name,r.notes].filter(Boolean).join(' ').toLowerCase();
+  const search=[r.sim_kind,r.msisdn,normPhone(r.msisdn),r.owner_name,r.station_name,r.modem_name,r.notes].filter(Boolean).join(' ').toLowerCase();
   return '<article class="mt-card sim-entry" data-search="'+esc(search)+'" data-id="'+esc(r.registry_uuid)+'">'+
     '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">📶</div><div class="mt-row-copy">'+
       '<h3>'+esc(KIND[r.sim_kind]||r.sim_kind)+' — '+esc(r.msisdn||'بدون رقم')+'</h3>'+
@@ -156,7 +163,7 @@ function card(r){
         '<br>Modem: '+esc(r.modem_name||'—')+
         '<br>تاريخ الاستلام: '+esc(fmtDate(r.received_at))+
       '</div></div></div>'+
-      '<span class="mt-chip '+(r.status==='active'?'success':r.status==='stopped'?'danger':'muted')+'">'+esc(STATUS[r.status]||r.status)+'</span>'+
+      '<span class="mt-chip '+(STATUS_CLASS[r.status]||'muted')+'">'+esc(STATUS[r.status]||r.status)+'</span>'+
     '</div>'+
     (r.notes?'<p class="mt-meta">'+esc(r.notes)+'</p>':'')+
     '<div class="sim-actions">'+
@@ -167,16 +174,35 @@ function card(r){
 }
 
 function render(){
+  rows=sortRows(rows);
+  const groups=['active','spare','stopped'].map(status=>{
+    const groupRows=rows.filter(r=>r.status===status);
+    if(!groupRows.length)return '';
+    return '<div class="sim-group" data-status-group="'+status+'">'+
+      '<div class="sim-group-head"><h3>'+esc(STATUS[status])+'</h3><span class="mt-chip '+(STATUS_CLASS[status]||'muted')+'">'+groupRows.length+'</span></div>'+
+      '<div class="sim-group-list">'+groupRows.map(card).join('')+'</div>'+
+    '</div>';
+  }).join('');
+  $('simList').innerHTML=groups;
   $('simCount').textContent=String(rows.length);
-  $('simList').innerHTML=rows.map(card).join('');
   $('emptyState').hidden=rows.length!==0;
   bindCards();applySearch();
 }
 
 function applySearch(){
-  const q=$('simSearch').value.trim().toLowerCase();let visible=0;
-  document.querySelectorAll('.sim-entry').forEach(el=>{const ok=!q||el.dataset.search.includes(q)||el.textContent.toLowerCase().includes(q);el.hidden=!ok;if(ok)visible++;});
-  if(rows.length)$('emptyState').hidden=visible!==0;
+  const q=$('simSearch').value.trim().toLowerCase();
+  const phoneQ=normPhone(q);
+  let visible=0;
+  document.querySelectorAll('.sim-entry').forEach(el=>{
+    const text=(el.dataset.search||'').toLowerCase();
+    const ok=!q||text.includes(q)||(phoneQ&&text.includes(phoneQ))||el.textContent.toLowerCase().includes(q);
+    el.hidden=!ok;if(ok)visible++;
+  });
+  document.querySelectorAll('[data-status-group]').forEach(group=>{
+    group.hidden=!group.querySelector('.sim-entry:not([hidden])');
+  });
+  $('simCount').textContent=String(visible);
+  $('emptyState').hidden=visible!==0;
 }
 
 function bindCards(){
