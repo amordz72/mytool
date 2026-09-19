@@ -29,10 +29,19 @@
   let authClient=null;
 
   function otherModeActive(){
-    const now=Date.now();
-    return Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0)>now
-      ||Number(localStorage.getItem(EMERGENCY_EXPIRES_KEY)||0)>now
-      ||(Boolean(localStorage.getItem(WORKER_TOKEN_KEY))&&Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0)>now);
+    const dashboard=$('dashboard');
+    const general=$('generalTools');
+    // Trust the UI state that root auth has actually established, not stale
+    // local expiry markers. A stale admin timer must not block an approved
+    // personal-tools session from resuming.
+    return Boolean(dashboard&&!dashboard.hidden&&(!general||general.hidden));
+  }
+
+  function showRootLoginFallback(){
+    if(otherModeActive())return;
+    const login=$('loginView'),dashboard=$('dashboard');
+    if(dashboard)dashboard.hidden=true;
+    if(login)login.hidden=false;
   }
 
   function adminDurationMs(){
@@ -350,14 +359,14 @@
           showTools(Number(session.expires_at),accessType);
           return;
         }
-        if(!personal)clearToolsSession();
+        clearToolsSession();showRootLoginFallback();
       }catch(error){
         if(personal&&!error?.status){
           // Network problem only: keep the approved personal-device session locally.
           // It will be validated again on the next load/online request.
           return;
         }
-        clearToolsSession();
+        clearToolsSession();showRootLoginFallback();
       }
     }else{
       const staleSession=readStorageSession(sessionStorage);
