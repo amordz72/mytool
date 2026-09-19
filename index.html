@@ -22,7 +22,7 @@
     @media(max-width:600px){body{padding:10px}.grid{grid-template-columns:1fr}.hero{padding:16px 15px}.hero h1{font-size:24px}.sessionbar{align-items:center;flex-direction:row}.sessionbar button{width:auto}.sessionbar .mode{font-size:13px}.sessionbar .small{font-size:10px}}
   </style>
   <script src="auth-guard.js?v=20260918-real-local-1" data-access="public" data-nav="off"></script>
-  <script src="auth-device.js?v=20260918-v2"></script>
+  <script src="auth-device.js?v=20260919-persist1"></script>
 </head>
 <body>
   <div id="loginView" class="login-wrap" hidden>
@@ -57,7 +57,7 @@
           <button id="devicePendingRefreshBtn" class="btn" type="button">تحديث الحالة</button>
           <button id="devicePendingBackBtn" class="btn secondary" type="button">حساب آخر</button>
         </div>
-        <div class="offline-note">لا يمكن البيع أو المخزون قبل موافقة الإدارة. بعد الموافقة سيطلب MyTool كلمة المرور مرة أخرى.</div>
+        <div class="offline-note">لا يمكن البيع أو المخزون قبل موافقة الإدارة. بعد الموافقة يفتح MyTool تلقائيًا على هذا الجهاز الموثوق.</div>
       </div>
       <div id="pinBox" hidden>
         <h2 class="recovery-title">فتح اليوم — الدخول المحلي</h2>
@@ -126,6 +126,7 @@
   const WORKSPACE_ROLE_KEY='mytool_workspace_role';
   const WORKSPACE_CODE_KEY='mytool_workspace_code';
   const AUTH_V2_SESSION_KEY='mytool_auth_v2_session';
+  const LAST_IDENTITY_KEY='mytool_auth_v2_last_identity';
   const EMERGENCY_EXPIRES_KEY='mytool_emergency_admin_expires_at';
   const WORKER_MS=10*24*60*60*1000;
   const WORKSPACE_MS=30*24*60*60*1000;
@@ -260,6 +261,45 @@
     localStorage.removeItem(ADMIN_EXPIRES_KEY);showLogin();
   }
 
+  async function applyTrustedSession(row,identity){
+    const client=await getSupabase();
+    const contextResult=await client.rpc('core_worker_session_context',{p_session_token:row.session_token});
+    if(contextResult.error||!contextResult.data?.length)throw contextResult.error||new Error('INVALID_SESSION');
+    const ctx=contextResult.data[0];
+
+    await client.auth.signOut().catch(()=>{});
+    clearEmergency();localStorage.removeItem(ADMIN_EXPIRES_KEY);
+    const trustExp=Date.parse(row.trusted_until||'');
+    const exp=Number.isFinite(trustExp)?Math.min(Date.now()+WORKSPACE_MS,trustExp):Date.now()+WORKSPACE_MS;
+    localStorage.setItem(WORKER_TOKEN_KEY,row.session_token);
+    localStorage.setItem(WORKER_NICKNAME_KEY,ctx.nickname||identity);
+    localStorage.setItem(WORKER_EXPIRES_KEY,String(exp));
+    localStorage.setItem(WORKSPACE_ROLE_KEY,ctx.account_role||'worker');
+    localStorage.setItem(WORKSPACE_CODE_KEY,ctx.workspace_code||'REAL');
+    localStorage.setItem(AUTH_V2_SESSION_KEY,'1');
+    localStorage.setItem(LAST_IDENTITY_KEY,identity);
+    setView(workspaceMode(ctx.account_role),exp);
+    return true;
+  }
+
+  async function resumeTrustedDevice(identity){
+    const clean=String(identity||'').trim();
+    if(!clean||clean.includes('@'))return false;
+    const client=await getSupabase();
+    const deviceApi=window.MyToolDeviceAuth;
+    if(!deviceApi)return false;
+    const installation=await deviceApi.getOrCreateIdentity();
+    const {data,error}=await client.rpc('core_worker_resume_trusted_device',{
+      p_username:clean,
+      p_public_device_id:installation.publicDeviceId,
+      p_device_secret:installation.deviceSecret
+    });
+    if(error)throw error;
+    const row=data?.[0];
+    if(!row||row.result_state!=='SESSION_CREATED'||!row.session_token)return false;
+    return applyTrustedSession(row,clean);
+  }
+
   async function deviceV2Login(identity,password){
     const client=await getSupabase();
     const deviceApi=window.MyToolDeviceAuth;
@@ -283,21 +323,7 @@
     if(row.result_state==='PENDING_APPROVAL'){showPendingDevice(row,row.request_token,identity);return;}
     if(row.result_state!=='SESSION_CREATED'||!row.session_token)throw new Error('DEVICE_AUTH_STATE');
 
-    const contextResult=await client.rpc('core_worker_session_context',{p_session_token:row.session_token});
-    if(contextResult.error||!contextResult.data?.length)throw contextResult.error||new Error('INVALID_SESSION');
-    const ctx=contextResult.data[0];
-
-    await client.auth.signOut().catch(()=>{});
-    clearEmergency();localStorage.removeItem(ADMIN_EXPIRES_KEY);
-    const trustExp=Date.parse(row.trusted_until||'');
-    const exp=Number.isFinite(trustExp)?Math.min(Date.now()+WORKSPACE_MS,trustExp):Date.now()+WORKSPACE_MS;
-    localStorage.setItem(WORKER_TOKEN_KEY,row.session_token);
-    localStorage.setItem(WORKER_NICKNAME_KEY,ctx.nickname||identity);
-    localStorage.setItem(WORKER_EXPIRES_KEY,String(exp));
-    localStorage.setItem(WORKSPACE_ROLE_KEY,ctx.account_role||'worker');
-    localStorage.setItem(WORKSPACE_CODE_KEY,ctx.workspace_code||'REAL');
-    localStorage.setItem(AUTH_V2_SESSION_KEY,'1');
-    setView(workspaceMode(ctx.account_role),exp);
+    await applyTrustedSession(row,identity);
   }
   async function checkPendingDevice(){
     if(!pendingDeviceRequestToken)return;
@@ -310,7 +336,12 @@
       if(state==='PENDING'){$('devicePendingState').textContent='ينتظر الموافقة';return;}
       if(state==='APPROVED_REVERIFY_REQUIRED'){
         $('devicePendingState').textContent='تمت الموافقة';
-        pendingDeviceRequestToken='';$('devicePendingBox').hidden=true;$('loginForm').hidden=false;$('identity').value=pendingDeviceIdentity;$('password').value='';showMessage('تم اعتماد الجهاز. أدخل كلمة المرور مرة أخرى للمتابعة.','ok');setTimeout(()=>$('password').focus(),50);return;
+        const identity=pendingDeviceIdentity;
+        pendingDeviceRequestToken='';
+        try{if(await resumeTrustedDevice(identity))return;}catch(_e){}
+        $('devicePendingBox').hidden=true;$('loginForm').hidden=false;$('identity').value=identity;$('password').value='';
+        showMessage('تم اعتماد الجهاز، لكن تعذر فتح الجلسة تلقائيًا. أدخل كلمة المرور مرة واحدة.','ok');
+        setTimeout(()=>$('password').focus(),50);return;
       }
       $('devicePendingState').textContent=state==='REJECTED'?'تم رفض الطلب':state==='REVOKED'?'تم إلغاء الجهاز':'انتهى الطلب';
       showMessage(state==='REJECTED'?'رفضت الإدارة طلب هذا الجهاز.':state==='REVOKED'?'تم إلغاء اعتماد هذا الجهاز.':'انتهت صلاحية طلب الجهاز.');
@@ -333,6 +364,8 @@
     const now=Date.now();const emergencyExp=Number(localStorage.getItem(EMERGENCY_EXPIRES_KEY)||0);
     if(emergencyExp>now){setView('emergency',emergencyExp);return;}if(emergencyExp)clearEmergency();
     const workerToken=localStorage.getItem(WORKER_TOKEN_KEY),workerExp=Number(localStorage.getItem(WORKER_EXPIRES_KEY)||0);
+    const trustedResume=localStorage.getItem(AUTH_V2_SESSION_KEY)==='1';
+    const lastIdentity=localStorage.getItem(LAST_IDENTITY_KEY)||'';
     if(workerToken&&workerExp>now){
       try{
         const c=await getSupabase();
@@ -361,8 +394,11 @@
         const normal=await c.rpc('worker_get_context',{p_session_token:workerToken});
         if(!normal.error&&normal.data?.length){setView('worker',workerExp);return;}
       }catch(_e){}
-      clearWorker();
-    }else if(workerToken||workerExp){clearWorker();}
+    }
+    if(trustedResume&&lastIdentity){
+      try{if(await resumeTrustedDevice(lastIdentity))return;}catch(_e){}
+    }
+    if(workerToken||workerExp)clearWorker();
     const adminExp=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0);
     if(adminExp>now){try{const c=await getSupabase();const {data}=await c.auth.getSession();if(data.session){if(AUTH_V2_FLAG){await prepareAdminMfaV2();return;}setView('admin',adminExp);return;}}catch(_e){}}
     if(adminExp){localStorage.removeItem(ADMIN_EXPIRES_KEY);try{(await getSupabase()).auth.signOut();}catch(_e){}}showLogin();
