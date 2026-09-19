@@ -136,6 +136,14 @@
     if(item.all)return '<button type="button" class="mytool-bottom-nav-item is-home" data-tools-all><span class="mytool-nav-icon">☰</span><span class="mytool-nav-label">الأدوات</span></button>';
     return `<a class="mytool-bottom-nav-item is-recent" href="${item.source.getAttribute('href')||item.href}"${item.source.target?` target="${item.source.target}"`:''}${item.source.rel?` rel="${item.source.rel}"`:''} data-tools-recent-id="${item.id}"><span class="mytool-nav-icon">${item.icon}</span><span class="mytool-nav-label">${shortLabel(item.title)}</span></a>`;
   }
+  function bindSourceRecents(items){
+    items.forEach(item=>{
+      const node=item.source;
+      if(!node||node.dataset.toolsRecentBound==='1')return;
+      node.dataset.toolsRecentBound='1';
+      node.addEventListener('click',()=>saveRecent(item.id));
+    });
+  }
   function renderBottomNav(items){
     const bar=ensureBottomNav();
     const map=new Map(items.map(x=>[x.id,x]));
@@ -144,7 +152,7 @@
     for(let i=1;i<=5;i++)bar.querySelector(`[data-tools-nav-slot="${i}"]`).innerHTML='';
     slots.forEach((slot,index)=>bar.querySelector(`[data-tools-nav-slot="${slot}"]`).innerHTML=navItemHtml(recents[index]||null));
     bar.querySelector('[data-tools-nav-slot="3"]').innerHTML=navItemHtml({all:true});
-    bar.querySelector('[data-tools-all]')?.addEventListener('click',()=>selectTab('work',true));
+    bar.querySelector('[data-tools-all]')?.addEventListener('click',()=>document.getElementById('adminTools')?.scrollIntoView({behavior:'smooth',block:'start'}));
     bar.querySelectorAll('[data-tools-recent-id]').forEach(a=>a.addEventListener('click',()=>saveRecent(a.dataset.toolsRecentId)));
     bar.hidden=false;
     document.body.classList.add('mytool-tools-nav-active');
@@ -165,14 +173,12 @@
       const sources=visibleSourceContainers();
       if(!sources.length){hideEnhancements();return}
       const items=catalog();
-      ensureShell().hidden=false;
-      sources.forEach(el=>el.classList.add('mytool-tools-source-hidden'));
-      const byId=new Map(items.map(x=>[x.id,x]));
-      const recent=safeReadRecent().map(id=>byId.get(id)).filter(Boolean).slice(0,RECENT_LIMIT);
-      fillGrid('recent',recent);
-      fillGrid('work',items.filter(x=>x.category==='work'));
-      fillGrid('quick',items.filter(x=>x.category==='quick'));
-      selectTab('recent',false);
+
+      // Root is now a real dashboard. Do not replace it with the old
+      // "Recent / Work / Quick" shell; keep native sections and cards visible.
+      if(shell)shell.hidden=true;
+      sources.forEach(el=>el.classList.remove('mytool-tools-source-hidden'));
+      bindSourceRecents(items);
       renderBottomNav(items);
     }finally{rendering=false}
   }
