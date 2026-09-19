@@ -104,7 +104,7 @@
     if(document.getElementById('dashboardOrderStyle'))return;
     const style=document.createElement('style');
     style.id='dashboardOrderStyle';
-    style.textContent=\`
+    style.textContent=`
       .dashboard-controls{display:flex;align-items:center;gap:8px;justify-content:flex-start;margin:10px 0 4px;min-height:38px}
       .dashboard-controls .small{margin:0}
       .dashboard-controls .btn{width:auto;padding:8px 11px}
@@ -122,7 +122,7 @@
         .dashboard-card-order{inset-inline-start:5px;top:5px;gap:3px}
         .dashboard-card-order button{width:25px;height:25px;border-radius:8px;font-size:12px}
       }
-    \`;
+    `;
     document.head.appendChild(style);
   }
 
