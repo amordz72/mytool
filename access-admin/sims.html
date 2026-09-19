@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f5f9fc">
+<title>سجل الشرائح — MyTool</title>
+<link rel="stylesheet" href="../ui/template-v1.css">
+<link rel="stylesheet" href="../mytool-bottom-nav.css">
+<style>
+.sim-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sim-form label{display:grid;gap:6px;font-weight:800;font-size:13px}
+.sim-form input,.sim-form select,.sim-form textarea{width:100%;padding:11px;border:1px solid #cbd8e3;border-radius:12px;background:#fff;color:#172033;font:inherit}
+.sim-form textarea{min-height:84px;resize:vertical}
+.sim-form .wide{grid-column:1/-1}
+.sim-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sim-grid{display:grid;gap:10px}
+.sim-pin{font-family:monospace;direction:ltr;font-weight:900;letter-spacing:1px}
+@media(max-width:680px){.sim-form{grid-template-columns:1fr}.sim-form .wide{grid-column:auto}}
+</style>
+<script src="../auth-guard.js?v=20260918-real-local-1" data-access="admin"></script>
+</head>
+<body class="mt-app" data-mytool-app="access-admin">
+<main class="mt-shell">
+<header class="mt-topbar">
+  <div class="mt-brand"><div class="mt-brand-mark">M</div><div class="mt-brand-copy"><strong>MyTool</strong><small>إدارة النظام</small></div></div>
+  <div class="mt-user"><div class="mt-user-copy"><strong>مدير النظام</strong><small>Flexy SIM Registry</small></div><div class="mt-avatar">A</div></div>
+</header>
+
+<section class="mt-page-head">
+  <div class="mt-page-title"><div class="mt-page-icon">📶</div><div class="mt-page-copy"><h1>سجل الشرائح</h1><p>مرجع الشرائح المستعملة في Flexy. Station وModem معلومات فرعية.</p></div></div>
+  <a class="mt-btn secondary mt-page-action" href="stations.html">المحطات</a>
+</section>
+
+<div id="pageMessage" class="mt-alert" hidden><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3 id="messageTitle"></h3><p id="messageText"></p></div></div>
+
+<section class="mt-card">
+  <h2 id="formTitle">إضافة شريحة</h2>
+  <form id="simForm">
+    <input id="registryUuid" type="hidden">
+    <div class="sim-form">
+      <label>النوع
+        <select id="simKind" required>
+          <option value="mobilis">Mobilis</option>
+          <option value="djezzy">Djezzy</option>
+          <option value="ooredoo">Ooredoo</option>
+          <option value="sama">Sama</option>
+        </select>
+      </label>
+      <label>رقم الشريحة
+        <input id="msisdn" inputmode="numeric" placeholder="06xxxxxxxx" maxlength="14">
+      </label>
+      <label>اسم صاحب الشريحة
+        <input id="ownerName" placeholder="الاسم المسجلة باسمه">
+      </label>
+      <label>تاريخ الاستلام
+        <input id="receivedAt" type="date">
+      </label>
+      <label>الحالة
+        <select id="status">
+          <option value="active">نشطة</option>
+          <option value="spare">احتياطية</option>
+          <option value="stopped">متوقفة</option>
+        </select>
+      </label>
+      <label>PIN
+        <input id="servicePin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="اختياري">
+      </label>
+      <label>Station — فرعي
+        <select id="stationUuid"><option value="">غير محدد</option></select>
+      </label>
+      <label>Modem — فرعي
+        <select id="modemUuid"><option value="">غير محدد</option></select>
+      </label>
+      <label class="wide">ملاحظة
+        <textarea id="notes" placeholder="أي معلومة تحتاج ترجع لها لاحقًا"></textarea>
+      </label>
+    </div>
+    <div class="sim-actions">
+      <button id="saveBtn" class="mt-btn primary" type="submit">حفظ الشريحة</button>
+      <button id="cancelEditBtn" class="mt-btn secondary" type="button" hidden>إلغاء التعديل</button>
+    </div>
+    <p class="mt-meta">الـPIN يحفظ مشفّرًا في Supabase Vault. عند تعديل شريحة وترك PIN فارغًا يبقى PIN القديم كما هو.</p>
+  </form>
+</section>
+
+<label class="mt-search">
+  <span class="mt-search-icon">⌕</span>
+  <input id="simSearch" placeholder="ابحث بالرقم أو الاسم أو النوع..." autocomplete="off">
+</label>
+
+<div class="mt-section-head">
+  <div class="mt-section-copy"><h2>الشرائح الحالية</h2><p>الأنواع المعتمدة الآن: Mobilis / Djezzy / Ooredoo / Sama.</p></div>
+  <span id="simCount" class="mt-chip muted">0</span>
+</div>
+
+<section id="simList" class="sim-grid"><div class="mt-card"><div class="mt-meta">جاري التحميل…</div></div></section>
+<div id="emptyState" class="mt-alert" hidden><div class="mt-alert-icon">📶</div><div class="mt-alert-copy"><h3>لا توجد شرائح</h3><p>أضف أول شريحة من النموذج أعلاه.</p></div></div>
+</main>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
+const $=id=>document.getElementById(id);
+let rows=[],stations=[],modems=[];
+
+const KIND={mobilis:'Mobilis',djezzy:'Djezzy',ooredoo:'Ooredoo',sama:'Sama'};
+const STATUS={active:'نشطة',spare:'احتياطية',stopped:'متوقفة'};
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function msg(title,text,type=''){const box=$('pageMessage');box.className='mt-alert'+(type?' '+type:'');$('messageTitle').textContent=title;$('messageText').textContent=text;box.hidden=false;}
+function clearMsg(){$('pageMessage').hidden=true;}
+function fmtDate(v){if(!v)return '—';const d=new Date(v+'T00:00:00');return Number.isNaN(d.getTime())?v:d.toLocaleDateString('ar-DZ');}
+
+async function requireAdmin(){
+  const {data}=await supabase.auth.getSession();
+  if(!data.session) throw new Error('جلسة Supabase للإدارة غير متاحة. افتح MyTool وسجّل دخول الإدارة أولًا.');
+}
+
+async function loadStations(){
+  const {data,error}=await supabase.rpc('station_connect_admin_list');
+  if(error) throw error;
+  stations=Array.isArray(data)?data:[];
+  $('stationUuid').innerHTML='<option value="">غير محدد</option>'+stations.map(s=>'<option value="'+esc(s.station_uuid)+'">'+esc(s.computer_name||'Station')+'</option>').join('');
+}
+
+async function loadModems(stationUuid,selected=''){
+  modems=[];
+  $('modemUuid').innerHTML='<option value="">غير محدد</option>';
+  if(!stationUuid)return;
+  const {data,error}=await supabase.rpc('station_connect_admin_hardware',{p_station_uuid:stationUuid});
+  if(error)throw error;
+  modems=Array.isArray(data)?data:[];
+  $('modemUuid').innerHTML='<option value="">غير محدد</option>'+modems.map(m=>{
+    const label=[m.device_name,m.modem_ip,m.imei].filter(Boolean).join(' · ')||'Modem';
+    return '<option value="'+esc(m.modem_uuid)+'" '+(m.modem_uuid===selected?'selected':'')+'>'+esc(label)+'</option>';
+  }).join('');
+}
+
+function resetForm(){
+  $('registryUuid').value='';$('simKind').value='mobilis';$('msisdn').value='';$('ownerName').value='';
+  $('receivedAt').value='';$('status').value='active';$('servicePin').value='';$('stationUuid').value='';
+  $('modemUuid').innerHTML='<option value="">غير محدد</option>';$('notes').value='';
+  $('formTitle').textContent='إضافة شريحة';$('saveBtn').textContent='حفظ الشريحة';$('cancelEditBtn').hidden=true;
+}
+
+function card(r){
+  const search=[r.sim_kind,r.msisdn,r.owner_name,r.station_name,r.modem_name,r.notes].filter(Boolean).join(' ').toLowerCase();
+  return '<article class="mt-card sim-entry" data-search="'+esc(search)+'" data-id="'+esc(r.registry_uuid)+'">'+
+    '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">📶</div><div class="mt-row-copy">'+
+      '<h3>'+esc(KIND[r.sim_kind]||r.sim_kind)+' — '+esc(r.msisdn||'بدون رقم')+'</h3>'+
+      '<div class="mt-meta">'+
+        'المالك: '+esc(r.owner_name||'—')+
+        '<br>Station: '+esc(r.station_name||'—')+
+        '<br>Modem: '+esc(r.modem_name||'—')+
+        '<br>تاريخ الاستلام: '+esc(fmtDate(r.received_at))+
+      '</div></div></div>'+
+      '<span class="mt-chip '+(r.status==='active'?'success':r.status==='stopped'?'danger':'muted')+'">'+esc(STATUS[r.status]||r.status)+'</span>'+
+    '</div>'+
+    (r.notes?'<p class="mt-meta">'+esc(r.notes)+'</p>':'')+
+    '<div class="sim-actions">'+
+      '<button class="mt-btn secondary edit-sim" type="button">تعديل</button>'+
+      (r.has_pin?'<button class="mt-btn secondary show-pin" type="button">إظهار PIN</button><span class="sim-pin pin-value" hidden></span>':'<span class="mt-chip muted">PIN غير محفوظ</span>')+
+    '</div>'+
+  '</article>';
+}
+
+function render(){
+  $('simCount').textContent=String(rows.length);
+  $('simList').innerHTML=rows.map(card).join('');
+  $('emptyState').hidden=rows.length!==0;
+  bindCards();applySearch();
+}
+
+function applySearch(){
+  const q=$('simSearch').value.trim().toLowerCase();let visible=0;
+  document.querySelectorAll('.sim-entry').forEach(el=>{const ok=!q||el.dataset.search.includes(q)||el.textContent.toLowerCase().includes(q);el.hidden=!ok;if(ok)visible++;});
+  if(rows.length)$('emptyState').hidden=visible!==0;
+}
+
+function bindCards(){
+  document.querySelectorAll('.edit-sim').forEach(btn=>btn.addEventListener('click',async()=>{
+    const id=btn.closest('.sim-entry').dataset.id;const r=rows.find(x=>x.registry_uuid===id);if(!r)return;
+    $('registryUuid').value=r.registry_uuid;$('simKind').value=r.sim_kind;$('msisdn').value=r.msisdn||'';$('ownerName').value=r.owner_name||'';
+    $('receivedAt').value=r.received_at||'';$('status').value=r.status||'active';$('servicePin').value='';$('notes').value=r.notes||'';
+    $('stationUuid').value=r.station_uuid||'';await loadModems(r.station_uuid||'',r.modem_uuid||'');
+    $('formTitle').textContent='تعديل الشريحة';$('saveBtn').textContent='حفظ التعديل';$('cancelEditBtn').hidden=false;
+    window.scrollTo({top:0,behavior:'smooth'});
+  }));
+
+  document.querySelectorAll('.show-pin').forEach(btn=>btn.addEventListener('click',async()=>{
+    const card=btn.closest('.sim-entry'),id=card.dataset.id,out=card.querySelector('.pin-value');
+    if(!out.hidden){out.hidden=true;out.textContent='';btn.textContent='إظهار PIN';return;}
+    btn.disabled=true;
+    try{
+      const {data,error}=await supabase.rpc('mytool_admin_sim_registry_pin',{p_registry_uuid:id});
+      if(error)throw error;
+      out.textContent=data?.[0]?.pin_code||'—';out.hidden=false;btn.textContent='إخفاء PIN';
+    }catch(e){msg('تعذر إظهار PIN',e?.message||'حدث خطأ.','danger');}
+    finally{btn.disabled=false;}
+  }));
+}
+
+async function loadRows(){
+  clearMsg();
+  const {data,error}=await supabase.rpc('mytool_admin_sim_registry_list');
+  if(error)throw error;
+  rows=Array.isArray(data)?data:[];render();
+}
+
+$('stationUuid').addEventListener('change',()=>loadModems($('stationUuid').value).catch(e=>msg('تعذر تحميل المودمات',e.message,'danger')));
+$('simSearch').addEventListener('input',applySearch);
+$('cancelEditBtn').addEventListener('click',resetForm);
+
+$('simForm').addEventListener('submit',async e=>{
+  e.preventDefault();clearMsg();const btn=$('saveBtn');btn.disabled=true;btn.textContent='جاري الحفظ…';
+  try{
+    await requireAdmin();
+    const payload={
+      p_registry_uuid:$('registryUuid').value||null,
+      p_sim_kind:$('simKind').value,
+      p_msisdn:$('msisdn').value||null,
+      p_owner_name:$('ownerName').value||null,
+      p_received_at:$('receivedAt').value||null,
+      p_status:$('status').value,
+      p_station_uuid:$('stationUuid').value||null,
+      p_modem_uuid:$('modemUuid').value||null,
+      p_service_pin:$('servicePin').value||null,
+      p_notes:$('notes').value||null
+    };
+    const {error}=await supabase.rpc('mytool_admin_sim_registry_save',payload);if(error)throw error;
+    resetForm();await loadRows();msg('تم الحفظ','تم تحديث سجل الشرائح.','success');
+  }catch(e){
+    const text=String(e?.message||'');
+    msg('تعذر الحفظ',text.includes('duplicate key')?'رقم الشريحة مسجل مسبقًا.':text,'danger');
+  }finally{btn.disabled=false;if($('registryUuid').value)btn.textContent='حفظ التعديل';else btn.textContent='حفظ الشريحة';}
+});
+
+(async()=>{
+  try{await requireAdmin();await loadStations();await loadRows();}
+  catch(e){$('simList').innerHTML='';msg('تعذر تحميل سجل الشرائح',e?.message||'حدث خطأ غير متوقع.','danger');}
+})();
+</script>
+<script src="../ui/template-v1.js"></script>
+<script src="../mytool-bottom-nav.js" data-root="../" data-app="access-admin"></script>
+</body>
+</html>
