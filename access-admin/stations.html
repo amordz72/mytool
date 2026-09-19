@@ -171,6 +171,7 @@ const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let stations=[];
 let hardwareByStation={};
+let arsselliBalancesBySim={};
 let recentJobs=[];
 let rechargeCards=[];
 let rechargeAttempts=[];
@@ -231,6 +232,31 @@ function fmtDzdAmount(value){
 }
 
 function arsselliBalanceView(item){
+  const stored=Array.isArray(arsselliBalancesBySim[item?.sim_uuid])
+    ?arsselliBalancesBySim[item.sim_uuid]
+    :[];
+
+  if(stored.length){
+    const gtsRow=stored.find(row=>
+      String(row.distributor_account_code||'')==='04'
+      ||String(row.account_name||'').trim().toUpperCase()==='GTS'
+    );
+    const extras=stored
+      .filter(row=>row!==gtsRow&&Number(row.balance_amount)!==0)
+      .map(row=>[String(row.account_name||row.account_key||'رصيد'),Number(row.balance_amount)]);
+    return {
+      hasGts:!!gtsRow,
+      gts:gtsRow?Number(gtsRow.balance_amount):null,
+      extras,
+      buckets:Object.fromEntries(
+        stored.map(row=>[
+          String(row.account_name||row.account_key||'رصيد'),
+          Number(row.balance_amount)
+        ])
+      )
+    };
+  }
+
   const buckets=parseDzdBalanceBuckets(item?.balance_raw);
   const hasGts=Object.prototype.hasOwnProperty.call(buckets,'GTS');
   const extras=Object.entries(buckets)
@@ -913,6 +939,7 @@ function bindActions(){
           const raw=String(result.result_text||'لم يرجع رد نصي من الشبكة.');
           if(result.result_code==='ARSSELLI_BALANCE_SMS'){
             await loadHardware();
+            await loadArsselliBalances();
             render();
             const summary=arsselliBalanceSummary(raw);
             showMessage(
@@ -1237,6 +1264,21 @@ async function loadHardware(){
   }));
 }
 
+async function loadArsselliBalances(){
+  arsselliBalancesBySim={};
+  const sims=Object.values(hardwareByStation)
+    .flat()
+    .filter(item=>item?.sim_uuid&&item?.sim_type==='mobilis-arsselli');
+
+  await Promise.all(sims.map(async item=>{
+    const result=await supabase.rpc('station_connect_admin_arsselli_balances',{
+      p_sim_uuid:item.sim_uuid
+    });
+    if(result.error)throw result.error;
+    arsselliBalancesBySim[item.sim_uuid]=Array.isArray(result.data)?result.data:[];
+  }));
+}
+
 async function loadStations(clearMessage=true){
   const button=$('refreshBtn');
   button.disabled=true;
@@ -1254,6 +1296,7 @@ async function loadStations(clearMessage=true){
 
     stations=Array.isArray(result.data)?result.data:[];
     await loadHardware();
+    await loadArsselliBalances();
     render();
     await Promise.all([loadRecentJobs(),loadRechargeCards(),loadRechargeAttempts()]);
   }catch(error){
