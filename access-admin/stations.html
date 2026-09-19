@@ -622,6 +622,12 @@ function hardwareSection(row){
     const simUuid=item.sim_uuid||'';
     const agentParts=String(row.agent_version||'0').split('.').map(Number);
     const arsselliReady=agentParts[0]>0 || agentParts[1]>4 || (agentParts[1]===4 && agentParts[2]>=2);
+    const arsselli=item.sim_type==='mobilis-arsselli';
+    const balanceDisabledReason= !row.online ? 'المحطة غير متصلة الآن.'
+      : arsselli&&!item.has_pin ? 'PIN الخدمة غير محفوظ لشريحة أرسالي. احفظه من بيانات الشريحة أولًا.'
+      : arsselli&&!arsselliReady ? 'Agent الحالي '+(row.agent_version||'غير معروف')+'؛ يلزم تحديثه إلى 0.4.2 وإعادة تشغيله.'
+      : '';
+    const balanceButtonLabel='تحديث رصيد '+(arsselli?'أرسالي':'سماء');
     const numberValue=item.msisdn||'';
     const pinLabel=item.has_pin?'PIN محفوظ':'PIN غير محفوظ';
     const balanceKnown=item.balance_amount!==null&&item.balance_amount!==undefined&&item.balance_amount!=='';
@@ -652,8 +658,8 @@ function hardwareSection(row){
           '<div class="mt-alert-copy"><h3>رصيد '+(item.sim_type==='mobilis-arsselli'?'Mobilis Arsselli':'Mobilis SAMA')+': '+escapeHtml(item.balance_status==='sms_pending'?'بانتظار رسالة SMS':balanceValue)+'</h3>'+
           '<p>آخر فحص: '+escapeHtml(balanceChecked)+
           (item.balance_raw?'<br>رد الشبكة: '+escapeHtml(item.balance_raw):'')+
-          '</p></div>'+
-          '<button class="mt-btn secondary refresh-balance" type="button" data-sim-type="'+escapeHtml(item.sim_type)+'" data-sim-uuid="'+escapeHtml(simUuid)+'" '+(item.sim_type==='mobilis-arsselli'&&!arsselliReady?'disabled title="حدّث Agent إلى 0.4.2 ثم أعد تشغيله"':'')+'>تحديث رصيد '+(item.sim_type==='mobilis-arsselli'?'أرسالي':'سماء')+'</button>'+
+          '</p>'+(balanceDisabledReason?'<p style="color:#a34822;font-weight:700;margin-top:6px">سبب تعطيل الزر: '+escapeHtml(balanceDisabledReason)+'</p>':'')+'</div>'+
+          '<button class="mt-btn secondary refresh-balance" type="button" data-sim-type="'+escapeHtml(item.sim_type)+'" data-sim-uuid="'+escapeHtml(simUuid)+'" '+(balanceDisabledReason?'disabled aria-label="'+escapeHtml(balanceButtonLabel+'؛ '+balanceDisabledReason)+'"':'')+'>'+escapeHtml(balanceButtonLabel)+'</button>'+
         '</div>'
         :'')+
       '<form class="sim-settings" data-sim-uuid="'+escapeHtml(simUuid)+'">'+
