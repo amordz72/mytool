@@ -104,7 +104,7 @@
     if(document.getElementById('dashboardOrderStyle'))return;
     const style=document.createElement('style');
     style.id='dashboardOrderStyle';
-    style.textContent=`
+    style.textContent=\`
       .dashboard-controls{display:flex;align-items:center;gap:8px;justify-content:flex-start;margin:10px 0 4px;min-height:38px}
       .dashboard-controls .small{margin:0}
       .dashboard-controls .btn{width:auto;padding:8px 11px}
@@ -112,11 +112,17 @@
       .dashboard-card-order button{width:32px;height:32px;padding:0;border:1px solid var(--line);background:#fff;color:#14729f;border-radius:10px;font-weight:900;cursor:pointer;box-shadow:0 3px 10px rgba(22,48,71,.08)}
       .dashboard-order-edit #adminTools .card{position:relative;outline:2px dashed #bfe3f6;outline-offset:-3px}
       @media(max-width:600px){
-        .dashboard-controls{margin-top:8px}
-        .dashboard-card-order{inset-inline-start:6px;top:6px}
-        .dashboard-card-order button{width:30px;height:30px}
+        #dashboard .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+        #dashboard .card{padding:10px;border-radius:14px;min-height:94px}
+        #dashboard .icon{width:38px;height:38px;border-radius:11px;font-size:20px;margin-bottom:7px}
+        #dashboard .card h2{font-size:13px;line-height:1.35;margin:0}
+        #dashboard .card p,#dashboard .card .badge{display:none}
+        #dashboard .section-title{margin:17px 3px 8px;font-size:15px}
+        .dashboard-controls{margin-top:8px;margin-bottom:2px}
+        .dashboard-card-order{inset-inline-start:5px;top:5px;gap:3px}
+        .dashboard-card-order button{width:25px;height:25px;border-radius:8px;font-size:12px}
       }
-    `;
+    \`;
     document.head.appendChild(style);
   }
 
