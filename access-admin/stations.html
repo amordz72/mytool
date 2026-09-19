@@ -620,14 +620,6 @@ function hardwareSection(row){
 
   return items.map(item=>{
     const simUuid=item.sim_uuid||'';
-    const agentParts=String(row.agent_version||'0').split('.').map(Number);
-    const arsselliReady=agentParts[0]>0 || agentParts[1]>4 || (agentParts[1]===4 && agentParts[2]>=2);
-    const arsselli=item.sim_type==='mobilis-arsselli';
-    const balanceDisabledReason= !row.online ? 'المحطة غير متصلة الآن.'
-      : arsselli&&!item.has_pin ? 'PIN الخدمة غير محفوظ لشريحة أرسالي. احفظه من بيانات الشريحة أولًا.'
-      : arsselli&&!arsselliReady ? 'Agent الحالي '+(row.agent_version||'غير معروف')+'؛ يلزم تحديثه إلى 0.4.2 وإعادة تشغيله.'
-      : '';
-    const balanceButtonLabel='تحديث رصيد '+(arsselli?'أرسالي':'سماء');
     const numberValue=item.msisdn||'';
     const pinLabel=item.has_pin?'PIN محفوظ':'PIN غير محفوظ';
     const balanceKnown=item.balance_amount!==null&&item.balance_amount!==undefined&&item.balance_amount!=='';
@@ -652,14 +644,14 @@ function hardwareSection(row){
         '<br>HiLink: '+escapeHtml(item.modem_ip||'—')+
         '<br>نوع الشريحة: '+escapeHtml(item.sim_type||'mobilis-sama')+
       '</div>'+
-      (['mobilis-sama','mobilis-arsselli'].includes(item.sim_type)
+      (item.sim_type==='mobilis-sama'
         ?'<div class="mt-alert" style="margin:10px 0">'+
           '<div class="mt-alert-icon" aria-hidden="true">💰</div>'+
-          '<div class="mt-alert-copy"><h3>رصيد '+(item.sim_type==='mobilis-arsselli'?'Mobilis Arsselli':'Mobilis SAMA')+': '+escapeHtml(item.balance_status==='sms_pending'?'بانتظار رسالة SMS':balanceValue)+'</h3>'+
+          '<div class="mt-alert-copy"><h3>الرصيد: '+escapeHtml(balanceValue)+'</h3>'+
           '<p>آخر فحص: '+escapeHtml(balanceChecked)+
           (item.balance_raw?'<br>رد الشبكة: '+escapeHtml(item.balance_raw):'')+
-          '</p>'+(balanceDisabledReason?'<p style="color:#a34822;font-weight:700;margin-top:6px">سبب تعطيل الزر: '+escapeHtml(balanceDisabledReason)+'</p>':'')+'</div>'+
-          '<button class="mt-btn secondary refresh-balance" type="button" data-sim-type="'+escapeHtml(item.sim_type)+'" data-sim-uuid="'+escapeHtml(simUuid)+'" '+(balanceDisabledReason?'disabled aria-label="'+escapeHtml(balanceButtonLabel+'؛ '+balanceDisabledReason)+'"':'')+'>'+escapeHtml(balanceButtonLabel)+'</button>'+
+          '</p></div>'+
+          '<button class="mt-btn secondary refresh-balance" type="button" data-sim-uuid="'+escapeHtml(simUuid)+'">تحديث الرصيد</button>'+
         '</div>'
         :'')+
       '<form class="sim-settings" data-sim-uuid="'+escapeHtml(simUuid)+'">'+
@@ -807,10 +799,9 @@ function bindActions(){
       hideMessage();
 
       try{
-        const arsselli=button.dataset.simType==='mobilis-arsselli';
-        const {error}=await supabase.rpc(arsselli?'station_connect_admin_queue_arsselli_balance':'station_connect_admin_queue_balance',{p_sim_uuid:simUuid});
+        const {error}=await supabase.rpc('station_connect_admin_queue_balance',{p_sim_uuid:simUuid});
         if(error)throw error;
-        showMessage('تم طلب الرصيد',arsselli?'Agent سيستعلم عن أرسالي عبر المودم 87؛ الرصيد النهائي يصل برسالة SMS.':'Agent سيقرأ رصيد سماء الآن عبر *222#.');
+        showMessage('تم طلب الرصيد','Agent سيقرأ رصيد SAMA الآن عبر *222#.');
 
         let updated=false;
         for(let attempt=0;attempt<12;attempt++){
@@ -820,13 +811,11 @@ function bindActions(){
           if(current?.balance_checked_at && current.balance_checked_at!==before){
             render();
             updated=true;
-            const value=arsselli&&current.balance_status==='sms_pending'
-              ?'بانتظار رسالة SMS من Mobilis'
-              :current.balance_amount!==null&&current.balance_amount!==undefined
-                ?Number(current.balance_amount).toLocaleString('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2})+' دج'
-                :'غير مقروء';
+            const value=current.balance_amount!==null&&current.balance_amount!==undefined
+              ?Number(current.balance_amount).toLocaleString('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2})+' دج'
+              :'غير مقروء';
             const raw=String(current.balance_raw||'لا يوجد رد نصي من الشبكة.');
-            showMessage(arsselli?'تم إرسال استعلام أرسالي':'تم تحديث الرصيد',(arsselli?'الحالة: ':'الرصيد: ')+value+' — رد الشبكة: '+raw);
+            showMessage('تم تحديث الرصيد','الرصيد: '+value+' — رد الشبكة: '+raw);
             break;
           }
         }
