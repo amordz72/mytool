@@ -212,6 +212,50 @@ function escapeHtml(value){
   }[c]));
 }
 
+function parseDzdBalanceBuckets(raw){
+  const balances={};
+  String(raw??'').split(/\r?\n/u).forEach(line=>{
+    const match=line.match(/^\s*([^:\r\n]{1,64}?)\s+est\s*:\s*([0-9]+(?:[.,][0-9]+)?)\s*DZD\b/iu);
+    if(!match)return;
+    const key=String(match[1]||'').normalize('NFKC').replace(/\s+/gu,' ').trim().toUpperCase();
+    const amount=Number(String(match[2]||'').replace(',','.'));
+    if(key&&Number.isFinite(amount))balances[key]=amount;
+  });
+  return balances;
+}
+
+function fmtDzdAmount(value){
+  const amount=Number(value);
+  if(!Number.isFinite(amount))return '—';
+  return amount.toLocaleString('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2})+' دج';
+}
+
+function arsselliBalanceView(item){
+  const buckets=parseDzdBalanceBuckets(item?.balance_raw);
+  const hasGts=Object.prototype.hasOwnProperty.call(buckets,'GTS');
+  const extras=Object.entries(buckets)
+    .filter(([key,amount])=>key!=='GTS'&&Number(amount)!==0);
+  return {
+    hasGts,
+    gts:hasGts?buckets.GTS:null,
+    extras,
+    buckets
+  };
+}
+
+function arsselliBalanceSummary(raw){
+  const buckets=parseDzdBalanceBuckets(raw);
+  const parts=[];
+  if(Object.prototype.hasOwnProperty.call(buckets,'GTS')){
+    parts.push('GTS: '+fmtDzdAmount(buckets.GTS));
+  }
+  Object.entries(buckets).forEach(([key,amount])=>{
+    if(key==='GTS'||Number(amount)===0)return;
+    parts.push(key+': '+fmtDzdAmount(amount));
+  });
+  return parts.join(' — ');
+}
+
 function statusMeta(row){
   const status=String(row.status||'').toLowerCase();
 
@@ -627,6 +671,10 @@ function hardwareSection(row){
       ?Number(item.balance_amount).toLocaleString('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2})+' دج'
       :(item.balance_raw?String(item.balance_raw):'لم يُفحص بعد');
     const balanceChecked=item.balance_checked_at?fmtDate(item.balance_checked_at):'—';
+    const arsselliView=item.sim_type==='mobilis-arsselli'?arsselliBalanceView(item):null;
+    const arsselliExtras=arsselliView?.extras?.length
+      ?arsselliView.extras.map(([key,amount])=>escapeHtml(key)+': '+escapeHtml(fmtDzdAmount(amount))).join(' · ')
+      :'';
     const identity=[
       item.imei?'IMEI: '+escapeHtml(item.imei):'',
       item.serial_number?'Serial: '+escapeHtml(item.serial_number):'',
@@ -647,8 +695,10 @@ function hardwareSection(row){
       (item.sim_type==='mobilis-arsselli'
         ?'<div class="mt-alert" style="margin:10px 0">'+
           '<div class="mt-alert-icon" aria-hidden="true">💰</div>'+
-          '<div class="mt-alert-copy"><h3>استعلام رصيد أرسالي</h3>'+
-          '<p>مودم '+escapeHtml(item.modem_ip||'—')+' — الرصيد النهائي يصل برسالة SMS. PIN: '+escapeHtml(pinLabel)+'</p></div>'+
+          '<div class="mt-alert-copy"><h3>GTS: '+escapeHtml(arsselliView?.hasGts?fmtDzdAmount(arsselliView.gts):'لم يُفحص بعد')+'</h3>'+
+          '<p>آخر فحص: '+escapeHtml(balanceChecked)+
+          (arsselliExtras?'<br><span class="mt-meta">أرصدة أخرى: '+arsselliExtras+'</span>':'')+
+          '<br><span class="mt-meta">كل رصيد محفوظ بصنفه؛ لا يتم جمع الأرصدة المختلفة.</span></p></div>'+
           '<button class="mt-btn secondary refresh-arsselli-balance" type="button" data-sim-uuid="'+escapeHtml(simUuid)+'">تحديث رصيد أرسالي</button>'+
         '</div>'
         :'')+
@@ -853,7 +903,7 @@ function bindActions(){
         const job=Array.isArray(data)?data[0]:null;
         if(!job?.job_uuid)throw new Error('لم يُنشأ طلب الرصيد.');
         showMessage('طلب رصيد أرسالي','أُرسل الطلب إلى المحطة؛ ننتظر رد الشبكة.');
-        for(let attempt=0;attempt<25;attempt++){
+        for(let attempt=0;attempt<60;attempt++){
           await new Promise(resolve=>setTimeout(resolve,1200));
           const {data:rows,error:readError}=await supabase.rpc('station_connect_admin_arsselli_balance_job',{p_job_uuid:job.job_uuid});
           if(readError)throw readError;
@@ -861,8 +911,16 @@ function bindActions(){
           if(!result)throw new Error('تعذر قراءة حالة الطلب.');
           if(['queued','claimed'].includes(result.status))continue;
           const raw=String(result.result_text||'لم يرجع رد نصي من الشبكة.');
-          if(result.result_code==='BALANCE_SMS_PENDING'){
-            showMessage('بانتظار SMS من Mobilis','رد USSD: '+raw+' — هذا ليس رصيدًا رقميًا؛ ننتظر رسالة الرصيد.');
+          if(result.result_code==='ARSSELLI_BALANCE_SMS'){
+            await loadHardware();
+            render();
+            const summary=arsselliBalanceSummary(raw);
+            showMessage(
+              'تم تحديث رصيد أرسالي',
+              summary||'وصلت رسالة الرصيد وحُفظت كما هي بدون جمع الأرصدة المختلفة.'
+            );
+          }else if(result.result_code==='BALANCE_SMS_PENDING'){
+            showMessage('بانتظار SMS من Mobilis','رد USSD: '+raw+' — لم تصل رسالة رصيد جديدة مؤكدة بعد.');
           }else{
             showMessage(result.status==='failed'?'فشل استعلام أرسالي':'نتيجة استعلام أرسالي','رد الشبكة: '+raw+(result.result_code?' — الحالة: '+result.result_code:''),result.status==='failed'?'danger':'');
           }
