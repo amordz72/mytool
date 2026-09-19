@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
+<title>مراجعة Flexy — MyTool</title>
+<link rel="stylesheet" href="app.css?v=20260919-1">
+<script src="../auth-guard.js?v=20260917-continuity-2" data-access="admin"></script>
+</head>
+<body>
+<main class="fx-wrap">
+  <div class="fx-top"><div><h1 class="fx-title">مراجعة Flexy</h1><p class="fx-sub">النتائج الغامضة والحجوزات التي لا يجب إعادتها تلقائيًا.</p></div><a class="fx-back" href="./">← Flexy</a></div>
+  <nav class="fx-tabs"><a class="fx-tab" href="./">الرئيسية</a><a class="fx-tab" href="orders.html">الطابور</a><a class="fx-tab" href="accounts.html">الحسابات</a><a class="fx-tab active" href="review.html">المراجعة</a></nav>
+  <div class="fx-message">لا يوجد إعادة تنفيذ تلقائية هنا. أي طلب يحتاج مراجعة يبقى محجوزًا حتى قرار إداري موثق.</div>
+  <section class="fx-card">
+    <div id="list" class="fx-list"><div class="fx-empty">جاري التحميل…</div></div>
+    <div class="fx-pagination"><button id="prev" class="fx-btn secondary" type="button">السابق</button><span id="pageInfo" class="fx-meta">—</span><button id="next" class="fx-btn secondary" type="button">التالي</button></div>
+  </section>
+</main>
+<script type="module">
+import {rpc,money,fmtDate,escapeHtml,PAGE_SIZE} from './api.js';
+const list=document.getElementById('list');let page=0,total=0;
+async function load(){
+  try{
+    const rows=await rpc('admin_flexy_list_orders',{p_status:'review',p_account_uuid:null,p_limit:PAGE_SIZE,p_offset:page*PAGE_SIZE});
+    total=Number(rows?.[0]?.total_count||0);
+    if(!rows?.length)list.innerHTML='<div class="fx-empty">لا توجد طلبات تحتاج مراجعة.</div>';
+    else list.innerHTML=rows.map(row=>'<article class="fx-item"><div class="fx-row"><div><div class="fx-name">'+escapeHtml(row.account_name)+' — <span dir="ltr">'+escapeHtml(row.phone)+'</span></div><div class="fx-meta">'+escapeHtml(fmtDate(row.created_at))+'</div></div><div class="fx-money">'+money(row.wallet_charge_amount)+'</div></div><div class="fx-pills"><span class="fx-pill warn">مراجعة</span><span class="fx-pill">محجوز حتى القرار</span></div><div class="fx-meta" style="margin-top:8px">'+escapeHtml(row.result_text||row.result_code||'لا توجد نتيجة نهائية موثوقة.')+'</div></article>').join('');
+    const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));document.getElementById('pageInfo').textContent=(page+1)+' / '+pages+' — '+total;
+    document.getElementById('prev').disabled=page===0;document.getElementById('next').disabled=(page+1)*PAGE_SIZE>=total;
+  }catch(error){list.innerHTML='<div class="fx-empty">تعذر تحميل المراجعة: '+escapeHtml(error?.message||error)+'</div>'}
+}
+document.getElementById('prev').onclick=()=>{if(page>0){page--;load()}};
+document.getElementById('next').onclick=()=>{if((page+1)*PAGE_SIZE<total){page++;load()}};
+load();
+</script>
+</body></html>
