@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
+<title>حسابات Flexy — MyTool</title>
+<link rel="stylesheet" href="app.css?v=20260919-1">
+<script src="../auth-guard.js?v=20260917-continuity-2" data-access="admin"></script>
+</head>
+<body>
+<main class="fx-wrap">
+  <div class="fx-top">
+    <div><h1 class="fx-title">حسابات Flexy</h1><p class="fx-sub">رصيد، دين، دفع وإرجاع لكل حساب.</p></div>
+    <a class="fx-back" href="./">← Flexy</a>
+  </div>
+
+  <nav class="fx-tabs"><a class="fx-tab" href="./">الرئيسية</a><a class="fx-tab" href="orders.html">الطابور</a><a class="fx-tab active" href="accounts.html">الحسابات</a><a class="fx-tab" href="review.html">المراجعة</a></nav>
+
+  <div id="message" class="fx-message" hidden></div>
+
+  <section class="fx-card">
+    <div class="fx-section-title"><h2>إضافة حساب</h2></div>
+    <form id="createForm" class="fx-form">
+      <div class="fx-fields">
+        <div class="fx-field"><label>الاسم</label><input class="fx-input" name="display_name" required maxlength="120"></div>
+        <div class="fx-field"><label>اسم المستخدم / المرجع</label><input class="fx-input" name="username" maxlength="120"></div>
+        <div class="fx-field"><label>النسبة الحالية %</label><input class="fx-input" name="rate" type="number" min="0" step="0.01" value="0"></div>
+        <div class="fx-field"><label>الدين</label><select class="fx-select" name="allow_debt"><option value="false">غير مسموح</option><option value="true">مسموح</option></select></div>
+      </div>
+      <div class="fx-actions"><button class="fx-btn" type="submit">إضافة الحساب</button></div>
+    </form>
+  </section>
+
+  <section class="fx-card">
+    <div class="fx-toolbar">
+      <input id="search" class="fx-input" placeholder="بحث بالاسم أو المستخدم أو ID">
+      <select id="status" class="fx-select"><option value="">الكل</option><option value="active">نشط</option><option value="blocked">موقوف</option><option value="archived">مؤرشف</option></select>
+    </div>
+    <div id="list" class="fx-list"><div class="fx-empty">جاري التحميل…</div></div>
+    <div class="fx-pagination"><button id="prev" class="fx-btn secondary" type="button">السابق</button><span id="pageInfo" class="fx-meta">—</span><button id="next" class="fx-btn secondary" type="button">التالي</button></div>
+  </section>
+</main>
+<script type="module">
+import {rpc,money,escapeHtml,PAGE_SIZE} from './api.js';
+const list=document.getElementById('list'),msg=document.getElementById('message'),search=document.getElementById('search'),status=document.getElementById('status');
+let page=0,total=0,timer=null;
+function show(text,bad=false){msg.hidden=false;msg.textContent=text;msg.className='fx-message '+(bad?'bad':'ok')}
+function render(rows){
+  if(!rows.length){list.innerHTML='<div class="fx-empty">لا توجد حسابات.</div>';return}
+  list.innerHTML=rows.map(row=>`
+    <a class="fx-item" href="account.html?id=${encodeURIComponent(row.account_uuid)}" style="text-decoration:none;color:inherit">
+      <div class="fx-row">
+        <div><div class="fx-name">${escapeHtml(row.display_name)}</div><div class="fx-meta">${escapeHtml(row.username||('ID '+row.account_id))}</div></div>
+        <div class="fx-money">${money(row.available_credit)}</div>
+      </div>
+      <div class="fx-pills">
+        <span class="fx-pill ok">رصيد ${money(row.credit_balance)}</span>
+        <span class="fx-pill ${Number(row.debt_balance)>0?'bad':''}">دين ${money(row.debt_balance)}</span>
+        <span class="fx-pill ${Number(row.reserved_credit)+Number(row.reserved_debt)>0?'warn':''}">محجوز ${money(Number(row.reserved_credit)+Number(row.reserved_debt))}</span>
+        <span class="fx-pill">نسبة ${money(row.account_rate_percent)}%</span>
+        <span class="fx-pill ${row.status==='active'?'ok':row.status==='blocked'?'bad':''}">${escapeHtml(row.status)}</span>
+      </div>
+    </a>`).join('');
+}
+async function load(){
+  list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';
+  try{
+    const rows=await rpc('admin_flexy_list_accounts',{p_search:search.value.trim()||null,p_status:status.value||null,p_limit:PAGE_SIZE,p_offset:page*PAGE_SIZE});
+    total=Number(rows?.[0]?.total_count||0);render(rows||[]);
+    const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+    document.getElementById('pageInfo').textContent=(page+1)+' / '+pages+' — '+total;
+    document.getElementById('prev').disabled=page===0;
+    document.getElementById('next').disabled=(page+1)*PAGE_SIZE>=total;
+  }catch(error){list.innerHTML='<div class="fx-empty">تعذر التحميل.</div>';show(String(error?.message||error),true)}
+}
+document.getElementById('createForm').addEventListener('submit',async event=>{
+  event.preventDefault();const fd=new FormData(event.currentTarget);const btn=event.currentTarget.querySelector('button');btn.disabled=true;
+  try{
+    const rows=await rpc('admin_flexy_create_account',{
+      p_display_name:String(fd.get('display_name')||'').trim(),
+      p_username:String(fd.get('username')||'').trim()||null,
+      p_allow_debt:String(fd.get('allow_debt'))==='true',
+      p_account_rate_percent:Number(fd.get('rate')||0),
+      p_notes:null
+    });
+    event.currentTarget.reset();event.currentTarget.querySelector('[name=rate]').value='0';
+    show('تم إنشاء الحساب بدون أي رصيد أو دين ابتدائي.');page=0;await load();
+    if(rows?.[0]?.account_uuid)location.href='account.html?id='+encodeURIComponent(rows[0].account_uuid);
+  }catch(error){show(String(error?.message||error),true)}finally{btn.disabled=false}
+});
+search.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{page=0;load()},250)});
+status.addEventListener('change',()=>{page=0;load()});
+document.getElementById('prev').onclick=()=>{if(page>0){page--;load()}};
+document.getElementById('next').onclick=()=>{if((page+1)*PAGE_SIZE<total){page++;load()}};
+load();
+</script>
+</body></html>
