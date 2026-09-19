@@ -340,6 +340,8 @@
     if(otherModeActive())return;
     const current=readToolsSession();
     if(current.token&&current.expiresAt>Date.now()){
+      const personal=current.accessType==='personal'&&current.storage===localStorage;
+      if(personal)showTools(current.expiresAt,'personal');
       try{
         const session=await api('/v1/session',{token:current.token});
         if(session.ok&&session.role==='tools'){
@@ -348,8 +350,15 @@
           showTools(Number(session.expires_at),accessType);
           return;
         }
-      }catch(_e){}
-      clearToolsSession();
+        if(!personal)clearToolsSession();
+      }catch(error){
+        if(personal&&!error?.status){
+          // Network problem only: keep the approved personal-device session locally.
+          // It will be validated again on the next load/online request.
+          return;
+        }
+        clearToolsSession();
+      }
     }else{
       const staleSession=readStorageSession(sessionStorage);
       const stalePersonal=readStorageSession(localStorage);
@@ -455,7 +464,11 @@
 
   injectUi();
 
-  $('loginForm')?.addEventListener('submit',()=>{clearToolsSession();clearRequest();},{capture:true});
+  $('loginForm')?.addEventListener('submit',()=>{
+    const current=readToolsSession();
+    if(current.accessType!=='personal')clearToolsSession();
+    clearRequest();
+  },{capture:true});
   $('logoutBtn')?.addEventListener('click',()=>{
     if(!$('generalTools')?.hidden){
       clearToolsSession();clearRequest();
