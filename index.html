@@ -11,7 +11,7 @@
     *{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:linear-gradient(135deg,#fff7ef,#eef9ff);color:var(--text);min-height:100vh;padding:16px}
     [hidden]{display:none!important}.app{max-width:900px;margin:auto}.hero{background:linear-gradient(135deg,var(--orange),#7fd3ff);color:#fff;border-radius:22px;padding:18px 18px;box-shadow:0 10px 30px rgba(22,48,71,.12)}
     .hero h1{margin:0 0 5px;font-size:26px}.hero p{margin:0;opacity:.95;line-height:1.6;font-size:14px}.section-title{margin:24px 4px 12px;font-size:17px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(22,48,71,.07);transition:.15s}.card:active{transform:scale(.985)}
+    .card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(22,48,71,.07);transition:.15s}.card:active{transform:scale(.985)}.core-grid .card{border-color:#cfe6f3}.core-grid .icon{margin-bottom:9px}
     .icon{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:27px;background:linear-gradient(135deg,#fff0df,#e9f8ff);margin-bottom:12px}.card h2{font-size:17px;margin:0 0 6px}.card p{font-size:13px;color:var(--muted);margin:0;line-height:1.6}.foot{margin-top:20px;text-align:center;color:var(--muted);font-size:12px}
         .badge{display:inline-block;margin-top:8px;padding:3px 7px;border-radius:99px;background:#edf8ff;color:#14729f;font-size:10px;font-weight:700}.sessionbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 10px;padding:9px 11px;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:14px}.sessionbar button{width:auto;flex:0 0 auto;padding:9px 13px}.sessionbar .small{margin-top:3px}
     button,input{font:inherit;border-radius:12px;border:1px solid var(--line);padding:12px;background:#fff}.btn{border:0;background:linear-gradient(135deg,#147fb2,#2ea8e6);color:#fff;font-weight:800;cursor:pointer}.btn.secondary{background:#fff;color:#14729f;border:1px solid #bfe3f6}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}
@@ -19,7 +19,7 @@
     .password-wrap{position:relative}.password-wrap input{padding-left:72px}.password-toggle{position:absolute;left:7px;top:50%;transform:translateY(-50%);width:auto!important;padding:7px 9px!important;border:0;background:transparent;color:#14729f;font-size:12px;font-weight:800;cursor:pointer}
     .local-note{margin-top:10px;padding:10px;border-radius:12px;background:#fffbeb;color:#92400e;font-size:12px;line-height:1.6}
     .mfa-qr{display:block;width:min(230px,100%);height:auto;margin:12px auto;border:1px solid var(--line);border-radius:14px;background:#fff;padding:8px}.mfa-secret{display:block;direction:ltr;text-align:center;word-break:break-all;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px;margin:8px 0;font-size:12px}
-    @media(max-width:600px){body{padding:10px}.grid{grid-template-columns:1fr}.hero{padding:16px 15px}.hero h1{font-size:24px}.sessionbar{align-items:center;flex-direction:row}.sessionbar button{width:auto}.sessionbar .mode{font-size:13px}.sessionbar .small{font-size:10px}}
+    @media(max-width:600px){body{padding:10px}.grid{grid-template-columns:1fr}.core-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.core-grid .card{padding:12px}.core-grid .icon{width:42px;height:42px;font-size:22px}.core-grid .card h2{font-size:14px}.core-grid .card p,.core-grid .badge{display:none}.hero{padding:16px 15px}.hero h1{font-size:24px}.sessionbar{align-items:center;flex-direction:row}.sessionbar button{width:auto}.sessionbar .mode{font-size:13px}.sessionbar .small{font-size:10px}}
   </style>
   <script src="auth-guard.js?v=20260919-personal-persist1" data-access="public" data-nav="off"></script>
   <script src="auth-device.js?v=20260919-owner-remember1"></script>
@@ -86,19 +86,24 @@
     <section class="hero"><h1>MyTool</h1><p id="welcomeText">أدوات العمل اليومية في مكان واحد.</p></section>
 
     <div id="adminTools">
-      <h2 class="section-title">الأدوات</h2><section class="grid">
-        <a class="card" href="cards/"><div class="icon">🎫</div><h2>معالج البطاقات</h2><p>Mobilis وToken Store، استخراج البطاقات، تسمية TXT، وتقسيمها إلى أقسام قابلة للتعديل.</p></a>
-        <a class="card" href="accounts-review/"><div class="icon">📊</div><h2>مراجعة الحسابات</h2><p>إجمالي الديون والأرصدة والأرباح، أكبر المدينين، وخطة تحصيل تقريبية من ملف CSV.</p><span class="badge">Vue 3 • محلي</span></a>
-        <a class="card" href="flexy/"><div class="icon">📱</div><h2>صفحة فليكسي</h2><p>معاينة Mobile First لإدخال الرقم واكتشاف المتعامل ثم عرض العروض المتاحة.</p></a>
-        <a class="card" href="programs/"><div class="icon">🧰</div><h2>البرامج</h2><p>روابط تحميل مباشرة للبرامج الأساسية وبرامج صيانة الكمبيوتر، مع نسخ 32-bit و64-bit عند توفرها.</p></a>
-        <a class="card" href="shop/"><div class="icon">🧾</div><h2>حساب المحل</h2><p>تسجيل المبيعات من الهاتف ومتابعة المخزون المتصل بقاعدة Supabase.</p><span class="badge">Supabase + Vue</span></a>
+      <h2 class="section-title">البرامج الأساسية</h2><section class="grid core-grid">
+        <a class="card" href="notes/"><div class="icon">📝</div><h2>الملاحظات</h2><p>صندوق الملاحظات اليومي والأفكار والمهام والرجوع السريع للمعلومات.</p><span class="badge">أساسي</span></a>
+        <a class="card" href="shop/"><div class="icon">🧾</div><h2>حساب المحل</h2><p>المبيعات والمخزون والجرد ودورة العمل اليومية للمحل.</p><span class="badge">أساسي</span></a>
+        <a class="card" href="flexy/"><div class="icon">📱</div><h2>فليكسي</h2><p>خدمات الفليكسي والمحطات والعروض والتنفيذ المرتبط بها.</p><span class="badge">أساسي</span></a>
+        <a class="card" href="cards/"><div class="icon">🎫</div><h2>معالج البطاقات</h2><p>استخراج وتنظيم أكواد البطاقات والملفات بسرعة.</p><span class="badge">أساسي</span></a>
+        <a class="card" href="accounts-review/"><div class="icon">📊</div><h2>الحسابات</h2><p>مراجعة الديون والأرصدة والأرباح وقوائم التحصيل.</p><span class="badge">أساسي</span></a>
+        <a class="card" href="programs/"><div class="icon">🧰</div><h2>البرامج</h2><p>روابط البرامج الأساسية وبرامج صيانة الكمبيوتر.</p><span class="badge">أساسي</span></a>
+      </section>
+
+      <h2 class="section-title">الإدارة والنظام</h2><section class="grid">
         <a id="usersAdminCard" class="card" href="shop/users.html"><div class="icon">👥</div><h2>المستخدمون</h2><p>إدارة حسابات العامل والدخول المحلي وصلاحيات المحل من نفس النظام الحقيقي.</p><span class="badge">REAL</span></a>
         <a class="card" href="shop/cash.html"><div class="icon">💵</div><h2>أماكن الأموال</h2><p>متابعة السيولة حسب مكانها: الكيس، الخزنة، عند شخص، البنك، أو قيد التحويل.</p><span class="badge">السيولة الآن</span></a>
-        <a class="card" href="notes/"><div class="icon">📝</div><h2>صندوق الملاحظات</h2><p>سجّل الملاحظات والصور بدل واتساب، وصنّفها وانسخها للذكاء الاصطناعي.</p><span class="badge">للإدارة</span></a>
-        <a class="card" href="documentation/"><div class="icon">🧭</div><h2>مخطط المشاريع</h2><p>Documentation مرئية لمعمارية MyTool وFlexy: السيرفر، Supabase، Station، الكود المعاد استخدامه والـCatalog.</p><span class="badge">قراءة فقط • للإدارة</span></a>
-        <a class="card" href="access-admin/stations.html"><div class="icon">🖥️</div><h2>المحطات</h2><p>متابعة أجهزة الكمبيوتر والمودمات والشرائح وحالات ONLINE وREVIEW لخدمة Flexy.</p><span class="badge">قراءة فقط • للإدارة</span></a>\n        <a class="card" href="access-admin/sims.html"><div class="icon">📶</div><h2>سجل الشرائح</h2><p>حفظ نوع الشريحة ورقمها وصاحبها وPIN وتاريخ الاستلام وربط Station/Modem عند الحاجة.</p><span class="badge">Flexy • للإدارة</span></a>
-        <a id="ownerAccessAdminCard" class="card" href="access-admin/"><div class="icon">🔐</div><h2>طلبات دخول الأدوات</h2><p>قبول أو رفض أجهزة العملاء، تحديد مدة الجلسة، وإلغاؤها فورًا عند الحاجة.</p><span class="badge">Owner • Cloudflare + D1</span></a>
+        <a class="card" href="documentation/"><div class="icon">🧭</div><h2>مخطط المشاريع</h2><p>Documentation مرئية لمعمارية MyTool وFlexy والمراجع المرتبطة.</p><span class="badge">قراءة فقط</span></a>
+        <a class="card" href="access-admin/stations.html"><div class="icon">🖥️</div><h2>المحطات والأجهزة</h2><p>متابعة أجهزة الكمبيوتر وUSB Modem والشرائح وحالة الاتصال.</p><span class="badge">Flexy</span></a>
+        <a class="card" href="access-admin/sims.html"><div class="icon">📶</div><h2>سجل الشرائح</h2><p>مرجع أرقام الشرائح وصاحبها وحالتها وربطها بالمحطات والمودمات.</p><span class="badge">Flexy</span></a>
+        <a id="ownerAccessAdminCard" class="card" href="access-admin/"><div class="icon">🔐</div><h2>الجلسات والأجهزة</h2><p>طلبات الدخول والجلسات الحالية والأجهزة الشخصية المعتمدة.</p><span class="badge">Owner</span></a>
       </section>
+
       <h2 class="section-title">أدوات سريعة</h2><section class="grid">
         <a class="card" href="qr/"><div class="icon">🔳</div><h2>مولّد QR</h2><p>حوّل رابطًا أو رقمًا أو نصًا إلى QR مباشرة من MyTool ثم حمّله PNG.</p><span class="badge">داخل MyTool</span></a>
         <a class="card" href="https://pairdrop.net/" target="_blank" rel="noopener"><div class="icon">📲</div><h2>نقل ملفات PairDrop</h2><p>إرسال ملفات وصور ونصوص بين الهاتف والكمبيوتر من المتصفح.</p><span class="badge">يفتح أونلاين</span></a>
