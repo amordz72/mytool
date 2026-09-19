@@ -620,6 +620,8 @@ function hardwareSection(row){
 
   return items.map(item=>{
     const simUuid=item.sim_uuid||'';
+    const agentParts=String(row.agent_version||'0').split('.').map(Number);
+    const arsselliReady=agentParts[0]>0 || agentParts[1]>4 || (agentParts[1]===4 && agentParts[2]>=2);
     const numberValue=item.msisdn||'';
     const pinLabel=item.has_pin?'PIN محفوظ':'PIN غير محفوظ';
     const balanceKnown=item.balance_amount!==null&&item.balance_amount!==undefined&&item.balance_amount!=='';
@@ -651,7 +653,7 @@ function hardwareSection(row){
           '<p>آخر فحص: '+escapeHtml(balanceChecked)+
           (item.balance_raw?'<br>رد الشبكة: '+escapeHtml(item.balance_raw):'')+
           '</p></div>'+
-          '<button class="mt-btn secondary refresh-balance" type="button" data-sim-type="'+escapeHtml(item.sim_type)+'" data-sim-uuid="'+escapeHtml(simUuid)+'">تحديث رصيد '+(item.sim_type==='mobilis-arsselli'?'أرسالي':'سماء')+'</button>'+
+          '<button class="mt-btn secondary refresh-balance" type="button" data-sim-type="'+escapeHtml(item.sim_type)+'" data-sim-uuid="'+escapeHtml(simUuid)+'" '+(item.sim_type==='mobilis-arsselli'&&!arsselliReady?'disabled title="حدّث Agent إلى 0.4.2 ثم أعد تشغيله"':'')+'>تحديث رصيد '+(item.sim_type==='mobilis-arsselli'?'أرسالي':'سماء')+'</button>'+
         '</div>'
         :'')+
       '<form class="sim-settings" data-sim-uuid="'+escapeHtml(simUuid)+'">'+
