@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
+<title>طابور Flexy — MyTool</title>
+<link rel="stylesheet" href="app.css?v=20260919-1">
+<script src="../auth-guard.js?v=20260917-continuity-2" data-access="admin"></script>
+</head>
+<body>
+<main class="fx-wrap">
+  <div class="fx-top"><div><h1 class="fx-title">طابور Flexy</h1><p class="fx-sub">طلبات المستخدم التجارية منفصلة عن Jobs التقنية للمحطة.</p></div><a class="fx-back" href="./">← Flexy</a></div>
+  <nav class="fx-tabs"><a class="fx-tab" href="./">الرئيسية</a><a class="fx-tab active" href="orders.html">الطابور</a><a class="fx-tab" href="accounts.html">الحسابات</a><a class="fx-tab" href="review.html">المراجعة</a></nav>
+  <div id="message" class="fx-message" hidden></div>
+  <section class="fx-card">
+    <div class="fx-toolbar">
+      <select id="status" class="fx-select">
+        <option value="">كل الحالات</option><option value="reserved">محجوز</option><option value="queued">في الطابور</option>
+        <option value="claimed">استلمها المنفذ</option><option value="execution_started">قيد التنفيذ</option>
+        <option value="success">ناجحة</option><option value="failed">فاشلة</option><option value="review">مراجعة</option>
+      </select>
+      <button id="refresh" class="fx-btn secondary" type="button">تحديث</button>
+    </div>
+    <div id="list" class="fx-list"><div class="fx-empty">جاري التحميل…</div></div>
+    <div class="fx-pagination"><button id="prev" class="fx-btn secondary" type="button">السابق</button><span id="pageInfo" class="fx-meta">—</span><button id="next" class="fx-btn secondary" type="button">التالي</button></div>
+  </section>
+</main>
+<script type="module">
+import {rpc,money,fmtDate,escapeHtml,statusLabel,pillClass,PAGE_SIZE} from './api.js';
+const list=document.getElementById('list'),status=document.getElementById('status'),msg=document.getElementById('message');let page=0,total=0;
+function show(text,bad=false){msg.hidden=false;msg.textContent=text;msg.className='fx-message '+(bad?'bad':'ok')}
+async function load(){
+  list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';
+  try{
+    const rows=await rpc('admin_flexy_list_orders',{p_status:status.value||null,p_account_uuid:null,p_limit:PAGE_SIZE,p_offset:page*PAGE_SIZE});
+    total=Number(rows?.[0]?.total_count||0);
+    if(!rows?.length)list.innerHTML='<div class="fx-empty">لا توجد طلبات في هذا الفلتر.</div>';
+    else list.innerHTML=rows.map(row=>'<article class="fx-item"><div class="fx-row"><div><div class="fx-name">'+escapeHtml(row.account_name)+' — <span dir="ltr">'+escapeHtml(row.phone)+'</span></div><div class="fx-meta">'+escapeHtml(fmtDate(row.created_at))+' — '+escapeHtml(row.family||'Flexy')+'</div></div><div class="fx-money">'+money(row.wallet_charge_amount)+'</div></div><div class="fx-pills"><span class="fx-pill '+pillClass(row.status)+'">'+escapeHtml(statusLabel(row.status))+'</span><span class="fx-pill">قيمة العرض '+money(row.face_amount)+'</span><span class="fx-pill">'+escapeHtml(row.funding_mode||'—')+'</span></div>'+(row.result_text?'<div class="fx-meta" style="margin-top:8px">'+escapeHtml(row.result_text)+'</div>':'')+'</article>').join('');
+    const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));document.getElementById('pageInfo').textContent=(page+1)+' / '+pages+' — '+total;
+    document.getElementById('prev').disabled=page===0;document.getElementById('next').disabled=(page+1)*PAGE_SIZE>=total;
+  }catch(error){list.innerHTML='<div class="fx-empty">تعذر تحميل الطابور.</div>';show(String(error?.message||error),true)}
+}
+status.onchange=()=>{page=0;load()};document.getElementById('refresh').onclick=load;
+document.getElementById('prev').onclick=()=>{if(page>0){page--;load()}};
+document.getElementById('next').onclick=()=>{if((page+1)*PAGE_SIZE<total){page++;load()}};
+load();
+</script>
+</body></html>
