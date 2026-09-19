@@ -22,7 +22,7 @@
     @media(max-width:600px){body{padding:10px}.grid{grid-template-columns:1fr}.hero{padding:16px 15px}.hero h1{font-size:24px}.sessionbar{align-items:center;flex-direction:row}.sessionbar button{width:auto}.sessionbar .mode{font-size:13px}.sessionbar .small{font-size:10px}}
   </style>
   <script src="auth-guard.js?v=20260919-personal-persist1" data-access="public" data-nav="off"></script>
-  <script src="auth-device.js?v=20260919-persist1"></script>
+  <script src="auth-device.js?v=20260919-owner-remember1"></script>
 </head>
 <body>
   <div id="loginView" class="login-wrap" hidden>
@@ -130,6 +130,7 @@
   const EMERGENCY_EXPIRES_KEY='mytool_emergency_admin_expires_at';
   const WORKER_MS=10*24*60*60*1000;
   const WORKSPACE_MS=30*24*60*60*1000;
+  const OWNER_REMEMBER_MS=30*24*60*60*1000;
   const RECOVERY_SALT_B64='nuRYGX3yC/CDoZxBulCgBA==';
   const RECOVERY_HASH_B64='w3lOqpC7yqAVag93XFn+ynwB7nD3cJotuZUjqpb7NsE=';
   const RECOVERY_ITERATIONS=600000;
@@ -145,6 +146,16 @@
 
   function clampHours(v){const n=Math.floor(Number(v)||24);return Math.min(96,Math.max(1,n));}
   function adminDurationMs(){return clampHours(localStorage.getItem(ADMIN_HOURS_KEY)||24)*60*60*1000;}
+  function rememberOwnerExpiry(){const exp=Date.now()+Math.max(OWNER_REMEMBER_MS,adminDurationMs());localStorage.setItem(ADMIN_EXPIRES_KEY,String(exp));return exp;}
+  function resumeBlockedPath(){
+    let raw='';try{raw=sessionStorage.getItem('mytool_blocked_path')||'';}catch(_e){}
+    if(!raw)return false;
+    try{
+      const target=new URL(raw,location.origin),root=new URL('./',location.href);
+      if(target.origin!==location.origin||!target.pathname.startsWith(root.pathname)||target.pathname===root.pathname){sessionStorage.removeItem('mytool_blocked_path');return false;}
+      sessionStorage.removeItem('mytool_blocked_path');location.replace(target.pathname+target.search+target.hash);return true;
+    }catch(_e){try{sessionStorage.removeItem('mytool_blocked_path');}catch(_x){}return false;}
+  }
   function b64Bytes(s){const raw=atob(s);return Uint8Array.from(raw,c=>c.charCodeAt(0));}
   function equalBytes(a,b){if(a.length!==b.length)return false;let x=0;for(let i=0;i<a.length;i++)x|=a[i]^b[i];return x===0;}
   function clearWorker(){localStorage.removeItem(WORKER_TOKEN_KEY);localStorage.removeItem(WORKER_NICKNAME_KEY);localStorage.removeItem(WORKER_EXPIRES_KEY);localStorage.removeItem(WORKSPACE_ROLE_KEY);localStorage.removeItem(WORKSPACE_CODE_KEY);localStorage.removeItem(AUTH_V2_SESSION_KEY);}
@@ -191,11 +202,11 @@
   function updateExpiryText(){if(!expiry){$('sessionExpiry').textContent='';return;}const ms=Math.max(0,expiry-Date.now());const hours=Math.floor(ms/3600000),mins=Math.floor((ms%3600000)/60000);$('sessionExpiry').textContent='تنتهي الجلسة بعد '+hours+'س '+mins+'د';}
   function setAdminViewAfterMfa(){
     clearWorker();clearEmergency();
-    const exp=Date.now()+adminDurationMs();
-    localStorage.setItem(ADMIN_EXPIRES_KEY,String(exp));
+    const exp=rememberOwnerExpiry();
     mfaFactorId='';mfaEnrollment=false;
     $('mfaBox').hidden=true;
     setView('admin',exp);
+    resumeBlockedPath();
   }
   function showMfaBox({factorId,enrollment=false,qrCode='',secret=''}) {
     mfaFactorId=factorId||'';mfaEnrollment=Boolean(enrollment);
@@ -350,7 +361,7 @@
   }
   async function normalLogin(identity,password){
     const client=await getSupabase();
-    if(identity.includes('@')){const {data,error}=await client.auth.signInWithPassword({email:identity,password});if(error)throw error;clearWorker();clearEmergency();if(AUTH_V2_FLAG){await prepareAdminMfaV2();return;}const exp=Date.now()+adminDurationMs();localStorage.setItem(ADMIN_EXPIRES_KEY,String(exp));setView('admin',exp);return;}
+    if(identity.includes('@')){const {data,error}=await client.auth.signInWithPassword({email:identity,password});if(error)throw error;clearWorker();clearEmergency();if(AUTH_V2_FLAG){await prepareAdminMfaV2();return;}const exp=rememberOwnerExpiry();setView('admin',exp);resumeBlockedPath();return;}
     const ws=await client.rpc('workspace_login',{p_username:identity,p_password:password});
     if(!ws.error&&ws.data?.length){await client.auth.signOut().catch(()=>{});clearEmergency();localStorage.removeItem(ADMIN_EXPIRES_KEY);const row=ws.data[0],exp=Date.now()+WORKSPACE_MS;localStorage.setItem(WORKER_TOKEN_KEY,row.session_token);localStorage.setItem(WORKER_NICKNAME_KEY,row.nickname||identity);localStorage.setItem(WORKER_EXPIRES_KEY,String(exp));localStorage.setItem(WORKSPACE_ROLE_KEY,row.account_role||'worker');localStorage.setItem(WORKSPACE_CODE_KEY,row.workspace_code||'REAL');setView(workspaceMode(row.account_role),exp);return;}
     const {data,error}=await client.rpc('worker_login',{p_username:identity,p_password:password});if(error||!data?.length)throw new Error('INVALID_LOGIN');await client.auth.signOut().catch(()=>{});clearEmergency();localStorage.removeItem(ADMIN_EXPIRES_KEY);const row=data[0],exp=Date.now()+WORKER_MS;localStorage.setItem(WORKER_TOKEN_KEY,row.session_token);localStorage.setItem(WORKER_NICKNAME_KEY,row.nickname||identity);localStorage.setItem(WORKER_EXPIRES_KEY,String(exp));setView('worker',exp);
@@ -400,8 +411,22 @@
     }
     if(workerToken||workerExp)clearWorker();
     const adminExp=Number(localStorage.getItem(ADMIN_EXPIRES_KEY)||0);
-    if(adminExp>now){try{const c=await getSupabase();const {data}=await c.auth.getSession();if(data.session){if(AUTH_V2_FLAG){await prepareAdminMfaV2();return;}setView('admin',adminExp);return;}}catch(_e){}}
-    if(adminExp){localStorage.removeItem(ADMIN_EXPIRES_KEY);try{(await getSupabase()).auth.signOut();}catch(_e){}}showLogin();
+    try{
+      const c=await getSupabase();
+      const {data}=await c.auth.getSession();
+      if(data.session){
+        if(AUTH_V2_FLAG){
+          const aal=await c.auth.mfa.getAuthenticatorAssuranceLevel();
+          if(!aal.error&&aal.data?.currentLevel==='aal2'){
+            const exp=rememberOwnerExpiry();setView('admin',exp);resumeBlockedPath();return;
+          }
+          await prepareAdminMfaV2();return;
+        }
+        const exp=rememberOwnerExpiry();setView('admin',exp);resumeBlockedPath();return;
+      }
+    }catch(_e){}
+    if(adminExp)localStorage.removeItem(ADMIN_EXPIRES_KEY);
+    showLogin();
   }
 
   $('loginForm').addEventListener('submit',async e=>{e.preventDefault();hideMessage();const identity=$('identity').value.trim();const btn=$('loginBtn');btn.disabled=true;btn.textContent='جاري الدخول…';try{if(AUTH_V2_FLAG&&!identity.includes('@'))await deviceV2Login(identity,$('password').value);else await normalLogin(identity,$('password').value);}catch(err){if(identity.includes('@')){if(AUTH_V2_FLAG){try{(await getSupabase()).auth.signOut();}catch(_e){}showMessage('تعذر إكمال دخول الإدارة الآمن. تحقق من كلمة المرور وإعداد المصادقة الثنائية.');}else showRecovery();}else if(err?.message==='INVALID_LOGIN')showMessage('اسم المستخدم أو كلمة المرور غير صحيحة.');else if(err?.message==='LOGIN_TEMPORARILY_THROTTLED')showMessage('محاولات دخول كثيرة. أعد المحاولة بعد قليل.');else if(err?.message==='DEVICE_REVOKED')showMessage('تم إلغاء اعتماد هذا الجهاز. تواصل مع الإدارة.');else if(err?.message==='INVALID_DEVICE_CREDENTIAL')showMessage('هوية هذا الجهاز غير صالحة. يلزم إعادة اعتماد الجهاز.');else showMessage('تعذر تسجيل الدخول.');}finally{btn.disabled=false;btn.textContent='دخول';}});
