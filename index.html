@@ -152,6 +152,16 @@
   function clampHours(v){const n=Math.floor(Number(v)||24);return Math.min(96,Math.max(1,n));}
   function adminDurationMs(){return clampHours(localStorage.getItem(ADMIN_HOURS_KEY)||24)*60*60*1000;}
   function rememberOwnerExpiry(){const exp=Date.now()+Math.max(OWNER_REMEMBER_MS,adminDurationMs());localStorage.setItem(ADMIN_EXPIRES_KEY,String(exp));return exp;}
+  function hasToolsAccessCandidate(){
+    for(const storage of [sessionStorage,localStorage]){
+      try{
+        const token=storage.getItem('mytool_tools_access_token')||'';
+        const exp=Number(storage.getItem('mytool_tools_access_expires_at')||0);
+        if(token&&exp>Date.now())return true;
+      }catch(_e){}
+    }
+    return false;
+  }
   function resumeBlockedPath(){
     let raw='';try{raw=sessionStorage.getItem('mytool_blocked_path')||'';}catch(_e){}
     if(!raw)return false;
@@ -181,6 +191,7 @@
     const adminLike=newMode==='admin'||newMode==='emergency'||newMode==='local_admin'||Boolean(context?.adminLike);
     $('adminTools').hidden=!adminLike;
     $('workerTools').hidden=!worker;
+    if($('generalTools'))$('generalTools').hidden=true;
     const ownerAccess=$('ownerAccessAdminCard');if(ownerAccess)ownerAccess.hidden=newMode!=='admin';
     if(newMode==='admin')$('sessionMode').textContent='المالك · النظام الرئيسي';
     if(newMode==='emergency')$('sessionMode').textContent='المالك · استرجاع محلي';
@@ -431,6 +442,7 @@
       }
     }catch(_e){}
     if(adminExp)localStorage.removeItem(ADMIN_EXPIRES_KEY);
+    if(hasToolsAccessCandidate())return;
     showLogin();
   }
 
@@ -449,7 +461,7 @@
   restore();
 })();
 </script>
-<script src="tools-access.js?v=20260919-personal-persist1"></script>
+<script src="tools-access.js?v=20260919-tools-resume2"></script>
 <script src="tools-home.js?v=20260919-dashboard1"></script>
 </body>
 </html>
