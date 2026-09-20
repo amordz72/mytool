@@ -164,7 +164,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const RECIPIENT_CONTEXT_KEY='mytool.document-reader.recipient-context.v1';
   const RECENT_OPERATIONS_KEY='mytool.document-reader.recent-operations.v1';
   const DOCUMENT_INDEX_KEY='mytool.document-reader.document-index.v1';
-  const DOCUMENT_INDEX_CLEANUP_KEY='mytool.document-reader.document-index-cleanup.v2';
+  const DOCUMENT_INDEX_CLEANUP_KEY='mytool.document-reader.document-index-cleanup.v3';
   const RECEIPT_DB_NAME='mytool-document-reader-local-v1';
   const RECEIPT_IMAGE_STORE='receipt-images';
   const UNSENT_RECIPIENT='لم يُرسل لمورد بعد';
@@ -408,9 +408,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function saveRecentOperations(items){
-    const trimmed=(items||[]).slice(0,20);
-    try{localStorage.setItem(RECENT_OPERATIONS_KEY,JSON.stringify(trimmed));}catch(_e){}
-    purgeReceiptImages(trimmed.map(op=>String(op.id||''))).catch(()=>{});
+    const history=(items||[]).slice(0,500);
+    try{localStorage.setItem(RECENT_OPERATIONS_KEY,JSON.stringify(history));}catch(_e){}
+    const imageKeep=history.slice(0,20).map(op=>String(op.id||''));
+    purgeReceiptImages(imageKeep).catch(()=>{});
   }
 
   function getDocumentIndex(){
@@ -472,38 +473,109 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(changed)saveDocumentIndex(index);
   }
 
+  function preferredCanonicalStatus(op){
+    if(op?.status==='saved')return 4;
+    if(op?.status==='analyzed')return 3;
+    if(op?.status==='manual_entry')return 2;
+    if(op?.status==='duplicate')return 1;
+    return 0;
+  }
+
+  function reconcileDocumentIndexAndDuplicates(){
+    try{
+      const items=getRecentOperations();
+      const groups=new Map();
+
+      items.forEach(op=>{
+        const fingerprint=documentFingerprint(op);
+        if(!fingerprint)return;
+        if(!['saved','analyzed','manual_entry','duplicate'].includes(op.status))return;
+        if(!groups.has(fingerprint))groups.set(fingerprint,[]);
+        groups.get(fingerprint).push(op);
+      });
+
+      const canonicalByFingerprint=new Map();
+      groups.forEach((group,fingerprint)=>{
+        const sorted=[...group].sort((a,b)=>{
+          const statusDiff=preferredCanonicalStatus(b)-preferredCanonicalStatus(a);
+          if(statusDiff)return statusDiff;
+          return String(a.createdAt||'').localeCompare(String(b.createdAt||''));
+        });
+        canonicalByFingerprint.set(fingerprint,sorted[0]);
+      });
+
+      let changed=false;
+      const repaired=items.map(op=>{
+        const fingerprint=documentFingerprint(op);
+        if(!fingerprint||!groups.has(fingerprint))return op;
+
+        const canonical=canonicalByFingerprint.get(fingerprint);
+        if(!canonical)return op;
+
+        if(op.id===canonical.id){
+          if(op.status==='duplicate'){
+            changed=true;
+            return {
+              ...op,
+              status:op.templateId&&op.templateId!=='unknown'?'analyzed':'manual_entry',
+              duplicateInfo:null
+            };
+          }
+          if(op.duplicateInfo){
+            changed=true;
+            return {...op,duplicateInfo:null};
+          }
+          return op;
+        }
+
+        const duplicateInfo={
+          operationId:canonical.id||'',
+          documentNumber:canonical.fields?.documentNumber?.value||'',
+          templateId:canonical.templateId||'unknown',
+          selectedRecipient:canonical.selectedRecipient||'',
+          receiptDate:canonical.receiptDate||'',
+          createdAt:canonical.createdAt||''
+        };
+        if(op.status!=='duplicate'||op.duplicateInfo?.operationId!==canonical.id){
+          changed=true;
+          return {...op,status:'duplicate',duplicateInfo};
+        }
+        return op;
+      });
+
+      // Rebuild the duplicate index only from real canonical operations.
+      saveDocumentIndex({});
+      const finalItems=changed?repaired:items;
+      const registered=new Set();
+      finalItems
+        .slice()
+        .sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||'')))
+        .forEach(op=>{
+          const fingerprint=documentFingerprint(op);
+          if(!fingerprint||registered.has(fingerprint))return;
+          if(!['saved','analyzed','manual_entry'].includes(op.status))return;
+          registerDocument(op);
+          registered.add(fingerprint);
+        });
+
+      if(changed)saveRecentOperations(finalItems);
+      localStorage.setItem(DOCUMENT_INDEX_CLEANUP_KEY,'done');
+      return {changed,repaired:finalItems};
+    }catch(_e){
+      return {changed:false,repaired:getRecentOperations()};
+    }
+  }
+
   function cleanupLegacyDocumentIndexOnce(){
     try{
       if(localStorage.getItem(DOCUMENT_INDEX_CLEANUP_KEY)==='done')return;
-      const items=getRecentOperations();
-      const liveIds=new Set(items.map(op=>String(op.id||'')));
-      const index=getDocumentIndex();
-      let changed=false;
-      Object.keys(index).forEach(key=>{
-        const item=index[key]||{};
-        const legacyKey=String(key).includes('|');
-        const orphan=Boolean(item.operationId)&&!liveIds.has(String(item.operationId));
-        if(legacyKey||orphan){
-          delete index[key];
-          changed=true;
-        }
-      });
-      if(changed)saveDocumentIndex(index);
-      localStorage.setItem(DOCUMENT_INDEX_CLEANUP_KEY,'done');
+      reconcileDocumentIndexAndDuplicates();
     }catch(_e){}
   }
 
   function rebuildDocumentIndexFromRecent(){
-    const items=getRecentOperations();
-    const index=getDocumentIndex();
-    const recentIds=new Set(items.map(op=>String(op.id||'')));
-    Object.keys(index).forEach(key=>{
-      if(recentIds.has(String(index[key]?.operationId||'')))delete index[key];
-    });
-    saveDocumentIndex(index);
-    items.slice().reverse()
-      .filter(op=>op.status==='analyzed'||op.status==='saved')
-      .forEach(op=>registerDocument(op));
+    // Keep index synchronized with the history source of truth.
+    reconcileDocumentIndexAndDuplicates();
   }
 
   function operationDate(op){
@@ -860,12 +932,17 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function initializeRecipientContext(){
     activeRecipient=UNSENT_RECIPIENT;
     renderRecipientSelect();
+    const before=getRecentOperations().filter(op=>op.status==='duplicate').length;
     cleanupLegacyDocumentIndexOnce();
     rebuildDocumentIndexFromRecent();
+    const after=getRecentOperations().filter(op=>op.status==='duplicate').length;
     receiptDate.value=todayLocal();
     selectRecipient(UNSENT_RECIPIENT);
     updateDateHint();
     renderRecentOperationTabs();
+    if(after<before){
+      showToast('success','تم إصلاح حالة التكرار','أزيلت علامة «مكرر» من وصل لم يعد له أصل آخر في السجل.',6000);
+    }
   }
 
   const frenchMonths = {
@@ -1576,9 +1653,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const notice=$('resultNotice');
     if(payload.duplicateInfo){
       const d=payload.duplicateInfo;
-      notice.textContent='⛔ وصل مكرر: رقم الوثيقة '+(d.documentNumber||'')+' سبق تسجيله'
-        +(d.selectedRecipient?' إلى '+d.selectedRecipient:'')
-        +(d.receiptDate?' بتاريخ '+d.receiptDate:'')+'. لم تُضف عملية جديدة إلى السجل.';
+      notice.textContent='⛔ وصل مكرر: رقم الوثيقة '+(d.documentNumber||'')+' موجود في عملية أخرى'
+        +(d.selectedRecipient?' عند '+d.selectedRecipient:'')
+        +(d.receiptDate?' بتاريخ '+d.receiptDate:'')
+        +(d.createdAt?' — '+new Date(d.createdAt).toLocaleTimeString('ar-DZ',{hour:'2-digit',minute:'2-digit'}):'')
+        +'. إذا لم تجد العملية الأخرى في السجل فهذا خطأ، وليس تكرارًا حقيقيًا.';
       notice.classList.remove('hidden');
     }else if(payload.templateId==='unknown'){
       notice.textContent='لم يتم التعرف على قالب مدعوم. اختر نوع الوثيقة يدويًا فقط إذا كنت متأكدًا منه؛ القارئ لن يخمّن.';
