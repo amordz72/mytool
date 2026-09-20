@@ -4,55 +4,60 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
 <title>Flexy — MyTool</title>
-<link rel="stylesheet" href="app.css?v=20260919-1">
+<link rel="stylesheet" href="app.css?v=20260920-dashboard-1">
 <script src="../auth-guard.js?v=20260917-continuity-2" data-access="admin"></script>
 </head>
 <body>
 <main class="fx-wrap">
   <div class="fx-top">
-    <div><h1 class="fx-title">Flexy</h1><p class="fx-sub">الطابور، الحسابات، والمحفظة في مكان واحد.</p></div>
+    <div><h1 class="fx-title">Flexy</h1><p class="fx-sub">كل جزء في صفحة مستقلة. اختر الخدمة التي تحتاجها مباشرة.</p></div>
     <a class="fx-back" href="../">← MyTool</a>
   </div>
 
-  <nav class="fx-tabs" aria-label="أقسام Flexy">
-    <a class="fx-tab active" href="./">الرئيسية</a>
-    <a class="fx-tab" href="orders.html">الطابور</a>
-    <a class="fx-tab" href="accounts.html">الحسابات</a>
-    <a class="fx-tab" href="review.html">المراجعة</a>
-  </nav>
-
   <div id="message" class="fx-message">جاري تحميل حالة Flexy…</div>
 
-  <section class="fx-grid">
-    <a class="fx-stat" href="accounts.html" style="text-decoration:none;color:inherit">
-      <div class="label">الحسابات</div><div id="accountsCount" class="value">—</div>
+  <section class="fx-service-grid" aria-label="أقسام Flexy">
+    <a class="fx-service-card" href="../access-admin/stations.html?view=station">
+      <span class="fx-service-icon">🖥️</span>
+      <span class="fx-service-copy"><strong>Station</strong><small>المحطات، المودمات، الشرائح وحالة الاتصال.</small></span>
+      <span class="fx-service-arrow">‹</span>
     </a>
-    <a class="fx-stat" href="orders.html" style="text-decoration:none;color:inherit">
-      <div class="label">الطلبات</div><div id="ordersCount" class="value">—</div>
+
+    <a class="fx-service-card primary" href="../access-admin/stations.html?view=flexy">
+      <span class="fx-service-icon">📱</span>
+      <span class="fx-service-copy"><strong>Flexy</strong><small>التنفيذ والعروض والرقم والمبلغ فقط.</small></span>
+      <span class="fx-service-arrow">‹</span>
     </a>
-    <a class="fx-stat" href="review.html" style="text-decoration:none;color:inherit">
-      <div class="label">تحتاج مراجعة</div><div id="reviewCount" class="value">—</div>
+
+    <a class="fx-service-card" href="../cards/">
+      <span class="fx-service-icon">🎫</span>
+      <span class="fx-service-copy"><strong>رفع البطاقات</strong><small>معالجة الملفات وإضافة بطاقات Mobilis للمخزون.</small></span>
+      <span class="fx-service-arrow">‹</span>
     </a>
-    <div class="fx-stat">
-      <div class="label">النسبة الافتراضية الحالية</div><div class="value">0%</div>
-    </div>
+
+    <a class="fx-service-card" href="../access-admin/stations.html?view=operations">
+      <span class="fx-service-icon">🧾</span>
+      <span class="fx-service-copy"><strong>العمليات</strong><small>السجل السابق، النتائج والحالات التقنية.</small></span>
+      <span class="fx-service-arrow">‹</span>
+    </a>
+
+    <a class="fx-service-card wide" href="accounts.html">
+      <span class="fx-service-icon">💳</span>
+      <span class="fx-service-copy"><strong>الحسابات</strong><small>أرصدة العملاء، الديون، الدفع والإرجاع.</small></span>
+      <span class="fx-service-badge"><span id="accountsCount">—</span> حساب</span>
+      <span class="fx-service-arrow">‹</span>
+    </a>
   </section>
 
-  <section class="fx-card" style="margin-top:12px">
-    <h2>الوضع الحالي</h2>
-    <div class="fx-meta">
-      هذه الوحدة تستخدم نفس دخول MyTool. إدارة الرصيد والدين والدفع والإرجاع هنا خاصة بخدمة Flexy فقط.
-      التنفيذ التقني عبر Station Connect يبقى منفصلًا عن حساب العميل ومحفظته.
-    </div>
+  <section class="fx-summary" aria-label="ملخص Flexy">
+    <div><span>طلبات الحسابات</span><strong id="ordersCount">—</strong></div>
+    <div><span>تحتاج مراجعة</span><strong id="reviewCount">—</strong></div>
+    <div><span>التنظيم</span><strong>5 أقسام</strong></div>
   </section>
 
-  <section class="fx-card">
-    <h2>مسارات سريعة</h2>
-    <div class="fx-actions">
-      <a class="fx-btn" href="accounts.html">إدارة الحسابات</a>
-      <a class="fx-btn secondary" href="orders.html">فتح الطابور</a>
-      <a class="fx-btn secondary" href="../access-admin/stations.html">المحطات</a>
-    </div>
+  <section class="fx-card fx-note">
+    <h2>مرحلة الفصل الحالية</h2>
+    <div class="fx-meta">التنفيذ وقاعدة البيانات لم يتغيرا. فصلنا الدخول والواجهة أولاً داخل MyTool، حتى نقدر لاحقاً ننقل كل جزء إلى ملفات مستقلة ثم إلى خدمة مستقلة بدون فتح مشروع جديد الآن.</div>
   </section>
 </main>
 <script type="module">
@@ -68,10 +73,10 @@ async function load(){
     document.getElementById('accountsCount').textContent=String(accounts?.[0]?.total_count||0);
     document.getElementById('ordersCount').textContent=String(orders?.[0]?.total_count||0);
     document.getElementById('reviewCount').textContent=String(review?.[0]?.total_count||0);
-    msg.textContent='الوحدة جاهزة. لا توجد كتابة مالية إلا من إجراءات الإدارة داخل حساب محدد.';
+    msg.textContent='Flexy جاهز — اختر القسم مباشرة بدون النزول داخل صفحة المحطات.';
     msg.className='fx-message ok';
   }catch(error){
-    msg.textContent=String(error?.message||'تعذر تحميل بيانات Flexy.');
+    msg.textContent=String(error?.message||'تعذر تحميل ملخص Flexy. الأقسام نفسها ما زالت قابلة للفتح.');
     msg.className='fx-message bad';
   }
 }
