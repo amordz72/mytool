@@ -21,7 +21,7 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
 .detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
-.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}
 .notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}.quality{margin-top:10px;border-radius:13px;padding:11px 12px;font-size:12px;line-height:1.65}.quality.ok{background:#effaf5;border:1px solid #b7e3cd;color:#17643f}.quality.warn{background:#fff9e8;border:1px solid #f1d28a;color:#755b13}.quality.bad{background:#fff4f2;border:1px solid #f0b6b1;color:#9f2219}.quality b{display:block;margin-bottom:3px}
 .error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
 details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{cursor:pointer;font-weight:700;font-size:12px;color:#0d5e86}pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:10px}
@@ -263,8 +263,19 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function qualityMessages(payload){
     const critical=['date','recipient','amount','documentNumber','sender'];
     const missing=critical.filter(key=>!(payload.fields?.[key]?.value));
+    const reviewFields=critical.filter(key=>payload.fields?.[key]?.status==='review');
     const messages=[];
     let level='ok';
+
+    if(payload.manualOverride){
+      messages.push('نوع الوثيقة تم تصحيحه يدويًا؛ راجع الحقول قبل الاعتماد.');
+      level='warn';
+    }
+
+    if(payload.detectedTemplateId==='unknown'){
+      messages.push('التعرف التلقائي على نوع الوثيقة لم ينجح.');
+      level='warn';
+    }
 
     if(payload.edgeCropSuspected){
       messages.push('جزء من الوثيقة قريب جدًا من حافة الصورة؛ قد تكون الصورة مقصوصة أو ناقصة.');
@@ -279,14 +290,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       if(level==='ok')level='warn';
     }
 
-    if(payload.templateId!=='unknown'&&missing.length>=2){
-      messages.push('حقول مهمة مفقودة ('+missing.length+'). السبب قد يكون قصّ الصورة أو عدم وضوح جزء منها.');
+    if(missing.length){
+      messages.push('حقول أساسية غير مؤكدة: '+missing.length+'.');
       if(level==='ok')level='warn';
     }
 
-    if(payload.templateId==='unknown'&&missing.length>=4){
-      messages.push('الصورة لم تعطِ معلومات كافية لتحديد الوثيقة؛ قد تكون ناقصة أو غير واضحة.');
-      level='bad';
+    if(reviewFields.length){
+      messages.push('يوجد حقل مالي/نصي احتاج تصحيحًا احتماليًا من OCR؛ راجعه بصريًا.');
+      if(level==='ok')level='warn';
     }
 
     return {level,messages};
@@ -296,7 +307,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const q=qualityMessages(payload);
     if(!q.messages.length){
       qualityNotice.className='quality ok';
-      qualityNotice.innerHTML='<b>✓ جودة الصورة مناسبة مبدئيًا</b>لا يوجد تنبيه واضح على قصّ الصورة أو ضعف القراءة. يبقى التحقق البصري من الختم مهمًا إذا كانت الوثيقة تعتمد عليه.';
+      qualityNotice.innerHTML='<b>✓ القراءة متماسكة مبدئيًا</b>لم يظهر نقص واضح في الحقول الأساسية أو ضعف كبير في OCR. يبقى التحقق البصري من الختم مهمًا إذا كانت الوثيقة تعتمد عليه.';
       return;
     }
     qualityNotice.className='quality '+q.level;
@@ -346,14 +357,15 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       &&t.includes('bordereau')&&t.includes('versement');
     if(isBna)return 'bna';
 
-    const bdlSignals=[
-      /avis\s+de\s+versement/.test(t),
-      /nom\s+ou\s+raison\s+sociale/.test(t),
-      /libelle|libellé/.test(t),
-      /date\s+de\s+valeur/.test(t),
-      /num[ée]ro\s+de\s+compte/.test(t)
-    ].filter(Boolean).length;
-    if(bdlSignals>=4)return 'bdl';
+    let bdlScore=0;
+    if(/avis[\s\S]{0,18}versement/.test(t))bdlScore+=4;
+    if(/raison\s+sociale/.test(t))bdlScore+=2;
+    if(/date\s+(?:de\s+)?valeur/.test(t))bdlScore+=1;
+    if(/num[ée]ro?\s+(?:de\s+)?compte/.test(t)||/\bcompte\b/.test(t))bdlScore+=1;
+    if(/libelle|libellé/.test(t))bdlScore+=1;
+    if(/\bagence\b/.test(t))bdlScore+=1;
+    if(/\btotal\b/.test(t)&&/dzd/.test(t))bdlScore+=1;
+    if(bdlScore>=5)return 'bdl';
 
     const posteSignals=[
       /donneur\s+d.?ordre/.test(t),
@@ -402,6 +414,32 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const n=Number(digits);
     if(!Number.isFinite(n))return null;
     return decimalLike?n/100:n;
+  }
+
+  function parseBankMoney(raw){
+    const original=String(raw||'').trim();
+    const groups=original.match(/\d+/g)||[];
+    if(!groups.length)return null;
+    const digits=groups.join('');
+    const n=Number(digits);
+    if(!Number.isFinite(n))return null;
+    const hasSeparator=/[.,\s]/.test(original);
+    const last=groups[groups.length-1]||'';
+    if(hasSeparator&&groups.length>=2&&last.length===2){
+      return {value:n/100,heuristic:false,raw:original};
+    }
+    if(!hasSeparator&&digits.length>=5&&digits.endsWith('00')){
+      return {value:n/100,heuristic:true,raw:original};
+    }
+    return {value:n,heuristic:!hasSeparator,raw:original};
+  }
+
+  function cleanEntityName(value){
+    return cleanLine(String(value||''))
+      .replace(/[|¦]+$/,'')
+      .replace(/\s+[a-z]$/,'')
+      .replace(/\s{2,}/g,' ')
+      .trim();
   }
 
   function extractBna(text){
@@ -456,43 +494,61 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
     const out={};
 
-    out.bank={value:'BDL — Banque de Développement Local',source:'قالب BDL المعتمد: Avis de versement'};
+    out.bank={value:'BDL — Banque de Développement Local',source:'مستنتج من نوع الوثيقة BDL — Avis de versement',status:'inferred'};
 
     const doc=oneLine.match(/AVIS\s+DE\s+VERSEMENT\s*N\s*[°ºo.]?\s*[:.]?\s*(\d{5,14})/i);
-    out.documentNumber=doc?{value:doc[1],source:'AVIS DE VERSEMENT N°'}:null;
+    out.documentNumber=doc?{value:doc[1],source:'AVIS DE VERSEMENT N°',status:'read'}:null;
 
     const date=parseFrenchDate(oneLine);
-    out.date=date?{value:date,source:'تاريخ الوثيقة بعد Le:'}:null;
+    out.date=date?{value:date,source:'تاريخ الوثيقة بعد Le:',status:'read'}:null;
 
     let recipient=findLineValue(lines,/^.*?Nom\s+ou\s+Raison\s+Sociale\s*[:.]?/i);
-    recipient=cleanLine(recipient);
+    recipient=cleanEntityName(recipient);
     out.recipient=recipient&&recipient.length<=100
-      ? {value:recipient,source:'Nom ou Raison Sociale'}
+      ? {value:recipient,source:'Nom ou Raison Sociale',status:'read'}
       : null;
 
-    let amountMatch=oneLine.match(/\bTOTAL\s*[:.]?\s*([0-9][0-9\s.,]{1,22})\s*(?:DZD|DA)\b/i);
-    if(!amountMatch)amountMatch=oneLine.match(/\bMontant\s*[:.]?\s*([0-9][0-9\s.,]{1,22})\s*(?:DZD|DA)\b/i);
-    const amount=amountMatch?parseAmountValue(amountMatch[1]):null;
-    out.amount=amount!==null
-      ? {value:new Intl.NumberFormat('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2}).format(amount)+' DZD',raw:amount,source:amountMatch[0].toUpperCase().startsWith('TOTAL')?'TOTAL':'Montant'}
+    const montantMatch=oneLine.match(/\bMontant\s*[:.]?\s*([0-9][0-9\s.,]{1,22})\s*(?:DZD|DA)\b/i);
+    const totalMatch=oneLine.match(/\bTOTAL\s*[:.]?\s*([0-9][0-9\s.,]{1,22})\s*(?:DZD|DA)\b/i);
+    const montantParsed=montantMatch?parseBankMoney(montantMatch[1]):null;
+    const totalParsed=totalMatch?parseBankMoney(totalMatch[1]):null;
+    const chosen=montantParsed||totalParsed;
+    let amountStatus=chosen?(chosen.heuristic?'review':'read'):null;
+    if(montantParsed&&totalParsed&&Math.abs(montantParsed.value-totalParsed.value)<0.01){
+      amountStatus='read';
+    }
+    out.amount=chosen
+      ? {value:new Intl.NumberFormat('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2}).format(chosen.value)+' DZD',raw:chosen.value,source:montantParsed?'Montant':'TOTAL',status:amountStatus}
       : null;
 
-    const libelleIndex=lines.findIndex(line=>/\bLIBELLE\b|\bLIBELLÉ\b/i.test(line));
+    let libelleIndex=lines.findIndex(line=>/\bLIBELLE\b|\bLIBELLÉ\b/i.test(line));
+    if(libelleIndex<0)libelleIndex=lines.findIndex(line=>/VERSEMENT\s+(?:ESP|ESF|E5P)?\s*\/?\s*TIERS/i.test(line));
     const senderLines=[];
     if(libelleIndex>=0){
-      for(let i=libelleIndex+1;i<Math.min(lines.length,libelleIndex+5);i++){
+      for(let i=libelleIndex+1;i<Math.min(lines.length,libelleIndex+6);i++){
         const line=cleanLine(lines[i]);
-        if(/\b(Montant|Commis|Commission|Taxes?|TOTAL|Signature|Date\s+de\s+valeur|DZD|DA)\b/i.test(line))break;
+        if(/\b(Montant|Commis|Commission|Taxes?|TOTAL|Signature|Date\s+(?:de\s+)?valeur|DZD|DA)\b/i.test(line))break;
         if(/\d/.test(line))break;
         if(!/[A-Za-zÀ-ÿ]/.test(line))continue;
         if(line.length>60)break;
         senderLines.push(line);
       }
     }
-    const sender=cleanLine(senderLines.join(' '));
+    if(!senderLines.length){
+      const moneyIndex=lines.findIndex(line=>/\bMontant\b/i.test(line));
+      if(moneyIndex>0){
+        for(let i=Math.max(0,moneyIndex-3);i<moneyIndex;i++){
+          const line=cleanLine(lines[i]);
+          if(/^[A-ZÀ-Ý][A-ZÀ-Ý' -]{4,60}$/.test(line)&&!/(LIBELLE|VERSEMENT|TOTAL|DZD|DATE|VALEUR)/i.test(line)){
+            senderLines.push(line);
+          }
+        }
+      }
+    }
+    const sender=cleanEntityName(senderLines.join(' '));
     const senderWords=sender.match(/[A-Za-zÀ-ÿ]{2,}/g)||[];
     out.sender=sender&&sender.length<=100&&senderWords.length>=2
-      ? {value:sender,source:'الاسم الظاهر بعد LIBELLE : VERSEMENT ESP/TIERS'}
+      ? {value:sender,source:'اسم المرسل قرب LIBELLE / VERSEMENT ESP-TIERS',status:'read'}
       : null;
 
     return out;
@@ -504,7 +560,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
     const out={};
 
-    out.bank={value:'Algérie Poste',source:"قالب Algérie Poste — Reçu de l'opération"};
+    out.bank={value:'Algérie Poste',source:"مستنتج من نوع الوثيقة Algérie Poste — Reçu de l'opération",status:'inferred'};
 
     const referenceLine=lines.find(line=>/R[ée]f[ée]rence/i.test(line))||'';
     const refMatch=referenceLine.match(/R[ée]f[ée]rence\s*[:.]?\s*(\d{4,12})/i);
@@ -570,7 +626,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const el=document.createElement('div');
       el.className='field';
       const clear=Boolean(data&&data.value);
-      el.innerHTML='<div class="field-head"><span class="field-label">'+label+'</span><span class="status '+(clear?'ok':'bad')+'">'+(clear?'واضح':'غير واضح')+'</span></div>'
+      let state=data?.status||'read';
+      if(key==='bank'&&clear&&payload.manualOverride&&state==='inferred')state='manual';
+      const labels={
+        read:['ok','واضح'],
+        inferred:['info','من نوع الوثيقة'],
+        manual:['warn','تصحيح يدوي'],
+        review:['warn','يحتاج مراجعة']
+      };
+      const badge=clear?(labels[state]||labels.read):['bad','غير واضح'];
+      el.innerHTML='<div class="field-head"><span class="field-label">'+label+'</span><span class="status '+badge[0]+'">'+badge[1]+'</span></div>'
         +'<div class="value">'+escapeHtml(clear?String(data.value):'لا توجد قراءة مؤكدة')+'</div>'
         +'<div class="source">'+escapeHtml(clear?String(data.source||''):'لم يتم التخمين أو ملء الحقل تلقائيًا')+'</div>';
       resultsEl.appendChild(el);
