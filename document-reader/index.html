@@ -22,7 +22,7 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
 .detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
 .results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}
-.notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}
+.notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}.quality{margin-top:10px;border-radius:13px;padding:11px 12px;font-size:12px;line-height:1.65}.quality.ok{background:#effaf5;border:1px solid #b7e3cd;color:#17643f}.quality.warn{background:#fff9e8;border:1px solid #f1d28a;color:#755b13}.quality.bad{background:#fff4f2;border:1px solid #f0b6b1;color:#9f2219}.quality b{display:block;margin-bottom:3px}
 .error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
 details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{cursor:pointer;font-weight:700;font-size:12px;color:#0d5e86}pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:10px}
 .hidden{display:none!important}
@@ -79,6 +79,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     </div>
   </div>
 
+  <div id="qualityNotice" class="quality hidden"></div>
   <div id="resultNotice" class="notice hidden"></div>
   <div id="results" class="results"></div>
 
@@ -109,6 +110,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const progressTitle = $('progressTitle');
   const progressText = $('progressText');
   const templateSelect = $('templateSelect');
+  const qualityNotice = $('qualityNotice');
 
   let objectUrl = '';
   let sourceImage = null;
@@ -164,6 +166,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     $('templateValue').textContent='—';
     $('resultNotice').classList.add('hidden');
     $('resultNotice').textContent='';
+    qualityNotice.className='quality hidden';
+    qualityNotice.innerHTML='';
     resultCard.classList.add('hidden');
     copyBtn.disabled=true;
   }
@@ -223,6 +227,80 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     ctx.drawImage(img,-dw/2,-dh/2,dw,dh);
     ctx.restore();
     return canvas;
+  }
+
+  function assessEdgeCrop(img,degrees){
+    try{
+      const canvas=drawRotatedCanvas(img,degrees,900);
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      const w=canvas.width,h=canvas.height;
+      if(w<80||h<80)return false;
+      const data=ctx.getImageData(0,0,w,h).data;
+      const strip=Math.max(3,Math.round(Math.min(w,h)*0.025));
+      let edgeDark=0,edgeTotal=0;
+      function sample(x0,y0,x1,y1){
+        const sx=Math.max(1,Math.floor((x1-x0)/90));
+        const sy=Math.max(1,Math.floor((y1-y0)/90));
+        for(let y=y0;y<y1;y+=sy){
+          for(let x=x0;x<x1;x+=sx){
+            const i=(y*w+x)*4;
+            const lum=(data[i]+data[i+1]+data[i+2])/3;
+            edgeTotal++;
+            if(lum<125)edgeDark++;
+          }
+        }
+      }
+      sample(0,0,w,strip);
+      sample(0,h-strip,w,h);
+      sample(0,0,strip,h);
+      sample(w-strip,0,w,h);
+      return edgeTotal>0&&(edgeDark/edgeTotal)>0.075;
+    }catch(_e){
+      return false;
+    }
+  }
+
+  function qualityMessages(payload){
+    const critical=['date','recipient','amount','documentNumber','sender'];
+    const missing=critical.filter(key=>!(payload.fields?.[key]?.value));
+    const messages=[];
+    let level='ok';
+
+    if(payload.edgeCropSuspected){
+      messages.push('جزء من الوثيقة قريب جدًا من حافة الصورة؛ قد تكون الصورة مقصوصة أو ناقصة.');
+      level='warn';
+    }
+
+    if(Number(payload.ocrConfidence||0)<52){
+      messages.push('جودة القراءة منخفضة؛ النص أو الختم/الكاشي قد يكون غير واضح ويحتاج مراجعة بصرية.');
+      level='bad';
+    }else if(Number(payload.ocrConfidence||0)<66){
+      messages.push('جودة القراءة متوسطة؛ راجع الختم/الكاشي وأي نص باهت قبل الاعتماد.');
+      if(level==='ok')level='warn';
+    }
+
+    if(payload.templateId!=='unknown'&&missing.length>=2){
+      messages.push('حقول مهمة مفقودة ('+missing.length+'). السبب قد يكون قصّ الصورة أو عدم وضوح جزء منها.');
+      if(level==='ok')level='warn';
+    }
+
+    if(payload.templateId==='unknown'&&missing.length>=4){
+      messages.push('الصورة لم تعطِ معلومات كافية لتحديد الوثيقة؛ قد تكون ناقصة أو غير واضحة.');
+      level='bad';
+    }
+
+    return {level,messages};
+  }
+
+  function renderQuality(payload){
+    const q=qualityMessages(payload);
+    if(!q.messages.length){
+      qualityNotice.className='quality ok';
+      qualityNotice.innerHTML='<b>✓ جودة الصورة مناسبة مبدئيًا</b>لا يوجد تنبيه واضح على قصّ الصورة أو ضعف القراءة. يبقى التحقق البصري من الختم مهمًا إذا كانت الوثيقة تعتمد عليه.';
+      return;
+    }
+    qualityNotice.className='quality '+q.level;
+    qualityNotice.innerHTML='<b>⚠ تنبيه جودة الوثيقة</b>'+q.messages.map(x=>'• '+escapeHtml(x)).join('<br>');
   }
 
   function scoreText(text){
@@ -485,6 +563,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     $('templateValue').textContent=payload.template+(payload.manualOverride?' — تصحيح يدوي':'');
     $('rawText').textContent=payload.rawText||'';
     resultsEl.innerHTML='';
+    renderQuality(payload);
 
     fields.forEach(([key,label])=>{
       const data=payload.fields[key];
@@ -579,7 +658,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         rawText:best.text,
         fields:extracted,
         ocrConfidence:best.confidence,
-        orientation:best.rotation
+        orientation:best.rotation,
+        edgeCropSuspected:assessEdgeCrop(sourceImage,best.rotation)
       });
 
       progressTitle.textContent='اكتمل التحليل';
@@ -604,7 +684,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       manualOverride,
       templateId,
       template:templateLabel(templateId),
-      fields:parseByTemplate(templateId,currentResult.rawText)
+      fields:parseByTemplate(templateId,currentResult.rawText),
+      edgeCropSuspected:assessEdgeCrop(sourceImage,currentResult.orientation||rotation)
     });
   }
 
