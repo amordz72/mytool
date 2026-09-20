@@ -149,8 +149,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const RECIPIENT_CONTEXT_KEY='mytool.document-reader.recipient-context.v1';
   const RECENT_OPERATIONS_KEY='mytool.document-reader.recent-operations.v1';
   const DOCUMENT_INDEX_KEY='mytool.document-reader.document-index.v1';
-  const defaultRecipientPresets=['لم يُرسل لمورد بعد','هني روحك','وفرلي','ديجيتال هوم','بوت علاء الدين'];
-  let activeRecipient='';
+  const UNSENT_RECIPIENT='لم يُرسل لمورد بعد';
+  const defaultRecipientPresets=[UNSENT_RECIPIENT,'هني روحك','وفرلي','ديجيتال هوم','بوت علاء الدين'];
+  let activeRecipient=UNSENT_RECIPIENT;
   let activeOperationId='';
   let activeHistorySupplier='all';
 
@@ -483,13 +484,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function initializeRecipientContext(){
-    const names=getRecipientPresets();
-    const ctx=getRecipientContext();
-    const initial=names.includes(ctx.active)?ctx.active:(names[0]||'');
+    activeRecipient=UNSENT_RECIPIENT;
     renderRecipientSelect();
     rebuildDocumentIndexFromRecent();
     receiptDate.value=todayLocal();
-    if(initial)selectRecipient(initial);
+    selectRecipient(UNSENT_RECIPIENT);
     updateDateHint();
     renderRecentOperationTabs();
   }
@@ -572,6 +571,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     progressBox.classList.add('hidden');
     clearError();
     resetResults();
+    activeRecipient=UNSENT_RECIPIENT;
+    receiptDate.value=todayLocal();
+    updateDateHint();
+    renderRecipientSelect();
+    selectRecipient(UNSENT_RECIPIENT);
   }
 
   function loadImage(file){
