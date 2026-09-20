@@ -10,6 +10,25 @@
 <link rel="stylesheet" href="../mytool-bottom-nav.css">
 <style>
 [hidden]{display:none!important}
+.fx-section-nav{display:flex;gap:7px;overflow:auto;padding:10px 0 4px;scrollbar-width:none}
+.fx-section-nav::-webkit-scrollbar{display:none}
+.fx-section-nav a{white-space:nowrap;text-decoration:none;color:#60788c;background:#fff;border:1px solid #d8e8f5;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800}
+.fx-section-nav a.active{color:#1678b5;background:#eaf6ff;border-color:#a9d5ef}
+html[data-station-view="station"] #rechargeGuard,
+html[data-station-view="station"] #rechargeSection,
+html[data-station-view="station"] #operationsSection,
+html[data-station-view="station"] .pilot-form{display:none!important}
+html[data-station-view="flexy"] #stationSearchWrap,
+html[data-station-view="flexy"] #stationSectionHead,
+html[data-station-view="flexy"] #rechargeSection,
+html[data-station-view="flexy"] #operationsSection,
+html[data-station-view="flexy"] .station-entry > :not(.pilot-form){display:none!important}
+html[data-station-view="operations"] #stationSearchWrap,
+html[data-station-view="operations"] #stationSectionHead,
+html[data-station-view="operations"] #stationList,
+html[data-station-view="operations"] #emptyState,
+html[data-station-view="operations"] #rechargeGuard,
+html[data-station-view="operations"] #rechargeSection{display:none!important}
 .pilot-form{margin-top:12px;padding:14px;border:1px solid #d8e8f5;border-radius:16px;background:#f8fbfe}
 .pilot-form h3{margin:0 0 5px;font-size:15px}
 .pilot-form p{margin:0 0 10px;color:#6b7f93;font-size:11px;line-height:1.5}
@@ -47,6 +66,13 @@
 .recharge-upload input[type="file"]{width:100%;font:inherit}
 .recharge-stock-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 </style>
+<script>
+(()=>{
+  const allowed=['station','flexy','operations'];
+  const requested=new URLSearchParams(location.search).get('view')||'station';
+  document.documentElement.dataset.stationView=allowed.includes(requested)?requested:'station';
+})();
+</script>
 <script src="../auth-guard.js?v=20260918-real-local-1" data-access="admin"></script>
 </head>
 <body class="mt-app" data-mytool-app="access-admin">
@@ -63,23 +89,32 @@
   </div>
 </header>
 
+<nav class="fx-section-nav" aria-label="أقسام Flexy">
+  <a href="../flexy/">لوحة Flexy</a>
+  <a href="stations.html?view=station" data-view-link="station">Station</a>
+  <a href="stations.html?view=flexy" data-view-link="flexy">Flexy</a>
+  <a href="../cards/">رفع البطاقات</a>
+  <a href="stations.html?view=operations" data-view-link="operations">العمليات</a>
+  <a href="../flexy/accounts.html">الحسابات</a>
+</nav>
+
 <section class="mt-page-head">
   <div class="mt-page-title">
     <div class="mt-page-icon" aria-hidden="true">⌖</div>
     <div class="mt-page-copy">
-      <h1>المحطات</h1>
-      <p>اعتماد أجهزة Windows ومتابعة اتصالها الحقيقي بالسيرفر.</p>
+      <h1 id="stationPageTitle">المحطات</h1>
+      <p id="stationPageSubtitle">اعتماد أجهزة Windows ومتابعة اتصالها الحقيقي بالسيرفر.</p>
     </div>
   </div>
   <button id="refreshBtn" class="mt-btn secondary mt-page-action" type="button">تحديث</button>
 </section>
 
-<label class="mt-search">
+<label id="stationSearchWrap" class="mt-search">
   <span class="mt-search-icon" aria-hidden="true">⌕</span>
   <input id="stationSearch" placeholder="ابحث باسم الكمبيوتر..." autocomplete="off">
 </label>
 
-<div class="mt-section-head">
+<div id="stationSectionHead" class="mt-section-head">
   <div class="mt-section-copy">
     <h2>المحطات الحالية</h2>
     <p>ONLINE يعني أن آخر Heartbeat وصل خلال 90 ثانية.</p>
@@ -115,7 +150,7 @@
   </div>
 </div>
 
-<section class="mt-card">
+<section id="rechargeSection" class="mt-card">
   <div class="mt-section-head" style="margin:0 0 8px">
     <div class="mt-section-copy">
       <h2>بطاقات شحن Mobilis</h2>
@@ -144,7 +179,7 @@
   <div id="rechargeAttempts"><div class="mt-meta">لا توجد محاولات شحن بعد.</div></div>
 </section>
 
-<section class="mt-card">
+<section id="operationsSection" class="mt-card">
   <div class="mt-section-head" style="margin:0 0 8px">
     <div class="mt-section-copy">
       <h2>عمليات Flexy السابقة</h2>
@@ -176,6 +211,7 @@ const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
 const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
+const PAGE_VIEW=document.documentElement.dataset.stationView||'station';
 let stations=[];
 let hardwareByStation={};
 let arsselliBalancesBySim={};
@@ -1368,6 +1404,26 @@ async function loadRecentJobs(){
   scheduleJobPoll();
 }
 
+function applyPageView(){
+  const config={
+    station:{title:'Station',subtitle:'المحطات، المودمات، الشرائح وحالة الاتصال فقط.'},
+    flexy:{title:'Flexy',subtitle:'تنفيذ الفليكسي والعروض فقط؛ إدارة المحطة والمخزون والسجل في صفحاتها.'},
+    operations:{title:'العمليات',subtitle:'سجل عمليات Flexy السابقة والنتائج والحالات التقنية.'}
+  }[PAGE_VIEW]||{title:'Station',subtitle:'المحطات وحالة الاتصال.'};
+  document.title=config.title+' — MyTool';
+  const title=$('stationPageTitle'),subtitle=$('stationPageSubtitle');
+  if(title)title.textContent=config.title;
+  if(subtitle)subtitle.textContent=config.subtitle;
+  document.querySelectorAll('[data-view-link]').forEach(link=>{
+    link.classList.toggle('active',link.dataset.viewLink===PAGE_VIEW);
+  });
+  if(PAGE_VIEW==='flexy'){
+    document.querySelectorAll('.station-entry').forEach(card=>{
+      card.hidden=!card.querySelector('.pilot-form');
+    });
+  }
+}
+
 function render(){
   $('stationCount').textContent=String(stations.length);
 
@@ -1382,6 +1438,7 @@ function render(){
   $('stationList').innerHTML=stations.map(stationCard).join('');
   bindActions();
   applySearch();
+  applyPageView();
 }
 
 async function loadHardware(){
@@ -1531,6 +1588,7 @@ $('rechargeCards').addEventListener('click',async event=>{
 });
 
 $('stationSearch').addEventListener('input',applySearch);
+applyPageView();
 $('refreshBtn').addEventListener('click',()=>loadStations(true));
 loadStations(true);
 </script>
