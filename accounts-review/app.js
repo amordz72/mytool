@@ -209,7 +209,7 @@ createApp({
       const apply=()=>window.MyToolBottomNav?.setActions(actions);if(window.MyToolBottomNav)apply();else window.addEventListener('mytool-bottom-nav-ready',apply,{once:true});
     }
     watch([activeTabId,()=>activeSource.value?.id,()=>activeUnknown.value?.id],()=>nextTick(configureNav));
-    onMounted(async()=>{try{await refreshState();setMessage(allTabs.value.length?'تم تحميل البيانات المحفوظة من هذا الجهاز.':'أضف أول ملف من الشريط السفلي.');configureNav()}catch(error){setMessage('تعذر فتح التخزين المحلي: '+(error?.message||''),'err')}});
+    onMounted(async()=>{window.addEventListener('accounts-total-selected',()=>{activeTabId.value=''});window.addEventListener('accounts-shared-selected',()=>{activeTabId.value=''});try{await refreshState();setMessage(allTabs.value.length?'تم تحميل البيانات المحفوظة من هذا الجهاز.':'أضف أول ملف من الشريط السفلي.');configureNav()}catch(error){setMessage('تعذر فتح التخزين المحلي: '+(error?.message||''),'err')}});
     return{fileInput,sources,profiles,unknowns,allTabs,activeTabId,activeSource,activeUnknown,viewMode,message,messageType,limit,goalText,goalTarget,rows,sourceAccounts,totalDebt,totalBalance,totalProfit,visibleDebtors,goalPlan,unknownPreview,unknownTotals,mappingOpen,mappingDraft,pickFile,readFiles,selectTab,displayName,displayNumber,normalizeGoal,copySummary,copyDiagnostic,copyAiPrompt,openMapping,saveMapping,saveUnknownMeta,reanalyzeUnknown,deleteActive};
   }
 }).mount('#app');
