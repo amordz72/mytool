@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>قواعد البيانات — MyTool Documentation</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../mytool-bottom-nav.css">
+<script src="../auth-guard.js" data-access="admin"></script>
+<style>
+.db{overflow:auto}.db table{width:100%;border-collapse:collapse}.db th,.db td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:right;vertical-align:top}.tag{display:inline-block;padding:3px 8px;border-radius:99px;background:#ecfdf5;color:#047857;font-size:11px;font-weight:800}.warn{background:#fff7ed;color:#9a3412}.old{background:#f1f5f9;color:#475569}.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px;line-height:1.7}
+</style>
+</head>
+<body data-mytool-app="documentation">
+<header class="top"><div class="top-inner"><div class="brand"><a href="./">🗄️ قواعد البيانات</a><small>الفهرس التقني السريع</small></div></div></header>
+<main class="wrap">
+<section class="hero"><h1>سجل قواعد البيانات</h1><p>مرجع سريع: ما هي القاعدة، متى استعملت، ماذا تحتوي، وهل توجد نسخة احتياطية موثقة.</p><div><span class="status now">Updated 2026-09-20</span></div></section>
+<section class="card db"><table><thead><tr><th>القاعدة</th><th>النوع/الفترة</th><th>المحتوى</th><th>الحالة</th></tr></thead><tbody>
+<tr><td><b>MyTool — amor-manager</b><br><small>Supabase project: wqyebqzbbpohbnznqdjj</small></td><td>PostgreSQL 17<br>من 2026-09-10</td><td>Shop، مخزون، مبيعات، Notes، الأموال، هوية العملاء، Station Connect/Flexy support</td><td><span class="tag">ACTIVE PRIMARY</span><br><small>Schema snapshot موثق. Full pg_dump خارجي ما زال يحتاج ملفًا فعليًا.</small></td></tr>
+<tr><td><b>mytool-access</b></td><td>Cloudflare D1<br>من 2026-09-15</td><td>طلبات وجلسات وحظر دخول الأدوات فقط</td><td><span class="tag">ACTIVE SIDECAR</span><br><small>ليس فيه بيانات المحل.</small></td></tr>
+<tr><td><b>Accounts Review local</b><br><small>mytool-accounts-review / mytool-accounts-links</small></td><td>IndexedDB<br>محلي على الجهاز</td><td>ملفات الحسابات المقروءة محليًا + روابط محلية انتقالية</td><td><span class="tag warn">LOCAL</span><br><small>حذف Profile المتصفح قد يفقد البيانات.</small></td></tr>
+<tr><td><b>tb-dev</b></td><td>MySQL محلي<br>أغسطس 2026</td><td>TehnaPay Dev: USSD، SIMs، templates، discovery، offer families/offers</td><td><span class="tag old">LEGACY</span><br><small>مكان SQL dump الفعلي يحتاج تحديد.</small></td></tr>
+<tr><td><b>Tehna Connect Core</b><br><small>database/database.sqlite</small></td><td>SQLite محلي<br>سبتمبر 2026</td><td>Discovery runs/steps/results وcache/catalog المحلي</td><td><span class="tag old">LEGACY LOCAL</span></td></tr>
+<tr><td><b>proud-forest-19826922</b></td><td>Neon / branch production<br>تجربة 2026-09-19</td><td>تجربة إعداد Neon؛ البيانات الفعلية لم تُثبت كProduction</td><td><span class="tag warn">EXPERIMENT</span></td></tr>
+</tbody></table></section>
+<section class="card"><h2>النسخ الاحتياطية</h2><div class="note">القاعدة: لا نعتبر Backup كاملًا إلا بوجود ملف فعلي خارج مزود القاعدة + SHA-256. GitHub يحفظ Schema/Metadata فقط، والـDump الحقيقي يحفظ في Google Drive الخاص/نسخة محلية.</div><p><b>المكان الخارجي:</b> Google Drive → <code>Database Registry & Backups</code></p><p><b>المرجع المركزي للمطور:</b> <code>DATABASE-REGISTRY.md</code> و <code>DATABASE-BACKUP-LEDGER.md</code>.</p></section>
+<section class="card"><a href="./">← الرجوع إلى رئيسية التوثيق</a></section>
+</main>
+<script src="../mytool-bottom-nav.js"></script>
+</body></html>
