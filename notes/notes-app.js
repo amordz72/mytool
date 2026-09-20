@@ -189,7 +189,7 @@
     btn.disabled=syncRunning;
     if(!hasSupabaseSession){
       box.className='sync-state local';
-      box.textContent='وضع الاستمرارية: الحفظ يتم على هذا الجهاز داخل IndexedDB. هذه الملاحظات ليست في قاعدة البيانات حتى تدخل لاحقًا بحساب المالك في النظام الرئيسي.'+(pending?' بانتظار المزامنة: '+pending+'.':'');
+      box.textContent='الحفظ المحلي: البيانات محفوظة على هذا الجهاز داخل IndexedDB، وتبقى ضمن نفس حساب REAL. ستتزامن مع قاعدة البيانات عند توفر الاتصال وجلسة الإدارة.'+(pending?' بانتظار المزامنة: '+pending+'.':'');
       return;
     }
     if(conflicts){
