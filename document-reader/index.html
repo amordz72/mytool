@@ -74,6 +74,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         <option value="auto">تلقائي</option>
         <option value="bna">BNA — Bordereau de versement espèces</option>
         <option value="bdl">BDL — Avis de versement</option>
+        <option value="poste">Algérie Poste — Reçu de l'opération</option>
       </select>
     </div>
   </div>
@@ -125,7 +126,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     ['recipient','لمن أُرسل'],
     ['amount','المبلغ'],
     ['documentNumber','رقم الوثيقة'],
-    ['bank','البنك'],
+    ['bank','البنك / المصدر'],
     ['sender','المرسل']
   ];
 
@@ -233,6 +234,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       [/raison\s+sociale/,2],
       [/libelle|libellé/,2],
       [/date\s+de\s+valeur/,1],
+      [/donneur\s+d.?ordre/,3],
+      [/b[ée]n[ée]fic/i,2],
+      [/re[çc]u|reeu|op[ée]ration/,1],
       [/versement/,2],
       [/montant/,2],
       [/dzd/,2],
@@ -247,13 +251,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function detectLanguage(text){
     const t=cleanText(text).toLowerCase();
     let fr=0;
-    ['bordereau','avis de versement','versement','montant','agence','compte','motif','guichet','caisse','raison sociale','libelle','libellé','date de valeur','dinars','algérie','algerie'].forEach(k=>{if(t.includes(k))fr++;});
+    ['bordereau','avis de versement','versement','montant','agence','compte','motif','guichet','caisse','raison sociale','libelle','libellé','date de valeur','donneur d ordre',"donneur d'ordre",'beneficiaire','bénéficiaire','reference','référence','operation','opération','dinars','algérie','algerie'].forEach(k=>{if(t.includes(k))fr++;});
     return fr>=2?'الفرنسية':'غير واضحة';
   }
 
   function templateLabel(id){
     if(id==='bna')return 'BNA — Bordereau de versement espèces';
     if(id==='bdl')return 'BDL — Avis de versement';
+    if(id==='poste')return "Algérie Poste — Reçu de l'opération";
     return 'غير معروف / غير مدعوم';
   }
 
@@ -271,6 +276,15 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       /num[ée]ro\s+de\s+compte/.test(t)
     ].filter(Boolean).length;
     if(bdlSignals>=4)return 'bdl';
+
+    const posteSignals=[
+      /donneur\s+d.?ordre/.test(t),
+      /b[ée]n[ée]fic/i.test(t),
+      /\bversement\b/.test(t),
+      /r[ée]f[ée]rence/.test(t),
+      /re[çc]u|reeu|op[ée]ration/.test(t)
+    ].filter(Boolean).length;
+    if(posteSignals>=4)return 'poste';
 
     return 'unknown';
   }
@@ -406,9 +420,58 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return out;
   }
 
+  function extractPoste(text){
+    const normalized=cleanText(text);
+    const oneLine=normalized.replace(/\n+/g,' ');
+    const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
+    const out={};
+
+    out.bank={value:'Algérie Poste',source:"قالب Algérie Poste — Reçu de l'opération"};
+
+    const referenceLine=lines.find(line=>/R[ée]f[ée]rence/i.test(line))||'';
+    const refMatch=referenceLine.match(/R[ée]f[ée]rence\s*[:.]?\s*(\d{4,12})/i);
+    out.documentNumber=refMatch
+      ? {value:refMatch[1],source:'Référence'}
+      : null;
+
+    // لا نستخرج تاريخًا من أرقام غير معنونة داخل Référence حتى لا نخمن.
+    let date='';
+    const explicitDate=oneLine.match(/\b(?:Date|Le)\s*[:.]?\s*([0-3]?\d)[\/\-.]([01]?\d)[\/\-.](20\d{2})\b/i);
+    if(explicitDate)date=explicitDate[3]+'-'+String(explicitDate[2]).padStart(2,'0')+'-'+String(explicitDate[1]).padStart(2,'0');
+    out.date=date?{value:date,source:'تاريخ صريح في الوثيقة'}:null;
+
+    const beneficiaryLine=lines.find(line=>/B[ée]n[ée]fic/i.test(line))||'';
+    let recipient='';
+    const legalPos=beneficiaryLine.search(/\b(?:SARL|EURL|SPA|SNC)\b/i);
+    if(legalPos>=0){
+      recipient=cleanLine(beneficiaryLine.slice(legalPos))
+        .replace(/\s+[a-z]{1,2}$/,'')
+        .trim();
+    }
+    out.recipient=recipient&&recipient.length>=4&&recipient.length<=100
+      ? {value:recipient,source:'Bénéficiaire'}
+      : null;
+
+    let amountMatch=oneLine.match(/\bVERSEMENT\s*[:.]?\s*([0-9][0-9\s.,]{1,22})/i);
+    const amount=amountMatch?parseAmountValue(amountMatch[1]):null;
+    out.amount=amount!==null
+      ? {value:new Intl.NumberFormat('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2}).format(amount)+' DZD',raw:amount,source:'VERSEMENT — دون إضافة TAXE'}
+      : null;
+
+    let sender=findLineValue(lines,/^.*?Donneur\s+d.?ordre\s*[:.]?/i);
+    sender=cleanLine(sender).replace(/\s+[a-z]{1,2}$/,'').trim();
+    const senderWords=sender.match(/[A-Za-zÀ-ÿ]{2,}/g)||[];
+    out.sender=sender&&sender.length<=100&&senderWords.length>=2
+      ? {value:sender,source:"Donneur d'ordre"}
+      : null;
+
+    return out;
+  }
+
   function parseByTemplate(id,text){
     if(id==='bna')return extractBna(text);
     if(id==='bdl')return extractBdl(text);
+    if(id==='poste')return extractPoste(text);
     return emptyExtraction();
   }
 
