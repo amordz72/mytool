@@ -516,8 +516,20 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const doc=oneLine.match(/AVIS\s+DE\s+VERSEMENT\s*N\s*[°ºo.]?\s*[:.]?\s*(\d{5,14})/i);
     out.documentNumber=doc?{value:doc[1],source:'AVIS DE VERSEMENT N°',status:'read'}:null;
 
-    const date=parseFrenchDate(oneLine);
-    out.date=date?{value:date,source:'تاريخ الوثيقة بعد Le:',status:'read'}:null;
+    let dateResult=null;
+    const leLine=lines.find(line=>/\bLe\s*[:.]?/i.test(line))||'';
+    const leMatch=leLine.match(/\bLe\s*[:.]?\s*([0-3]?\d)[\s\/\-.]+([01]?\d)[\s\/\-.]+(20\d{2})\b/i);
+    const valueLine=lines.find(line=>/Date\s+(?:de\s+)?valeur/i.test(line))||'';
+    const valueMatch=valueLine.match(/Date\s+(?:de\s+)?valeur\s*[:.]?\s*([0-3]?\d)[\s\/\-.]+([01]?\d)[\s\/\-.]+(20\d{2})\b/i);
+    if(leMatch){
+      const candidate=leMatch[3]+'-'+String(leMatch[2]).padStart(2,'0')+'-'+String(leMatch[1]).padStart(2,'0');
+      if(valueMatch&&valueMatch[3]!==leMatch[3]){
+        dateResult={value:candidate,source:'Le: — قراءة OCR تتعارض في السنة مع Date de valeur '+valueMatch[1]+'/'+valueMatch[2]+'/'+valueMatch[3],status:'review'};
+      }else{
+        dateResult={value:candidate,source:'تاريخ الوثيقة بعد Le:',status:'read'};
+      }
+    }
+    out.date=dateResult;
 
     let recipient=findLineValue(lines,/^.*?Nom\s+ou\s+Raison\s+Sociale\s*[:.]?/i);
     recipient=cleanEntityName(recipient);
@@ -555,11 +567,30 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }
     if(!senderLines.length){
       const moneyIndex=lines.findIndex(line=>/\bMontant\b/i.test(line));
-      if(moneyIndex>0){
-        for(let i=Math.max(0,moneyIndex-3);i<moneyIndex;i++){
-          const line=cleanLine(lines[i]);
-          if(/^[A-ZÀ-Ý][A-ZÀ-Ý' -]{4,60}$/.test(line)&&!/(LIBELLE|VERSEMENT|TOTAL|DZD|DATE|VALEUR)/i.test(line)){
-            senderLines.push(line);
+      if(moneyIndex>=0){
+        for(let i=moneyIndex;i<Math.min(lines.length,moneyIndex+4);i++){
+          let line=cleanLine(lines[i])
+            .replace(/^.*?\bMontant\b[^A-ZÀ-Ý]*/i,'')
+            .replace(/\b(?:Commis|Commission|Taxes?|TOTAL)\b.*$/i,'')
+            .replace(/\b\d[\d\s.,]*\s*(?:DZD|DA)\b/ig,'')
+            .replace(/^[|¦\s]+|[|¦\s]+$/g,'')
+            .trim();
+          const nameMatch=line.match(/([A-ZÀ-Ý][A-ZÀ-Ý' -]{4,60})/);
+          if(nameMatch){
+            const candidate=cleanEntityName(nameMatch[1]);
+            const words=candidate.match(/[A-ZÀ-Ý]{2,}/g)||[];
+            if(words.length>=2&&!/(LIBELLE|VERSEMENT|TOTAL|DZD|DATE|VALEUR|MONTANT)/i.test(candidate)){
+              senderLines.push(candidate);
+              break;
+            }
+          }
+        }
+        if(!senderLines.length&&moneyIndex>0){
+          for(let i=Math.max(0,moneyIndex-3);i<moneyIndex;i++){
+            const line=cleanLine(lines[i]);
+            if(/^[A-ZÀ-Ý][A-ZÀ-Ý' -]{4,60}$/.test(line)&&!/(LIBELLE|VERSEMENT|TOTAL|DZD|DATE|VALEUR)/i.test(line)){
+              senderLines.push(line);
+            }
           }
         }
       }
