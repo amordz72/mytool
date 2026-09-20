@@ -10,25 +10,6 @@
 <link rel="stylesheet" href="../mytool-bottom-nav.css">
 <style>
 [hidden]{display:none!important}
-.fx-section-nav{display:flex;gap:7px;overflow:auto;padding:10px 0 4px;scrollbar-width:none}
-.fx-section-nav::-webkit-scrollbar{display:none}
-.fx-section-nav a{white-space:nowrap;text-decoration:none;color:#60788c;background:#fff;border:1px solid #d8e8f5;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800}
-.fx-section-nav a.active{color:#1678b5;background:#eaf6ff;border-color:#a9d5ef}
-html[data-station-view="station"] #rechargeGuard,
-html[data-station-view="station"] #rechargeSection,
-html[data-station-view="station"] #operationsSection,
-html[data-station-view="station"] .pilot-form{display:none!important}
-html[data-station-view="flexy"] #stationSearchWrap,
-html[data-station-view="flexy"] #stationSectionHead,
-html[data-station-view="flexy"] #rechargeSection,
-html[data-station-view="flexy"] #operationsSection,
-html[data-station-view="flexy"] .station-entry > :not(.pilot-form){display:none!important}
-html[data-station-view="operations"] #stationSearchWrap,
-html[data-station-view="operations"] #stationSectionHead,
-html[data-station-view="operations"] #stationList,
-html[data-station-view="operations"] #emptyState,
-html[data-station-view="operations"] #rechargeGuard,
-html[data-station-view="operations"] #rechargeSection{display:none!important}
 .pilot-form{margin-top:12px;padding:14px;border:1px solid #d8e8f5;border-radius:16px;background:#f8fbfe}
 .pilot-form h3{margin:0 0 5px;font-size:15px}
 .pilot-form p{margin:0 0 10px;color:#6b7f93;font-size:11px;line-height:1.5}
@@ -66,13 +47,6 @@ html[data-station-view="operations"] #rechargeSection{display:none!important}
 .recharge-upload input[type="file"]{width:100%;font:inherit}
 .recharge-stock-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 </style>
-<script>
-(()=>{
-  const allowed=['station','flexy','operations'];
-  const requested=new URLSearchParams(location.search).get('view')||'station';
-  document.documentElement.dataset.stationView=allowed.includes(requested)?requested:'station';
-})();
-</script>
 <script src="../auth-guard.js?v=20260918-real-local-1" data-access="admin"></script>
 </head>
 <body class="mt-app" data-mytool-app="access-admin">
@@ -89,32 +63,23 @@ html[data-station-view="operations"] #rechargeSection{display:none!important}
   </div>
 </header>
 
-<nav class="fx-section-nav" aria-label="أقسام Flexy">
-  <a href="../flexy/">لوحة Flexy</a>
-  <a href="stations.html?view=station" data-view-link="station">Station</a>
-  <a href="stations.html?view=flexy" data-view-link="flexy">Flexy</a>
-  <a href="../cards/">رفع البطاقات</a>
-  <a href="stations.html?view=operations" data-view-link="operations">العمليات</a>
-  <a href="../flexy/accounts.html">الحسابات</a>
-</nav>
-
 <section class="mt-page-head">
   <div class="mt-page-title">
     <div class="mt-page-icon" aria-hidden="true">⌖</div>
     <div class="mt-page-copy">
-      <h1 id="stationPageTitle">المحطات</h1>
-      <p id="stationPageSubtitle">اعتماد أجهزة Windows ومتابعة اتصالها الحقيقي بالسيرفر.</p>
+      <h1>المحطات</h1>
+      <p>اعتماد أجهزة Windows ومتابعة اتصالها الحقيقي بالسيرفر.</p>
     </div>
   </div>
   <button id="refreshBtn" class="mt-btn secondary mt-page-action" type="button">تحديث</button>
 </section>
 
-<label id="stationSearchWrap" class="mt-search">
+<label class="mt-search">
   <span class="mt-search-icon" aria-hidden="true">⌕</span>
   <input id="stationSearch" placeholder="ابحث باسم الكمبيوتر..." autocomplete="off">
 </label>
 
-<div id="stationSectionHead" class="mt-section-head">
+<div class="mt-section-head">
   <div class="mt-section-copy">
     <h2>المحطات الحالية</h2>
     <p>ONLINE يعني أن آخر Heartbeat وصل خلال 90 ثانية.</p>
@@ -150,7 +115,7 @@ html[data-station-view="operations"] #rechargeSection{display:none!important}
   </div>
 </div>
 
-<section id="rechargeSection" class="mt-card">
+<section class="mt-card">
   <div class="mt-section-head" style="margin:0 0 8px">
     <div class="mt-section-copy">
       <h2>بطاقات شحن Mobilis</h2>
@@ -158,16 +123,24 @@ html[data-station-view="operations"] #rechargeSection{display:none!important}
     </div>
     <span id="rechargeCardCount" class="mt-chip muted">0</span>
   </div>
-  <div class="recharge-upload">
-    <strong>الإدخال من معالج البطاقات فقط</strong>
+  <form id="rechargeCardForm" class="recharge-upload">
+    <strong>رفع ملف بطاقات Mobilis إلى المخزون</strong>
     <div class="mt-meta" style="margin:5px 0 9px">
-      المخزون مركزي ومشترك بين الهاتف والكمبيوتر. عالج Mobilis مرة واحدة من معالج البطاقات، وهنا نعرض المخزون والحالة فقط.
+      ملف TXT فقط: بطاقة واحدة في كل سطر، 15 رقمًا فقط، بدون فراغات أو فواصل أو SN. هذا المسار مستقل عن معالج البطاقات.
     </div>
-    <div class="mt-actions">
-      <a class="mt-btn primary" href="../cards/" style="text-decoration:none;text-align:center">فتح معالج البطاقات</a>
+    <input id="rechargeFileInput" name="file" type="file" accept=".txt,text/plain" required>
+    <div style="display:grid;grid-template-columns:130px 1fr;gap:8px;margin-top:8px">
+      <label class="mt-search">
+        <select id="rechargeAmountSelect" name="amount" style="width:100%;border:0;outline:0;background:transparent;font:inherit" required>
+          <option value="">قيمة البطاقة</option>
+          <option value="1000">1000 دج</option>
+          <option value="2000">2000 دج</option>
+        </select>
+      </label>
+      <button id="addRechargeCardBtn" class="mt-btn primary" type="submit">حفظ الملف في المخزون</button>
     </div>
     <div id="rechargeUploadSummary" class="mt-meta"></div>
-  </div>
+  </form>
   <div id="rechargeCards"><div class="mt-meta">لا توجد بطاقات مضافة.</div></div>
 
   <div class="mt-section-head" style="margin:16px 0 8px">
@@ -179,7 +152,7 @@ html[data-station-view="operations"] #rechargeSection{display:none!important}
   <div id="rechargeAttempts"><div class="mt-meta">لا توجد محاولات شحن بعد.</div></div>
 </section>
 
-<section id="operationsSection" class="mt-card">
+<section class="mt-card">
   <div class="mt-section-head" style="margin:0 0 8px">
     <div class="mt-section-copy">
       <h2>عمليات Flexy السابقة</h2>
@@ -211,7 +184,6 @@ const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
 const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
-const PAGE_VIEW=document.documentElement.dataset.stationView||'station';
 let stations=[];
 let hardwareByStation={};
 let arsselliBalancesBySim={};
@@ -486,6 +458,37 @@ async function loadRechargeGuard(){
 function rechargeAmountFromFilename(name){
   const match=String(name||'').match(/(?:^|[^0-9])(1000|2000)(?:[^0-9]|$)/u);
   return match?Number(match[1]):null;
+}
+
+function parseStrictMobilisTxt(raw){
+  let text=String(raw??'');
+  if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
+
+  const lines=text.split(/\r\n|\n|\r/u);
+  while(lines.length&&lines[lines.length-1]==='')lines.pop();
+
+  if(!lines.length)return {ok:false,error:'الملف فارغ.',codes:[]};
+
+  const errors=[];
+  lines.forEach((line,index)=>{
+    if(line===''){
+      errors.push('السطر '+(index+1)+' فارغ.');
+      return;
+    }
+    if(/\s/u.test(line)){
+      errors.push('السطر '+(index+1)+' يحتوي فراغًا أو Tab.');
+      return;
+    }
+    if(!/^[0-9]{15}$/.test(line)){
+      errors.push('السطر '+(index+1)+' يجب أن يكون 15 رقمًا فقط.');
+    }
+  });
+
+  if(errors.length){
+    return {ok:false,error:errors.slice(0,3).join(' ')+(errors.length>3?' ويوجد أخطاء أخرى.':''),codes:[]};
+  }
+
+  return {ok:true,error:'',codes:lines};
 }
 
 function refreshRechargeAutomationState(){
@@ -1404,26 +1407,6 @@ async function loadRecentJobs(){
   scheduleJobPoll();
 }
 
-function applyPageView(){
-  const config={
-    station:{title:'Station',subtitle:'المحطات، المودمات، الشرائح وحالة الاتصال فقط.'},
-    flexy:{title:'Flexy',subtitle:'تنفيذ الفليكسي والعروض فقط؛ إدارة المحطة والمخزون والسجل في صفحاتها.'},
-    operations:{title:'العمليات',subtitle:'سجل عمليات Flexy السابقة والنتائج والحالات التقنية.'}
-  }[PAGE_VIEW]||{title:'Station',subtitle:'المحطات وحالة الاتصال.'};
-  document.title=config.title+' — MyTool';
-  const title=$('stationPageTitle'),subtitle=$('stationPageSubtitle');
-  if(title)title.textContent=config.title;
-  if(subtitle)subtitle.textContent=config.subtitle;
-  document.querySelectorAll('[data-view-link]').forEach(link=>{
-    link.classList.toggle('active',link.dataset.viewLink===PAGE_VIEW);
-  });
-  if(PAGE_VIEW==='flexy'){
-    document.querySelectorAll('.station-entry').forEach(card=>{
-      card.hidden=!card.querySelector('.pilot-form');
-    });
-  }
-}
-
 function render(){
   $('stationCount').textContent=String(stations.length);
 
@@ -1438,7 +1421,6 @@ function render(){
   $('stationList').innerHTML=stations.map(stationCard).join('');
   bindActions();
   applySearch();
-  applyPageView();
 }
 
 async function loadHardware(){
@@ -1587,8 +1569,75 @@ $('rechargeCards').addEventListener('click',async event=>{
   }
 });
 
+$('rechargeFileInput').addEventListener('change',()=>{
+  const file=$('rechargeFileInput').files?.[0];
+  if(!file)return;
+  const detected=rechargeAmountFromFilename(file.name);
+  if(detected)$('rechargeAmountSelect').value=String(detected);
+});
+
+$('rechargeCardForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const form=event.currentTarget;
+  const input=$('rechargeFileInput');
+  const select=$('rechargeAmountSelect');
+  const button=$('addRechargeCardBtn');
+  const file=input.files?.[0];
+  const amount=Number(select.value||0);
+
+  if(!file){
+    showMessage('اختر ملف TXT','ارفع ملف بطاقات Mobilis أولًا.','danger');
+    return;
+  }
+  if(![1000,2000].includes(amount)){
+    showMessage('حدد قيمة البطاقات','اختر 1000 دج أو 2000 دج.','danger');
+    return;
+  }
+
+  button.disabled=true;
+  button.textContent='جاري التحقق والحفظ…';
+  hideMessage();
+
+  try{
+    const parsed=parseStrictMobilisTxt(await file.text());
+    if(!parsed.ok){
+      throw new Error('MOBILIS_FILE_FORMAT: '+parsed.error);
+    }
+
+    const {data,error}=await supabase.rpc('station_connect_admin_bulk_add_recharge_cards',{
+      p_codes:parsed.codes,
+      p_amount:amount,
+      p_source_code:'file_import'
+    });
+    if(error)throw error;
+
+    const row=Array.isArray(data)?data[0]:null;
+    const inserted=Number(row?.inserted_count||0);
+    const duplicates=Number(row?.duplicate_count||0);
+
+    form.reset();
+    await Promise.all([loadRechargeCards(),loadRechargeGuard(),loadRecentJobs()]);
+
+    showMessage(
+      'تم حفظ ملف البطاقات',
+      'جديدة: '+inserted+' — مكررة: '+duplicates+' — القيمة: '+amount+' دج. المخزون الآن مركزي ومشترك بين الهاتف والكمبيوتر.'
+    );
+    refreshRechargeAutomationState();
+  }catch(error){
+    const msg=String(error?.message||'حدث خطأ غير متوقع.');
+    const friendly=msg.includes('MOBILIS_FILE_FORMAT')
+      ?msg.replace('MOBILIS_FILE_FORMAT: ','')
+      :msg.includes('MOBILIS_BATCH_FORMAT_INVALID')
+        ?'تم رفض الملف: كل بطاقة يجب أن تكون في سطر وحدها، 15 رقمًا فقط، بدون فراغات أو فواصل.'
+        :msg;
+    showMessage('تعذر حفظ ملف البطاقات',friendly,'danger');
+  }finally{
+    button.disabled=false;
+    button.textContent='حفظ الملف في المخزون';
+  }
+});
+
 $('stationSearch').addEventListener('input',applySearch);
-applyPageView();
 $('refreshBtn').addEventListener('click',()=>loadStations(true));
 loadStations(true);
 </script>
