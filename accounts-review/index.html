@@ -58,7 +58,7 @@
         <div class="stat profit"><span>أرباح {{ activeSource.name }}</span><strong>{{ displayNumber(totalProfit) }}</strong></div>
       </div>
       <div class="source-accounts-list">
-        <article v-for="customer in sourceAccounts" :key="customer.key" class="source-account-card">
+        <article v-for="customer in sourceAccounts" :key="customer.key" class="source-account-card" :data-source-id="activeSource.id" :data-row-key="customer.key">
           <header>
             <div>
               <strong>{{ displayName(customer) }}</strong>
@@ -68,6 +68,7 @@
               صافي {{ (Number(customer.balance||0)-Number(customer.debt||0))>0?'+':((Number(customer.balance||0)-Number(customer.debt||0))<0?'−':'') }}{{ displayNumber(Math.abs(Number(customer.balance||0)-Number(customer.debt||0))) }}
             </span>
           </header>
+          <div class="source-link-status" data-link-status>جاري فحص حالة الربط…</div>
           <footer>
             <span class="metric debt">الدين <b>{{ displayNumber(customer.debt) }}</b></span>
             <span class="metric balance">الرصيد <b>{{ displayNumber(customer.balance) }}</b></span>
