@@ -59,8 +59,8 @@ async function init(){
       const branchName=branches.find(x=>Number(x.id)===Number(branch.default_branch_id))?.name||'مخزن العامل'
       const nickname=ctx.nickname||localStorage.getItem(NICK)||'العامل'
       const perms={sell:!!ctx.can_sell,purchase:!!ctx.can_purchase,inventory:!!ctx.can_inventory,view_stock:!!ctx.can_view_stock,transfer:!!branch.can_transfer,record_money:!!ctx.can_record_money,view_sales:!!ctx.can_view_sales}
-      const prelaunchAdmin=localStorage.getItem('mytool_workspace_code')==='PRELAUNCH'&&localStorage.getItem('mytool_workspace_role')==='workspace_admin'
-      render(perms,prelaunchAdmin?'admin':'worker',prelaunchAdmin?'مدير · وضع الاستمرارية':nickname+' — '+branchName)
+      const localAdmin=localStorage.getItem('mytool_workspace_role')==='workspace_admin'
+      render(perms,localAdmin?'admin':'worker',localAdmin?'مدير · دخول محلي':nickname+' — '+branchName)
       return
     }
 
