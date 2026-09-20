@@ -9,7 +9,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=v=>String(v??'').trim().toLowerCase();
 
-let me=null,sources=[],parties=[],suggestions=[],page=1;
+let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformSignatures=[],identityReviews=[],page=1;
 let adminMode='none',workspaceToken='';
 let confirmResolve=null;
 const selectedSources=new Set();
@@ -20,7 +20,19 @@ function msg(text,kind='info'){
   $('message').className='message '+kind;
 }
 function platformLabel(v){
-  return ({tehna_pay:'تهنى باي',hanii_rohek:'هني روحك',other:'منصة أخرى'}[v]||v||'مصدر');
+  return platforms.find(x=>x.platform_key===v)?.display_name||({tehna_pay:'تهنى باي',hanii_rohek:'هني روحك',wafarly:'وفرلي'}[v]||v||'مصدر');
+}
+function platformKeyFromName(name){
+  const base=norm(name).normalize('NFKD').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  return base?('custom_'+base.slice(0,32)):('platform_'+Date.now().toString(36));
+}
+function renderPlatformControls(){
+  const current=$('importPlatform').value;
+  $('importPlatform').innerHTML='<option value="">اختر المنصة…</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
+  if(platforms.some(p=>p.platform_key===current))$('importPlatform').value=current;
+  const pf=$('platformFilter').value;
+  $('platformFilter').innerHTML='<option value="all">كل المنصات</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
+  if(pf==='all'||platforms.some(p=>p.platform_key===pf))$('platformFilter').value=pf;
 }
 async function sha256File(file){
   const bytes=await file.arrayBuffer();
@@ -56,7 +68,7 @@ async function adminRpc(ownerName,workspaceName,params={}){
   return supabase.rpc(ownerName,params);
 }
 function saveCache(){
-  const payload={saved_at:Date.now(),sources,parties,suggestions};
+  const payload={saved_at:Date.now(),sources,parties,suggestions,platforms,platformSignatures,identityReviews};
   localStorage.setItem(CACHE,JSON.stringify(payload));
   localStorage.setItem(DIRECTORY_CACHE,JSON.stringify({
     saved_at:payload.saved_at,
@@ -71,8 +83,8 @@ function loadCache(){
   try{
     const v=JSON.parse(localStorage.getItem(CACHE)||'null');
     if(!v||!Array.isArray(v.sources)||!Array.isArray(v.parties))return false;
-    sources=v.sources;parties=v.parties;suggestions=Array.isArray(v.suggestions)?v.suggestions:[];
-    renderAll();
+    sources=v.sources;parties=v.parties;suggestions=Array.isArray(v.suggestions)?v.suggestions:[];platforms=Array.isArray(v.platforms)?v.platforms:[];platformSignatures=Array.isArray(v.platformSignatures)?v.platformSignatures:[];identityReviews=Array.isArray(v.identityReviews)?v.identityReviews:[];
+    renderPlatformControls();renderAll();
     const when=v.saved_at?new Date(v.saved_at).toLocaleString('ar-DZ'):'';
     msg('Offline — تعرض آخر نسخة محفوظة'+(when?' ('+when+')':'')+'.','warn');
     return true;
@@ -84,6 +96,7 @@ function renderConnectivity(){
   $('importBtn').disabled=off;
   $('smartBtn').disabled=off;
   $('manualSave').disabled=off;
+  $('newPlatformBtn').disabled=off;
 }
 function askConfirm(title,body,okText='تأكيد'){
   if(confirmResolve){confirmResolve(false);confirmResolve=null}
@@ -215,8 +228,8 @@ function renderSources(){
 }
 function reasonHtml(r){
   if(!r||typeof r!=='object')return '';
-  const labels={phone:'نفس الهاتف',email:'نفس البريد',username_loose:'مستخدم متشابه بعد التطبيع',email_loose:'بريد متشابه بعد التطبيع'};
-  return Object.keys(r).map(k=>'<span class="reason">'+esc(labels[k]||k)+'</span>').join('');
+  const labels={phone:'نفس الهاتف',email:'نفس البريد',username:'نفس المستخدم',username_loose:'مستخدم متشابه',email_loose:'بريد متشابه',phone_near:'هاتف قريب',near_phone:'هاتف قريب',name_close:'اسم قريب',identity_history:'هوية سابقة مشتركة',smart_similarity:'تشابه ذكي',exact_identity_conflict:'تعارض هوية قوي'};
+  return Object.keys(r).filter(k=>r[k]!==false&&r[k]!=null).map(k=>'<span class="reason">'+esc(labels[k]||k)+'</span>').join('');
 }
 function suggestionSide(prefix,s){
   const name=s[prefix+'_display_name']||s[prefix+'_username'];
@@ -245,12 +258,40 @@ function renderSuggestions(){
   document.querySelectorAll('[data-approve-suggestion]').forEach(b=>b.onclick=()=>reviewSuggestion(Number(b.dataset.approveSuggestion),'approve'));
   document.querySelectorAll('[data-reject-suggestion]').forEach(b=>b.onclick=()=>reviewSuggestion(Number(b.dataset.rejectSuggestion),'reject'));
 }
+function renderIdentityReviews(){
+  const box=$('identityReviews'),badge=$('identityReviewCount');
+  const active=identityReviews.filter(r=>['pending','conflict'].includes(r.status));
+  badge.textContent=active.length;
+  if(!active.length){box.innerHTML='<div class="empty">لا توجد حالات هوية داخل المنصة تحتاج مراجعة.</div>';return}
+  box.innerHTML=active.map(r=>{
+    const incoming=r.incoming_payload||{},candidate=r.candidate_display_name||r.candidate_username||'غير محسوم';
+    const incomingName=incoming.display_name||[incoming.first_name,incoming.last_name].filter(Boolean).join(' ')||incoming.username||'بيانات واردة';
+    const canSame=!!r.candidate_source_account_id;
+    return '<div class="identity-review"><div class="source-top"><div><b>'+esc(platformLabel(r.platform_key))+' · '+esc(incomingName)+'</b><div class="meta">درجة: '+Number(r.score||0)+' · '+(r.status==='conflict'?'تعارض':'مراجعة')+'</div></div><span class="badge '+(r.status==='conflict'?'conflict':'pending_review')+'">'+(r.status==='conflict'?'تعارض':'اقتراح')+'</span></div>'+
+      '<div class="incoming"><b>الحساب الأقرب:</b> '+esc(candidate)+'<div class="meta">'+esc([r.candidate_phone,r.candidate_email].filter(Boolean).join(' · '))+'</div></div>'+
+      '<div>'+reasonHtml(r.reasons)+'</div><div class="actions">'+
+      (canSame?'<button class="btn" data-identity-same="'+r.id+'">نفس الحساب</button>':'')+
+      (r.status!=='conflict'?'<button class="btn secondary" data-identity-new="'+r.id+'">حساب جديد فعلاً</button>':'')+
+      '<button class="btn secondary" data-identity-ignore="'+r.id+'">تجاهل</button></div></div>';
+  }).join('');
+  document.querySelectorAll('[data-identity-same]').forEach(b=>b.onclick=()=>reviewIdentity(Number(b.dataset.identitySame),'same'));
+  document.querySelectorAll('[data-identity-new]').forEach(b=>b.onclick=()=>reviewIdentity(Number(b.dataset.identityNew),'new'));
+  document.querySelectorAll('[data-identity-ignore]').forEach(b=>b.onclick=()=>reviewIdentity(Number(b.dataset.identityIgnore),'ignore'));
+}
+function partyMatrix(p){
+  return '<div class="platform-matrix">'+platforms.map(pl=>{
+    const rows=sources.filter(s=>Number(s.linked_party_id||0)===Number(p.id)&&s.platform_key===pl.platform_key);
+    if(!rows.length)return '<div class="platform-slot missing"><b>'+esc(pl.display_name)+'</b>غير موجود</div>';
+    return '<div class="platform-slot"><b>'+esc(pl.display_name)+'</b>'+rows.map(s=>esc(s.display_name||s.username)+' · '+esc(s.username)).join('<br>')+'</div>';
+  }).join('')+'</div>';
+}
 function renderParties(){
   if(!parties.length){
     $('parties').innerHTML='<div class="empty">لا يوجد عميل موحد بعد. أنشئ واحدًا يدويًا أو من حساب مصدر.</div>';
     return;
   }
   $('parties').innerHTML=parties.map(p=>'<div class="party-card"><div><b>#'+p.id+' · '+esc(p.display_name)+'</b></div>'+
+    partyMatrix(p)+
     '<div class="party-edit"><div class="field"><label>الاسم</label><input data-party-name="'+p.id+'" value="'+esc(p.display_name)+'"></div>'+
     '<div class="field"><label>الهاتف</label><input data-party-phone="'+p.id+'" value="'+esc(p.primary_phone||'')+'" inputmode="tel"></div>'+
     '<div class="field"><label>البريد</label><input data-party-email="'+p.id+'" value="'+esc(p.primary_email||'')+'" inputmode="email"></div>'+
@@ -258,7 +299,7 @@ function renderParties(){
   document.querySelectorAll('[data-party-save]').forEach(b=>b.onclick=()=>saveParty(Number(b.dataset.partySave)));
 }
 function renderAll(){
-  renderMetrics();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();
+  renderMetrics();renderIdentityReviews();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();
 }
 async function identify(){
   const now=Date.now();
@@ -303,16 +344,21 @@ async function load(){
     return;
   }
   msg('جاري تحميل دليل الربط…');
-  const [a,b]=await Promise.all([
+  const [a,b,c,d,e]=await Promise.all([
     adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
-    adminRpc('admin_customer_list_link_suggestions','workspace_admin_list_link_suggestions',{p_status:null})
+    adminRpc('admin_customer_list_link_suggestions','workspace_admin_list_link_suggestions',{p_status:null}),
+    adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms'),
+    adminRpc('admin_customer_list_identity_reviews','workspace_admin_list_identity_reviews'),
+    adminRpc('admin_customer_list_schema_signatures','workspace_admin_list_schema_signatures')
   ]);
-  if(a.error)throw a.error;
-  if(b.error)throw b.error;
+  if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;if(d.error)throw d.error;if(e.error)throw e.error;
   sources=Array.isArray(a.data?.sources)?a.data.sources:[];
   parties=Array.isArray(a.data?.parties)?a.data.parties:[];
   suggestions=Array.isArray(b.data)?b.data:[];
-  saveCache();renderAll();
+  platforms=Array.isArray(c.data)?c.data:[];
+  identityReviews=Array.isArray(d.data)?d.data:[];
+  platformSignatures=Array.isArray(e.data)?e.data:[];
+  renderPlatformControls();saveCache();renderAll();
   msg('تم تحديث دليل العملاء والروابط.','ok');
 }
 async function mergeSelectedSources(){
@@ -464,6 +510,7 @@ function firstValue(obj,names){
   }
   return '';
 }
+function headerSignature(headers){return headers.map(norm).filter(Boolean).join('|')}
 function detectPlatformFromMatrix(matrix,headerIndex,headers){
   const h=new Set(headers.map(norm));
   const roleIndex=headers.findIndex(v=>norm(v)==='الدور'||norm(v)==='role');
@@ -480,21 +527,32 @@ function detectPlatformFromMatrix(matrix,headerIndex,headers){
   const hasTehnaRole=sampleRoles.some(v=>/^ROLE_/i.test(v));
   if(tehnaHits>=5&&hasTehnaRole&&!h.has(norm('اسم المحل')))return 'tehna_pay';
 
-  return null;
+  const waf=['uid','user','رصيد','مقترض','مقترض (المفوض)'];
+  if(waf.filter(x=>h.has(norm(x))).length>=4)return 'wafarly';
+
+  const sig=headerSignature(headers);
+  const learned=platformSignatures.find(x=>x.header_signature===sig);
+  return learned?.platform_key||null;
 }
 function rowsToAccounts(matrix){
-  const headerIndex=matrix.findIndex(r=>Array.isArray(r)&&r.some(v=>norm(v)==='اسم المستخدم'||norm(v)==='username'));
+  const headerIndex=matrix.findIndex(r=>Array.isArray(r)&&r.some(v=>['اسم المستخدم','username','user'].includes(norm(v))));
   if(headerIndex<0)throw new Error('لم أجد عمود اسم المستخدم.');
   const headers=matrix[headerIndex].map(v=>String(v??'').trim());
   const detectedPlatform=detectPlatformFromMatrix(matrix,headerIndex,headers);
   const accounts=matrix.slice(headerIndex+1).filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()!=='')).map(row=>{
     const obj={};headers.forEach((h,i)=>{if(h)obj[h]=row[i]??''});
-    const username=firstValue(obj,['اسم المستخدم','username','user']);
-    if(!username)return null;
+    let username=firstValue(obj,['اسم المستخدم','username','user']);
+    const uid=firstValue(obj,['uid']);
+    if(!username&&!uid)return null;
     const first=firstValue(obj,['الاسم','first name','firstname']);
     const last=firstValue(obj,['اللقب','last name','lastname']);
     const shop=firstValue(obj,['اسم المحل','المحل','shop name','display name']);
-    const phone=firstValue(obj,['الهاتف','رقم الهاتف','هاتف','phone','telephone']);
+    let phone=firstValue(obj,['الهاتف','رقم الهاتف','هاتف','phone','telephone']);
+    if(detectedPlatform==='wafarly'&&username){
+      const m=username.match(/(?:-|\s)?(\+?213\d{9}|0[5-7]\d{8})\s*$/);
+      if(m&&!phone)phone=m[1];
+      if(m)username=username.slice(0,m.index).replace(/[\s-]+$/,'').trim()||username;
+    }
     let email=firstValue(obj,['بريد إلكتروني','البريد الإلكتروني','البريد الالكتروني','email']);
     if(!email&&username.includes('@')&&username.includes('.'))email=username;
     const status=firstValue(obj,['حالة الحساب','الحالة','status']);
@@ -502,14 +560,14 @@ function rowsToAccounts(matrix){
     const updated=firstValue(obj,['تاريخ التحديث','تاريخ الإنشاء','created at','updated at']);
     const disabled=/معطل|disabled|inactive/i.test(status);
     return {
-      username,
-      external_account_id:external||null,
+      username:uid||username,
+      external_account_id:external||uid||null,
       display_name:shop||[first,last].filter(Boolean).join(' ').trim()||username,
       first_name:first||null,last_name:last||null,phone:phone||null,email:email||null,
       source_status:status||null,source_updated_at:updated||null,active:!disabled,raw_data:obj
     };
   }).filter(Boolean);
-  return {accounts,detectedPlatform,headers};
+  return {accounts,detectedPlatform,headers,headerSignature:headerSignature(headers)};
 }
 async function parseImportFile(file){
   const ext=(file.name.split('.').pop()||'').toLowerCase();
@@ -524,15 +582,51 @@ async function parseImportFile(file){
   const matrix=window.XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
   return rowsToAccounts(matrix);
 }
+function platformHints(accounts){
+  const scores=new Map();
+  const phoneKey=v=>String(v||'').replace(/\D/g,'').replace(/^00213/,'213').replace(/^0(?=[5-7]\d{8}$)/,'213');
+  for(const incoming of accounts){
+    for(const old of sources){
+      let pts=0;
+      if(incoming.phone&&old.phone&&phoneKey(incoming.phone)===phoneKey(old.phone))pts+=5;
+      if(incoming.email&&old.email&&norm(incoming.email)===norm(old.email))pts+=5;
+      if(incoming.username&&old.username&&norm(incoming.username)===norm(old.username))pts+=4;
+      if(pts)scores.set(old.platform_key,(scores.get(old.platform_key)||0)+pts);
+    }
+  }
+  return [...scores.entries()].sort((a,b)=>b[1]-a[1]).map(([key,score])=>({key,score,label:platformLabel(key)}));
+}
+async function addPlatform(){
+  const name=$('newPlatformName').value.trim();
+  if(!name)return msg('اكتب اسم المنصة الجديدة.','error');
+  const key=platformKeyFromName(name);
+  const {data,error}=await adminRpc('admin_customer_register_platform','workspace_admin_register_platform',{p_platform_key:key,p_display_name:name});
+  if(error)return msg('تعذر إضافة المنصة: '+safeError(error),'error');
+  $('newPlatformName').value='';
+  await load();$('importPlatform').value=data?.platform_key||key;
+  msg('تمت إضافة منصة «'+name+'». يمكنك الآن نسب الملف إليها.','ok');
+}
+async function reviewIdentity(id,action){
+  if(!navigator.onLine)return msg('مراجعة الهوية تحتاج اتصالًا.','warn');
+  const {error}=await adminRpc('admin_customer_review_source_identity','workspace_admin_review_source_identity',{p_review_id:id,p_action:action});
+  if(error)return msg('تعذر حفظ قرار الهوية: '+safeError(error),'error');
+  if(action!=='ignore'){await autoBootstrap(null);await generateSuggestions({silent:true})}
+  await load();msg(action==='same'?'تم تحديث نفس الحساب بدون إنشاء نسخة.':action==='new'?'تم إنشاء الحساب الجديد بعد تأكيدك.':'تم تجاهل الاقتراح.','ok');
+}
 async function importSources(){
   if(!navigator.onLine)return msg('الاستيراد يحتاج اتصالًا.','warn');
   const file=$('sourceFile').files?.[0];
   if(!file)return msg('اختر ملف CSV أو XLSX أولًا.','error');
-  const platform=$('importPlatform').value;
+  let platform=$('importPlatform').value;
   $('importBtn').disabled=true;msg('جاري التحقق من الملف…');
   try{
     const parsed=await parseImportFile(file);
     const accounts=parsed.accounts;
+    if(!platform&&parsed.detectedPlatform){platform=parsed.detectedPlatform;$('importPlatform').value=platform}
+    if(!platform){
+      const hints=platformHints(accounts),hint=hints[0];
+      throw new Error('الصيغة غير معروفة ولم أحدد لها منصة.'+(hint?' أقوى ترشيح حسب الهاتف/البريد/المستخدم: «'+hint.label+'». اختر المنصة أو أضف اسم منصة جديدة ثم أعد التحديث.':' اختر المنصة أو أضف اسم منصة جديدة ثم أعد التحديث.'));
+    }
     if(parsed.detectedPlatform&&parsed.detectedPlatform!==platform){
       throw new Error(
         'شكل هذا الملف يخص «'+platformLabel(parsed.detectedPlatform)+'» وليس «'+platformLabel(platform)+'». غيّر المنصة قبل التحديث.'
@@ -545,7 +639,7 @@ async function importSources(){
       throw new Error('هذا الملف سبق تحميله لمنصة «'+existing+'» ولا يمكن تحميله مرة أخرى كمنصة «'+requested+'».');
     }
     if(!accounts.length)throw new Error('لم أجد حسابات صالحة في الملف.');
-    let processed=0,inserted=0,updated=0;
+    let processed=0,inserted=0,updated=0,reviews=0,conflicts=0,stale=0;
     for(let i=0;i<accounts.length;i+=150){
       const chunk=accounts.slice(i,i+150);
       const {data,error}=await adminRpc('admin_customer_upsert_source_accounts','workspace_admin_upsert_source_accounts',{
@@ -555,6 +649,12 @@ async function importSources(){
       processed+=Number(data?.processed||chunk.length);
       inserted+=Number(data?.inserted||0);
       updated+=Number(data?.updated||0);
+      reviews+=Number(data?.identity_reviews||0);conflicts+=Number(data?.identity_conflicts||0);stale+=Number(data?.stale_skipped||0);
+    }
+    const sig=parsed.headerSignature;
+    if(sig){
+      const {error:sigError}=await adminRpc('admin_customer_register_schema_signature','workspace_admin_register_schema_signature',{p_platform_key:platform,p_header_signature:sig});
+      if(sigError)console.warn('schema signature not saved:',safeError(sigError));
     }
     $('sourceFile').value='';
     const boot=await autoBootstrap(platform);
@@ -564,7 +664,7 @@ async function importSources(){
       msg('تم تحديث '+processed+' حساب. بقيت بعض حالات الربط للمراجعة، ولم تتوقف الصفحة.','warn');
     }else{
       const repeat=registration?.status==='same_platform'?' · إعادة تحديث لنفس المصدر':'';
-      msg('تم تحديث '+processed+' حساب؛ ربط أولي تلقائي '+Number(boot?.created||0)+'، وبانتظار مراجعة دمج '+Number(smart?.pending||0)+repeat+'.','ok');
+      msg('تمت معالجة '+processed+' سطر: جديد '+inserted+' · تحديث '+updated+' · مراجعة هوية '+reviews+' · تعارض '+conflicts+' · أقدم من المحفوظ '+stale+' · ربط أولي '+Number(boot?.created||0)+' · دمج تلقائي قوي '+Number(smart?.auto_merged||0)+' · اقتراحات '+Number(smart?.pending||0)+repeat+'.','ok');
     }
   }catch(error){
     msg('تعذر الاستيراد: '+safeError(error),'error');
@@ -589,6 +689,7 @@ $('selectPage').onclick=()=>{currentPageIds.forEach(id=>selectedSources.add(id))
 $('clearSelected').onclick=()=>{selectedSources.clear();renderSources();renderBulk()};
 $('mergeSelected').onclick=mergeSelectedSources;
 $('manualSave').onclick=createManual;
+$('newPlatformBtn').onclick=addPlatform;
 $('importBtn').onclick=importSources;
 $('smartBtn').onclick=generateSuggestions;
 $('search').oninput=()=>{page=1;renderSources()};
