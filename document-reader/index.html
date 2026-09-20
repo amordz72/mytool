@@ -17,13 +17,14 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .security{display:flex;gap:10px;align-items:flex-start;background:#effaf5;border-color:#b7e3cd}.security b{color:var(--ok)}.security p{margin:2px 0 0;color:#416956;font-size:12px;line-height:1.65}
 .file-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.file-name{min-width:0;padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:10px;padding:10px 12px;font-weight:700;font-size:12px;cursor:pointer}.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--o),var(--b))}.btn.danger{border-color:#f1b8b3;background:#fff4f2;color:var(--bad)}.btn:disabled{opacity:.55;cursor:not-allowed}
-.actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:10px}
+.actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:10px}
 .preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
 .detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
-.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}.field-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.edit-btn{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.edit-input{width:100%;margin-top:8px;border:1px solid #a9d5e9;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;color:var(--t);background:#fff}.edit-row{display:flex;gap:6px;margin-top:6px}.recipient-context{padding:0;overflow:hidden}.context-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;padding:12px 14px;border-bottom:1px solid var(--l)}.recipient-box{display:flex;flex-direction:column;gap:4px}.recipient-box span,.date-box span{font-size:10px;color:var(--m);font-weight:800}.recipient-select-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.recipient-box select,.date-box input{width:100%;border:1px solid #b9d5e3;border-radius:9px;padding:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700}.recipient-add{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:9px;padding:7px 12px;font-size:18px;font-weight:900;cursor:pointer}.date-box{display:flex;flex-direction:column;gap:4px;min-width:150px}.history-title{padding:9px 14px 7px;font-size:10px;font-weight:800;color:var(--m);background:#fafcfd}.recipient-tabs{display:flex;overflow-x:auto;scrollbar-width:thin;border-top:1px solid var(--l);border-bottom:1px solid var(--l);background:#f2f4f6}.recipient-tab{flex:0 0 auto;border:0;border-left:1px solid #d8dee3;background:#eef0f2;color:#30485a;padding:11px 14px;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap}.recipient-tab.active{background:#fff;color:#0d5e86;box-shadow:inset 0 3px 0 var(--b)}.operation-history{background:#fff}.history-date{padding:9px 14px;background:#f8fbfd;border-top:1px solid var(--l);border-bottom:1px solid var(--l);font-size:11px;font-weight:900;color:#24566f}.history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid #edf2f5}.history-row.active{background:#f2fbff}.history-main{min-width:0;cursor:pointer}.history-main b{display:block;font-size:12px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-main small{display:block;margin-top:3px;color:var(--m);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-actions{display:flex;gap:5px}.history-open,.history-delete{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800;cursor:pointer}.history-delete{color:#a33;border-color:#efc4bf;background:#fff7f6}.history-empty{padding:12px 14px;color:var(--m);font-size:11px}.date-hint{font-size:10px;color:#0d5e86;font-weight:800;min-height:14px;margin-top:2px}.context-body{padding:9px 14px;background:#fff;font-size:10px;color:var(--m);line-height:1.6}.context-body b{color:var(--t)}.selected-context{margin-top:10px;background:#eef9ff;border:1px solid #b9d8e7;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.6;color:#24566f}@media(max-width:520px){.context-top{grid-template-columns:1fr}.date-box{min-width:0}}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}.field-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.edit-btn{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.edit-input{width:100%;margin-top:8px;border:1px solid #a9d5e9;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;color:var(--t);background:#fff}.edit-row{display:flex;gap:6px;margin-top:6px}.recipient-context{padding:0;overflow:hidden}.context-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;padding:12px 14px;border-bottom:1px solid var(--l)}.recipient-box{display:flex;flex-direction:column;gap:4px}.recipient-box span,.date-box span{font-size:10px;color:var(--m);font-weight:800}.recipient-select-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.recipient-box select,.date-box input{width:100%;border:1px solid #b9d5e3;border-radius:9px;padding:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700}.recipient-add{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:9px;padding:7px 12px;font-size:18px;font-weight:900;cursor:pointer}.date-box{display:flex;flex-direction:column;gap:4px;min-width:150px}.history-title{padding:9px 14px 7px;font-size:10px;font-weight:800;color:var(--m);background:#fafcfd}.recipient-tabs{display:flex;overflow-x:auto;scrollbar-width:thin;border-top:1px solid var(--l);border-bottom:1px solid var(--l);background:#f2f4f6}.recipient-tab{flex:0 0 auto;border:0;border-left:1px solid #d8dee3;background:#eef0f2;color:#30485a;padding:11px 14px;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap}.recipient-tab.active{background:#fff;color:#0d5e86;box-shadow:inset 0 3px 0 var(--b)}.operation-history{background:#fff}.history-date{padding:9px 14px;background:#f8fbfd;border-top:1px solid var(--l);border-bottom:1px solid var(--l);font-size:11px;font-weight:900;color:#24566f}.history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 10px;padding:11px 12px;border:1px solid #e1eaf0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #1630470a}.history-row.active{background:#f2fbff;border-color:#9bd3ec}.history-main{min-width:0;cursor:pointer}.history-main b{display:block;font-size:12px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-main small{display:block;margin-top:3px;color:var(--m);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-actions{display:flex;gap:5px}.history-open,.history-delete{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800;cursor:pointer}.history-delete{color:#a33;border-color:#efc4bf;background:#fff7f6}.history-empty{padding:12px 14px;color:var(--m);font-size:11px}.date-hint{font-size:10px;color:#0d5e86;font-weight:800;min-height:14px;margin-top:2px}.context-body{padding:9px 14px;background:#fff;font-size:10px;color:var(--m);line-height:1.6}.context-body b{color:var(--t)}.selected-context{margin-top:10px;background:#eef9ff;border:1px solid #b9d8e7;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.6;color:#24566f}@media(max-width:520px){.context-top{grid-template-columns:1fr}.date-box{min-width:0}}
 .notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}.quality{margin-top:10px;border-radius:13px;padding:11px 12px;font-size:12px;line-height:1.65}.quality.ok{background:#effaf5;border:1px solid #b7e3cd;color:#17643f}.quality.warn{background:#fff9e8;border:1px solid #f1d28a;color:#755b13}.quality.bad{background:#fff4f2;border:1px solid #f0b6b1;color:#9f2219}.quality b{display:block;margin-bottom:3px}
 .error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
+.image-refs{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding:6px 2px}.image-ref{flex:0 0 auto;border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:800;cursor:pointer}.image-ref.active{background:#e8f7ff;border-color:#66b9df}.toast-stack{position:fixed;top:16px;right:16px;z-index:9999;display:grid;gap:10px;width:min(360px,calc(100vw - 24px));pointer-events:none}.toast{pointer-events:auto;background:#fff;border:1px solid #dfe7ed;border-radius:15px;padding:13px 14px;box-shadow:0 12px 34px #10283a28;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;animation:toastIn .18s ease}.toast-icon{font-size:20px;line-height:1}.toast-title{font-weight:900;font-size:13px;color:var(--t)}.toast-message{margin-top:3px;font-size:11px;line-height:1.55;color:var(--m)}.toast-close{border:0;background:transparent;color:#81919d;font-size:20px;line-height:1;cursor:pointer}.toast.success{border-right:4px solid #35bf75}.toast.warn{border-right:4px solid #e4a21b}.toast.error{border-right:4px solid #ef6470}.toast.info{border-right:4px solid #45a8d8}@keyframes toastIn{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}@media(max-width:620px){.toast-stack{top:10px;right:12px;left:12px;width:auto}}
 details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{cursor:pointer;font-weight:700;font-size:12px;color:#0d5e86}pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:10px}
 .hidden{display:none!important}
 @media(max-width:620px){.actions{grid-template-columns:1fr 1fr}.results,.detected{grid-template-columns:1fr}.hero{padding:15px}.file-row{grid-template-columns:1fr}}
@@ -63,12 +64,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   <div class="file-row">
     <div id="fileName" class="file-name">لم يتم اختيار صورة</div>
     <label class="btn primary" for="fileInput">اختيار صورة</label>
-    <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden>
+    <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/*" multiple hidden>
+    <input id="additionalFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/*" multiple hidden>
   </div>
 
   <div class="actions">
     <button id="analyzeBtn" class="btn primary" type="button" disabled>تحليل الصورة</button>
     <button id="saveBtn" class="btn" type="button" disabled>حفظ</button>
+    <button id="addImageBtn" class="btn" type="button" disabled>+ صورة مرجع</button>
     <button id="rotateRightBtn" class="btn" type="button" disabled>↻ تدوير</button>
     <button id="copyBtn" class="btn" type="button" disabled>نسخ النتائج</button>
     <button id="clearBtn" class="btn danger" type="button" disabled>مسح</button>
@@ -78,6 +81,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     <div id="previewEmpty" class="empty">اختر صورة واضحة للوثيقة. إذا كانت مائلة سيحاول القارئ اكتشاف الاتجاه تلقائيًا.</div>
     <img id="previewImg" alt="معاينة الوثيقة" class="hidden">
   </div>
+  <div id="imageRefs" class="image-refs hidden"></div>
 
   <div id="progressBox" class="progress hidden"><strong id="progressTitle">جاري التحليل…</strong><div id="progressText"></div></div>
   <div id="errorBox" class="error hidden"></div>
@@ -109,6 +113,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   </details>
 </section>
 </main>
+<div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <script>
@@ -117,10 +122,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   const $ = id => document.getElementById(id);
   const fileInput = $('fileInput');
+  const additionalFileInput = $('additionalFileInput');
   const previewImg = $('previewImg');
   const previewEmpty = $('previewEmpty');
   const analyzeBtn = $('analyzeBtn');
   const saveBtn = $('saveBtn');
+  const addImageBtn = $('addImageBtn');
   const rotateRightBtn = $('rotateRightBtn');
   const copyBtn = $('copyBtn');
   const clearBtn = $('clearBtn');
@@ -140,6 +147,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const operationHistory = $('operationHistory');
   const recipientContextText = $('recipientContextText');
   const selectedContext = $('selectedContext');
+  const imageRefs = $('imageRefs');
+  const toastStack = $('toastStack');
 
   let objectUrl = '';
   let sourceImage = null;
@@ -159,6 +168,21 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   let activeOperationId='';
   let activeHistorySupplier='all';
   let receiptDbPromise=null;
+  let currentImageIndex=0;
+
+  function showToast(type,title,message,timeout=4200){
+    const icons={success:'✓',warn:'!',error:'×',info:'i'};
+    const toast=document.createElement('div');
+    toast.className='toast '+(type||'info');
+    toast.innerHTML='<div class="toast-icon">'+escapeHtml(icons[type]||icons.info)+'</div>'
+      +'<div><div class="toast-title">'+escapeHtml(title||'تنبيه')+'</div>'
+      +'<div class="toast-message">'+escapeHtml(message||'')+'</div></div>'
+      +'<button type="button" class="toast-close" aria-label="إغلاق">×</button>';
+    toast.querySelector('.toast-close').addEventListener('click',()=>toast.remove());
+    toastStack.appendChild(toast);
+    if(timeout>0)setTimeout(()=>toast.remove(),timeout);
+    return toast;
+  }
 
   function getRecipientPresets(){
     try{
@@ -236,22 +260,31 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return receiptDbPromise;
   }
 
-  async function saveReceiptImage(id,blob,fileName=''){
-    if(!id||!blob)return false;
-    const db=await openReceiptDb();
-    return new Promise((resolve,reject)=>{
-      const tx=db.transaction(RECEIPT_IMAGE_STORE,'readwrite');
-      tx.objectStore(RECEIPT_IMAGE_STORE).put({
-        id,
-        blob,
-        fileName:fileName||'صورة الوصل',
-        type:blob.type||'image/jpeg',
-        savedAt:new Date().toISOString()
-      });
-      tx.oncomplete=()=>resolve(true);
-      tx.onerror=()=>reject(tx.error||new Error('تعذر حفظ صورة الوصل محليًا.'));
-      tx.onabort=()=>reject(tx.error||new Error('تعذر حفظ صورة الوصل محليًا.'));
-    });
+  function normalizeReceiptImageRecord(record,id=''){
+    if(!record)return {id,images:[],primaryIndex:0,savedAt:''};
+    if(Array.isArray(record.images)){
+      return {
+        ...record,
+        id:record.id||id,
+        images:record.images.filter(item=>item&&item.blob),
+        primaryIndex:0
+      };
+    }
+    if(record.blob){
+      return {
+        id:record.id||id,
+        images:[{
+          imageId:'legacy-main',
+          blob:record.blob,
+          fileName:record.fileName||'صورة الوصل',
+          type:record.type||record.blob.type||'image/jpeg',
+          savedAt:record.savedAt||new Date().toISOString()
+        }],
+        primaryIndex:0,
+        savedAt:record.savedAt||''
+      };
+    }
+    return {id:record.id||id,images:[],primaryIndex:0,savedAt:record.savedAt||''};
   }
 
   async function getReceiptImage(id){
@@ -260,8 +293,32 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return new Promise((resolve,reject)=>{
       const tx=db.transaction(RECEIPT_IMAGE_STORE,'readonly');
       const req=tx.objectStore(RECEIPT_IMAGE_STORE).get(id);
-      req.onsuccess=()=>resolve(req.result||null);
+      req.onsuccess=()=>resolve(normalizeReceiptImageRecord(req.result||null,id));
       req.onerror=()=>reject(req.error||new Error('تعذر قراءة صورة الوصل المحلية.'));
+    });
+  }
+
+  async function saveReceiptImage(id,blob,fileName='',append=true){
+    if(!id||!blob)return null;
+    const db=await openReceiptDb();
+    const existing=await getReceiptImage(id);
+    const record=normalizeReceiptImageRecord(existing,id);
+    const image={
+      imageId:'img-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+      blob,
+      fileName:fileName||'صورة الوصل',
+      type:blob.type||'image/jpeg',
+      savedAt:new Date().toISOString()
+    };
+    record.images=append?[...(record.images||[]),image]:[image];
+    record.primaryIndex=0;
+    record.savedAt=new Date().toISOString();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(RECEIPT_IMAGE_STORE,'readwrite');
+      tx.objectStore(RECEIPT_IMAGE_STORE).put(record);
+      tx.oncomplete=()=>resolve(record);
+      tx.onerror=()=>reject(tx.error||new Error('تعذر حفظ صورة الوصل محليًا.'));
+      tx.onabort=()=>reject(tx.error||new Error('تعذر حفظ صورة الوصل محليًا.'));
     });
   }
 
@@ -293,6 +350,47 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         if(!keep.has(String(key)))await deleteReceiptImage(key);
       }
     }catch(_e){}
+  }
+
+  function renderImageRefs(record){
+    const images=record?.images||[];
+    imageRefs.innerHTML='';
+    if(images.length<=1){
+      imageRefs.classList.add('hidden');
+      return;
+    }
+    images.forEach((img,index)=>{
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='image-ref'+(index===currentImageIndex?' active':'');
+      btn.textContent=index===0?'الصورة الرئيسية':'مرجع '+(index+1);
+      btn.title=img.fileName||btn.textContent;
+      btn.dataset.imageIndex=String(index);
+      imageRefs.appendChild(btn);
+    });
+    imageRefs.classList.remove('hidden');
+  }
+
+  async function displayStoredImage(operationId,index=0){
+    const record=await getReceiptImage(operationId);
+    const images=record?.images||[];
+    if(!images.length)return null;
+    const safeIndex=Math.max(0,Math.min(index,images.length-1));
+    const item=images[safeIndex];
+    sourceImage=await loadImage(item.blob);
+    currentImageIndex=safeIndex;
+    $('fileName').textContent=item.fileName||(safeIndex===0?'صورة الوصل':'صورة مرجع');
+    previewImg.src=objectUrl;
+    previewImg.classList.remove('hidden');
+    previewEmpty.classList.add('hidden');
+    updatePreview();
+    renderImageRefs(record);
+    return record;
+  }
+
+  async function ensurePrimaryImageLoaded(){
+    if(!currentResult?.operationId)return;
+    if(currentImageIndex!==0)await displayStoredImage(currentResult.operationId,0);
   }
 
   function getRecentOperations(){
@@ -395,7 +493,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function renderRecipientSelect(){
     const names=getRecipientPresets();
-    const previous=activeRecipient;
+    const assigned=currentResult?.selectedRecipient||'';
+    const previous=assigned||activeRecipient||UNSENT_RECIPIENT;
     recipientSelect.innerHTML='';
     names.forEach(name=>{
       const option=document.createElement('option');
@@ -403,11 +502,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       option.textContent=name;
       recipientSelect.appendChild(option);
     });
-    const selected=names.includes(previous)?previous:(names[0]||'');
-    if(selected){
-      activeRecipient=selected;
-      recipientSelect.value=selected;
-    }
+    const selected=names.includes(previous)?previous:UNSENT_RECIPIENT;
+    activeRecipient=selected;
+    recipientSelect.value=selected;
+    recipientSelect.disabled=Boolean(currentResult&&assigned&&assigned!==UNSENT_RECIPIENT);
+    recipientAddBtn.disabled=recipientSelect.disabled;
   }
 
   function renderHistorySupplierTabs(){
@@ -417,7 +516,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const btn=document.createElement('button');
       btn.type='button';
       btn.className='recipient-tab'+(name===activeHistorySupplier?' active':'');
-      btn.textContent=name==='all'?'الكل':name;
+      btn.textContent=name==='all'?'الكل':(name===UNSENT_RECIPIENT?'الانتظار':name);
       btn.dataset.historySupplier=name;
       btn.setAttribute('role','tab');
       btn.setAttribute('aria-selected',name===activeHistorySupplier?'true':'false');
@@ -472,6 +571,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const headline=(activeHistorySupplier==='all'?supplier+' — ':'')
         +(op.status==='pending_analysis'||op.status==='analysis_failed'||op.status==='duplicate'?state:(amount||state));
       const meta=[operationTime(op),state];
+      if(op.imageCount>1)meta.push(op.imageCount+' صور');
       if(op.fileName)meta.push(op.fileName);
       if(op.status!=='pending_analysis')meta.push('رقم '+doc);
       main.innerHTML='<b>'+escapeHtml(headline)+'</b>'
@@ -497,6 +597,15 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function selectRecipient(name){
     const value=cleanLine(name);
     if(!value)return;
+
+    const assigned=currentResult?.selectedRecipient||'';
+    if(currentResult&&assigned&&assigned!==UNSENT_RECIPIENT&&value!==assigned){
+      activeRecipient=assigned;
+      renderRecipientSelect();
+      showToast('warn','هذا الوصل مسند بالفعل','الوصل مسند إلى '+assigned+' ولا يمكن استعماله لمورد آخر.',5200);
+      return;
+    }
+
     activeRecipient=value;
     const ctx=getRecipientContext();
     ctx.active=value;
@@ -504,15 +613,23 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     updateDateHint();
     ctx.date=receiptDate.value;
     saveRecipientContext(ctx);
-    renderRecipientSelect();
-    recipientContextText.innerHTML='<b>'+escapeHtml(value)+'</b> — تاريخ الإدخال: <b>'+escapeHtml(receiptDate.value)+'</b>';
+
     if(currentResult&&!currentResult.historyView){
+      const wasUnsent=!currentResult.selectedRecipient||currentResult.selectedRecipient===UNSENT_RECIPIENT;
       currentResult.selectedRecipient=value;
       currentResult.receiptDate=receiptDate.value;
-      currentResult.duplicateInfo=findDuplicateDocument(currentResult);
-      if(!currentResult.duplicateInfo)persistCurrentOperation();
-      renderResult(currentResult);
+      if(value!==UNSENT_RECIPIENT&&wasUnsent){
+        currentResult.assignedAt=new Date().toISOString();
+        activeHistorySupplier=value;
+        showToast('success','تم إسناد الوصل','انتقل الوصل إلى '+value+' ولا يمكن إسناده لمورد آخر.',5000);
+      }
+      persistCurrentOperation({registerDoc:currentResult.status==='analyzed'||currentResult.status==='saved'});
+      if(currentResult.status!=='pending_analysis'&&currentResult.status!=='analysis_failed')renderResult(currentResult);
     }
+
+    renderRecipientSelect();
+    renderRecentOperationTabs();
+    recipientContextText.innerHTML='<b>'+escapeHtml(value)+'</b> — تاريخ الإدخال: <b>'+escapeHtml(receiptDate.value)+'</b>';
   }
 
   function snapshotResult(payload){
@@ -533,6 +650,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       status:payload.status||'pending_analysis',
       fileName:payload.fileName||'',
       savedAt:payload.savedAt||'',
+      assignedAt:payload.assignedAt||'',
+      imageCount:Number(payload.imageCount||1),
       duplicateInfo:payload.duplicateInfo?{
         documentNumber:payload.duplicateInfo.documentNumber||'',
         selectedRecipient:payload.duplicateInfo.selectedRecipient||'',
@@ -551,7 +670,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }
 
     unregisterDocumentForOperation({id:currentResult.operationId});
-    const duplicate=registerDoc?findDuplicateDocument(currentResult):null;
+    const duplicate=registerDoc?findDuplicateDocument(currentResult):(currentResult.duplicateInfo||null);
     currentResult.duplicateInfo=duplicate||null;
     if(duplicate)currentResult.status='duplicate';
 
@@ -578,14 +697,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     let storedImage=null;
     try{storedImage=await getReceiptImage(op.id);}catch(_e){}
-    if(storedImage?.blob){
+    if(storedImage?.images?.length){
       try{
-        sourceImage=await loadImage(storedImage.blob);
+        currentImageIndex=0;
+        await displayStoredImage(op.id,0);
         rotation=Number(op.orientation||0);
-        $('fileName').textContent=op.fileName||storedImage.fileName||'صورة الوصل';
-        previewImg.src=objectUrl;
-        previewImg.classList.remove('hidden');
-        previewEmpty.classList.add('hidden');
         updatePreview();
         clearBtn.disabled=false;
         rotateRightBtn.disabled=op.status==='saved';
@@ -598,6 +714,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       previewImg.removeAttribute('src');
       previewImg.classList.add('hidden');
       previewEmpty.classList.remove('hidden');
+      imageRefs.innerHTML='';
+      imageRefs.classList.add('hidden');
       analyzeBtn.disabled=true;
       rotateRightBtn.disabled=true;
     }
@@ -615,13 +733,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     renderRecentOperationTabs();
 
+    renderRecipientSelect();
+    updateSaveButton();
+
     if(op.status==='pending_analysis'||op.status==='analysis_failed'){
       resultCard.classList.add('hidden');
       copyBtn.disabled=true;
       updateSaveButton();
       progressBox.classList.remove('hidden');
       progressTitle.textContent=op.status==='analysis_failed'?'التحليل السابق فشل':'بانتظار التحليل';
-      progressText.textContent=storedImage?.blob?'الصورة محفوظة محليًا. اضغط «تحليل الصورة».':'الصورة المحلية غير موجودة؛ لا يمكن إعادة التحليل من هذا الجهاز.';
+      progressText.textContent=storedImage?.images?.length?'الصورة محفوظة محليًا. اضغط «تحليل الصورة».':'الصورة المحلية غير موجودة؛ لا يمكن إعادة التحليل من هذا الجهاز.';
       return;
     }
 
@@ -685,6 +806,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function showError(message){
     errorBox.textContent=message;
     errorBox.classList.remove('hidden');
+    showToast('error','حدث خطأ',String(message||'تعذر إكمال العملية.'),6000);
   }
 
   function clearError(){
@@ -693,6 +815,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function updateSaveButton(){
+    const finalized=Boolean(currentResult&&(currentResult.status==='saved'||currentResult.status==='duplicate'));
     const canSave=Boolean(currentResult
       && !currentResult.historyView
       && currentResult.status==='analyzed'
@@ -701,6 +824,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(currentResult?.status==='saved')saveBtn.textContent='محفوظ ✓';
     else if(currentResult?.status==='duplicate')saveBtn.textContent='مكرر';
     else saveBtn.textContent='حفظ';
+
+    const canAddReference=Boolean(currentResult
+      && !currentResult.historyView
+      && !finalized);
+    addImageBtn.disabled=busy||!canAddReference;
+    analyzeBtn.disabled=busy||!sourceImage||finalized;
+    rotateRightBtn.disabled=busy||!sourceImage||finalized;
+    receiptDate.disabled=Boolean(busy||currentResult?.historyView||currentResult?.status==='saved'||currentResult?.status==='duplicate');
   }
 
   function setBusy(on){
@@ -709,6 +840,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     rotateRightBtn.disabled=on||!sourceImage;
     clearBtn.disabled=on||!sourceImage;
     fileInput.disabled=on;
+    additionalFileInput.disabled=on;
+    const assigned=currentResult?.selectedRecipient&&currentResult.selectedRecipient!==UNSENT_RECIPIENT;
+    recipientSelect.disabled=Boolean(on||assigned||currentResult?.historyView);
+    recipientAddBtn.disabled=recipientSelect.disabled;
+    receiptDate.disabled=Boolean(on||currentResult?.historyView);
     updateSaveButton();
   }
 
@@ -728,6 +864,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     copyBtn.disabled=true;
     saveBtn.disabled=true;
     saveBtn.textContent='حفظ';
+    addImageBtn.disabled=true;
+    imageRefs.innerHTML='';
+    imageRefs.classList.add('hidden');
+    currentImageIndex=0;
+    renderRecipientSelect();
   }
 
   function updatePreview(){
@@ -741,6 +882,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     sourceImage=null;
     rotation=0;
     fileInput.value='';
+    additionalFileInput.value='';
     $('fileName').textContent='لم يتم اختيار صورة';
     previewImg.removeAttribute('src');
     previewImg.classList.add('hidden');
@@ -1331,10 +1473,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const shownSource=data?.status==='absent'
         ? (data.source||'هذا القالب لا يحتوي هذا الحقل')
         : (data?.source?String(data.source):(clear?String(data.source||''):'لم يتم التخمين أو ملء الحقل تلقائيًا'));
+      const canEdit=!payload.historyView&&payload.status!=='saved'&&payload.status!=='duplicate';
       el.innerHTML='<div class="field-head"><span class="field-label">'+label+'</span><span class="status '+badge[0]+'">'+badge[1]+'</span></div>'
         +'<div class="value">'+escapeHtml(shownValue)+'</div>'
         +'<div class="source">'+escapeHtml(shownSource)+'</div>'
-        +'<div class="field-actions"><button type="button" class="edit-btn" data-edit-field="'+key+'">'+(clear?'تعديل':'إدخال يدوي')+'</button></div>';
+        +(canEdit?'<div class="field-actions"><button type="button" class="edit-btn" data-edit-field="'+key+'">'+(clear?'تعديل':'إدخال يدوي')+'</button></div>':'');
       resultsEl.appendChild(el);
     });
 
@@ -1362,7 +1505,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function startFieldEdit(key){
-    if(!currentResult)return;
+    if(!currentResult||currentResult.historyView||currentResult.status==='saved'||currentResult.status==='duplicate')return;
     const fieldEl=resultsEl.querySelector('[data-edit-field="'+key+'"]')?.closest('.field');
     if(!fieldEl)return;
     const data=currentResult.fields[key]||{};
@@ -1520,10 +1663,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   async function analyze(){
     if(!sourceImage||busy)return;
+    if(currentResult?.operationId&&currentImageIndex!==0){
+      try{await ensurePrimaryImageLoaded();}catch(_e){}
+    }
     const workingOperation=currentResult&&!currentResult.historyView?currentResult:null;
     clearError();
     resetResults();
     currentResult=workingOperation;
+    renderRecipientSelect();
     progressBox.classList.remove('hidden');
     setBusy(true);
 
@@ -1589,6 +1736,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         operationId:workingOperation?.operationId||('op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)),
         createdAt:workingOperation?.createdAt||new Date().toISOString(),
         fileName:workingOperation?.fileName||$('fileName').textContent||'صورة الوثيقة',
+        imageCount:Number(workingOperation?.imageCount||1),
+        assignedAt:workingOperation?.assignedAt||'',
         status:'analyzed',
         rawTextAvailable:true,
         historyView:false
@@ -1598,10 +1747,19 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       if(!accepted)currentResult.status='duplicate';
       renderResult(currentResult);
 
-      progressTitle.textContent=currentResult.status==='duplicate'?'تم التحليل — وصل مكرر':'اكتمل التحليل — بانتظار الحفظ';
-      progressText.textContent=currentResult.status==='duplicate'
-        ? 'تمت قراءة الوصل، لكن رقم الوثيقة مسجل سابقًا لذلك لا يمكن حفظه مرة ثانية.'
-        : 'تم التحليل وحفظ النتيجة تلقائيًا محليًا. راجعها ثم اضغط «حفظ» للتأكيد.';
+      progressBox.classList.add('hidden');
+      try{
+        const imageRecord=await getReceiptImage(currentResult.operationId);
+        currentResult.imageCount=imageRecord?.images?.length||currentResult.imageCount||1;
+        currentImageIndex=0;
+        renderImageRefs(imageRecord);
+        persistCurrentOperation({registerDoc:currentResult.status!=='duplicate'});
+      }catch(_e){}
+      if(currentResult.status==='duplicate'){
+        showToast('error','وصل مكرر — ممنوع الحفظ','رقم الوثيقة مسجل سابقًا. هذه العملية تبقى للمراجعة ولا يمكن حفظها مرة ثانية.',6500);
+      }else{
+        showToast('warn','تم التحليل — قبل الحفظ','راجع الحقول والصور ثم اضغط «حفظ» لتأكيد العملية.',6500);
+      }
     }catch(err){
       if(workingOperation){
         currentResult=workingOperation;
@@ -1609,9 +1767,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         persistCurrentOperation({registerDoc:false});
       }
       showError('فشل تحليل الوثيقة\n'+(err&&err.message?err.message:String(err)));
-      progressBox.classList.remove('hidden');
-      progressTitle.textContent='فشل التحليل — الوصل لم يضع';
-      progressText.textContent='الصورة ما زالت محفوظة محليًا ويمكن إعادة التحليل لاحقًا.';
+      progressBox.classList.add('hidden');
+      showToast('error','فشل التحليل — الوصل لم يضع','الصورة ما زالت محفوظة محليًا ويمكن إعادة التحليل لاحقًا.',6500);
     }finally{
       if(worker){try{await worker.terminate();}catch(_e){}}
       setBusy(false);
@@ -1648,12 +1805,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!ok){
       currentResult.status='duplicate';
       renderResult(currentResult);
+      showToast('error','تعذر الحفظ','رقم الوثيقة مسجل سابقًا.',6000);
       return;
     }
     renderResult(currentResult);
-    progressBox.classList.remove('hidden');
-    progressTitle.textContent='تم الحفظ ✓';
-    progressText.textContent='تم تأكيد العملية بعد التحليل، والصورة باقية محليًا على هذا الجهاز.';
+    renderRecipientSelect();
+    updateSaveButton();
+    progressBox.classList.add('hidden');
+    showToast('success','تم الحفظ بنجاح','تم تأكيد الوصل بعد التحليل، والصور المرجعية مرتبطة بنفس العملية.',5000);
   }
 
   function copyResults(){
@@ -1676,29 +1835,29 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   fileInput.addEventListener('change',async()=>{
-    const file=fileInput.files&&fileInput.files[0];
-    if(!file)return;
-    clearError();
-    resetResults();
-    activeOperationId='';
-    activeHistorySupplier='all';
-    activeRecipient=UNSENT_RECIPIENT;
-    renderRecipientSelect();
-    receiptDate.value=todayLocal();
-    updateDateHint();
-    renderRecentOperationTabs();
-    templateSelect.value='auto';
-
-    if(!/^image\//i.test(file.type)){
-      showError('الملف المختار ليس صورة مدعومة.');
+    const files=[...(fileInput.files||[])];
+    if(!files.length)return;
+    if(files.some(file=>!/^image\//i.test(file.type))){
+      showError('يوجد ملف غير مدعوم؛ اختر صورًا فقط.');
       fileInput.value='';
       return;
     }
 
+    clearError();
+    resetResults();
+    activeOperationId='';
+    activeHistorySupplier=UNSENT_RECIPIENT;
+    activeRecipient=UNSENT_RECIPIENT;
+    receiptDate.value=todayLocal();
+    updateDateHint();
+    templateSelect.value='auto';
+
     try{
-      sourceImage=await loadImage(file);
+      const mainFile=files[0];
+      sourceImage=await loadImage(mainFile);
       rotation=0;
-      $('fileName').textContent=file.name||'صورة الوثيقة';
+      currentImageIndex=0;
+      $('fileName').textContent=mainFile.name||'صورة الوثيقة';
       previewImg.src=objectUrl;
       previewImg.classList.remove('hidden');
       previewEmpty.classList.add('hidden');
@@ -1720,31 +1879,87 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         orientation:0,
         edgeCropSuspected:false,
         status:'pending_analysis',
-        fileName:file.name||'صورة الوثيقة',
+        fileName:mainFile.name||'صورة الوثيقة',
+        imageCount:files.length,
         rawTextAvailable:false,
         historyView:false
       };
 
-      let imageSaved=false;
+      let record=null;
       try{
-        imageSaved=await saveReceiptImage(currentResult.operationId,file,currentResult.fileName);
+        record=await saveReceiptImage(currentResult.operationId,mainFile,currentResult.fileName,false);
+        for(let i=1;i<files.length;i++){
+          record=await saveReceiptImage(currentResult.operationId,files[i],files[i].name||('مرجع '+(i+1)),true);
+        }
+        currentResult.imageCount=record?.images?.length||files.length;
+        renderImageRefs(record);
       }catch(_e){
-        imageSaved=false;
+        record=null;
       }
+
       persistCurrentOperation({registerDoc:false});
+      renderRecipientSelect();
+      renderRecentOperationTabs();
 
       analyzeBtn.disabled=false;
       rotateRightBtn.disabled=false;
       clearBtn.disabled=false;
       updateSaveButton();
-      progressBox.classList.remove('hidden');
-      progressTitle.textContent=imageSaved?'تم حفظ الوصل تلقائيًا على الجهاز':'تعذر حفظ الصورة محليًا';
-      progressText.textContent=imageSaved
-        ? 'الحالة: بانتظار التحليل. المورد الافتراضي: لم يُرسل لمورد بعد.'
-        : 'الصورة موجودة الآن في الصفحة ويمكن تحليلها، لكن إغلاق الصفحة قد يفقدها.';
+      progressBox.classList.add('hidden');
+
+      if(record){
+        showToast('success','تم حفظ الوصل في الانتظار',
+          currentResult.imageCount>1
+            ? 'تم حفظ '+currentResult.imageCount+' صور في بطاقة واحدة. الصورة الأولى رئيسية والباقي مراجع.'
+            : 'تم حفظ الصورة محليًا بدون مورد، والعملية بانتظار التحليل.',
+          6000);
+      }else{
+        showToast('error','تعذر الحفظ المحلي','الصورة مفتوحة الآن، لكن إغلاق الصفحة قد يفقدها.',6500);
+      }
     }catch(err){
       showError(err.message||String(err));
       clearAll();
+    }
+  });
+
+  addImageBtn.addEventListener('click',()=>{
+    if(!currentResult||currentResult.historyView||currentResult.status==='saved'||currentResult.status==='duplicate')return;
+    additionalFileInput.value='';
+    additionalFileInput.click();
+  });
+
+  additionalFileInput.addEventListener('change',async()=>{
+    const files=[...(additionalFileInput.files||[])];
+    if(!files.length||!currentResult?.operationId)return;
+    if(files.some(file=>!/^image\//i.test(file.type))){
+      showToast('error','ملف غير مدعوم','أضف صورًا فقط.',4500);
+      return;
+    }
+    try{
+      let record=await getReceiptImage(currentResult.operationId);
+      for(const file of files){
+        record=await saveReceiptImage(currentResult.operationId,file,file.name||'صورة مرجع',true);
+      }
+      currentResult.imageCount=record?.images?.length||currentResult.imageCount||1;
+      persistCurrentOperation({registerDoc:currentResult.status==='analyzed'||currentResult.status==='saved'});
+      renderImageRefs(record);
+      showToast('success','تمت إضافة صورة مرجع',
+        files.length>1?'أضيفت '+files.length+' صور إلى نفس الوصل.':'الصورة أضيفت لنفس الوصل ولن تُنشئ عملية جديدة.',
+        5000);
+    }catch(_e){
+      showToast('error','تعذر إضافة الصورة','لم أستطع حفظ صورة المرجع محليًا.',5500);
+    }
+  });
+
+  imageRefs.addEventListener('click',async event=>{
+    const btn=event.target.closest('[data-image-index]');
+    if(!btn||!currentResult?.operationId)return;
+    const index=Number(btn.getAttribute('data-image-index')||0);
+    try{
+      await displayStoredImage(currentResult.operationId,index);
+      if(index>0)showToast('info','صورة مرجع','هذه صورة مرجعية فقط؛ التحليل يعتمد الصورة الرئيسية.',3500);
+    }catch(_e){
+      showToast('error','تعذر فتح الصورة','الصورة المرجعية غير متاحة على هذا الجهاز.',4500);
     }
   });
 
