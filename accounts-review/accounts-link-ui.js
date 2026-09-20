@@ -28,7 +28,23 @@ async function batch(st){const c=C(),a=st.ss.find(x=>x.id===draft.a),b=st.ss.fin
 async function copy(){const c=C(),st=await c.state(),lines=['الحسابات المشتركة','عدد العلاقات: '+st.ls.length,''];for(const l of st.ls){const xs=l.members.map(m=>c.resolve(m,st.ss)).filter(x=>x.r);lines.push((l.displayName||c.name(xs[0]?.r))+' — '+xs.length+' حساب');xs.forEach(x=>lines.push(x.s.name+': '+(x.r.username||'—')+' | رصيد '+c.num(x.r.balance)+' | دين '+c.num(x.r.debt)));lines.push('')}try{await navigator.clipboard.writeText(lines.join('\n'));toast('تم النسخ')}catch{toast('تعذر النسخ',true)}}
 async function openSourceLinkRequest(event){const c=C(),d=event.detail||{},st=await c.state(),s=st.ss.find(x=>x.id===d.sourceId),r=s?.rows?.find(x=>String(x.key)===String(d.rowKey));if(!s||!r){toast('تعذر العثور على الحساب',true);return}const linkId=st.map.get(c.rid(s.id,r));if(linkId){sub='linked';addTo={linkId,sourceId:'',rowKey:''};await enter();setTimeout(()=>{const card=[...document.querySelectorAll('[data-link-card]')].find(x=>x.dataset.linkCard===linkId);card?.scrollIntoView({behavior:'smooth',block:'center'})},120);return}addTo={linkId:'',sourceId:'',rowKey:''};draft={a:s.id,b:'',sa:[String(r.key)],sb:[],step:'b'};sub='manual';await enter()}
 function nav(){if(!mode||!window.MyToolBottomNav)return;window.MyToolBottomNav.setActions([{slot:1,icon:'🔗',label:'ربط',onClick:()=>{sub='manual';render()}},{slot:2,icon:'📂',label:'ملف',onClick:()=>document.querySelector('input[type="file"][multiple]')?.click()},{icon:'📋',label:'نسخ المشتركة',overflow:true,onClick:copy},{icon:'🔄',label:'تحديث',overflow:true,onClick:render}])}
-function schedule(){clearTimeout(timer);timer=setTimeout(()=>render().catch(()=>{}),120)}
-function start(){const app=document.getElementById('app');if(!app||!C())return;panelBase();schedule();app.addEventListener('click',e=>{const t=e.target.closest('.tab');if(t&&t.id!=='accountsSharedTab'&&mode){exit();setTimeout(schedule,80)}},true);window.addEventListener('accounts-link-request',openSourceLinkRequest);window.addEventListener('accounts-total-selected',()=>{if(mode)exit();const p=document.getElementById('accountsSharedPanel');if(p){p.hidden=true;p.style.display='none'}});window.addEventListener('accounts-source-selected',()=>{if(mode)exit();const p=document.getElementById('accountsSharedPanel');if(p){p.hidden=true;p.style.display='none'}});window.addEventListener('accounts-identities-updated',schedule);window.addEventListener('mytool-bottom-nav-ready',()=>mode&&nav());new MutationObserver(()=>{if(!document.getElementById('accountsSharedTab'))panelBase()}).observe(app,{childList:true,subtree:true})}
+let statusTimer=0;
+async function decorateSourceLinkStatus(){
+  const c=C(),cards=[...document.querySelectorAll('.source-account-card[data-source-id][data-row-key]')];if(!c||!cards.length)return;
+  const st=await c.state();
+  for(const card of cards){
+    const sid=card.dataset.sourceId,key=String(card.dataset.rowKey||''),s=st.ss.find(x=>x.id===sid),r=s?.rows?.find(x=>String(x.key)===key),box=card.querySelector('[data-link-status]'),btn=card.querySelector('.source-link-btn');
+    if(!box||!s||!r)continue;
+    const linkId=st.map.get(c.rid(s.id,r)),link=linkId?st.ls.find(x=>x.id===linkId):null;
+    const others=link?[...new Set((link.members||[]).map(m=>c.resolve(m,st.ss)).filter(x=>x?.s&&x?.r&&x.s.id!==s.id).map(x=>x.s.name).filter(Boolean))]:[];
+    const linked=others.length>0,text=linked?'مربوط بـ: '+others.join('، '):'غير مربوط';
+    if(box.textContent!==text)box.textContent=text;
+    box.classList.toggle('linked',linked);box.classList.toggle('unlinked',!linked);
+    if(btn)btn.textContent=linked?'🔗 إضافة / إدارة الربط':'🔗 إضافة / ربط';
+  }
+}
+function scheduleStatus(){clearTimeout(statusTimer);statusTimer=setTimeout(()=>decorateSourceLinkStatus().catch(()=>{}),80)}
+function schedule(){clearTimeout(timer);timer=setTimeout(()=>render().catch(()=>{}),120);scheduleStatus()}
+function start(){const app=document.getElementById('app');if(!app||!C())return;panelBase();schedule();app.addEventListener('click',e=>{const t=e.target.closest('.tab');if(t&&t.id!=='accountsSharedTab'&&mode){exit();setTimeout(schedule,80)}},true);window.addEventListener('accounts-link-request',openSourceLinkRequest);window.addEventListener('accounts-total-selected',()=>{if(mode)exit();const p=document.getElementById('accountsSharedPanel');if(p){p.hidden=true;p.style.display='none'}});window.addEventListener('accounts-source-selected',()=>{if(mode)exit();const p=document.getElementById('accountsSharedPanel');if(p){p.hidden=true;p.style.display='none'}scheduleStatus();setTimeout(scheduleStatus,180)});window.addEventListener('accounts-identities-updated',()=>{schedule();scheduleStatus()});window.addEventListener('mytool-bottom-nav-ready',()=>mode&&nav());new MutationObserver(()=>{if(!document.getElementById('accountsSharedTab'))panelBase();scheduleStatus()}).observe(app,{childList:true,subtree:true})}
 if(C())start();else window.addEventListener('mytool-account-links-core-ready',start,{once:true});
 })();
