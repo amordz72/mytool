@@ -32,8 +32,33 @@ function detectAmount(){
 function codesFromGroup(group){
   return String(group.querySelector('.codes')?.textContent||'')
     .split(/\r\n|\n|\r/u)
-    .map(x=>x.trim())
-    .filter(Boolean);
+    .filter(line=>line!=='');
+}
+
+function validateMobilisCodes(codes){
+  const clean=[];
+  const bad=[];
+
+  codes.forEach((raw,index)=>{
+    let code=String(raw??'');
+    if(index===0&&code.charCodeAt(0)===0xFEFF)code=code.slice(1);
+
+    if(!code){
+      bad.push('السطر '+(index+1)+': فارغ.');
+      return;
+    }
+    if(/\s/u.test(code)){
+      bad.push('السطر '+(index+1)+': يحتوي فراغًا أو Tab.');
+      return;
+    }
+    if(!/^[0-9]{15}$/.test(code)){
+      bad.push('السطر '+(index+1)+': يجب أن يكون 15 رقمًا فقط.');
+      return;
+    }
+    clean.push(code);
+  });
+
+  return {ok:bad.length===0,codes:clean,bad};
 }
 
 function setBox(box,type,text){
@@ -42,9 +67,18 @@ function setBox(box,type,text){
 }
 
 async function saveCentral(group,amount,manual=false){
-  const codes=codesFromGroup(group);
-  if(!codes.length)return;
+  const checked=validateMobilisCodes(codesFromGroup(group));
   const box=group.querySelector('.recharge-stock-state');
+  if(!checked.ok){
+    setBox(
+      box,
+      'error',
+      '⚠️ لم يتم حفظ أي بطاقة. صيغة Mobilis المطلوبة: بطاقة واحدة في كل سطر، 15 رقمًا فقط، بدون فراغات أو BOM أو فواصل. '+checked.bad.slice(0,3).join(' ')
+    );
+    return;
+  }
+  const codes=checked.codes;
+  if(!codes.length)return;
   const key=currentBatchKey(amount,codes);
   if(completed.has(key)||saving.has(key))return;
 
@@ -94,7 +128,9 @@ async function saveCentral(group,amount,manual=false){
       ?'⚠️ الحفظ المركزي يحتاج جلسة الإدارة. افتح MyTool بحساب الإدارة ثم أعد المحاولة.'
       :message.includes('RECHARGE_AMOUNT_NOT_SUPPORTED')
         ?'⚠️ الشحن المركزي يدعم حاليًا 1000 و2000 دج فقط.'
-        :'⚠️ تعذر حفظ البطاقات مركزيًا: '+message;
+        :message.includes('MOBILIS_BATCH_FORMAT_INVALID')||message.includes('MOBILIS_BATCH_EMPTY')
+          ?'⚠️ تم رفض الدفعة كاملة لحمايتها: كل بطاقة Mobilis يجب أن تكون في سطر وحدها، 15 رقمًا فقط، بدون فراغات أو BOM أو فواصل.'
+          :'⚠️ تعذر حفظ البطاقات مركزيًا: '+message;
     setBox(box,'error',friendly);
 
     const action=group.querySelector('.recharge-stock-save');
@@ -114,8 +150,9 @@ function attach(group){
   if(!download)return;
 
   group.dataset.centralStockBound='1';
-  const codes=codesFromGroup(group);
-  if(!codes.length)return;
+  const checked=validateMobilisCodes(codesFromGroup(group));
+  const codes=checked.codes;
+  if(!codes.length&&!checked.bad.length)return;
 
   const wrap=document.createElement('div');
   wrap.className='recharge-stock-wrap';
@@ -139,15 +176,27 @@ function attach(group){
 
   save.addEventListener('click',()=>saveCentral(group,Number(select.value),true));
 
+  if(!checked.ok){
+    controls.hidden=true;
+    setBox(
+      state,
+      'error',
+      '⚠️ الدفعة موقوفة: بطاقة واحدة في كل سطر، 15 رقمًا فقط، بدون فراغات أو BOM أو فواصل. '+checked.bad.slice(0,3).join(' ')
+    );
+    return;
+  }
+
+  const formatNote='الصيغة محمية: سطر لكل بطاقة • 15 رقمًا ASCII • بدون فراغات • بدون BOM. ';
+
   if(amount===1000||amount===2000){
     select.value=String(amount);
     save.textContent='حفظ في المخزون';
     controls.hidden=true;
-    setBox(state,'working',`تم التعرف على القيمة: ${amount} دج — سيتم الحفظ مركزيًا تلقائيًا.`);
+    setBox(state,'working',formatNote+`تم التعرف على القيمة: ${amount} دج — سيتم الحفظ مركزيًا تلقائيًا.`);
     saveCentral(group,amount,false);
   }else{
     controls.hidden=false;
-    setBox(state,'warning','لم أستطع تحديد هل البطاقات 1000 أو 2000 دج. اختر القيمة مرة واحدة ثم احفظ.');
+    setBox(state,'warning',formatNote+'لم أستطع تحديد هل البطاقات 1000 أو 2000 دج. اختر القيمة مرة واحدة ثم احفظ.');
   }
 }
 
