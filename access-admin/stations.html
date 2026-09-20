@@ -123,15 +123,16 @@
     </div>
     <span id="rechargeCardCount" class="mt-chip muted">0</span>
   </div>
-  <form id="rechargeCardForm" class="recharge-upload">
-    <label>
-      <strong>رفع ملفات البطاقات</strong>
-      <div class="mt-meta" style="margin:5px 0 9px">ارفع TXT واحدًا أو عدة ملفات. القيمة 1000 أو 2000 تُقرأ من اسم الملف تلقائيًا.</div>
-      <input id="rechargeFileInput" name="files" type="file" accept=".txt,text/plain" multiple required>
-    </label>
-    <div class="mt-actions"><button id="addRechargeCardBtn" class="mt-btn primary" type="submit">رفع البطاقات للمخزون</button></div>
+  <div class="recharge-upload">
+    <strong>الإدخال من معالج البطاقات فقط</strong>
+    <div class="mt-meta" style="margin:5px 0 9px">
+      المخزون مركزي ومشترك بين الهاتف والكمبيوتر. عالج Mobilis مرة واحدة من معالج البطاقات، وهنا نعرض المخزون والحالة فقط.
+    </div>
+    <div class="mt-actions">
+      <a class="mt-btn primary" href="../cards/" style="text-decoration:none;text-align:center">فتح معالج البطاقات</a>
+    </div>
     <div id="rechargeUploadSummary" class="mt-meta"></div>
-  </form>
+  </div>
   <div id="rechargeCards"><div class="mt-meta">لا توجد بطاقات مضافة.</div></div>
 
   <div class="mt-section-head" style="margin:16px 0 8px">
@@ -1526,70 +1527,6 @@ $('rechargeCards').addEventListener('click',async event=>{
       :msg;
     showMessage('تعذر إرسال البطاقة',friendly,'danger');
     await loadRechargeCards().catch(()=>{});
-  }
-});
-
-$('rechargeCardForm').addEventListener('submit',async event=>{
-  event.preventDefault();
-  const form=event.currentTarget;
-  const button=$('addRechargeCardBtn');
-  const input=$('rechargeFileInput');
-  const files=[...(input?.files||[])];
-
-  if(!files.length){
-    showMessage('اختر ملف البطاقات','ارفع TXT يحتوي أكواد Mobilis، ويفضل أن يحتوي اسم الملف على 1000 أو 2000.','danger');
-    return;
-  }
-
-  button.disabled=true;
-  button.textContent='جاري رفع البطاقات…';
-  hideMessage();
-
-  let inserted=0;
-  let duplicates=0;
-  let invalid=0;
-  let skippedFiles=0;
-
-  try{
-    for(const file of files){
-      const amount=rechargeAmountFromFilename(file.name);
-      if(!amount){
-        skippedFiles++;
-        continue;
-      }
-
-      const text=await file.text();
-      const codes=String(text||'').split(/\r?\n/u).map(x=>x.trim()).filter(Boolean);
-      if(!codes.length){
-        skippedFiles++;
-        continue;
-      }
-
-      const {data,error}=await supabase.rpc('station_connect_admin_bulk_add_recharge_cards',{
-        p_codes:codes,
-        p_amount:amount,
-        p_source_code:'file_import'
-      });
-      if(error)throw error;
-
-      const row=Array.isArray(data)?data[0]:null;
-      inserted+=Number(row?.inserted_count||0);
-      duplicates+=Number(row?.duplicate_count||0);
-      invalid+=Number(row?.invalid_count||0);
-    }
-
-    form.reset();
-    await Promise.all([loadRechargeCards(),loadRechargeGuard()]);
-    showMessage(
-      'تم رفع مخزون البطاقات',
-      'جديدة: '+inserted+' — مكررة: '+duplicates+' — غير صالحة: '+invalid+
-      (skippedFiles?' — ملفات لم تُقرأ قيمتها: '+skippedFiles:'')
-    );
-  }catch(error){
-    showMessage('تعذر رفع البطاقات',String(error?.message||'حدث خطأ غير متوقع.'),'danger');
-  }finally{
-    button.disabled=false;
-    button.textContent='رفع البطاقات للمخزون';
   }
 });
 
