@@ -21,7 +21,7 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
 .detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
-.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}.field-actions{display:flex;gap:6px;margin-top:8px}.edit-btn{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.edit-input{width:100%;margin-top:8px;border:1px solid #a9d5e9;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;color:var(--t);background:#fff}.edit-row{display:flex;gap:6px;margin-top:6px}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}.field-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.edit-btn{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.edit-input{width:100%;margin-top:8px;border:1px solid #a9d5e9;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;color:var(--t);background:#fff}.edit-row{display:flex;gap:6px;margin-top:6px}.recipient-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.recipient-chip{border:1px solid #b9d8e7;background:#f7fbfd;color:#164f6b;border-radius:999px;padding:7px 10px;font-size:10px;font-weight:800;cursor:pointer}.recipient-chip.add{font-size:15px;line-height:1;padding:5px 10px}.recipient-chip.active{background:#e9f7ff;border-color:#6cb7dc;color:#0c5d87}
 .notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}.quality{margin-top:10px;border-radius:13px;padding:11px 12px;font-size:12px;line-height:1.65}.quality.ok{background:#effaf5;border:1px solid #b7e3cd;color:#17643f}.quality.warn{background:#fff9e8;border:1px solid #f1d28a;color:#755b13}.quality.bad{background:#fff4f2;border:1px solid #f0b6b1;color:#9f2219}.quality b{display:block;margin-bottom:3px}
 .error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
 details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{cursor:pointer;font-weight:700;font-size:12px;color:#0d5e86}pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:10px}
@@ -39,7 +39,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="card security">
   <div style="font-size:24px">🔒</div>
-  <div><b>المعالجة محلية على جهازك</b><p>الصورة لا تُرفع إلى MyTool أو Supabase أو GitHub. مكتبة OCR وملفات اللغة قد تُحمّل من الإنترنت، لكن الصورة تبقى داخل المتصفح ولا تُحفظ تلقائيًا.</p></div>
+  <div><b>المعالجة محلية على جهازك</b><p>الصورة لا تُرفع إلى MyTool أو Supabase أو GitHub ولا تُحفظ تلقائيًا. فقط أسماء الوجهات التي تضيفها بزر + يمكن حفظها محليًا في المتصفح لتظهر لك لاحقًا.</p></div>
 </section>
 
 <section class="card">
@@ -118,6 +118,32 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   let rotation = 0;
   let currentResult = null;
   let busy = false;
+
+  const RECIPIENT_PRESETS_KEY='mytool.document-reader.recipient-presets.v1';
+  const defaultRecipientPresets=['هني روحك','وفرلي','ديجيتال هوم','بوت علاء الدين'];
+
+  function getRecipientPresets(){
+    try{
+      const custom=JSON.parse(localStorage.getItem(RECIPIENT_PRESETS_KEY)||'[]');
+      const valid=Array.isArray(custom)?custom.map(cleanLine).filter(Boolean):[];
+      return [...new Set([...defaultRecipientPresets,...valid])];
+    }catch(_e){
+      return [...defaultRecipientPresets];
+    }
+  }
+
+  function saveCustomRecipient(name){
+    const value=cleanLine(name);
+    if(!value)return;
+    try{
+      const current=JSON.parse(localStorage.getItem(RECIPIENT_PRESETS_KEY)||'[]');
+      const custom=Array.isArray(current)?current.map(cleanLine).filter(Boolean):[];
+      if(!defaultRecipientPresets.includes(value)&&!custom.includes(value)){
+        custom.push(value);
+        localStorage.setItem(RECIPIENT_PRESETS_KEY,JSON.stringify(custom));
+      }
+    }catch(_e){}
+  }
 
   const frenchMonths = {
     janvier:'01', fevrier:'02', février:'02', mars:'03', avril:'04', mai:'05', juin:'06',
@@ -743,6 +769,26 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         +'<div class="value">'+escapeHtml(shownValue)+'</div>'
         +'<div class="source">'+escapeHtml(shownSource)+'</div>'
         +'<div class="field-actions"><button type="button" class="edit-btn" data-edit-field="'+key+'">'+(clear?'تعديل':'إدخال يدوي')+'</button></div>';
+      if(key==='recipient'){
+        const presetWrap=document.createElement('div');
+        presetWrap.className='recipient-presets';
+        getRecipientPresets().forEach(name=>{
+          const btn=document.createElement('button');
+          btn.type='button';
+          btn.className='recipient-chip'+(clear&&String(data.value)===name?' active':'');
+          btn.textContent=name;
+          btn.dataset.recipientPreset=name;
+          presetWrap.appendChild(btn);
+        });
+        const add=document.createElement('button');
+        add.type='button';
+        add.className='recipient-chip add';
+        add.textContent='+';
+        add.title='إضافة وجهة';
+        add.dataset.addRecipientPreset='1';
+        presetWrap.appendChild(add);
+        el.appendChild(presetWrap);
+      }
       resultsEl.appendChild(el);
     });
 
@@ -760,6 +806,18 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }
     resultCard.classList.remove('hidden');
     copyBtn.disabled=false;
+  }
+
+  function setRecipientManual(value,source='اختيار سريع'){
+    if(!currentResult)return;
+    const name=cleanLine(value);
+    if(!name)return;
+    currentResult.fields.recipient={
+      value:name,
+      source,
+      status:'manual'
+    };
+    renderResult(currentResult);
   }
 
   function startFieldEdit(key){
@@ -1066,6 +1124,20 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   });
 
   resultsEl.addEventListener('click',event=>{
+    const preset=event.target.closest('[data-recipient-preset]');
+    if(preset){
+      setRecipientManual(preset.getAttribute('data-recipient-preset'),'اختيار سريع للوجهة');
+      return;
+    }
+    const addPreset=event.target.closest('[data-add-recipient-preset]');
+    if(addPreset){
+      const name=prompt('اسم الوجهة الجديدة');
+      if(name&&cleanLine(name)){
+        saveCustomRecipient(name);
+        setRecipientManual(name,'وجهة مضافة يدويًا');
+      }
+      return;
+    }
     const btn=event.target.closest('[data-edit-field]');
     if(!btn)return;
     startFieldEdit(btn.getAttribute('data-edit-field'));
