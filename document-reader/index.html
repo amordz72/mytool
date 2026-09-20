@@ -17,10 +17,10 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .security{display:flex;gap:10px;align-items:flex-start;background:#effaf5;border-color:#b7e3cd}.security b{color:var(--ok)}.security p{margin:2px 0 0;color:#416956;font-size:12px;line-height:1.65}
 .file-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.file-name{min-width:0;padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:10px;padding:10px 12px;font-weight:700;font-size:12px;cursor:pointer}.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--o),var(--b))}.btn.danger{border-color:#f1b8b3;background:#fff4f2;color:var(--bad)}.btn:disabled{opacity:.55;cursor:not-allowed}
-.actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:10px}
+.actions{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:10px}
 .preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
-.detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
+.detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.id-guide{margin-top:9px;border:1px solid #c9dce8;background:#f4faff;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65;color:#365f75}.id-guide b{color:#123e57}.id-guide code{direction:ltr;unicode-bidi:isolate;background:#fff;border:1px solid #dce9f0;border-radius:6px;padding:2px 5px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
 .results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}.field-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.edit-btn{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.edit-input{width:100%;margin-top:8px;border:1px solid #a9d5e9;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;color:var(--t);background:#fff}.edit-row{display:flex;gap:6px;margin-top:6px}.recipient-context{padding:0;overflow:hidden}.context-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;padding:12px 14px;border-bottom:1px solid var(--l)}.recipient-box{display:flex;flex-direction:column;gap:4px}.recipient-box span,.date-box span{font-size:10px;color:var(--m);font-weight:800}.recipient-select-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.recipient-box select,.date-box input{width:100%;border:1px solid #b9d5e3;border-radius:9px;padding:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700}.recipient-add{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:9px;padding:7px 12px;font-size:18px;font-weight:900;cursor:pointer}.date-box{display:flex;flex-direction:column;gap:4px;min-width:150px}.history-title{padding:9px 14px 7px;font-size:10px;font-weight:800;color:var(--m);background:#fafcfd}.recipient-tabs{display:flex;overflow-x:auto;scrollbar-width:thin;border-top:1px solid var(--l);border-bottom:1px solid var(--l);background:#f2f4f6}.recipient-tab{flex:0 0 auto;border:0;border-left:1px solid #d8dee3;background:#eef0f2;color:#30485a;padding:11px 14px;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap}.recipient-tab.active{background:#fff;color:#0d5e86;box-shadow:inset 0 3px 0 var(--b)}.operation-history{background:#fff}.history-date{padding:9px 14px;background:#f8fbfd;border-top:1px solid var(--l);border-bottom:1px solid var(--l);font-size:11px;font-weight:900;color:#24566f}.history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 10px;padding:11px 12px;border:1px solid #e1eaf0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #1630470a}.history-row.active{background:#f2fbff;border-color:#9bd3ec}.history-main{min-width:0;cursor:pointer}.history-main b{display:block;font-size:12px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-main small{display:block;margin-top:3px;color:var(--m);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-actions{display:flex;gap:5px}.history-open,.history-delete{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800;cursor:pointer}.history-delete{color:#a33;border-color:#efc4bf;background:#fff7f6}.history-empty{padding:12px 14px;color:var(--m);font-size:11px}.date-hint{font-size:10px;color:#0d5e86;font-weight:800;min-height:14px;margin-top:2px}.context-body{padding:9px 14px;background:#fff;font-size:10px;color:var(--m);line-height:1.6}.context-body b{color:var(--t)}.selected-context{margin-top:10px;background:#eef9ff;border:1px solid #b9d8e7;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.6;color:#24566f}@media(max-width:520px){.context-top{grid-template-columns:1fr}.date-box{min-width:0}}
 .notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}.quality{margin-top:10px;border-radius:13px;padding:11px 12px;font-size:12px;line-height:1.65}.quality.ok{background:#effaf5;border:1px solid #b7e3cd;color:#17643f}.quality.warn{background:#fff9e8;border:1px solid #f1d28a;color:#755b13}.quality.bad{background:#fff4f2;border:1px solid #f0b6b1;color:#9f2219}.quality b{display:block;margin-bottom:3px}
 .error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
@@ -70,6 +70,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   <div class="actions">
     <button id="analyzeBtn" class="btn primary" type="button" disabled>تحليل الصورة</button>
+    <button id="manualEntryBtn" class="btn" type="button" disabled>إدخال يدوي</button>
     <button id="saveBtn" class="btn" type="button" disabled>حفظ</button>
     <button id="addImageBtn" class="btn" type="button" disabled>+ صورة مرجع</button>
     <button id="rotateRightBtn" class="btn" type="button" disabled>↻ تدوير</button>
@@ -101,6 +102,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       </select>
     </div>
   </div>
+  <div id="idRuleHint" class="id-guide"></div>
 
   <div id="selectedContext" class="selected-context hidden"></div>
   <div id="qualityNotice" class="quality hidden"></div>
@@ -126,6 +128,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const previewImg = $('previewImg');
   const previewEmpty = $('previewEmpty');
   const analyzeBtn = $('analyzeBtn');
+  const manualEntryBtn = $('manualEntryBtn');
   const saveBtn = $('saveBtn');
   const addImageBtn = $('addImageBtn');
   const rotateRightBtn = $('rotateRightBtn');
@@ -138,6 +141,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const progressTitle = $('progressTitle');
   const progressText = $('progressText');
   const templateSelect = $('templateSelect');
+  const idRuleHint = $('idRuleHint');
   const qualityNotice = $('qualityNotice');
   const receiptDate = $('receiptDate');
   const receiptDateHint = $('receiptDateHint');
@@ -524,9 +528,65 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     });
   }
 
+  function documentIdRule(templateId){
+    const rules={
+      bna:{
+        label:'BNA',
+        field:'Bordereau de versement espèces N°',
+        help:'رقم البوردرو نفسه هو ID المعتمد لمنع التكرار.'
+      },
+      bdl:{
+        label:'BDL',
+        field:'AVIS DE VERSEMENT N°',
+        help:'استعمل رقم AVIS DE VERSEMENT N° كما هو مطبوع.'
+      },
+      poste:{
+        label:'Algérie Poste',
+        field:'Référence',
+        help:'استعمل أول رقم يأتي مباشرة بعد كلمة Référence.'
+      },
+      baridimob:{
+        label:'BaridiMob',
+        field:'Identifiant de transaction',
+        help:'استعمل Identifiant de transaction (حتى لو OCR كتب transation).'
+      }
+    };
+    return rules[templateId]||null;
+  }
+
+  function renderDocumentIdGuide(templateId){
+    const rule=documentIdRule(templateId);
+    if(rule){
+      idRuleHint.innerHTML='<b>رقم الوثيقة المعتمد لمنع التكرار — '+escapeHtml(rule.label)+':</b> '
+        +'<code>'+escapeHtml(rule.field)+'</code><br>'+escapeHtml(rule.help);
+    }else{
+      idRuleHint.innerHTML='<b>إذا فشل التعرف:</b> اختر نوع الوثيقة يدويًا، ثم أدخل الحقول. '
+        +'سيشرح البرنامج هنا أي رقم يعتبره ID لمنع تكرار نفس الوصل.';
+    }
+  }
+
+  function manualTemplateBaseFields(templateId,existingFields){
+    const out={...(existingFields||emptyExtraction())};
+    if(templateId==='bna'&&!out.bank){
+      out.bank={value:"BNA — Banque Nationale d'Algérie",source:'اختيار نوع الوثيقة يدويًا',status:'manual'};
+    }
+    if(templateId==='bdl'&&!out.bank){
+      out.bank={value:'BDL — Banque de Développement Local',source:'اختيار نوع الوثيقة يدويًا',status:'manual'};
+    }
+    if(templateId==='poste'&&!out.bank){
+      out.bank={value:'Algérie Poste',source:'اختيار نوع الوثيقة يدويًا',status:'manual'};
+    }
+    if(templateId==='baridimob'){
+      if(!out.bank)out.bank={value:'Algérie Poste — BaridiMob',source:'اختيار نوع الوثيقة يدويًا',status:'manual'};
+      if(!out.sender)out.sender={value:null,source:'هذا الإيصال لا يعرض اسم أو حساب المرسل؛ لم يتم التخمين',status:'absent'};
+    }
+    return out;
+  }
+
   function operationStatusText(op){
     if(op?.status==='pending_analysis')return 'بانتظار التحليل';
     if(op?.status==='analyzed')return 'تم التحليل — بانتظار الحفظ';
+    if(op?.status==='manual_entry')return 'إدخال يدوي — بانتظار الحفظ';
     if(op?.status==='saved')return 'محفوظ ✓';
     if(op?.status==='duplicate')return 'وصل مكرر — ممنوع الحفظ';
     if(op?.status==='analysis_failed')return 'فشل التحليل — أعد المحاولة';
@@ -804,8 +864,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function showError(message){
-    errorBox.textContent=message;
-    errorBox.classList.remove('hidden');
+    errorBox.textContent='';
+    errorBox.classList.add('hidden');
     showToast('error','حدث خطأ',String(message||'تعذر إكمال العملية.'),6000);
   }
 
@@ -818,7 +878,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const finalized=Boolean(currentResult&&(currentResult.status==='saved'||currentResult.status==='duplicate'));
     const canSave=Boolean(currentResult
       && !currentResult.historyView
-      && currentResult.status==='analyzed'
+      && (currentResult.status==='analyzed'||currentResult.status==='manual_entry')
       && !currentResult.duplicateInfo);
     saveBtn.disabled=busy||!canSave;
     if(currentResult?.status==='saved')saveBtn.textContent='محفوظ ✓';
@@ -829,6 +889,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       && !currentResult.historyView
       && !finalized);
     addImageBtn.disabled=busy||!canAddReference;
+    manualEntryBtn.disabled=busy||!currentResult||currentResult.historyView||finalized;
     analyzeBtn.disabled=busy||!sourceImage||finalized;
     rotateRightBtn.disabled=busy||!sourceImage||finalized;
     receiptDate.disabled=Boolean(busy||currentResult?.historyView||currentResult?.status==='saved'||currentResult?.status==='duplicate');
@@ -865,6 +926,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     saveBtn.disabled=true;
     saveBtn.textContent='حفظ';
     addImageBtn.disabled=true;
+    manualEntryBtn.disabled=true;
+    renderDocumentIdGuide('unknown');
     imageRefs.innerHTML='';
     imageRefs.classList.add('hidden');
     currentImageIndex=0;
@@ -1435,6 +1498,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     currentResult=payload;
     $('languageValue').textContent=payload.language;
     $('templateValue').textContent=payload.template+(payload.manualOverride?' — تصحيح يدوي':'');
+    renderDocumentIdGuide(payload.templateId);
     $('rawText').textContent=payload.rawText||'';
     resultsEl.innerHTML='';
     const contextDate=payload.receiptDate||receiptDate.value||'';
@@ -1763,16 +1827,69 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }catch(err){
       if(workingOperation){
         currentResult=workingOperation;
-        currentResult.status='analysis_failed';
-        persistCurrentOperation({registerDoc:false});
+        currentResult.status='manual_entry';
+        currentResult.language='يدوي';
+        currentResult.templateId=templateSelect.value==='auto'?'unknown':templateSelect.value;
+        currentResult.manualOverride=currentResult.templateId!=='unknown';
+        currentResult.template=currentResult.templateId==='unknown'?'نوع غير محدد — إدخال يدوي':templateLabel(currentResult.templateId);
+        currentResult.fields=manualTemplateBaseFields(currentResult.templateId,currentResult.fields||emptyExtraction());
+        persistCurrentOperation({registerDoc:Boolean(documentFingerprint(currentResult))});
+        renderResult(currentResult);
       }
-      showError('فشل تحليل الوثيقة\n'+(err&&err.message?err.message:String(err)));
+      clearError();
       progressBox.classList.add('hidden');
-      showToast('error','فشل التحليل — الوصل لم يضع','الصورة ما زالت محفوظة محليًا ويمكن إعادة التحليل لاحقًا.',6500);
+      showToast('error','فشل التحليل — يمكنك الإدخال يدويًا',
+        'الصورة محفوظة محليًا. '+(err&&err.message?err.message:String(err))+' اختر نوع الوثيقة وأدخل الحقول يدويًا.',
+        7500);
     }finally{
       if(worker){try{await worker.terminate();}catch(_e){}}
       setBusy(false);
     }
+  }
+
+  function startManualEntry(){
+    if(!currentResult||currentResult.historyView||currentResult.status==='saved'||currentResult.status==='duplicate')return;
+    currentResult.status='manual_entry';
+    currentResult.language=currentResult.language||'يدوي';
+    currentResult.rawTextAvailable=Boolean(currentResult.rawTextAvailable);
+    const selected=templateSelect.value==='auto'?'unknown':templateSelect.value;
+    currentResult.templateId=selected;
+    currentResult.detectedTemplateId=currentResult.detectedTemplateId||'unknown';
+    currentResult.manualOverride=selected!=='unknown';
+    currentResult.template=selected==='unknown'?'نوع غير محدد — إدخال يدوي':templateLabel(selected);
+    currentResult.fields=manualTemplateBaseFields(selected,currentResult.fields||emptyExtraction());
+    currentResult.duplicateInfo=findDuplicateDocument(currentResult);
+    persistCurrentOperation({registerDoc:Boolean(documentFingerprint(currentResult))});
+    renderResult(currentResult);
+    showToast('info','الإدخال اليدوي جاهز',
+      selected==='unknown'
+        ? 'اختر نوع الوثيقة أولًا، ثم أدخل رقم الوثيقة وبقية الحقول يدويًا.'
+        : 'استعمل رقم الوثيقة الموضح في دليل ID ثم أكمل الحقول.',
+      6000);
+  }
+
+  function handleTemplateChange(){
+    if(!currentResult)return;
+    if(currentResult.historyView||currentResult.status==='saved'||currentResult.status==='duplicate'){
+      templateSelect.value=currentResult.manualOverride?currentResult.templateId:'auto';
+      renderDocumentIdGuide(currentResult.templateId);
+      return;
+    }
+
+    if(currentResult.rawTextAvailable!==false&&currentResult.rawText){
+      reparseCurrent();
+      return;
+    }
+
+    const selected=templateSelect.value==='auto'?'unknown':templateSelect.value;
+    currentResult.status='manual_entry';
+    currentResult.templateId=selected;
+    currentResult.manualOverride=selected!=='unknown';
+    currentResult.template=selected==='unknown'?'نوع غير محدد — إدخال يدوي':templateLabel(selected);
+    currentResult.fields=manualTemplateBaseFields(selected,currentResult.fields||emptyExtraction());
+    currentResult.duplicateInfo=findDuplicateDocument(currentResult);
+    persistCurrentOperation({registerDoc:Boolean(documentFingerprint(currentResult))});
+    renderResult(currentResult);
   }
 
   function reparseCurrent(){
@@ -1798,7 +1915,30 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function confirmSaveCurrent(){
     if(!currentResult||currentResult.historyView)return;
-    if(currentResult.status!=='analyzed'||currentResult.duplicateInfo)return;
+    if(!['analyzed','manual_entry'].includes(currentResult.status)||currentResult.duplicateInfo)return;
+
+    if(currentResult.templateId==='unknown'){
+      showToast('warn','حدد نوع الوثيقة','اختر نوع الوثيقة أولًا حتى يعرف البرنامج أي ID يجب اعتماده.',6000);
+      return;
+    }
+    const docNumber=cleanLine(currentResult.fields?.documentNumber?.value||'');
+    if(!docNumber){
+      const rule=documentIdRule(currentResult.templateId);
+      showToast('warn','رقم الوثيقة مطلوب',
+        rule?'أدخل '+rule.field+' قبل الحفظ حتى يمكن منع تكرار نفس الوصل.':'أدخل رقم الوثيقة قبل الحفظ.',
+        6500);
+      return;
+    }
+
+    currentResult.duplicateInfo=findDuplicateDocument(currentResult);
+    if(currentResult.duplicateInfo){
+      currentResult.status='duplicate';
+      persistCurrentOperation({registerDoc:false});
+      renderResult(currentResult);
+      showToast('error','تعذر الحفظ','رقم الوثيقة '+docNumber+' مسجل سابقًا.',6500);
+      return;
+    }
+
     currentResult.status='saved';
     currentResult.savedAt=new Date().toISOString();
     const ok=persistCurrentOperation({registerDoc:true});
@@ -1812,7 +1952,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     renderRecipientSelect();
     updateSaveButton();
     progressBox.classList.add('hidden');
-    showToast('success','تم الحفظ بنجاح','تم تأكيد الوصل بعد التحليل، والصور المرجعية مرتبطة بنفس العملية.',5000);
+    showToast('success','تم الحفظ بنجاح','تم تأكيد الوصل، والصور المرجعية مرتبطة بنفس العملية.',5000);
   }
 
   function copyResults(){
@@ -2026,8 +2166,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   initializeRecipientContext();
 
-  templateSelect.addEventListener('change',reparseCurrent);
+  templateSelect.addEventListener('change',handleTemplateChange);
   analyzeBtn.addEventListener('click',analyze);
+  manualEntryBtn.addEventListener('click',startManualEntry);
   saveBtn.addEventListener('click',confirmSaveCurrent);
   clearBtn.addEventListener('click',clearAll);
   copyBtn.addEventListener('click',copyResults);
