@@ -7,10 +7,10 @@
 <meta name="theme-color" content="#2ea8e6">
 <title>مراجعة الحسابات — MyTool</title>
 <script src="../auth-guard.js?v=20260916-safe-clearance1" data-access="admin"></script>
-<link rel="stylesheet" href="./style.css?v=20260916-smart1">
+<link rel="stylesheet" href="./style.css?v=20260920-import3">
 <link rel="stylesheet" href="./selection.css?v=20260916-select2">
-<link rel="stylesheet" href="./accounts-advanced.css?v=20260920-integrity2">
-<link rel="stylesheet" href="./accounts-linker.css?v=20260920-multisource2">
+<link rel="stylesheet" href="./accounts-advanced.css?v=20260920-report3">
+<link rel="stylesheet" href="./accounts-linker.css?v=20260920-report3">
 <link rel="stylesheet" href="./modal-safe.css?v=20260916-safe2">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -22,6 +22,15 @@
   </section>
 
   <div v-if="message" class="msg" :class="messageType">{{ message }}</div>
+
+  <section class="panel accounts-import-panel">
+    <div class="accounts-import-copy">
+      <h2>تحديث ملفات الحسابات</h2>
+      <p>اختر ملفات تهنى باي وهني روحك ووفرلي معًا. البرنامج يكتشف صيغة كل ملف تلقائيًا ويحفظ آخر البيانات محليًا على هذا الجهاز.</p>
+      <small>لا تحتاج الدخول إلى كل منصة داخل MyTool ولا إعادة الرفع في كل صفحة. ارفع مرة، ثم أعد الرفع فقط عندما تريد تحديث الأرقام.</small>
+    </div>
+    <button class="btn accounts-import-btn" type="button" @click="pickFile">📂 اختيار عدة ملفات</button>
+  </section>
 
   <section v-if="allTabs.length" class="panel">
     <div class="tabs" aria-label="مصادر الحسابات">
@@ -64,8 +73,8 @@
               <strong>{{ displayName(customer) }}</strong>
               <small>{{ customer.username || '—' }}</small>
             </div>
-            <span class="customer-net" :class="(Number(customer.balance||0)-Number(customer.debt||0))<0?'negative':((Number(customer.balance||0)-Number(customer.debt||0))>0?'positive':'zero')">
-              صافي {{ (Number(customer.balance||0)-Number(customer.debt||0))>0?'+':((Number(customer.balance||0)-Number(customer.debt||0))<0?'−':'') }}{{ displayNumber(Math.abs(Number(customer.balance||0)-Number(customer.debt||0))) }}
+            <span class="customer-net" :class="(Number(customer.debt||0)-Number(customer.balance||0))>0?'negative':((Number(customer.debt||0)-Number(customer.balance||0))<0?'positive':'zero')">
+              {{ (Number(customer.debt||0)-Number(customer.balance||0))>0?'صافي مستحق':((Number(customer.debt||0)-Number(customer.balance||0))<0?'صافي رصيد':'صافي') }} {{ displayNumber(Math.abs(Number(customer.debt||0)-Number(customer.balance||0))) }}
             </span>
           </header>
           <div class="source-link-status" data-link-status>جاري فحص حالة الربط…</div>
@@ -166,12 +175,12 @@
     </div>
   </dialog>
 </main>
-<script type="module" src="./app.js?v=20260920-linkbtn1"></script>
-<script src="./accounts-advanced.js?v=20260920-integrity2" defer></script>
+<script type="module" src="./app.js?v=20260920-import3"></script>
+<script src="./accounts-advanced.js?v=20260920-report3" defer></script>
 <script src="./selection.js?v=20260916-select2" defer></script>
 <script src="./accounts-identities.js?v=20260916-links1" defer></script>
 <script src="./accounts-link-core.js?v=20260920-multisource2" defer></script>
-<script src="./accounts-link-ui.js?v=20260920-multisource2" defer></script>
+<script src="./accounts-link-ui.js?v=20260920-report3" defer></script>
 <script src="./accounts-view-router.js?v=20260920-router1" defer></script>
 </body>
 </html>
