@@ -172,6 +172,7 @@ const $=id=>document.getElementById(id);
 let stations=[];
 let hardwareByStation={};
 let arsselliBalancesBySim={};
+let arsselliResponsesBySim={};
 let recentJobs=[];
 let rechargeCards=[];
 let rechargeAttempts=[];
@@ -280,6 +281,38 @@ function arsselliBalanceSummary(raw){
     parts.push(key+': '+fmtDzdAmount(amount));
   });
   return parts.join(' — ');
+}
+
+function arsselliResponsesDetails(item){
+  const rows=Array.isArray(arsselliResponsesBySim[item?.sim_uuid])
+    ?arsselliResponsesBySim[item.sim_uuid]
+    :[];
+
+  const body=rows.length
+    ?rows.map(response=>{
+      const kind=String(response.response_kind||'')==='sms'
+        ?'SMS رصيد'
+        :String(response.response_kind||'')==='ussd'
+          ?'رد USSD'
+          :'نتيجة';
+      const status=jobStatusMeta(response.status);
+      const when=fmtDate(response.completed_at||response.created_at);
+      return '<div class="pilot-job">'+
+        '<div class="mt-row">'+
+          '<div><strong>'+escapeHtml(kind)+'</strong><div class="mt-meta">'+escapeHtml(when)+'</div></div>'+
+          '<span class="mt-chip '+status.cls+'">'+escapeHtml(status.label)+'</span>'+
+        '</div>'+
+        '<div class="mt-meta" style="margin-top:7px;white-space:pre-line">'+escapeHtml(response.result_text||'لا يوجد نص محفوظ')+'</div>'+
+        '<div class="mt-meta" style="margin-top:5px">الحالة التقنية: '+escapeHtml(response.result_code||'—')+'</div>'+
+      '</div>';
+    }).join('')
+    :'<div class="mt-meta" style="padding:10px 0">لا توجد ردود أرسالي محفوظة لهذه الشريحة بعد.</div>';
+
+  return '<details style="margin:8px 0 12px">'+
+    '<summary class="mt-detail-row"><span>آخر ردود أرسالي</span><span>'+rows.length+' ⌄</span></summary>'+
+    body+
+    '<div class="mt-meta" style="margin-top:7px">هذا السجل يعرض ما حفظه MyTool من عمليات أرسالي مع وقتها؛ لا يعني أنه يعرض كل رسائل Inbox الموجودة داخل المودم.</div>'+
+  '</details>';
 }
 
 function statusMeta(row){
@@ -728,6 +761,9 @@ function hardwareSection(row){
           '<button class="mt-btn secondary refresh-arsselli-balance" type="button" data-sim-uuid="'+escapeHtml(simUuid)+'">تحديث رصيد أرسالي</button>'+
         '</div>'
         :'')+
+      (item.sim_type==='mobilis-arsselli'
+        ?arsselliResponsesDetails(item)
+        :'')+
       (item.sim_type==='mobilis-sama'
         ?'<div class="mt-alert" style="margin:10px 0">'+
           '<div class="mt-alert-icon" aria-hidden="true">💰</div>'+
@@ -937,9 +973,10 @@ function bindActions(){
           if(!result)throw new Error('تعذر قراءة حالة الطلب.');
           if(['queued','claimed'].includes(result.status))continue;
           const raw=String(result.result_text||'لم يرجع رد نصي من الشبكة.');
+          await loadArsselliResponses().catch(()=>{});
           if(result.result_code==='ARSSELLI_BALANCE_SMS'){
             await loadHardware();
-            await loadArsselliBalances();
+            await Promise.all([loadArsselliBalances(),loadArsselliResponses()]);
             render();
             const summary=arsselliBalanceSummary(raw);
             showMessage(
@@ -947,8 +984,10 @@ function bindActions(){
               summary||'وصلت رسالة الرصيد وحُفظت كما هي بدون جمع الأرصدة المختلفة.'
             );
           }else if(result.result_code==='BALANCE_SMS_PENDING'){
-            showMessage('بانتظار SMS من Mobilis','رد USSD: '+raw+' — لم تصل رسالة رصيد جديدة مؤكدة بعد.');
+            render();
+            showMessage('بانتظار تأكيد SMS جديدة','رد USSD: '+raw+' — لم يتم تأكيد SMS جديدة من البيانات المتاحة. افتح «آخر ردود أرسالي» أسفل الشريحة لمراجعة الوقت والنص المسجل.');
           }else{
+            render();
             showMessage(result.status==='failed'?'فشل استعلام أرسالي':'نتيجة استعلام أرسالي','رد الشبكة: '+raw+(result.result_code?' — الحالة: '+result.result_code:''),result.status==='failed'?'danger':'');
           }
           return;
@@ -1279,6 +1318,22 @@ async function loadArsselliBalances(){
   }));
 }
 
+async function loadArsselliResponses(){
+  arsselliResponsesBySim={};
+  const sims=Object.values(hardwareByStation)
+    .flat()
+    .filter(item=>item?.sim_uuid&&item?.sim_type==='mobilis-arsselli');
+
+  await Promise.all(sims.map(async item=>{
+    const result=await supabase.rpc('station_connect_admin_arsselli_recent_responses',{
+      p_sim_uuid:item.sim_uuid,
+      p_limit:8
+    });
+    if(result.error)throw result.error;
+    arsselliResponsesBySim[item.sim_uuid]=Array.isArray(result.data)?result.data:[];
+  }));
+}
+
 async function loadStations(clearMessage=true){
   const button=$('refreshBtn');
   button.disabled=true;
@@ -1296,7 +1351,7 @@ async function loadStations(clearMessage=true){
 
     stations=Array.isArray(result.data)?result.data:[];
     await loadHardware();
-    await loadArsselliBalances();
+    await Promise.all([loadArsselliBalances(),loadArsselliResponses()]);
     render();
     await Promise.all([loadRecentJobs(),loadRechargeCards(),loadRechargeAttempts()]);
   }catch(error){
