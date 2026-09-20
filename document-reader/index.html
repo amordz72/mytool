@@ -164,6 +164,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const RECIPIENT_CONTEXT_KEY='mytool.document-reader.recipient-context.v1';
   const RECENT_OPERATIONS_KEY='mytool.document-reader.recent-operations.v1';
   const DOCUMENT_INDEX_KEY='mytool.document-reader.document-index.v1';
+  const DOCUMENT_INDEX_CLEANUP_KEY='mytool.document-reader.document-index-cleanup.v2';
   const RECEIPT_DB_NAME='mytool-document-reader-local-v1';
   const RECEIPT_IMAGE_STORE='receipt-images';
   const UNSENT_RECIPIENT='لم يُرسل لمورد بعد';
@@ -458,14 +459,38 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function unregisterDocumentForOperation(op){
     if(!op)return;
     const index=getDocumentIndex();
+    const number=cleanLine(op?.fields?.documentNumber?.value||op?.documentNumber||'').replace(/\s+/g,'').toUpperCase();
     let changed=false;
     Object.keys(index).forEach(key=>{
-      if(index[key]?.operationId===op.id){
+      const item=index[key]||{};
+      const indexedNumber=cleanLine(item.documentNumber||key||'').replace(/\s+/g,'').toUpperCase();
+      if((op.id&&item.operationId===op.id)||(number&&indexedNumber===number)){
         delete index[key];
         changed=true;
       }
     });
     if(changed)saveDocumentIndex(index);
+  }
+
+  function cleanupLegacyDocumentIndexOnce(){
+    try{
+      if(localStorage.getItem(DOCUMENT_INDEX_CLEANUP_KEY)==='done')return;
+      const items=getRecentOperations();
+      const liveIds=new Set(items.map(op=>String(op.id||'')));
+      const index=getDocumentIndex();
+      let changed=false;
+      Object.keys(index).forEach(key=>{
+        const item=index[key]||{};
+        const legacyKey=String(key).includes('|');
+        const orphan=Boolean(item.operationId)&&!liveIds.has(String(item.operationId));
+        if(legacyKey||orphan){
+          delete index[key];
+          changed=true;
+        }
+      });
+      if(changed)saveDocumentIndex(index);
+      localStorage.setItem(DOCUMENT_INDEX_CLEANUP_KEY,'done');
+    }catch(_e){}
   }
 
   function rebuildDocumentIndexFromRecent(){
@@ -818,6 +843,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     saveRecentOperations(next);
     unregisterDocumentForOperation(op);
     await deleteReceiptImage(id);
+    showToast('success','تم حذف الوصل','حُذفت القراءة والصور وبصمة رقم الوثيقة؛ يمكن إدخال نفس الوصل من جديد إذا أردت.',5000);
     if(activeOperationId===id){
       activeOperationId='';
       if(currentResult?.operationId===id){
@@ -834,6 +860,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function initializeRecipientContext(){
     activeRecipient=UNSENT_RECIPIENT;
     renderRecipientSelect();
+    cleanupLegacyDocumentIndexOnce();
     rebuildDocumentIndexFromRecent();
     receiptDate.value=todayLocal();
     selectRecipient(UNSENT_RECIPIENT);
