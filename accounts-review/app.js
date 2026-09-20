@@ -16,6 +16,7 @@ const FIELD_ALIASES={
 const HANI_MARKERS=['bfs hanii rohek','hanii rohek','هني روحك','هاني روحك'];
 const HANI_UNIQUE=['معرف الشبكة','اسم المحل','الحد الأقصى للديون'];
 const TEHNA_CANONICAL=['اسم المستخدم','الاسم','اللقب','الدور','حالة الحساب','رصيد','ديون','ارباح'];
+const WAFARLY_HEADERS=['uid','joined at','user','رصيد','مقترض','مقترض (المفوض)'];
 
 function normalizeText(v){return String(v??'').replace(/^\uFEFF/,'').trim().toLowerCase().normalize('NFKC').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ')}
 function cleanHeader(v){return normalizeText(v).replace(/[.:؛،]+$/g,'')}
@@ -78,9 +79,11 @@ function candidateForTable(table){
 async function analyzeFile(file){const tables=await extractTables(file);const candidates=tables.map(candidateForTable).filter(Boolean).sort((a,b)=>b.score-a.score);if(!candidates.length)throw new Error('لم أجد جدول بيانات واضحًا داخل الملف.');return{file,fileType:(file.name.split('.').pop()||'').toLowerCase(),candidate:candidates[0],tablesCount:tables.length}}
 function isHanii(c){const marker=normalizeText(c.marker);const unique=c.headers.map(cleanHeader);const markerHit=HANI_MARKERS.some(x=>marker.includes(normalizeText(x)));const uniqueHits=HANI_UNIQUE.filter(x=>unique.includes(cleanHeader(x))).length;return markerHit||uniqueHits>=2}
 function isTehna(c){if(isHanii(c))return false;const hs=c.headers.map(cleanHeader);const hits=TEHNA_CANONICAL.filter(x=>hs.includes(cleanHeader(x))).length;return hits>=7&&REQUIRED_FIELDS.every(k=>c.mapping[k])}
+function isWafarly(c){const hs=c.headers.map(cleanHeader),hits=WAFARLY_HEADERS.filter(x=>hs.includes(cleanHeader(x))).length;return hits>=5&&hs.includes(cleanHeader('User'))&&hs.includes(cleanHeader('رصيد'))&&(hs.includes(cleanHeader('مقترض'))||hs.includes(cleanHeader('مقترض (المفوض)')))}
 function builtinProfile(c){
   if(isHanii(c))return{id:'builtin:hanii-rouhek',name:'هني روحك',kind:'builtin',mapping:Object.fromEntries(Object.entries(c.mapping).map(([k,v])=>[k,v.header]))};
   if(isTehna(c))return{id:'builtin:tehna-pay',name:'تهنى باي',kind:'builtin',mapping:Object.fromEntries(Object.entries(c.mapping).map(([k,v])=>[k,v.header]))};
+  if(isWafarly(c))return{id:'builtin:wafarly',name:'وفرلي',kind:'builtin-wafarly',mapping:{}};
   return null;
 }
 function customProfileMatch(c,profiles,fileFamily){
@@ -98,6 +101,21 @@ function rowsFromCandidate(c,mapping){
     const key=normalizeText(username)||('row-'+(++auto));dedup.set(key,{key,username,first,last,store,balance,debt,profit});
   }
   return[...dedup.values()].map((x,index)=>({...x,index}));
+}
+function rowsFromWafarly(c){
+  const hs=c.headers.map(cleanHeader),at=h=>hs.indexOf(cleanHeader(h)),uidI=at('UID'),userI=at('User'),balanceI=at('رصيد'),debtI=at('مقترض'),authDebtI=at('مقترض (المفوض)');
+  if(userI<0||balanceI<0||(debtI<0&&authDebtI<0))throw new Error('صيغة وفرلي ناقصة الحقول المطلوبة.');
+  const out=[];let auto=0;
+  for(const r of c.matrix.slice(c.headerRow+1)){
+    const rawUser=String(r[userI]??'').trim(),uid=uidI>=0?String(r[uidI]??'').trim():'';
+    if(!rawUser&&!uid)continue;
+    const pm=rawUser.match(/(?:-|\s)?(\+?213\d{9}|0[5-7]\d{8})\s*$/),phone=pm?pm[1].trim():'';
+    const name=(pm?rawUser.slice(0,pm.index):rawUser).replace(/[\s-]+$/,'').trim()||rawUser;
+    const balance=numeric(r[balanceI]),debt=(debtI>=0?numeric(r[debtI]):0)+(authDebtI>=0?numeric(r[authDebtI]):0),profit=0;
+    const key=uid||phone||normalizeText(name)||('row-'+(++auto));
+    out.push({key,username:name,first:name,last:'',store:'',phone,balance,debt,profit,profitKnown:false,index:out.length});
+  }
+  return out;
 }
 async function hashRows(rows){const stable=rows.map(r=>[normalizeText(r.username),r.first,r.last,r.store,r.balance,r.debt,r.profit]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])));const text=JSON.stringify(stable);if(crypto?.subtle){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}return simpleHash(text)}
 function overlapRatio(a,b){const A=new Set((a||[]).map(x=>normalizeText(x.username)).filter(Boolean));const B=new Set((b||[]).map(x=>normalizeText(x.username)).filter(Boolean));if(!A.size||!B.size)return 0;let n=0;for(const x of B)if(A.has(x))n++;return n/Math.min(A.size,B.size)}
@@ -164,16 +182,13 @@ createApp({
     async function copyAiPrompt(){const u=activeUnknown.value;if(!u)return;await saveUnknownMeta();await copyText(aiPromptText(u));window.MyToolBottomNav?.toast('تم نسخ أمر الذكاء الاصطناعي')}
     function isWafarlyName(value){const n=normalizeText(value).replace(/\s+/g,'');return n.includes('وفرلي')||n.includes('وفريلي')||n.includes('wafarly')||n.includes('wafrly')||n.includes('wafri')}
     async function promoteWafarlyUnknowns(){
-      const candidates=unknowns.value.filter(u=>isWafarlyName(u.aiAppName)||isWafarlyName(u.fileFamily)||isWafarlyName(u.fileName));let changed=false;
+      const candidates=unknowns.value.filter(u=>isWafarlyName(u.aiAppName)||isWafarlyName(u.fileFamily)||isWafarlyName(u.fileName)||isWafarly({headers:u.headers||[]}));let changed=false;
       for(const u of candidates){
-        const mapping=u.detectedMapping||{};if(!REQUIRED_FIELDS.every(k=>mapping[k]))continue;
-        let parsed=[];try{parsed=rowsFromCandidate({matrix:u.matrix,headerRow:u.headerRow,headers:u.headers},mapping)}catch{parsed=[]}
+        let parsed=[];try{parsed=rowsFromWafarly({matrix:u.matrix,headerRow:u.headerRow,headers:u.headers})}catch{parsed=[]}
         if(!parsed.length)continue;
-        const sourceName='وفرلي',id='custom:'+simpleHash(normalizeText(sourceName)+'|'+u.signature+'|'+u.fileFamily),now=new Date().toISOString();
-        const profile={id,name:sourceName,kind:'custom',signature:u.signature,marker:u.marker||'',fileFamily:u.fileFamily,mapping,createdAt:now,updatedAt:now};
-        const hash=await hashRows(parsed);
-        const source={id,name:sourceName,readerId:id,readerKind:'custom',signature:u.signature,fileName:u.fileName,fileFamily:u.fileFamily,fileType:u.fileType,sheetName:u.sheetName,headerRow:u.headerRow,contentHash:hash,rows:parsed,updatedAt:now};
-        await dbPut('profiles',profile);await dbPut('sources',source);await dbDelete('unknown',u.id);changed=true;
+        const sourceName='وفرلي',id='builtin:wafarly',now=new Date().toISOString(),hash=await hashRows(parsed);
+        const source={id,name:sourceName,readerId:id,readerKind:'builtin-wafarly',signature:u.signature,fileName:u.fileName,fileFamily:u.fileFamily,fileType:u.fileType,sheetName:u.sheetName,headerRow:u.headerRow,contentHash:hash,rows:parsed,updatedAt:now};
+        await dbPut('sources',source);await dbDelete('unknown',u.id);changed=true;
       }
       return changed;
     }
@@ -189,7 +204,9 @@ createApp({
     async function saveUnknown(rec){const existing=unknowns.value.find(x=>x.id===rec.id);if(existing){rec.aiAppName=existing.aiAppName||rec.aiAppName;rec.aiPath=existing.aiPath||rec.aiPath}await dbPut('unknown',rec);await refreshState();activeTabId.value=rec.id;viewMode.value='unknown'}
     async function processAnalysis(analysis){
       const c=analysis.candidate;const family=normalizeFileFamily(analysis.file.name);let profile=builtinProfile(c)||customProfileMatch(c,profiles.value,family);let mapping=profile?.mapping||detectedMappingHeaders(c);let parsed=[];
-      const complete=REQUIRED_FIELDS.every(k=>mapping[k]);if(complete){try{parsed=rowsFromCandidate(c,mapping)}catch{parsed=[]}}
+      const complete=REQUIRED_FIELDS.every(k=>mapping[k]);
+      if(profile?.kind==='builtin-wafarly'){try{parsed=rowsFromWafarly(c)}catch{parsed=[]}}
+      else if(complete){try{parsed=rowsFromCandidate(c,mapping)}catch{parsed=[]}}
       if(!profile){const reason=complete?'صيغة حسابات قابلة للقراءة لكنها غير معرفة كمصدر بعد.':'صيغة جديدة وتحتاج تعريف بعض الأعمدة.';await saveUnknown(unknownRecord(analysis,reason,parsed));setMessage(complete?'تم فهم البيانات تلقائيًا. أعطِ النوع اسمًا من «تعريف» ليُحفظ كقارئ دائم.':'تم تسجيل نوع جديد ويحتاج تعريفًا.','ok');return}
       if(!parsed.length)throw new Error('Reader معروف لكن لم ينتج سجلات صالحة.');
       const hash=await hashRows(parsed);const existing=sources.value.find(x=>x.id===profile.id);const sameFamily=existing&&existing.fileFamily===family;const overlap=existing?overlapRatio(existing.rows,parsed):1;
