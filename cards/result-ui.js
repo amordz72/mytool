@@ -27,9 +27,10 @@
   const pad=n=>String(n).padStart(2,'0');
   const timeStamp=()=>{const d=new Date();return pad(d.getHours())+pad(d.getMinutes())};
   const splitSuffix=(part,total)=>part?`_P${part}-${total}`:'';
+  const batchSuffix=()=>{const id=typeof window.getCardBatchId==='function'?window.getCardBatchId():'';return /^[A-Z0-9]{4}$/.test(id)?`_B${id}`:''};
   function shortName(type,count,part,total,extra=''){
     const x=extra?`_${String(extra).replace(/[^A-Za-z0-9_-]/g,'').slice(0,8)}`:'';
-    return `${readPrefix(type)}_C${count}${x}${splitSuffix(part,total)}_${timeStamp()}.txt`;
+    return `${readPrefix(type)}_C${count}${x}${splitSuffix(part,total)}${batchSuffix()}_${timeStamp()}.txt`;
   }
   function plainName(count,part,total){return shortName('plain',count,part,total)}
   function smartKind(kind){return kind==='DIGITS'?'D':kind==='ALNUM'?'A':'M'}
