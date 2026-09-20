@@ -144,6 +144,7 @@ createApp({
     const activeSource=computed(()=>sources.value.find(x=>x.id===activeTabId.value)||null);
     const activeUnknown=computed(()=>unknowns.value.find(x=>x.id===activeTabId.value)||null);
     const rows=computed(()=>activeSource.value?.rows||[]);
+    const sourceAccounts=computed(()=>rows.value.slice().sort((a,b)=>(Number(b.debt)||0)-(Number(a.debt)||0)||String(displayName(a)).localeCompare(String(displayName(b)),'ar')));
     const debtors=computed(()=>rows.value.filter(x=>x.debt>0).slice().sort((a,b)=>b.debt-a.debt));
     const totalDebt=computed(()=>rows.value.reduce((s,x)=>s+x.debt,0));
     const totalBalance=computed(()=>rows.value.reduce((s,x)=>s+x.balance,0));
@@ -154,7 +155,7 @@ createApp({
     const unknownTotals=computed(()=>({debt:unknownPreview.value.reduce((s,x)=>s+x.debt,0),balance:unknownPreview.value.reduce((s,x)=>s+x.balance,0),profit:unknownPreview.value.reduce((s,x)=>s+x.profit,0)}));
     function setMessage(text,type='ok'){message.value=text;messageType.value=type}
     function pickFile(){fileInput.value?.click()}
-    function selectTab(tab){activeTabId.value=tab.id;viewMode.value=tab.kind==='source'?'summary':'unknown';goalTarget.value=0;goalText.value=''}
+    function selectTab(tab){activeTabId.value=tab.id;viewMode.value=tab.kind==='source'?'accounts':'unknown';goalTarget.value=0;goalText.value='';window.dispatchEvent(new CustomEvent('accounts-source-selected',{detail:{id:tab.id,kind:tab.kind}}))}
     function displayName(c){return[c.first,c.last].filter(Boolean).join(' ').trim()||c.store||'بدون اسم'}
     function normalizeGoal(){goalTarget.value=Math.max(0,numeric(goalText.value));goalText.value=goalTarget.value?String(goalTarget.value):''}
     function summaryText(){const s=activeSource.value;if(!s)return'';let out=s.name+' — مراجعة الحسابات\nإجمالي الديون: '+displayNumber(totalDebt.value)+'\nإجمالي الأرصدة: '+displayNumber(totalBalance.value)+'\nإجمالي الأرباح: '+displayNumber(totalProfit.value);if(goalTarget.value>0){out+='\n\nهدف التحصيل: '+displayNumber(goalTarget.value)+'\nالمجموع المقترح: '+displayNumber(goalPlan.value.total)+'\nالعملاء:';goalPlan.value.customers.forEach((c,i)=>{out+='\n'+(i+1)+'. '+displayName(c)+' | '+(c.username||'—')+' | '+displayNumber(c.debt)})}return out}
@@ -209,6 +210,6 @@ createApp({
     }
     watch([activeTabId,()=>activeSource.value?.id,()=>activeUnknown.value?.id],()=>nextTick(configureNav));
     onMounted(async()=>{try{await refreshState();setMessage(allTabs.value.length?'تم تحميل البيانات المحفوظة من هذا الجهاز.':'أضف أول ملف من الشريط السفلي.');configureNav()}catch(error){setMessage('تعذر فتح التخزين المحلي: '+(error?.message||''),'err')}});
-    return{fileInput,sources,profiles,unknowns,allTabs,activeTabId,activeSource,activeUnknown,viewMode,message,messageType,limit,goalText,goalTarget,rows,totalDebt,totalBalance,totalProfit,visibleDebtors,goalPlan,unknownPreview,unknownTotals,mappingOpen,mappingDraft,pickFile,readFiles,selectTab,displayName,displayNumber,normalizeGoal,copySummary,copyDiagnostic,copyAiPrompt,openMapping,saveMapping,saveUnknownMeta,reanalyzeUnknown,deleteActive};
+    return{fileInput,sources,profiles,unknowns,allTabs,activeTabId,activeSource,activeUnknown,viewMode,message,messageType,limit,goalText,goalTarget,rows,sourceAccounts,totalDebt,totalBalance,totalProfit,visibleDebtors,goalPlan,unknownPreview,unknownTotals,mappingOpen,mappingDraft,pickFile,readFiles,selectTab,displayName,displayNumber,normalizeGoal,copySummary,copyDiagnostic,copyAiPrompt,openMapping,saveMapping,saveUnknownMeta,reanalyzeUnknown,deleteActive};
   }
 }).mount('#app');
