@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#2ea8e6">
 <title>مراجعة الحسابات — MyTool</title>
 <script src="../auth-guard.js?v=20260916-safe-clearance1" data-access="admin"></script>
-<link rel="stylesheet" href="./style.css?v=20260920-import3">
+<link rel="stylesheet" href="./style.css?v=20260920-import4">
 <link rel="stylesheet" href="./selection.css?v=20260916-select2">
 <link rel="stylesheet" href="./accounts-advanced.css?v=20260920-share5">
 <link rel="stylesheet" href="./accounts-linker.css?v=20260920-report3">
@@ -30,6 +30,16 @@
       <small>لا تحتاج الدخول إلى كل منصة داخل MyTool ولا إعادة الرفع في كل صفحة. ارفع مرة، ثم أعد الرفع فقط عندما تريد تحديث الأرقام.</small>
     </div>
     <button class="btn accounts-import-btn" type="button" @click="pickFile">📂 اختيار عدة ملفات</button>
+  </section>
+
+  <section class="panel">
+    <div class="head-row">
+      <div>
+        <h2>🧩 هوية ودمج الحسابات</h2>
+        <div class="meta">المصدر يُحدد أولًا، ثم يمنع التكرار داخل نفس المنصة، وبعدها تُجمع حسابات نفس العميل بين المنصات. الهاتف/البريد/المستخدم القوي يربط تلقائيًا، والحالات القريبة تذهب للمراجعة.</div>
+      </div>
+      <a class="btn" href="../shop/customer-links.html" style="text-decoration:none">فتح الدمج والمراجعة</a>
+    </div>
   </section>
 
   <section v-if="allTabs.length" class="panel">
@@ -112,6 +122,8 @@
         <div class="meta-grid">
           <div class="notice">Reader: {{ activeSource.readerId }}</div>
           <div class="notice">النوع: {{ activeSource.fileType.toUpperCase() }} — {{ activeSource.sheetName }}</div>
+          <div class="notice">دفعات محفوظة: {{ activeSource.imports?.length || 0 }}</div>
+          <div class="notice" v-if="activeSource.identityReviews?.length">هوية تحتاج مراجعة: {{ activeSource.identityReviews.length }} — لم تُنشأ كحسابات جديدة تلقائيًا.</div>
         </div>
         <button class="btn danger" type="button" @click="deleteActive">حذف بيانات هذا المصدر من الجهاز</button>
       </details>
@@ -175,7 +187,7 @@
     </div>
   </dialog>
 </main>
-<script type="module" src="./app.js?v=20260920-import3"></script>
+<script type="module" src="./app.js?v=20260920-cumulative1"></script>
 <script src="./accounts-advanced.js?v=20260920-fullreport6" defer></script>
 <script src="./selection.js?v=20260920-share4" defer></script>
 <script src="./accounts-identities.js?v=20260916-links1" defer></script>
