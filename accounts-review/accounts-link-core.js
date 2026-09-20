@@ -24,10 +24,26 @@ async function pair(a,b){const st=await state(),ar=rid(a.s.id,a.r),br=rid(b.s.id
 async function approve(id){const st=await state(),c=suggestions(st).find(x=>x.id===id);if(c){await pair(c.a,c.b);await ldel('dismissed',id).catch(()=>{})}}
 const dismiss=id=>lput('dismissed',{id,at:new Date().toISOString()});
 async function addMember(id,sid,key){const st=await state(),l=st.ls.find(x=>x.id===id),s=st.ss.find(x=>x.id===sid);if(!l||!s)return{ok:false,reason:'not_found'};const r=(s.rows||[]).find(x=>String(x.key)===String(key));if(!r)return{ok:false,reason:'row_not_found'};const rk=rid(s,r),linked=st.map.get(rk);if(linked&&linked!==id)return{ok:false,reason:'linked_elsewhere'};if((l.members||[]).some(m=>m.sourceId===sid&&String(m.rowKey)===String(key)))return{ok:true,reason:'already'};l.members.push(member(s,r));l.updatedAt=new Date().toISOString();await lput('links',l);return{ok:true,reason:'added'}}
+async function group(items){
+  const st=await state(),clean=[],seenRows=new Set(),seenSources=new Set();
+  for(const x of (items||[])){
+    if(!x?.s||!x?.r)continue;
+    const rowId=rid(x.s.id,x.r),sourceId=String(x.s.id);
+    if(seenRows.has(rowId))continue;
+    if(st.map.get(rowId))return{ok:false,reason:'linked_elsewhere'};
+    if(seenSources.has(sourceId))return{ok:false,reason:'same_source'};
+    seenRows.add(rowId);seenSources.add(sourceId);clean.push(x);
+  }
+  if(clean.length<2||seenSources.size<2)return{ok:false,reason:'need_two_sources'};
+  const display=clean.map(x=>name(x.r)).find(x=>x&&x!=='بدون اسم')||'عميل مشترك',now=new Date().toISOString();
+  const link={id:'link:'+uid(),displayName:display,members:clean.map(x=>member(x.s,x.r)),createdAt:now,updatedAt:now};
+  await lput('links',link);
+  return{ok:true,id:link.id,count:link.members.length};
+}
 async function unlinkMember(id,sid,key){const ls=await lall('links'),l=ls.find(x=>x.id===id);if(!l)return;l.members=l.members.filter(m=>!(m.sourceId===sid&&String(m.rowKey)===String(key)));if(l.members.length<2)await ldel('links',id);else{l.updatedAt=new Date().toISOString();await lput('links',l)}}
 const unlinkAll=id=>ldel('links',id);
 async function rename(id,n){const ls=await lall('links'),l=ls.find(x=>x.id===id);if(!l)return;l.displayName=String(n||'').trim()||l.displayName;l.updatedAt=new Date().toISOString();await lput('links',l)}
 function unlinked(s,st){const set=new Set();st.ls.forEach(l=>l.members.forEach(m=>set.add(m.sourceId+'::'+m.rowKey)));return(s?.rows||[]).filter(r=>!set.has(rid(s.id,r)))}
-window.MyToolAccountLinks={norm,email,phone,esc,num,name,rid,resolve,state,suggestions,pair,approve,dismiss,addMember,unlinkMember,unlinkAll,rename,unlinked};
+window.MyToolAccountLinks={norm,email,phone,esc,num,name,rid,resolve,state,suggestions,pair,approve,dismiss,addMember,group,unlinkMember,unlinkAll,rename,unlinked};
 window.dispatchEvent(new Event('mytool-account-links-core-ready'));
 })();
