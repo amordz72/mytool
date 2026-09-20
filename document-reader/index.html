@@ -269,22 +269,17 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function parseAmountValue(raw){
-    let s=String(raw||'').replace(/[^0-9.,]/g,'');
-    if(!s)return null;
-    if(s.includes(',')&&s.includes('.')){
-      s=s.replace(/\./g,'').replace(',','.');
-    }else if(s.includes(',')){
-      const p=s.split(',');
-      if(p.length===2&&p[1].length<=2)s=p[0].replace(/\./g,'')+'.'+p[1];
-      else s=s.replace(/,/g,'');
-    }else if((s.match(/\./g)||[]).length>1){
-      s=s.replace(/\./g,'');
-    }else if(s.includes('.')){
-      const p=s.split('.');
-      if(!(p.length===2&&p[1].length===2))s=s.replace('.','');
-    }
-    const n=Number(s);
-    return Number.isFinite(n)?n:null;
+    const original=String(raw||'').trim();
+    const groups=original.match(/\d+/g)||[];
+    if(!groups.length)return null;
+    const digits=groups.join('');
+    if(!digits)return null;
+    const last=groups[groups.length-1]||'';
+    const hasSeparator=/[.,\s]/.test(original);
+    const decimalLike=groups.length>=2&&last.length===2&&hasSeparator;
+    const n=Number(digits);
+    if(!Number.isFinite(n))return null;
+    return decimalLike?n/100:n;
   }
 
   function extractBna(text){
@@ -311,9 +306,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const amount=amountMatch?parseAmountValue(amountMatch[1]):null;
     out.amount=amount!==null?{value:new Intl.NumberFormat('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2}).format(amount)+' DZD',raw:amount,source:"Montant versement"}:null;
 
-    const companyLines=lines.filter(x=>/\b(SARL|EURL|SPA|SNC)\b/i.test(x)).map(x=>cleanLine(x));
-    const uniqueCompanies=[...new Set(companyLines)];
-    out.recipient=uniqueCompanies.length===1?{value:uniqueCompanies[0],source:"اسم صاحب/جهة الحساب في قالب BNA"}:null;
+    const companyCandidates=lines.map(line=>{
+      const pos=line.search(/\b(?:SARL|EURL|SPA|SNC)\b/i);
+      if(pos<0)return '';
+      return cleanLine(
+        line.slice(pos)
+          .replace(/\b(?:Agence|Devise|Guichet|Caisse|Gestionnaire|Montant|Timbre|Valeur|Motif|N[°o]?\s*Compte)\b.*$/i,'')
+      );
+    }).filter(value=>value&&value.length>=4&&value.length<=80);
+    const uniqueCompanies=[...new Set(companyCandidates)];
+    out.recipient=uniqueCompanies.length===1?{value:uniqueCompanies[0],source:"اسم الشركة ابتداءً من الصيغة القانونية SARL/EURL/SPA/SNC"}:null;
 
     let sender=findLineValue(lines,/^.*?Motif\s*[:.]?/i);
     sender=sender.replace(/^[.:·_\-\s]+/,'').trim();
