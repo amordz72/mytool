@@ -183,6 +183,7 @@ let recentJobs=[];
 let rechargeCards=[];
 let rechargeAttempts=[];
 let rechargeGuard={loaded:false,can_flexy:false,ready_1000:0,ready_2000:0,balance_amount:null,threshold_amount:null};
+let rechargeRefreshTimers=[];
 let jobPollTimer=null;
 const OFFER_CACHE_KEY='mytool.flexy.offers.v1';
 
@@ -405,7 +406,8 @@ function renderRechargeGuard(){
     return;
   }
 
-  const balance=Number(rechargeGuard.balance_amount);
+  const hasBalance=rechargeGuard.balance_amount!==null&&rechargeGuard.balance_amount!==undefined&&rechargeGuard.balance_amount!=='';
+  const balance=hasBalance?Number(rechargeGuard.balance_amount):NaN;
   const balanceText=Number.isFinite(balance)?fmtDzdAmount(balance):'غير مقروء';
   const c1000=Number(rechargeGuard.ready_1000||0);
   const c2000=Number(rechargeGuard.ready_2000||0);
@@ -447,6 +449,23 @@ async function loadRechargeGuard(){
 function rechargeAmountFromFilename(name){
   const match=String(name||'').match(/(?:^|[^0-9])(1000|2000)(?:[^0-9]|$)/u);
   return match?Number(match[1]):null;
+}
+
+function refreshRechargeAutomationState(){
+  rechargeRefreshTimers.forEach(timer=>clearTimeout(timer));
+  rechargeRefreshTimers=[];
+  [800,2500,5000,9000,15000].forEach(delay=>{
+    const timer=setTimeout(async()=>{
+      try{
+        await Promise.all([
+          loadRechargeCards(),
+          loadRechargeGuard(),
+          loadRechargeAttempts()
+        ]);
+      }catch{}
+    },delay);
+    rechargeRefreshTimers.push(timer);
+  });
 }
 
 function confirmOfferExecution({phone,label,amount}){
@@ -641,7 +660,9 @@ function renderDiscoveryOffers(form,job,source='network'){
             'تعذر تنفيذ العرض',
             message.includes('OFFER_REFERENCE_NOT_FOUND')
               ?'العرض المحدد غير موجود في كاتالوج التنفيذ المؤكد.'
-              :message,
+              :message.includes('RECHARGE_STOCK_EMPTY')
+                ?'بطاقات الشحن انتهت. لا يمكن تنفيذ Flexy قبل رفع بطاقات 1000 أو 2000 دج.'
+                :message,
             'danger'
           );
         }
@@ -764,6 +785,7 @@ async function pollOfferExecute(form,jobUuid,row,executeCheck){
         state==='failed'?'danger':''
       );
       await loadRecentJobs().catch(()=>{});
+      if(state==='success')refreshRechargeAutomationState();
       return;
     }
 
@@ -1482,7 +1504,10 @@ $('rechargeCards').addEventListener('click',async event=>{
       const current=rechargeCards.find(x=>x.card_uuid===cardUuid);
       if(current&&!['queued','processing'].includes(String(current.status||''))){
         const answer=current.result_text||'لم يصل رد نصي من الشبكة.';
-        await loadRechargeAttempts().catch(()=>{});
+        await Promise.all([
+          loadRechargeAttempts().catch(()=>{}),
+          loadRechargeGuard().catch(()=>{})
+        ]);
         showMessage(
           current.status==='used'?'تم شحن البطاقة':
           current.status==='failed'?'فشل شحن البطاقة':'النتيجة تحتاج مراجعة',
