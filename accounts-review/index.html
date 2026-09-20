@@ -9,7 +9,7 @@
 <script src="../auth-guard.js?v=20260916-safe-clearance1" data-access="admin"></script>
 <link rel="stylesheet" href="./style.css?v=20260916-smart1">
 <link rel="stylesheet" href="./selection.css?v=20260916-select2">
-<link rel="stylesheet" href="./accounts-advanced.css?v=20260920-net1">
+<link rel="stylesheet" href="./accounts-advanced.css?v=20260920-source1">
 <link rel="stylesheet" href="./accounts-linker.css?v=20260920-net1">
 <link rel="stylesheet" href="./modal-safe.css?v=20260916-safe2">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -38,9 +38,43 @@
         <div><h2>{{ activeSource.name }}</h2><div class="meta">آخر تحديث: {{ new Date(activeSource.updatedAt).toLocaleString('ar-DZ') }} — {{ activeSource.fileName }}</div></div>
       </div>
       <div class="view-tabs" role="tablist">
+        <button class="view-tab" :class="{active:viewMode==='accounts'}" type="button" @click="viewMode='accounts'">الحسابات</button>
         <button class="view-tab" :class="{active:viewMode==='summary'}" type="button" @click="viewMode='summary'">الملخص</button>
         <button class="view-tab" :class="{active:viewMode==='goal'}" type="button" @click="viewMode='goal'">التحصيل</button>
         <button class="view-tab" :class="{active:viewMode==='debtors'}" type="button" @click="viewMode='debtors'">المدينون</button>
+      </div>
+    </section>
+
+    <section v-if="viewMode==='accounts'" class="panel source-accounts-panel">
+      <div class="head-row">
+        <div>
+          <h2>حسابات {{ activeSource.name }}</h2>
+          <div class="meta">{{ sourceAccounts.length }} حساب — مرتبة افتراضيًا حسب الدين من الأكبر إلى الأصغر.</div>
+        </div>
+      </div>
+      <div class="summary source-accounts-summary">
+        <div class="stat debt"><span>ديون {{ activeSource.name }}</span><strong>{{ displayNumber(totalDebt) }}</strong></div>
+        <div class="stat balance"><span>أرصدة {{ activeSource.name }}</span><strong>{{ displayNumber(totalBalance) }}</strong></div>
+        <div class="stat profit"><span>أرباح {{ activeSource.name }}</span><strong>{{ displayNumber(totalProfit) }}</strong></div>
+      </div>
+      <div class="source-accounts-list">
+        <article v-for="customer in sourceAccounts" :key="customer.key" class="source-account-card">
+          <header>
+            <div>
+              <strong>{{ displayName(customer) }}</strong>
+              <small>{{ customer.username || '—' }}</small>
+            </div>
+            <span class="customer-net" :class="(Number(customer.balance||0)-Number(customer.debt||0))<0?'negative':((Number(customer.balance||0)-Number(customer.debt||0))>0?'positive':'zero')">
+              صافي {{ (Number(customer.balance||0)-Number(customer.debt||0))>0?'+':((Number(customer.balance||0)-Number(customer.debt||0))<0?'−':'') }}{{ displayNumber(Math.abs(Number(customer.balance||0)-Number(customer.debt||0))) }}
+            </span>
+          </header>
+          <footer>
+            <span class="metric debt">الدين <b>{{ displayNumber(customer.debt) }}</b></span>
+            <span class="metric balance">الرصيد <b>{{ displayNumber(customer.balance) }}</b></span>
+            <span class="metric profit">الأرباح <b>{{ displayNumber(customer.profit) }}</b></span>
+          </footer>
+        </article>
+        <div v-if="!sourceAccounts.length" class="empty">لا توجد حسابات في هذا المصدر.</div>
       </div>
     </section>
 
@@ -130,7 +164,7 @@
     </div>
   </dialog>
 </main>
-<script type="module" src="./app.js?v=20260920-wafarly1"></script>
+<script type="module" src="./app.js?v=20260920-source1"></script>
 <script src="./accounts-advanced.js?v=20260920-nodup1" defer></script>
 <script src="./selection.js?v=20260916-select2" defer></script>
 <script src="./accounts-identities.js?v=20260916-links1" defer></script>
