@@ -39,7 +39,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="card security">
   <div style="font-size:24px">🔒</div>
-  <div><b>المعالجة محلية على جهازك</b><p>الصورة والنص الخام لا يُرفعان ولا يُحفظان. آخر 20 عملية تُحفظ محليًا وتُعرض تحت المورد ومجمعة حسب التاريخ، مع فهرس محلي حتى 500 رقم وثيقة لمنع تكرار نفس الوصل على هذا الجهاز.</p></div>
+  <div><b>المعالجة محلية على جهازك</b><p>الصورة والنص الخام لا يُرفعان ولا يُحفظان. آخر 20 عملية تُحفظ محليًا وتُعرض تحت المورد ومجمعة حسب التاريخ، مع فهرس محلي حتى 500 رقم وثيقة. أي رقم وثيقة سبق تسجيله يُمنع من التسجيل مرة ثانية حتى لو كان من بنك أو تاريخ مختلف.</p></div>
 </section>
 
 <section class="card recipient-context">
@@ -243,9 +243,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function documentFingerprint(payload){
     const number=cleanLine(payload?.fields?.documentNumber?.value||'').replace(/\s+/g,'').toUpperCase();
-    if(!number)return '';
-    const template=cleanLine(payload?.templateId||'unknown').toLowerCase();
-    return template+'|'+number;
+    return number||'';
   }
 
   function findDuplicateDocument(payload){
@@ -255,21 +253,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!item)return null;
     if(item.operationId&&item.operationId===payload.operationId)return null;
     return {...item,fingerprint};
-  }
-
-  function findCrossSourceNumberCollision(payload){
-    const number=cleanLine(payload?.fields?.documentNumber?.value||'').replace(/\s+/g,'').toUpperCase();
-    if(!number)return null;
-    const template=cleanLine(payload?.templateId||'unknown').toLowerCase();
-    const index=getDocumentIndex();
-    for(const item of Object.values(index)){
-      const existingNumber=cleanLine(item?.documentNumber||'').replace(/\s+/g,'').toUpperCase();
-      const existingTemplate=cleanLine(item?.templateId||'unknown').toLowerCase();
-      if(existingNumber===number&&existingTemplate!==template){
-        return item;
-      }
-    }
-    return null;
   }
 
   function registerDocument(payload){
@@ -318,6 +301,23 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function operationTime(op){
     const d=new Date(op?.createdAt||Date.now());
     return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  }
+
+  function renderRecipientSelect(){
+    const names=getRecipientPresets();
+    const previous=activeRecipient;
+    recipientSelect.innerHTML='';
+    names.forEach(name=>{
+      const option=document.createElement('option');
+      option.value=name;
+      option.textContent=name;
+      recipientSelect.appendChild(option);
+    });
+    const selected=names.includes(previous)?previous:(names[0]||'');
+    if(selected){
+      activeRecipient=selected;
+      recipientSelect.value=selected;
+    }
   }
 
   function renderHistorySupplierTabs(){
@@ -444,6 +444,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const items=getRecentOperations().filter(op=>op.id!==currentResult.operationId);
     items.unshift(snapshotResult(currentResult));
     saveRecentOperations(items);
+    unregisterDocumentForOperation({id:currentResult.operationId});
     registerDocument(currentResult);
     renderRecentOperationTabs();
     return true;
@@ -685,15 +686,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     if(payload.duplicateInfo){
       const d=payload.duplicateInfo;
-      messages.push('وصل مكرر: رقم الوثيقة '+(d.documentNumber||'')+' سبق تسجيله'
+      messages.push('وصل مكرر ممنوع: رقم الوثيقة '+(d.documentNumber||'')+' سبق تسجيله'
         +(d.selectedRecipient?' إلى '+d.selectedRecipient:'')
         +(d.receiptDate?' بتاريخ '+d.receiptDate:'')+'.');
       level='bad';
-    }else if(payload.crossSourceCollision){
-      const d=payload.crossSourceCollision;
-      messages.push('تنبيه: نفس رقم الوثيقة موجود سابقًا في مصدر آخر'
-        +(d.selectedRecipient?' عند '+d.selectedRecipient:'')+'. راجعه قبل الاعتماد.');
-      if(level==='ok')level='warn';
     }
 
     const selectedDate=String(payload.receiptDate||'').slice(0,10);
@@ -1160,7 +1156,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const notice=$('resultNotice');
     if(payload.duplicateInfo){
       const d=payload.duplicateInfo;
-      notice.textContent='⚠ وصل مكرر: رقم الوثيقة '+(d.documentNumber||'')+' سبق تسجيله'
+      notice.textContent='⛔ وصل مكرر: رقم الوثيقة '+(d.documentNumber||'')+' سبق تسجيله'
         +(d.selectedRecipient?' إلى '+d.selectedRecipient:'')
         +(d.receiptDate?' بتاريخ '+d.receiptDate:'')+'. لم تُضف عملية جديدة إلى السجل.';
       notice.classList.remove('hidden');
@@ -1405,7 +1401,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         createdAt:new Date().toISOString()
       };
       payload.duplicateInfo=findDuplicateDocument(payload);
-      payload.crossSourceCollision=payload.duplicateInfo?null:findCrossSourceNumberCollision(payload);
       renderResult(payload);
       if(!payload.duplicateInfo){
         persistCurrentOperation();
@@ -1439,7 +1434,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       edgeCropSuspected:assessEdgeCrop(sourceImage,currentResult.orientation||rotation)
     };
     payload.duplicateInfo=findDuplicateDocument(payload);
-    payload.crossSourceCollision=payload.duplicateInfo?null:findCrossSourceNumberCollision(payload);
     renderResult(payload);
     if(!payload.duplicateInfo)persistCurrentOperation();
   }
