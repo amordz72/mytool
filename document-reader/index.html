@@ -521,6 +521,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     let recipient=findLineValue(lines,/^.*?Nom\s+ou\s+Raison\s+Sociale\s*[:.]?/i);
     recipient=cleanEntityName(recipient);
+    const legalRecipient=recipient.match(/\b(?:SARL|EURL|SPA|SNC)\b(?:\s+[A-ZÀ-Ý][A-ZÀ-Ý'&.-]{1,}){1,6}/);
+    if(legalRecipient)recipient=legalRecipient[0];
     out.recipient=recipient&&recipient.length<=100
       ? {value:recipient,source:'Nom ou Raison Sociale',status:'read'}
       : null;
@@ -720,6 +722,63 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  function cropCanvasFraction(canvas,left,top,width,height){
+    const x=Math.max(0,Math.round(canvas.width*left));
+    const y=Math.max(0,Math.round(canvas.height*top));
+    const w=Math.max(1,Math.min(canvas.width-x,Math.round(canvas.width*width)));
+    const h=Math.max(1,Math.min(canvas.height-y,Math.round(canvas.height*height)));
+    const out=document.createElement('canvas');
+    out.width=w;out.height=h;
+    const ctx=out.getContext('2d',{willReadFrequently:true});
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+    ctx.drawImage(canvas,x,y,w,h,0,0,w,h);
+    return out;
+  }
+
+  function parseBdlSenderRegion(text){
+    const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
+    const candidates=[];
+    for(const raw of lines){
+      let line=cleanEntityName(raw)
+        .replace(/\b(?:LIBELLE|LIBELLÉ|VERSEMENT|ESP\/?TIERS|MONTANT|COMMIS|COMMISSION|TAXES?|TOTAL|SIGNATURE|CHARGE|CAISSE)\b/ig,' ')
+        .replace(/\s{2,}/g,' ')
+        .trim();
+      if(!line||/\d/.test(line))continue;
+      if(!/[A-Za-zÀ-ÿ]/.test(line))continue;
+      const letters=(line.match(/[A-Za-zÀ-ÿ]/g)||[]).length;
+      if(letters<4)continue;
+      if(line.length>60)continue;
+      if(!/^[A-ZÀ-Ý' -]+$/.test(line))continue;
+      candidates.push(line);
+      if(candidates.length>=2)break;
+    }
+    const sender=cleanEntityName(candidates.join(' '));
+    const words=sender.match(/[A-ZÀ-Ý]{2,}/g)||[];
+    return words.length>=2&&sender.length<=100?sender:'';
+  }
+
+  async function tryRecoverBdlSender(worker,degrees){
+    try{
+      progressTitle.textContent='تحسين قراءة المرسل…';
+      progressText.textContent='قراءة الجزء السفلي الأيسر من وثيقة BDL بدقة أعلى.';
+      const page=drawRotatedCanvas(sourceImage,degrees,2200);
+      const region=cropCanvasFraction(page,0.04,0.50,0.52,0.28);
+      const result=await worker.recognize(region);
+      const text=result.data?.text||'';
+      const sender=parseBdlSenderRegion(text);
+      const confidence=Number(result.data?.confidence||0);
+      if(!sender)return null;
+      return {
+        value:sender,
+        source:'قراءة مركزة لمنطقة المرسل في وثيقة BDL',
+        status:confidence>=70?'read':'review',
+        confidence
+      };
+    }catch(_e){
+      return null;
+    }
+  }
+
   async function recognizeAt(worker,degrees,index,total){
     progressTitle.textContent='جاري قراءة الوثيقة…';
     progressText.textContent='فحص اتجاه الصورة '+index+' من '+total;
@@ -772,6 +831,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const manualOverride=templateSelect.value!=='auto';
       const templateId=manualOverride?templateSelect.value:detectedTemplateId;
       const extracted=parseByTemplate(templateId,best.text);
+      if(templateId==='bdl'&&!extracted.sender){
+        const recoveredSender=await tryRecoverBdlSender(worker,best.rotation);
+        if(recoveredSender)extracted.sender=recoveredSender;
+      }
 
       renderResult({
         language,
