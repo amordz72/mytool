@@ -17,7 +17,7 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .security{display:flex;gap:10px;align-items:flex-start;background:#effaf5;border-color:#b7e3cd}.security b{color:var(--ok)}.security p{margin:2px 0 0;color:#416956;font-size:12px;line-height:1.65}
 .file-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.file-name{min-width:0;padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:10px;padding:10px 12px;font-weight:700;font-size:12px;cursor:pointer}.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--o),var(--b))}.btn.danger{border-color:#f1b8b3;background:#fff4f2;color:var(--bad)}.btn:disabled{opacity:.55;cursor:not-allowed}
-.actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:10px}
 .preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
 .detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
@@ -39,7 +39,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="card security">
   <div style="font-size:24px">🔒</div>
-  <div><b>المعالجة محلية على جهازك</b><p>الصورة والنص الخام لا يُرفعان ولا يُحفظان. آخر 20 عملية تُحفظ محليًا وتُعرض تحت المورد ومجمعة حسب التاريخ، مع فهرس محلي حتى 500 رقم وثيقة. أي رقم وثيقة سبق تسجيله يُمنع من التسجيل مرة ثانية حتى لو كان من بنك أو تاريخ مختلف.</p></div>
+  <div><b>المعالجة محلية على جهازك</b><p>الصورة لا تُرفع إلى أي خادم. عند اختيارها تُحفظ نسخة محلية على هذا الجهاز حتى لا تضيع قبل التحليل، وتبقى مرتبطة بالعملية المحلية. آخر 20 عملية تُحفظ محليًا مع فهرس حتى 500 رقم وثيقة لمنع التكرار.</p></div>
 </section>
 
 <section class="card recipient-context">
@@ -68,6 +68,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   <div class="actions">
     <button id="analyzeBtn" class="btn primary" type="button" disabled>تحليل الصورة</button>
+    <button id="saveBtn" class="btn" type="button" disabled>حفظ</button>
     <button id="rotateRightBtn" class="btn" type="button" disabled>↻ تدوير</button>
     <button id="copyBtn" class="btn" type="button" disabled>نسخ النتائج</button>
     <button id="clearBtn" class="btn danger" type="button" disabled>مسح</button>
@@ -119,6 +120,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const previewImg = $('previewImg');
   const previewEmpty = $('previewEmpty');
   const analyzeBtn = $('analyzeBtn');
+  const saveBtn = $('saveBtn');
   const rotateRightBtn = $('rotateRightBtn');
   const copyBtn = $('copyBtn');
   const clearBtn = $('clearBtn');
@@ -149,11 +151,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const RECIPIENT_CONTEXT_KEY='mytool.document-reader.recipient-context.v1';
   const RECENT_OPERATIONS_KEY='mytool.document-reader.recent-operations.v1';
   const DOCUMENT_INDEX_KEY='mytool.document-reader.document-index.v1';
+  const RECEIPT_DB_NAME='mytool-document-reader-local-v1';
+  const RECEIPT_IMAGE_STORE='receipt-images';
   const UNSENT_RECIPIENT='لم يُرسل لمورد بعد';
   const defaultRecipientPresets=[UNSENT_RECIPIENT,'هني روحك','وفرلي','ديجيتال هوم','بوت علاء الدين'];
   let activeRecipient=UNSENT_RECIPIENT;
   let activeOperationId='';
   let activeHistorySupplier='all';
+  let receiptDbPromise=null;
 
   function getRecipientPresets(){
     try{
@@ -216,6 +221,80 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     try{localStorage.setItem(RECIPIENT_CONTEXT_KEY,JSON.stringify(data||{}));}catch(_e){}
   }
 
+  function openReceiptDb(){
+    if(!('indexedDB' in window))return Promise.reject(new Error('التخزين المحلي للصور غير مدعوم في هذا المتصفح.'));
+    if(receiptDbPromise)return receiptDbPromise;
+    receiptDbPromise=new Promise((resolve,reject)=>{
+      const req=indexedDB.open(RECEIPT_DB_NAME,1);
+      req.onupgradeneeded=()=>{
+        const db=req.result;
+        if(!db.objectStoreNames.contains(RECEIPT_IMAGE_STORE))db.createObjectStore(RECEIPT_IMAGE_STORE,{keyPath:'id'});
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error||new Error('تعذر فتح مخزن الصور المحلي.'));
+    });
+    return receiptDbPromise;
+  }
+
+  async function saveReceiptImage(id,blob,fileName=''){
+    if(!id||!blob)return false;
+    const db=await openReceiptDb();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(RECEIPT_IMAGE_STORE,'readwrite');
+      tx.objectStore(RECEIPT_IMAGE_STORE).put({
+        id,
+        blob,
+        fileName:fileName||'صورة الوصل',
+        type:blob.type||'image/jpeg',
+        savedAt:new Date().toISOString()
+      });
+      tx.oncomplete=()=>resolve(true);
+      tx.onerror=()=>reject(tx.error||new Error('تعذر حفظ صورة الوصل محليًا.'));
+      tx.onabort=()=>reject(tx.error||new Error('تعذر حفظ صورة الوصل محليًا.'));
+    });
+  }
+
+  async function getReceiptImage(id){
+    if(!id)return null;
+    const db=await openReceiptDb();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(RECEIPT_IMAGE_STORE,'readonly');
+      const req=tx.objectStore(RECEIPT_IMAGE_STORE).get(id);
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>reject(req.error||new Error('تعذر قراءة صورة الوصل المحلية.'));
+    });
+  }
+
+  async function deleteReceiptImage(id){
+    if(!id)return;
+    try{
+      const db=await openReceiptDb();
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(RECEIPT_IMAGE_STORE,'readwrite');
+        tx.objectStore(RECEIPT_IMAGE_STORE).delete(id);
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error);
+        tx.onabort=()=>reject(tx.error);
+      });
+    }catch(_e){}
+  }
+
+  async function purgeReceiptImages(validIds){
+    try{
+      const keep=new Set(validIds||[]);
+      const db=await openReceiptDb();
+      const keys=await new Promise((resolve,reject)=>{
+        const tx=db.transaction(RECEIPT_IMAGE_STORE,'readonly');
+        const req=tx.objectStore(RECEIPT_IMAGE_STORE).getAllKeys();
+        req.onsuccess=()=>resolve(req.result||[]);
+        req.onerror=()=>reject(req.error);
+      });
+      for(const key of keys){
+        if(!keep.has(String(key)))await deleteReceiptImage(key);
+      }
+    }catch(_e){}
+  }
+
   function getRecentOperations(){
     try{
       const data=JSON.parse(localStorage.getItem(RECENT_OPERATIONS_KEY)||'[]');
@@ -226,7 +305,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function saveRecentOperations(items){
-    try{localStorage.setItem(RECENT_OPERATIONS_KEY,JSON.stringify((items||[]).slice(0,20)));}catch(_e){}
+    const trimmed=(items||[]).slice(0,20);
+    try{localStorage.setItem(RECENT_OPERATIONS_KEY,JSON.stringify(trimmed));}catch(_e){}
+    purgeReceiptImages(trimmed.map(op=>String(op.id||''))).catch(()=>{});
   }
 
   function getDocumentIndex(){
@@ -287,7 +368,15 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function rebuildDocumentIndexFromRecent(){
     const items=getRecentOperations();
-    items.slice().reverse().forEach(op=>registerDocument(op));
+    const index=getDocumentIndex();
+    const recentIds=new Set(items.map(op=>String(op.id||'')));
+    Object.keys(index).forEach(key=>{
+      if(recentIds.has(String(index[key]?.operationId||'')))delete index[key];
+    });
+    saveDocumentIndex(index);
+    items.slice().reverse()
+      .filter(op=>op.status==='analyzed'||op.status==='saved')
+      .forEach(op=>registerDocument(op));
   }
 
   function operationDate(op){
@@ -336,6 +425,15 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     });
   }
 
+  function operationStatusText(op){
+    if(op?.status==='pending_analysis')return 'بانتظار التحليل';
+    if(op?.status==='analyzed')return 'تم التحليل — بانتظار الحفظ';
+    if(op?.status==='saved')return 'محفوظ ✓';
+    if(op?.status==='duplicate')return 'وصل مكرر — ممنوع الحفظ';
+    if(op?.status==='analysis_failed')return 'فشل التحليل — أعد المحاولة';
+    return 'بانتظار التحليل';
+  }
+
   function renderOperationHistory(){
     const items=getRecentOperations()
       .filter(op=>activeHistorySupplier==='all'||op.selectedRecipient===activeHistorySupplier)
@@ -367,11 +465,17 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const main=document.createElement('div');
       main.className='history-main';
       main.dataset.operationId=op.id;
-      const amount=op.fields?.amount?.value||'مبلغ غير واضح';
+      const amount=op.fields?.amount?.value||'';
       const doc=op.fields?.documentNumber?.value||'بدون رقم وثيقة';
-      const supplier=op.selectedRecipient||'بدون مورد';
-      main.innerHTML='<b>'+escapeHtml((activeHistorySupplier==='all'?supplier+' — ':'')+amount)+'</b>'
-        +'<small>'+escapeHtml(operationTime(op)+' · رقم '+doc+' · '+(op.template||''))+'</small>';
+      const supplier=op.selectedRecipient||UNSENT_RECIPIENT;
+      const state=operationStatusText(op);
+      const headline=(activeHistorySupplier==='all'?supplier+' — ':'')
+        +(op.status==='pending_analysis'||op.status==='analysis_failed'||op.status==='duplicate'?state:(amount||state));
+      const meta=[operationTime(op),state];
+      if(op.fileName)meta.push(op.fileName);
+      if(op.status!=='pending_analysis')meta.push('رقم '+doc);
+      main.innerHTML='<b>'+escapeHtml(headline)+'</b>'
+        +'<small>'+escapeHtml(meta.join(' · '))+'</small>';
 
       const actions=document.createElement('div');
       actions.className='history-actions';
@@ -425,60 +529,123 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       fields:JSON.parse(JSON.stringify(payload.fields||emptyExtraction())),
       ocrConfidence:Number(payload.ocrConfidence||0),
       orientation:Number(payload.orientation||0),
-      edgeCropSuspected:Boolean(payload.edgeCropSuspected)
+      edgeCropSuspected:Boolean(payload.edgeCropSuspected),
+      status:payload.status||'pending_analysis',
+      fileName:payload.fileName||'',
+      savedAt:payload.savedAt||'',
+      duplicateInfo:payload.duplicateInfo?{
+        documentNumber:payload.duplicateInfo.documentNumber||'',
+        selectedRecipient:payload.duplicateInfo.selectedRecipient||'',
+        receiptDate:payload.duplicateInfo.receiptDate||'',
+        operationId:payload.duplicateInfo.operationId||''
+      }:null,
+      rawTextAvailable:false
     };
   }
 
-  function persistCurrentOperation(){
+  function persistCurrentOperation({registerDoc=true}={}){
     if(!currentResult)return false;
     if(!currentResult.operationId){
       currentResult.operationId='op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
       currentResult.createdAt=new Date().toISOString();
     }
-    const duplicate=findDuplicateDocument(currentResult);
-    if(duplicate){
-      currentResult.duplicateInfo=duplicate;
-      return false;
-    }
-    currentResult.duplicateInfo=null;
+
+    unregisterDocumentForOperation({id:currentResult.operationId});
+    const duplicate=registerDoc?findDuplicateDocument(currentResult):null;
+    currentResult.duplicateInfo=duplicate||null;
+    if(duplicate)currentResult.status='duplicate';
+
     activeOperationId=currentResult.operationId;
     const items=getRecentOperations().filter(op=>op.id!==currentResult.operationId);
     items.unshift(snapshotResult(currentResult));
     saveRecentOperations(items);
-    unregisterDocumentForOperation({id:currentResult.operationId});
-    registerDocument(currentResult);
+
+    if(registerDoc&&!duplicate)registerDocument(currentResult);
     renderRecentOperationTabs();
-    return true;
+    updateSaveButton();
+    return !duplicate;
   }
 
-  function openRecentOperation(id){
+  async function openRecentOperation(id){
     const op=getRecentOperations().find(item=>item.id===id);
     if(!op)return;
+
     activeOperationId=op.id;
-    activeRecipient=op.selectedRecipient||activeRecipient;
+    activeRecipient=op.selectedRecipient||UNSENT_RECIPIENT;
     renderRecipientSelect();
     if(op.receiptDate)receiptDate.value=op.receiptDate;
-    recipientContextText.innerHTML='<b>'+escapeHtml(activeRecipient||'غير محدد')+'</b> — عملية سابقة من <b>'+escapeHtml(new Date(op.createdAt).toLocaleTimeString('ar-DZ',{hour:'2-digit',minute:'2-digit'}))+'</b>. الصورة والنص الخام غير محفوظين.';
+    updateDateHint();
+
+    let storedImage=null;
+    try{storedImage=await getReceiptImage(op.id);}catch(_e){}
+    if(storedImage?.blob){
+      try{
+        sourceImage=await loadImage(storedImage.blob);
+        rotation=Number(op.orientation||0);
+        $('fileName').textContent=op.fileName||storedImage.fileName||'صورة الوصل';
+        previewImg.src=objectUrl;
+        previewImg.classList.remove('hidden');
+        previewEmpty.classList.add('hidden');
+        updatePreview();
+        clearBtn.disabled=false;
+        rotateRightBtn.disabled=op.status==='saved';
+        analyzeBtn.disabled=op.status==='saved';
+      }catch(_e){
+        sourceImage=null;
+      }
+    }else{
+      sourceImage=null;
+      previewImg.removeAttribute('src');
+      previewImg.classList.add('hidden');
+      previewEmpty.classList.remove('hidden');
+      analyzeBtn.disabled=true;
+      rotateRightBtn.disabled=true;
+    }
+
+    recipientContextText.innerHTML='<b>'+escapeHtml(activeRecipient||UNSENT_RECIPIENT)+'</b> — '+escapeHtml(operationStatusText(op))
+      +' — '+escapeHtml(new Date(op.createdAt).toLocaleTimeString('ar-DZ',{hour:'2-digit',minute:'2-digit'}));
+
     currentResult={
       ...op,
-      rawText:'السجل المحلي يحفظ نتائج العملية فقط، ولا يحفظ الصورة أو النص الخام.',
-      historyView:true
+      rawText:'النص الخام لا يُحفظ في السجل المحلي. يمكن إعادة التحليل من الصورة المحلية إذا كانت العملية غير محفوظة نهائيًا.',
+      rawTextAvailable:false,
+      historyView:op.status==='saved'
     };
+    templateSelect.value=op.manualOverride?op.templateId:'auto';
+
     renderRecentOperationTabs();
+
+    if(op.status==='pending_analysis'||op.status==='analysis_failed'){
+      resultCard.classList.add('hidden');
+      copyBtn.disabled=true;
+      updateSaveButton();
+      progressBox.classList.remove('hidden');
+      progressTitle.textContent=op.status==='analysis_failed'?'التحليل السابق فشل':'بانتظار التحليل';
+      progressText.textContent=storedImage?.blob?'الصورة محفوظة محليًا. اضغط «تحليل الصورة».':'الصورة المحلية غير موجودة؛ لا يمكن إعادة التحليل من هذا الجهاز.';
+      return;
+    }
+
     renderResult(currentResult);
   }
 
-  function deleteRecentOperation(id){
+  async function deleteRecentOperation(id){
     const items=getRecentOperations();
     const op=items.find(item=>item.id===id);
     if(!op)return;
-    if(!confirm('حذف هذه القراءة السابقة؟'))return;
+    if(!confirm('حذف هذه القراءة السابقة والصورة المحلية المرتبطة بها؟'))return;
     const next=items.filter(item=>item.id!==id);
     saveRecentOperations(next);
     unregisterDocumentForOperation(op);
+    await deleteReceiptImage(id);
     if(activeOperationId===id){
       activeOperationId='';
-      if(currentResult?.operationId===id)resetResults();
+      if(currentResult?.operationId===id){
+        resetResults();
+        sourceImage=null;
+        previewImg.removeAttribute('src');
+        previewImg.classList.add('hidden');
+        previewEmpty.classList.remove('hidden');
+      }
     }
     renderRecentOperationTabs();
   }
@@ -525,12 +692,24 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     errorBox.classList.add('hidden');
   }
 
+  function updateSaveButton(){
+    const canSave=Boolean(currentResult
+      && !currentResult.historyView
+      && currentResult.status==='analyzed'
+      && !currentResult.duplicateInfo);
+    saveBtn.disabled=busy||!canSave;
+    if(currentResult?.status==='saved')saveBtn.textContent='محفوظ ✓';
+    else if(currentResult?.status==='duplicate')saveBtn.textContent='مكرر';
+    else saveBtn.textContent='حفظ';
+  }
+
   function setBusy(on){
     busy=on;
     analyzeBtn.disabled=on||!sourceImage;
     rotateRightBtn.disabled=on||!sourceImage;
     clearBtn.disabled=on||!sourceImage;
     fileInput.disabled=on;
+    updateSaveButton();
   }
 
   function resetResults(){
@@ -547,6 +726,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     selectedContext.textContent='';
     resultCard.classList.add('hidden');
     copyBtn.disabled=true;
+    saveBtn.disabled=true;
+    saveBtn.textContent='حفظ';
   }
 
   function updatePreview(){
@@ -1118,7 +1299,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const contextDay=weekdayArabic(contextDate);
     selectedContext.innerHTML='<b>لمن أرسلتها:</b> '+escapeHtml(payload.selectedRecipient||activeRecipient||'غير محدد')
       +' &nbsp; | &nbsp; <b>تاريخ الوصل:</b> '+escapeHtml(contextDate||'غير محدد')
-      +(contextDay?' — '+escapeHtml(contextDay):'');
+      +(contextDay?' — '+escapeHtml(contextDay):'')
+      +' &nbsp; | &nbsp; <b>الحالة:</b> '+escapeHtml(operationStatusText(payload));
     selectedContext.classList.remove('hidden');
     renderQuality(payload);
 
@@ -1176,6 +1358,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }
     resultCard.classList.remove('hidden');
     copyBtn.disabled=false;
+    updateSaveButton();
   }
 
   function startFieldEdit(key){
@@ -1337,8 +1520,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   async function analyze(){
     if(!sourceImage||busy)return;
+    const workingOperation=currentResult&&!currentResult.historyView?currentResult:null;
     clearError();
     resetResults();
+    currentResult=workingOperation;
     progressBox.classList.remove('hidden');
     setBusy(true);
 
@@ -1394,27 +1579,39 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         detectedTemplateId,
         manualOverride,
         template:templateLabel(templateId),
-        selectedRecipient:activeRecipient,
+        selectedRecipient:activeRecipient||UNSENT_RECIPIENT,
         receiptDate:receiptDate.value,
         rawText:best.text,
         fields:extracted,
         ocrConfidence:best.confidence,
         orientation:best.rotation,
         edgeCropSuspected:assessEdgeCrop(sourceImage,best.rotation),
-        operationId:'op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
-        createdAt:new Date().toISOString()
+        operationId:workingOperation?.operationId||('op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)),
+        createdAt:workingOperation?.createdAt||new Date().toISOString(),
+        fileName:workingOperation?.fileName||$('fileName').textContent||'صورة الوثيقة',
+        status:'analyzed',
+        rawTextAvailable:true,
+        historyView:false
       };
-      payload.duplicateInfo=findDuplicateDocument(payload);
-      renderResult(payload);
-      if(!payload.duplicateInfo){
-        persistCurrentOperation();
-      }
+      currentResult=payload;
+      const accepted=persistCurrentOperation({registerDoc:true});
+      if(!accepted)currentResult.status='duplicate';
+      renderResult(currentResult);
 
-      progressTitle.textContent='اكتمل التحليل';
-      progressText.textContent='تم اختيار أفضل اتجاه للصورة. راجع الحقول؛ غير الواضح بقي فارغًا.';
+      progressTitle.textContent=currentResult.status==='duplicate'?'تم التحليل — وصل مكرر':'اكتمل التحليل — بانتظار الحفظ';
+      progressText.textContent=currentResult.status==='duplicate'
+        ? 'تمت قراءة الوصل، لكن رقم الوثيقة مسجل سابقًا لذلك لا يمكن حفظه مرة ثانية.'
+        : 'تم التحليل وحفظ النتيجة تلقائيًا محليًا. راجعها ثم اضغط «حفظ» للتأكيد.';
     }catch(err){
+      if(workingOperation){
+        currentResult=workingOperation;
+        currentResult.status='analysis_failed';
+        persistCurrentOperation({registerDoc:false});
+      }
       showError('فشل تحليل الوثيقة\n'+(err&&err.message?err.message:String(err)));
-      progressBox.classList.add('hidden');
+      progressBox.classList.remove('hidden');
+      progressTitle.textContent='فشل التحليل — الوصل لم يضع';
+      progressText.textContent='الصورة ما زالت محفوظة محليًا ويمكن إعادة التحليل لاحقًا.';
     }finally{
       if(worker){try{await worker.terminate();}catch(_e){}}
       setBusy(false);
@@ -1422,7 +1619,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function reparseCurrent(){
-    if(!currentResult||!currentResult.rawText||currentResult.historyView)return;
+    if(!currentResult||!currentResult.rawText||currentResult.historyView||currentResult.rawTextAvailable===false)return;
     const detectedTemplateId=detectTemplateId(currentResult.rawText);
     const manualOverride=templateSelect.value!=='auto';
     const templateId=manualOverride?templateSelect.value:detectedTemplateId;
@@ -1440,6 +1637,23 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     payload.duplicateInfo=findDuplicateDocument(payload);
     renderResult(payload);
     if(!payload.duplicateInfo)persistCurrentOperation();
+  }
+
+  function confirmSaveCurrent(){
+    if(!currentResult||currentResult.historyView)return;
+    if(currentResult.status!=='analyzed'||currentResult.duplicateInfo)return;
+    currentResult.status='saved';
+    currentResult.savedAt=new Date().toISOString();
+    const ok=persistCurrentOperation({registerDoc:true});
+    if(!ok){
+      currentResult.status='duplicate';
+      renderResult(currentResult);
+      return;
+    }
+    renderResult(currentResult);
+    progressBox.classList.remove('hidden');
+    progressTitle.textContent='تم الحفظ ✓';
+    progressText.textContent='تم تأكيد العملية بعد التحليل، والصورة باقية محليًا على هذا الجهاز.';
   }
 
   function copyResults(){
@@ -1468,6 +1682,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     resetResults();
     activeOperationId='';
     activeHistorySupplier='all';
+    activeRecipient=UNSENT_RECIPIENT;
+    renderRecipientSelect();
     receiptDate.value=todayLocal();
     updateDateHint();
     renderRecentOperationTabs();
@@ -1487,9 +1703,45 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       previewImg.classList.remove('hidden');
       previewEmpty.classList.add('hidden');
       updatePreview();
+
+      currentResult={
+        operationId:'op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+        createdAt:new Date().toISOString(),
+        selectedRecipient:UNSENT_RECIPIENT,
+        receiptDate:receiptDate.value,
+        language:'',
+        templateId:'unknown',
+        detectedTemplateId:'unknown',
+        manualOverride:false,
+        template:'بانتظار التحليل',
+        rawText:'',
+        fields:emptyExtraction(),
+        ocrConfidence:0,
+        orientation:0,
+        edgeCropSuspected:false,
+        status:'pending_analysis',
+        fileName:file.name||'صورة الوثيقة',
+        rawTextAvailable:false,
+        historyView:false
+      };
+
+      let imageSaved=false;
+      try{
+        imageSaved=await saveReceiptImage(currentResult.operationId,file,currentResult.fileName);
+      }catch(_e){
+        imageSaved=false;
+      }
+      persistCurrentOperation({registerDoc:false});
+
       analyzeBtn.disabled=false;
       rotateRightBtn.disabled=false;
       clearBtn.disabled=false;
+      updateSaveButton();
+      progressBox.classList.remove('hidden');
+      progressTitle.textContent=imageSaved?'تم حفظ الوصل تلقائيًا على الجهاز':'تعذر حفظ الصورة محليًا';
+      progressText.textContent=imageSaved
+        ? 'الحالة: بانتظار التحليل. المورد الافتراضي: لم يُرسل لمورد بعد.'
+        : 'الصورة موجودة الآن في الصفحة ويمكن تحليلها، لكن إغلاق الصفحة قد يفقدها.';
     }catch(err){
       showError(err.message||String(err));
       clearAll();
@@ -1500,7 +1752,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!sourceImage||busy)return;
     rotation=(rotation+90)%360;
     updatePreview();
-    resetResults();
+    if(currentResult&&!currentResult.historyView){
+      currentResult.orientation=rotation;
+      persistCurrentOperation({registerDoc:currentResult.status!=='pending_analysis'&&currentResult.status!=='analysis_failed'});
+    }
   });
 
   resultsEl.addEventListener('click',event=>{
@@ -1558,6 +1813,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   templateSelect.addEventListener('change',reparseCurrent);
   analyzeBtn.addEventListener('click',analyze);
+  saveBtn.addEventListener('click',confirmSaveCurrent);
   clearBtn.addEventListener('click',clearAll);
   copyBtn.addEventListener('click',copyResults);
 })();
