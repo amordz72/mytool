@@ -639,8 +639,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       },
       poste:{
         label:'Algérie Poste',
-        field:'Référence',
-        help:'استعمل أول رقم يأتي مباشرة بعد كلمة Référence.'
+        field:'Référence — كامل السطر',
+        help:'استعمل كل النص الموجود في نفس السطر بعد كلمة Référence، وليس أول رقم فقط.'
       },
       baridimob:{
         label:'BaridiMob',
@@ -1509,9 +1509,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     out.bank={value:'Algérie Poste',source:"مستنتج من نوع الوثيقة Algérie Poste — Reçu de l'opération",status:'inferred'};
 
     const referenceLine=lines.find(line=>/R[ée]f[ée]rence/i.test(line))||'';
-    const refMatch=referenceLine.match(/R[ée]f[ée]rence\s*[:.]?\s*(\d{4,12})/i);
-    out.documentNumber=refMatch
-      ? {value:refMatch[1],source:'Référence'}
+    let referenceValue=referenceLine
+      .replace(/^.*?R[ée]f[ée]rence\s*[:.]?\s*/i,'')
+      .trim();
+    referenceValue=referenceValue.replace(/^[|¦:;.,\-\s]+|[|¦\s]+$/g,'').trim();
+    out.documentNumber=referenceValue
+      ? {value:referenceValue,source:'Référence — كامل السطر بعد الكلمة',status:'read'}
       : null;
 
     // لا نستخرج تاريخًا من أرقام غير معنونة داخل Référence حتى لا نخمن.
