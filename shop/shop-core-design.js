@@ -10,8 +10,7 @@
   }
   document.documentElement.classList.add('mt-core-design');
   const workerActive=Boolean(localStorage.getItem('mytool_shop_worker_token'))&&!localStorage.getItem('mytool_admin_expires_at');
-  const prelaunchAdmin=localStorage.getItem('mytool_workspace_code')==='PRELAUNCH'&&localStorage.getItem('mytool_workspace_role')==='workspace_admin';
-  if(workerActive&&!prelaunchAdmin)document.documentElement.classList.add('mt-worker-mode');
+  if(workerActive)document.documentElement.classList.add('mt-worker-mode');
 
   function enforceMobileShell(){
     if(!window.matchMedia('(max-width:759px)').matches)return;
@@ -51,18 +50,11 @@
 
   function enhanceHome(){
     const hero=document.querySelector('.dash-hero');if(!hero)return false;
-    const title=prelaunchAdmin?'الرئيسية':(workerActive?'رئيسية العامل':'الرئيسية');
-    const subtitle=prelaunchAdmin?'مدير وضع الاستمرارية؛ اختر المخزن وتابع العمل من نفس الواجهة.':(workerActive?'أهم عمليات المحل أمامك مباشرة، والباقي من «المزيد».':'ملخص سريع للمحل والعمليات الأساسية.');
-    addHeading(hero,title,subtitle,'MyTool');
+    addHeading(hero,workerActive?'رئيسية العامل':'الرئيسية',workerActive?'أهم عمليات المحل أمامك مباشرة، والباقي من «المزيد».':'ملخص سريع للمحل والعمليات الأساسية.','MyTool');
     return true;
   }
 
-  function loadPrelaunchAdapter(){
-    if(screen!=='index'||localStorage.getItem('mytool_workspace_code')!=='PRELAUNCH'||document.querySelector('script[data-prelaunch-home-fix]'))return;
-    const fix=document.createElement('script');fix.src=new URL('prelaunch-home-fix.js?v=20260917-1',script?.src||location.href).href;fix.defer=true;fix.dataset.prelaunchHomeFix='1';document.head.appendChild(fix);
-  }
-
-  function run(){enforceMobileShell();const result=screen==='sale'?enhanceSale():screen==='stock'?enhanceStock():enhanceHome();loadPrelaunchAdapter();return result}
+  function run(){enforceMobileShell();return screen==='sale'?enhanceSale():screen==='stock'?enhanceStock():enhanceHome()}
   run();
   let tries=0;const timer=setInterval(()=>{tries++;enforceMobileShell();if(tries>=60)clearInterval(timer)},100);
   const observer=new MutationObserver(()=>enforceMobileShell());observer.observe(document.documentElement,{childList:true,subtree:true});setTimeout(()=>observer.disconnect(),12000);
