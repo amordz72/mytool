@@ -118,6 +118,47 @@ function rowsFromWafarly(c){
   return out;
 }
 async function hashRows(rows){const stable=rows.map(r=>[normalizeText(r.username),r.first,r.last,r.store,r.balance,r.debt,r.profit]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])));const text=JSON.stringify(stable);if(crypto?.subtle){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}return simpleHash(text)}
+function strongIdentityKeys(r){
+  const out=[];
+  const key=String(r?.key??'').trim();if(key)out.push('k:'+normalizeText(key));
+  const u=normalizeText(r?.username);if(u)out.push('u:'+u);
+  const p=String(r?.phone||'').replace(/\D/g,'');if(p)out.push('p:'+p.replace(/^00213/,'213').replace(/^0(?=[5-7]\d{8}$)/,'213'));
+  const e=normalizeText(r?.email);if(e)out.push('e:'+e);
+  return [...new Set(out)];
+}
+function rowDisplayKey(r){return normalizeText([r?.first,r?.last].filter(Boolean).join(' ').trim()||r?.store||r?.username||'')}
+function mergeRowsCumulative(oldRows,incomingRows){
+  const rows=(oldRows||[]).map((r,i)=>({...r,index:i}));
+  const reviews=[];let added=0,updated=0,unchanged=0;
+  const rebuild=()=>{
+    const m=new Map();
+    rows.forEach((r,i)=>strongIdentityKeys(r).forEach(k=>{const a=m.get(k)||[];a.push(i);m.set(k,a)}));
+    return m;
+  };
+  let byKey=rebuild();
+  for(const incoming of incomingRows||[]){
+    const hits=new Set();
+    strongIdentityKeys(incoming).forEach(k=>(byKey.get(k)||[]).forEach(i=>hits.add(i)));
+    if(hits.size===1){
+      const i=[...hits][0],old=rows[i];
+      const next={...old,...incoming,key:old.key||incoming.key,firstSeenAt:old.firstSeenAt||new Date().toISOString(),lastSeenAt:new Date().toISOString(),index:i};
+      const same=JSON.stringify([old.username,old.first,old.last,old.store,old.phone,old.email,old.balance,old.debt,old.profit])===JSON.stringify([next.username,next.first,next.last,next.store,next.phone,next.email,next.balance,next.debt,next.profit]);
+      rows[i]=next;if(same)unchanged++;else updated++;
+      byKey=rebuild();continue;
+    }
+    if(hits.size>1){
+      reviews.push({kind:'strong_conflict',incoming,candidates:[...hits].map(i=>rows[i])});continue;
+    }
+    const nameKey=rowDisplayKey(incoming);
+    const nameHits=nameKey?rows.map((r,i)=>rowDisplayKey(r)===nameKey?i:-1).filter(i=>i>=0):[];
+    if(nameHits.length){
+      reviews.push({kind:'name_candidate',incoming,candidates:nameHits.map(i=>rows[i])});continue;
+    }
+    rows.push({...incoming,firstSeenAt:new Date().toISOString(),lastSeenAt:new Date().toISOString(),index:rows.length});
+    added++;byKey=rebuild();
+  }
+  return{rows:rows.map((r,i)=>({...r,index:i})),added,updated,unchanged,reviews};
+}
 function overlapRatio(a,b){const A=new Set((a||[]).map(x=>normalizeText(x.username)).filter(Boolean));const B=new Set((b||[]).map(x=>normalizeText(x.username)).filter(Boolean));if(!A.size||!B.size)return 0;let n=0;for(const x of B)if(A.has(x))n++;return n/Math.min(A.size,B.size)}
 function dbOpen(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const db=req.result;for(const s of STORES)if(!db.objectStoreNames.contains(s))db.createObjectStore(s,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 async function dbAll(store){const db=await dbOpen();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly');const req=tx.objectStore(store).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);tx.oncomplete=()=>db.close()})}
@@ -210,11 +251,14 @@ createApp({
       else if(complete){try{parsed=rowsFromCandidate(c,mapping)}catch{parsed=[]}}
       if(!profile){const reason=complete?'صيغة حسابات قابلة للقراءة لكنها غير معرفة كمصدر بعد.':'صيغة جديدة وتحتاج تعريف بعض الأعمدة.';await saveUnknown(unknownRecord(analysis,reason,parsed));setMessage(complete?'تم فهم البيانات تلقائيًا. أعطِ النوع اسمًا من «تعريف» ليُحفظ كقارئ دائم.':'تم تسجيل نوع جديد ويحتاج تعريفًا.','ok');return}
       if(!parsed.length)throw new Error('Reader معروف لكن لم ينتج سجلات صالحة.');
-      const hash=await hashRows(parsed);const existing=sources.value.find(x=>x.id===profile.id);const sameFamily=existing&&existing.fileFamily===family;const overlap=existing?overlapRatio(existing.rows,parsed):1;
-      if(existing&&existing.contentHash===hash){activeTabId.value=existing.id;setMessage('هذا الملف مطابق للبيانات المحفوظة؛ لم يتم إنشاء نسخة مكررة.');return}
-      if(existing&&!sameFamily&&overlap<0.08){const rec=unknownRecord(analysis,'الـReader يطابق الصيغة، لكن اسم الملف مختلف ولا يوجد تطابق كافٍ في الحسابات. تم منع الاستبدال لاحتمال أنه مصدر مستقل.',parsed);rec.aiAppName='';await saveUnknown(rec);setMessage('اكتشفت احتمال مصدر جديد؛ لم أستبدل البيانات القديمة.','ok');return}
-      const source={id:profile.id,name:profile.name,readerId:profile.id,readerKind:profile.kind||'custom',signature:c.signature,fileName:analysis.file.name,fileFamily:family,fileType:analysis.fileType,sheetName:c.sheetName||'',headerRow:c.headerRow,contentHash:hash,rows:parsed,updatedAt:new Date().toISOString()};
-      await dbPut('sources',source);await refreshState();activeTabId.value=source.id;viewMode.value='summary';setMessage((existing?'تم تحديث ':'تم إنشاء ')+source.name+' وحفظ '+parsed.length+' حسابًا محليًا.');
+      const hash=await hashRows(parsed);const existing=sources.value.find(x=>x.id===profile.id);
+      if(existing&&existing.contentHash===hash){activeTabId.value=existing.id;setMessage('هذا الملف مطابق لآخر دفعة محفوظة؛ لم يتم إنشاء نسخة مكررة.');return}
+      const merged=mergeRowsCumulative(existing?.rows||[],parsed);
+      const now=new Date().toISOString();
+      const imports=[...(existing?.imports||[]),{fileName:analysis.file.name,fileFamily:family,contentHash:hash,importedAt:now,rows:parsed.length,added:merged.added,updated:merged.updated,unchanged:merged.unchanged,needsReview:merged.reviews.length}].slice(-200);
+      const source={...(existing||{}),id:profile.id,name:profile.name,readerId:profile.id,readerKind:profile.kind||'custom',signature:c.signature,fileName:analysis.file.name,fileFamily:family,fileType:analysis.fileType,sheetName:c.sheetName||'',headerRow:c.headerRow,contentHash:hash,rows:merged.rows,identityReviews:merged.reviews,imports,updatedAt:now};
+      await dbPut('sources',source);await refreshState();activeTabId.value=source.id;viewMode.value='summary';
+      setMessage((existing?'تم دمج التحديث داخل ':'تم إنشاء ')+source.name+': جديد '+merged.added+' · تحديث '+merged.updated+' · بدون تغيير '+merged.unchanged+(merged.reviews.length?' · يحتاج مراجعة هوية '+merged.reviews.length:'')+'. الحسابات الغائبة من الملف لم تُحذف.');
     }
     async function readFiles(event){const files=[...(event.target.files||[])];if(!files.length)return;let ok=0;const detected=[],failed=[];for(const file of files){try{const analysis=await analyzeFile(file),family=normalizeFileFamily(file.name),profile=builtinProfile(analysis.candidate)||customProfileMatch(analysis.candidate,profiles.value,family),label=profile?.name||'نوع جديد يحتاج تعريف';await processAnalysis(analysis);ok++;detected.push(file.name+' → '+label)}catch(error){failed.push(file.name+': '+(error?.message||'تعذر قراءة الملف.'))}}event.target.value='';if(failed.length)setMessage('تمت معالجة '+ok+' من '+files.length+' ملفات. تعذر: '+failed.join(' | '),'err');else setMessage('تمت معالجة '+ok+' ملفات وحفظها محليًا: '+detected.join(' | '));await nextTick();configureNav()}
     function openMapping(){const u=activeUnknown.value;if(!u)return;mappingDraft.value={sourceName:u.aiAppName||'',sourcePath:u.aiPath||'accounts-review/',username:u.detectedMapping?.username||'',first:u.detectedMapping?.first||'',last:u.detectedMapping?.last||'',store:u.detectedMapping?.store||'',balance:u.detectedMapping?.balance||'',debt:u.detectedMapping?.debt||'',profit:u.detectedMapping?.profit||''};mappingOpen.value=true}
