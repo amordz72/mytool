@@ -21,7 +21,7 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
 .detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
-.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}.field-actions{display:flex;gap:6px;margin-top:8px}.edit-btn{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.edit-input{width:100%;margin-top:8px;border:1px solid #a9d5e9;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;color:var(--t);background:#fff}.edit-row{display:flex;gap:6px;margin-top:6px}
 .notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}.quality{margin-top:10px;border-radius:13px;padding:11px 12px;font-size:12px;line-height:1.65}.quality.ok{background:#effaf5;border:1px solid #b7e3cd;color:#17643f}.quality.warn{background:#fff9e8;border:1px solid #f1d28a;color:#755b13}.quality.bad{background:#fff4f2;border:1px solid #f0b6b1;color:#9f2219}.quality b{display:block;margin-bottom:3px}
 .error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
 details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{cursor:pointer;font-weight:700;font-size:12px;color:#0d5e86}pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:10px}
@@ -126,7 +126,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   const fields = [
     ['date','التاريخ'],
-    ['recipient','لمن أُرسل'],
+    ['recipient','لمن أرسلتها'],
     ['amount','المبلغ'],
     ['documentNumber','رقم الوثيقة'],
     ['bank','البنك / المصدر'],
@@ -265,6 +265,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const critical=['date','recipient','amount','documentNumber','sender'];
     const missing=critical.filter(key=>!(payload.fields?.[key]?.value)&&payload.fields?.[key]?.status!=='absent');
     const reviewFields=critical.filter(key=>payload.fields?.[key]?.status==='review');
+    const manualFields=critical.filter(key=>payload.fields?.[key]?.status==='manual');
     const messages=[];
     let level='ok';
 
@@ -298,6 +299,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     if(reviewFields.length){
       messages.push('يوجد حقل مالي/نصي احتاج تصحيحًا احتماليًا من OCR؛ راجعه بصريًا.');
+      if(level==='ok')level='warn';
+    }
+
+    if(manualFields.length){
+      messages.push('يوجد '+manualFields.length+' حقل تم تصحيحه يدويًا.');
       if(level==='ok')level='warn';
     }
 
@@ -524,7 +530,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(leMatch){
       const candidate=leMatch[3]+'-'+String(leMatch[2]).padStart(2,'0')+'-'+String(leMatch[1]).padStart(2,'0');
       if(valueMatch&&valueMatch[3]!==leMatch[3]){
-        dateResult={value:candidate,source:'Le: — قراءة OCR تتعارض في السنة مع Date de valeur '+valueMatch[1]+'/'+valueMatch[2]+'/'+valueMatch[3],status:'review'};
+        dateResult={value:null,source:'Le: غير موثوق — قراءة OCR ('+candidate+') تتعارض مع Date de valeur '+valueMatch[1]+'/'+valueMatch[2]+'/'+valueMatch[3],status:'review'};
       }else{
         dateResult={value:candidate,source:'تاريخ الوثيقة بعد Le:',status:'read'};
       }
@@ -724,12 +730,19 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         review:['warn','يحتاج مراجعة'],
         absent:['info','غير موجود']
       };
-      const badge=data?.status==='absent'?labels.absent:(clear?(labels[state]||labels.read):['bad','غير واضح']);
-      const shownValue=data?.status==='absent'?'غير موجود في الوثيقة':(clear?String(data.value):'لا توجد قراءة مؤكدة');
-      const shownSource=data?.status==='absent'?(data.source||'هذا القالب لا يحتوي هذا الحقل'):(clear?String(data.source||''):'لم يتم التخمين أو ملء الحقل تلقائيًا');
+      const badge=data?.status==='absent'
+        ? labels.absent
+        : (!clear&&data?.status==='review' ? labels.review : (clear?(labels[state]||labels.read):['bad','غير واضح']));
+      const shownValue=data?.status==='absent'
+        ? 'غير موجود في الوثيقة'
+        : (clear?String(data.value):'لا توجد قراءة مؤكدة');
+      const shownSource=data?.status==='absent'
+        ? (data.source||'هذا القالب لا يحتوي هذا الحقل')
+        : (data?.source?String(data.source):(clear?String(data.source||''):'لم يتم التخمين أو ملء الحقل تلقائيًا'));
       el.innerHTML='<div class="field-head"><span class="field-label">'+label+'</span><span class="status '+badge[0]+'">'+badge[1]+'</span></div>'
         +'<div class="value">'+escapeHtml(shownValue)+'</div>'
-        +'<div class="source">'+escapeHtml(shownSource)+'</div>';
+        +'<div class="source">'+escapeHtml(shownSource)+'</div>'
+        +'<div class="field-actions"><button type="button" class="edit-btn" data-edit-field="'+key+'">'+(clear?'تعديل':'إدخال يدوي')+'</button></div>';
       resultsEl.appendChild(el);
     });
 
@@ -749,6 +762,51 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     copyBtn.disabled=false;
   }
 
+  function startFieldEdit(key){
+    if(!currentResult)return;
+    const fieldEl=resultsEl.querySelector('[data-edit-field="'+key+'"]')?.closest('.field');
+    if(!fieldEl)return;
+    const data=currentResult.fields[key]||{};
+    const oldValue=data.value==null?'':String(data.value);
+    const actions=fieldEl.querySelector('.field-actions');
+    if(!actions)return;
+    actions.innerHTML='';
+    const input=document.createElement('input');
+    input.className='edit-input';
+    input.type='text';
+    input.value=oldValue;
+    input.setAttribute('aria-label','تعديل '+(fields.find(([k])=>k===key)?.[1]||key));
+    const row=document.createElement('div');
+    row.className='edit-row';
+    const save=document.createElement('button');
+    save.type='button';save.className='edit-btn';save.textContent='حفظ';
+    const cancel=document.createElement('button');
+    cancel.type='button';cancel.className='edit-btn';cancel.textContent='إلغاء';
+    row.appendChild(save);row.appendChild(cancel);
+    actions.appendChild(input);actions.appendChild(row);
+    input.focus();
+    input.select();
+
+    save.addEventListener('click',()=>{
+      const value=cleanLine(input.value);
+      if(!value){
+        currentResult.fields[key]=null;
+      }else{
+        currentResult.fields[key]={
+          value,
+          source:'تصحيح يدوي',
+          status:'manual'
+        };
+      }
+      renderResult(currentResult);
+    });
+    cancel.addEventListener('click',()=>renderResult(currentResult));
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Enter')save.click();
+      if(e.key==='Escape')cancel.click();
+    });
+  }
+
   function escapeHtml(value){
     return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
@@ -764,6 +822,48 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
     ctx.drawImage(canvas,x,y,w,h,0,0,w,h);
     return out;
+  }
+
+  function parseBdlDateRegion(text,valueDateText){
+    const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
+    const joined=lines.join(' ');
+    const m=joined.match(/\bLe\s*[:.]?\s*([0-3]?\d)[\s\/\-.]+([01]?\d)[\s\/\-.]+(20\d{2})\b/i)
+      || joined.match(/\b([0-3]?\d)[\/\-.]([01]?\d)[\/\-.](20\d{2})\b/);
+    if(!m)return null;
+    const day=Number(m[1]),month=Number(m[2]),year=Number(m[3]);
+    if(day<1||day>31||month<1||month>12)return null;
+    const valueMatch=String(valueDateText||'').match(/([0-3]?\d)[\/\-.]([01]?\d)[\/\-.](20\d{2})/);
+    if(valueMatch&&Number(valueMatch[3])!==year)return null;
+    return year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+  }
+
+  async function tryRecoverBdlDate(worker,degrees,rawText){
+    try{
+      const valueLine=(String(rawText||'').split(/\n+/).find(line=>/Date\s+(?:de\s+)?valeur/i.test(line))||'');
+      progressTitle.textContent='تحسين قراءة التاريخ…';
+      progressText.textContent='قراءة منطقة التاريخ في أعلى وثيقة BDL بدقة أعلى.';
+      const page=drawRotatedCanvas(sourceImage,degrees,2400);
+      const regions=[
+        cropCanvasFraction(page,0.42,0.00,0.58,0.24),
+        cropCanvasFraction(page,0.00,0.00,1.00,0.22)
+      ];
+      for(const region of regions){
+        const result=await worker.recognize(region);
+        const text=result.data?.text||'';
+        const value=parseBdlDateRegion(text,valueLine);
+        if(!value)continue;
+        const confidence=Number(result.data?.confidence||0);
+        return {
+          value,
+          source:'قراءة مركزة لمنطقة Le: في أعلى وثيقة BDL',
+          status:confidence>=68?'read':'review',
+          confidence
+        };
+      }
+      return null;
+    }catch(_e){
+      return null;
+    }
   }
 
   function parseBdlSenderRegion(text){
@@ -862,6 +962,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const manualOverride=templateSelect.value!=='auto';
       const templateId=manualOverride?templateSelect.value:detectedTemplateId;
       const extracted=parseByTemplate(templateId,best.text);
+      if(templateId==='bdl'&&(!extracted.date||extracted.date.status==='review')){
+        const recoveredDate=await tryRecoverBdlDate(worker,best.rotation,best.text);
+        if(recoveredDate)extracted.date=recoveredDate;
+      }
       if(templateId==='bdl'&&!extracted.sender){
         const recoveredSender=await tryRecoverBdlSender(worker,best.rotation);
         if(recoveredSender)extracted.sender=recoveredSender;
@@ -959,6 +1063,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     rotation=(rotation+90)%360;
     updatePreview();
     resetResults();
+  });
+
+  resultsEl.addEventListener('click',event=>{
+    const btn=event.target.closest('[data-edit-field]');
+    if(!btn)return;
+    startFieldEdit(btn.getAttribute('data-edit-field'));
   });
 
   templateSelect.addEventListener('change',reparseCurrent);
