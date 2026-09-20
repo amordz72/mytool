@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="theme-color" content="#2ea8e6">
+<title>قارئ الوثائق - MyTool</title>
+<script src="../auth-guard.js" data-access="admin"></script>
+<style>
+:root{--o:#ff8a1f;--b:#2ea8e6;--t:#163047;--m:#61778a;--l:#dbe7f0;--ok:#18794e;--warn:#9a6700;--bad:#b42318;--bg:#f7fbfd}
+*{box-sizing:border-box}
+body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear-gradient(135deg,#fff7ef,#eef9ff);color:var(--t);min-height:100vh}
+.wrap{max-width:820px;margin:auto}.back{display:block;text-decoration:none;color:var(--t);font-weight:700;background:#fff;border:1px solid var(--l);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.hero{background:linear-gradient(135deg,var(--o),#7fd3ff);color:#fff;border-radius:18px;padding:18px;box-shadow:0 8px 24px #16304718}.hero h1{margin:0 0 5px;font-size:23px}.hero p{margin:0;font-size:12px;line-height:1.7}
+.card{margin-top:12px;background:#fff;border:1px solid var(--l);border-radius:16px;padding:14px;box-shadow:0 5px 16px #1630470d}
+.security{display:flex;gap:10px;align-items:flex-start;background:#effaf5;border-color:#b7e3cd}.security b{color:var(--ok)}.security p{margin:2px 0 0;color:#416956;font-size:12px;line-height:1.65}
+.file-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.file-name{min-width:0;padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:10px;padding:10px 12px;font-weight:700;font-size:12px;cursor:pointer}.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--o),var(--b))}.btn.danger{border-color:#f1b8b3;background:#fff4f2;color:var(--bad)}.btn:disabled{opacity:.55;cursor:not-allowed}
+.actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
+.progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
+.detected{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}
+.notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}
+.error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
+details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{cursor:pointer;font-weight:700;font-size:12px;color:#0d5e86}pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:10px}
+.hidden{display:none!important}
+@media(max-width:620px){.actions{grid-template-columns:1fr 1fr}.results,.detected{grid-template-columns:1fr}.hero{padding:15px}.file-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body><main class="wrap">
+<a class="back" href="../">← لوحة الأدوات</a>
+
+<section class="hero">
+  <h1>📄 قارئ الوثائق</h1>
+  <p>استخرج التاريخ، المستفيد، المبلغ، رقم الوثيقة، البنك والمرسل من صورة الوثيقة بدون تخمين.</p>
+</section>
+
+<section class="card security">
+  <div style="font-size:24px">🔒</div>
+  <div><b>المعالجة محلية على جهازك</b><p>الصورة لا تُرفع إلى MyTool أو Supabase أو GitHub. مكتبة OCR وملفات اللغة قد تُحمّل من الإنترنت، لكن الصورة تبقى داخل المتصفح ولا تُحفظ تلقائيًا.</p></div>
+</section>
+
+<section class="card">
+  <div class="file-row">
+    <div id="fileName" class="file-name">لم يتم اختيار صورة</div>
+    <label class="btn primary" for="fileInput">اختيار صورة</label>
+    <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden>
+  </div>
+
+  <div class="actions">
+    <button id="analyzeBtn" class="btn primary" type="button" disabled>تحليل الصورة</button>
+    <button id="rotateRightBtn" class="btn" type="button" disabled>↻ تدوير</button>
+    <button id="copyBtn" class="btn" type="button" disabled>نسخ النتائج</button>
+    <button id="clearBtn" class="btn danger" type="button" disabled>مسح</button>
+  </div>
+
+  <div class="preview">
+    <div id="previewEmpty" class="empty">اختر صورة واضحة للوثيقة. إذا كانت مائلة سيحاول القارئ اكتشاف الاتجاه تلقائيًا.</div>
+    <img id="previewImg" alt="معاينة الوثيقة" class="hidden">
+  </div>
+
+  <div id="progressBox" class="progress hidden"><strong id="progressTitle">جاري التحليل…</strong><div id="progressText"></div></div>
+  <div id="errorBox" class="error hidden"></div>
+</section>
+
+<section id="resultCard" class="card hidden">
+  <div class="detected">
+    <div class="pill"><small>لغة الوثيقة</small><b id="languageValue">—</b></div>
+    <div class="pill"><small>نوع الوثيقة</small><b id="templateValue">—</b></div>
+  </div>
+
+  <div id="resultNotice" class="notice hidden"></div>
+  <div id="results" class="results"></div>
+
+  <details>
+    <summary>النص الخام المستخرج — للتدقيق فقط</summary>
+    <pre id="rawText"></pre>
+  </details>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const fileInput = $('fileInput');
+  const previewImg = $('previewImg');
+  const previewEmpty = $('previewEmpty');
+  const analyzeBtn = $('analyzeBtn');
+  const rotateRightBtn = $('rotateRightBtn');
+  const copyBtn = $('copyBtn');
+  const clearBtn = $('clearBtn');
+  const resultCard = $('resultCard');
+  const resultsEl = $('results');
+  const errorBox = $('errorBox');
+  const progressBox = $('progressBox');
+  const progressTitle = $('progressTitle');
+  const progressText = $('progressText');
+
+  let objectUrl = '';
+  let sourceImage = null;
+  let rotation = 0;
+  let currentResult = null;
+  let busy = false;
+
+  const frenchMonths = {
+    janvier:'01', fevrier:'02', février:'02', mars:'03', avril:'04', mai:'05', juin:'06',
+    juillet:'07', aout:'08', août:'08', septembre:'09', octobre:'10', novembre:'11', decembre:'12', décembre:'12'
+  };
+
+  const fields = [
+    ['date','التاريخ'],
+    ['recipient','لمن أُرسل'],
+    ['amount','المبلغ'],
+    ['documentNumber','رقم الوثيقة'],
+    ['bank','البنك'],
+    ['sender','المرسل']
+  ];
+
+  function cleanText(s){
+    return String(s||'').replace(/\r/g,'').replace(/[\t\u00a0]+/g,' ').replace(/ {2,}/g,' ').trim();
+  }
+
+  function cleanLine(s){
+    return cleanText(s).replace(/^[.:•·_\-\s]+|[.:•·_\-\s]+$/g,'').trim();
+  }
+
+  function showError(message){
+    errorBox.textContent=message;
+    errorBox.classList.remove('hidden');
+  }
+
+  function clearError(){
+    errorBox.textContent='';
+    errorBox.classList.add('hidden');
+  }
+
+  function setBusy(on){
+    busy=on;
+    analyzeBtn.disabled=on||!sourceImage;
+    rotateRightBtn.disabled=on||!sourceImage;
+    clearBtn.disabled=on||!sourceImage;
+    fileInput.disabled=on;
+  }
+
+  function resetResults(){
+    currentResult=null;
+    resultsEl.innerHTML='';
+    $('rawText').textContent='';
+    $('languageValue').textContent='—';
+    $('templateValue').textContent='—';
+    $('resultNotice').classList.add('hidden');
+    $('resultNotice').textContent='';
+    resultCard.classList.add('hidden');
+    copyBtn.disabled=true;
+  }
+
+  function updatePreview(){
+    if(!sourceImage)return;
+    previewImg.style.transform='rotate('+rotation+'deg)';
+  }
+
+  function clearAll(){
+    if(objectUrl)URL.revokeObjectURL(objectUrl);
+    objectUrl='';
+    sourceImage=null;
+    rotation=0;
+    fileInput.value='';
+    $('fileName').textContent='لم يتم اختيار صورة';
+    previewImg.removeAttribute('src');
+    previewImg.classList.add('hidden');
+    previewImg.style.transform='';
+    previewEmpty.classList.remove('hidden');
+    analyzeBtn.disabled=true;
+    rotateRightBtn.disabled=true;
+    clearBtn.disabled=true;
+    progressBox.classList.add('hidden');
+    clearError();
+    resetResults();
+  }
+
+  function loadImage(file){
+    return new Promise((resolve,reject)=>{
+      if(objectUrl)URL.revokeObjectURL(objectUrl);
+      objectUrl=URL.createObjectURL(file);
+      const img=new Image();
+      img.onload=()=>resolve(img);
+      img.onerror=()=>reject(new Error('تعذر فتح الصورة على الجهاز.'));
+      img.src=objectUrl;
+    });
+  }
+
+  function drawRotatedCanvas(img, degrees, maxDim=1500){
+    const rad=((degrees%360)+360)%360;
+    const swap=rad===90||rad===270;
+    const rawW=swap?img.naturalHeight:img.naturalWidth;
+    const rawH=swap?img.naturalWidth:img.naturalHeight;
+    const scale=Math.min(1,maxDim/Math.max(rawW,rawH));
+    const w=Math.max(1,Math.round(rawW*scale));
+    const h=Math.max(1,Math.round(rawH*scale));
+    const canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+    ctx.save();
+    ctx.translate(w/2,h/2);
+    ctx.rotate(rad*Math.PI/180);
+    const dw=img.naturalWidth*scale;
+    const dh=img.naturalHeight*scale;
+    ctx.drawImage(img,-dw/2,-dh/2,dw,dh);
+    ctx.restore();
+    return canvas;
+  }
+
+  function scoreText(text){
+    const t=cleanText(text).toLowerCase();
+    const tests=[
+      [/banque nationale|\bbna\b/,3],
+      [/bordereau/,3],
+      [/versement/,2],
+      [/montant/,2],
+      [/dzd/,2],
+      [/agence/,1],
+      [/compte/,1],
+      [/motif/,1],
+      [/guichet/,1]
+    ];
+    return tests.reduce((sum,[re,w])=>sum+(re.test(t)?w:0),0);
+  }
+
+  function detectLanguage(text){
+    const t=cleanText(text).toLowerCase();
+    let fr=0;
+    ['bordereau','versement','montant','agence','compte','motif','guichet','caisse','dinars','algérie','algerie'].forEach(k=>{if(t.includes(k))fr++;});
+    return fr>=2?'الفرنسية':'غير واضحة';
+  }
+
+  function detectTemplate(text){
+    const t=cleanText(text).toLowerCase();
+    const isBna=(t.includes('banque nationale')||/\bbna\b/.test(t))&&t.includes('bordereau')&&t.includes('versement');
+    return isBna?'BNA — Bordereau de versement espèces':'غير معروف / غير مدعوم';
+  }
+
+  function findLineValue(lines,labelRegex){
+    const idx=lines.findIndex(line=>labelRegex.test(line));
+    if(idx<0)return '';
+    const line=lines[idx];
+    const stripped=cleanLine(line.replace(labelRegex,'').replace(/^[\s.:·_\-]+/,''));
+    if(stripped&&/[A-Za-zÀ-ÿ0-9]/.test(stripped))return stripped;
+    const next=cleanLine(lines[idx+1]||'');
+    if(next&&!/^(agence|devise|guichet|caisse|gestionnaire|montant|timbre|valeur|motif|n[°o]?\s*compte)/i.test(next))return next;
+    return '';
+  }
+
+  function parseFrenchDate(text){
+    const t=cleanText(text);
+    let m=t.match(/\bLe\s*[:.]?\s*([0-3]?\d)\s+(janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre)\s+(20\d{2})\b/i);
+    if(m){
+      const month=frenchMonths[m[2].toLowerCase()];
+      if(month)return m[3]+'-'+month+'-'+String(m[1]).padStart(2,'0');
+    }
+    m=t.match(/\bLe\s*[:.]?\s*([0-3]?\d)[\/\-.]([01]?\d)[\/\-.](20\d{2})\b/i);
+    if(m)return m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');
+    return '';
+  }
+
+  function parseAmountValue(raw){
+    let s=String(raw||'').replace(/[^0-9.,]/g,'');
+    if(!s)return null;
+    if(s.includes(',')&&s.includes('.')){
+      s=s.replace(/\./g,'').replace(',','.');
+    }else if(s.includes(',')){
+      const p=s.split(',');
+      if(p.length===2&&p[1].length<=2)s=p[0].replace(/\./g,'')+'.'+p[1];
+      else s=s.replace(/,/g,'');
+    }else if((s.match(/\./g)||[]).length>1){
+      s=s.replace(/\./g,'');
+    }else if(s.includes('.')){
+      const p=s.split('.');
+      if(!(p.length===2&&p[1].length===2))s=s.replace('.','');
+    }
+    const n=Number(s);
+    return Number.isFinite(n)?n:null;
+  }
+
+  function extractBna(text){
+    const normalized=cleanText(text);
+    const oneLine=normalized.replace(/\n+/g,' ');
+    const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
+    const out={};
+
+    out.bank=(/banque\s+nationale\s+d[’' ]?alg[ée]rie/i.test(oneLine)||/\bBNA\b/i.test(oneLine))
+      ? {value:"BNA — Banque Nationale d'Algérie",source:"اسم البنك ظاهر في الوثيقة"}
+      : null;
+
+    const doc=oneLine.match(/BORDEREAU\s+DE\s+VERSEMENT\s+ESPECES?[^0-9]{0,45}(\d{4,12})/i);
+    out.documentNumber=doc?{value:doc[1],source:"Bordereau de versement espèces N°"}:null;
+
+    const date=parseFrenchDate(oneLine);
+    out.date=date?{value:date,source:"تاريخ الوثيقة بعد Le:"}:null;
+
+    let amountMatch=oneLine.match(/Montant\s+versement\s*[:.]?\s*([0-9][0-9\s.,]{1,22})\s*(?:DZD|DA)\b/i);
+    if(!amountMatch){
+      const line=lines.find(x=>/montant\s+versement/i.test(x));
+      if(line)amountMatch=line.match(/([0-9][0-9\s.,]{1,22})\s*(?:DZD|DA)\b/i);
+    }
+    const amount=amountMatch?parseAmountValue(amountMatch[1]):null;
+    out.amount=amount!==null?{value:new Intl.NumberFormat('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2}).format(amount)+' DZD',raw:amount,source:"Montant versement"}:null;
+
+    const companyLines=lines.filter(x=>/\b(SARL|EURL|SPA|SNC)\b/i.test(x)).map(x=>cleanLine(x));
+    const uniqueCompanies=[...new Set(companyLines)];
+    out.recipient=uniqueCompanies.length===1?{value:uniqueCompanies[0],source:"اسم صاحب/جهة الحساب في قالب BNA"}:null;
+
+    let sender=findLineValue(lines,/^.*?Motif\s*[:.]?/i);
+    sender=sender.replace(/^[.:·_\-\s]+/,'').trim();
+    if(sender&&sender.length<=80&&!/\b(DZD|Montant|Timbre|Valeur|Compte|Agence)\b/i.test(sender)){
+      out.sender={value:sender,source:"Motif — قاعدة قالب BNA التي أكدها عمر"};
+    }else{
+      out.sender=null;
+    }
+
+    return out;
+  }
+
+  function emptyExtraction(){
+    return {date:null,recipient:null,amount:null,documentNumber:null,bank:null,sender:null};
+  }
+
+  function renderResult(payload){
+    currentResult=payload;
+    $('languageValue').textContent=payload.language;
+    $('templateValue').textContent=payload.template;
+    $('rawText').textContent=payload.rawText||'';
+    resultsEl.innerHTML='';
+
+    fields.forEach(([key,label])=>{
+      const data=payload.fields[key];
+      const el=document.createElement('div');
+      el.className='field';
+      const clear=Boolean(data&&data.value);
+      el.innerHTML='<div class="field-head"><span class="field-label">'+label+'</span><span class="status '+(clear?'ok':'bad')+'">'+(clear?'واضح':'غير واضح')+'</span></div>'
+        +'<div class="value">'+escapeHtml(clear?String(data.value):'لا توجد قراءة مؤكدة')+'</div>'
+        +'<div class="source">'+escapeHtml(clear?String(data.source||''):'لم يتم التخمين أو ملء الحقل تلقائيًا')+'</div>';
+      resultsEl.appendChild(el);
+    });
+
+    const missing=fields.filter(([key])=>!(payload.fields[key]&&payload.fields[key].value)).length;
+    const notice=$('resultNotice');
+    if(payload.template.startsWith('غير معروف')){
+      notice.textContent='لم يتم التعرف على قالب مدعوم. لن يطبّق القارئ قواعد BNA على وثيقة مختلفة.';
+      notice.classList.remove('hidden');
+    }else if(missing){
+      notice.textContent='بعض الحقول غير واضحة. تركها القارئ فارغة بدل التخمين.';
+      notice.classList.remove('hidden');
+    }else{
+      notice.classList.add('hidden');
+      notice.textContent='';
+    }
+    resultCard.classList.remove('hidden');
+    copyBtn.disabled=false;
+  }
+
+  function escapeHtml(value){
+    return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function recognizeAt(worker,degrees,index,total){
+    progressTitle.textContent='جاري قراءة الوثيقة…';
+    progressText.textContent='فحص اتجاه الصورة '+index+' من '+total;
+    const canvas=drawRotatedCanvas(sourceImage,degrees,1500);
+    const result=await worker.recognize(canvas);
+    return {rotation:degrees,text:result.data?.text||'',confidence:Number(result.data?.confidence||0),score:scoreText(result.data?.text||'')};
+  }
+
+  async function analyze(){
+    if(!sourceImage||busy)return;
+    clearError();
+    resetResults();
+    progressBox.classList.remove('hidden');
+    setBusy(true);
+
+    let worker=null;
+    try{
+      if(!window.Tesseract)throw new Error('تعذر تحميل محرك OCR. تحقق من الإنترنت ثم أعد المحاولة.');
+      progressTitle.textContent='تهيئة قارئ النص…';
+      progressText.textContent='تحميل نموذج اللغة الفرنسية لأول استعمال قد يستغرق قليلًا.';
+      worker=await Tesseract.createWorker(['fra','eng'],1,{
+        logger:m=>{
+          if(m&&typeof m.progress==='number'&&m.status){
+            const pct=Math.round(m.progress*100);
+            progressText.textContent=String(m.status)+' — '+pct+'%';
+          }
+        }
+      });
+
+      const base=((rotation%360)+360)%360;
+      const order=[base,(base+90)%360,(base+270)%360,(base+180)%360];
+      const unique=[...new Set(order)];
+      const candidates=[];
+
+      for(let i=0;i<unique.length;i++){
+        const r=await recognizeAt(worker,unique[i],i+1,unique.length);
+        candidates.push(r);
+        if(r.score>=11)break;
+      }
+
+      candidates.sort((a,b)=>b.score-a.score||b.confidence-a.confidence);
+      const best=candidates[0];
+      if(!best||!best.text.trim())throw new Error('لم أستطع قراءة نص واضح من الصورة.');
+
+      rotation=best.rotation;
+      updatePreview();
+
+      const language=detectLanguage(best.text);
+      const template=detectTemplate(best.text);
+      const extracted=template.startsWith('BNA')?extractBna(best.text):emptyExtraction();
+
+      renderResult({
+        language,
+        template,
+        rawText:best.text,
+        fields:extracted,
+        ocrConfidence:best.confidence,
+        orientation:best.rotation
+      });
+
+      progressTitle.textContent='اكتمل التحليل';
+      progressText.textContent='تم اختيار أفضل اتجاه للصورة. راجع الحقول؛ غير الواضح بقي فارغًا.';
+    }catch(err){
+      showError('فشل تحليل الوثيقة\n'+(err&&err.message?err.message:String(err)));
+      progressBox.classList.add('hidden');
+    }finally{
+      if(worker){try{await worker.terminate();}catch(_e){}}
+      setBusy(false);
+    }
+  }
+
+  function copyResults(){
+    if(!currentResult)return;
+    const lines=[
+      'لغة الوثيقة: '+currentResult.language,
+      'نوع الوثيقة: '+currentResult.template,
+      ...fields.map(([key,label])=>{
+        const d=currentResult.fields[key];
+        return label+': '+(d&&d.value?d.value:'غير واضح');
+      })
+    ];
+    navigator.clipboard.writeText(lines.join('\n')).then(()=>{
+      const old=copyBtn.textContent;
+      copyBtn.textContent='تم النسخ ✓';
+      setTimeout(()=>copyBtn.textContent=old,1300);
+    }).catch(()=>showError('تعذر النسخ التلقائي. يمكنك فتح النص الخام أو إعادة المحاولة.'));
+  }
+
+  fileInput.addEventListener('change',async()=>{
+    const file=fileInput.files&&fileInput.files[0];
+    if(!file)return;
+    clearError();
+    resetResults();
+
+    if(!/^image\//i.test(file.type)){
+      showError('الملف المختار ليس صورة مدعومة.');
+      fileInput.value='';
+      return;
+    }
+
+    try{
+      sourceImage=await loadImage(file);
+      rotation=0;
+      $('fileName').textContent=file.name||'صورة الوثيقة';
+      previewImg.src=objectUrl;
+      previewImg.classList.remove('hidden');
+      previewEmpty.classList.add('hidden');
+      updatePreview();
+      analyzeBtn.disabled=false;
+      rotateRightBtn.disabled=false;
+      clearBtn.disabled=false;
+    }catch(err){
+      showError(err.message||String(err));
+      clearAll();
+    }
+  });
+
+  rotateRightBtn.addEventListener('click',()=>{
+    if(!sourceImage||busy)return;
+    rotation=(rotation+90)%360;
+    updatePreview();
+    resetResults();
+  });
+
+  analyzeBtn.addEventListener('click',analyze);
+  clearBtn.addEventListener('click',clearAll);
+  copyBtn.addEventListener('click',copyResults);
+})();
+</script>
+</body>
+</html>
