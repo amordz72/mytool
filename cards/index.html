@@ -47,10 +47,11 @@ function safe(s){return String(s||'ملف').trim().replace(/[/\\?%*:|"<>]/g,'-')
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
 function mobilisValue(){const b=uploaded.replace(/\.[^.]+$/,'');let m=b.match(/(\d{2,5})[-_ ]*(?:DA|DZD)\b/i)||b.match(/MOBILIS[-_ ]*(\d{2,5})/i)||b.match(/CARTE[-_ ]*(\d{2,5})/i);return m?m[1]:''}
 function filePrefixFor(id,fallback){try{const v=String(localStorage.getItem('mytool.cards.filePrefix.'+id)||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,2);if(v)return v}catch(e){}return safe(fallback||id||'CD').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,2)||'CD'}
-function nameCard(rule,count,part,total){const s=shortStamp(),p=part?`_P${part}-${total}`:'',prefix=filePrefixFor(rule.id,rule.filePrefix),detected=rule.detectValueFromFilename?(mobilisValue()||rule.defaultValue):'',v=detected?`_${safe(detected)}`:'';return `${prefix}${v}_C${count}${p}_${s.tm}_${s.dt}.txt`}
-function nameWaffarly(prod,count,part,total){const s=shortStamp(),p=part?`_P${part}-${total}`:'';return `WAFFARLY_${safe(prod)}_${count}${p}_${s.tm}_${s.dt}.txt`}
-function nameToken(prod,count,part,total){const s=stamp(),p=part?`_part-${part}-of-${total}`:'';return `TokenStore_${safe(prod)}_count-${count}${p}_${s.tm}_${s.dt}.txt`}
-function namePlain(count){const s=shortStamp(),prefix=filePrefixFor('plain','SM');return `${prefix}_C${count}_${s.tm}_${s.dt}.txt`}
+function batchSuffix(){const id=typeof window.getCardBatchId==='function'?window.getCardBatchId():'';return /^[A-Z0-9]{4}$/.test(id)?`_B${id}`:''}
+function nameCard(rule,count,part,total){const s=shortStamp(),p=part?`_P${part}-${total}`:'',prefix=filePrefixFor(rule.id,rule.filePrefix),detected=rule.detectValueFromFilename?(mobilisValue()||rule.defaultValue):'',v=detected?`_${safe(detected)}`:'';return `${prefix}${v}_C${count}${p}${batchSuffix()}_${s.tm}_${s.dt}.txt`}
+function nameWaffarly(prod,count,part,total){const s=shortStamp(),p=part?`_P${part}-${total}`:'';return `WAFFARLY_${safe(prod)}_${count}${p}${batchSuffix()}_${s.tm}_${s.dt}.txt`}
+function nameToken(prod,count,part,total){const s=stamp(),p=part?`_part-${part}-of-${total}`:'';return `TokenStore_${safe(prod)}_count-${count}${p}${batchSuffix()}_${s.tm}_${s.dt}.txt`}
+function namePlain(count){const s=shortStamp(),prefix=filePrefixFor('plain','SM');return `${prefix}_C${count}${batchSuffix()}_${s.tm}_${s.dt}.txt`}
 function download(content,name,withBom=true){const bytes=new TextEncoder().encode(content),parts=withBom?[new Uint8Array([239,187,191]),bytes]:[bytes],blob=new Blob(parts,{type:'text/plain;charset=utf-8'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),800)}
 function copy(t){navigator.clipboard.writeText(t).then(()=>statusEl.textContent='تم النسخ.')}
 function validationError(title,details=[]){result.innerHTML=`<div class="group validationBox"><div class="error">⚠️ ${esc(title)}</div>${details.length?`<ul class="validationList">${details.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}<div class="hint">لم يتم إنشاء أي مخرج. راجع المصدر ثم أعد المعالجة.</div></div>`;statusEl.textContent='تم إيقاف المعالجة لحماية البطاقات.';return false}
@@ -70,5 +71,5 @@ function processToken(){const checked=validateTokenSource(text.value);if(!checke
 $('process').onclick=()=>{result.innerHTML='';statusEl.textContent='';if(!text.value.trim()){result.innerHTML='<div class="error">ألصق النص أو ارفع ملفًا أولًا.</div>';return}if(autoDetect.checked){const detected=detectContentType(text.value);if(detected){selectType(detected);if(detected==='plain'){processPlain();statusEl.textContent='لم يتطابق المحتوى مع أي تنسيق معروف — تم تحويله إلى نص عادي وتجهيزه.';return}if(detected==='waffarly'){processWaffarly();return}if(detected==='token'){processToken();return}const detectedRule=cardRules.find(r=>r.id===detected);if(detectedRule){processCard(detectedRule);return}}}const rule=currentRule();if(rule)processCard(rule);else if(type==='waffarly')processWaffarly();else if(type==='token')processToken();else processPlain()};
 loadRules();
 </script>
-<script src="./auto-settings.js?v=20260910-0931"></script>
+<script src="./auto-settings.js?v=20260920-batch7"></script>
 </body></html>
