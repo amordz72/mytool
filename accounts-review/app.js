@@ -161,7 +161,26 @@ createApp({
     async function copySummary(){if(!activeSource.value)return;await copyText(summaryText());window.MyToolBottomNav?.toast('تم نسخ الملخص')}
     async function copyDiagnostic(){const u=activeUnknown.value;if(!u)return;await copyText(diagnosticText(u));window.MyToolBottomNav?.toast('تم نسخ التشخيص')}
     async function copyAiPrompt(){const u=activeUnknown.value;if(!u)return;await saveUnknownMeta();await copyText(aiPromptText(u));window.MyToolBottomNav?.toast('تم نسخ أمر الذكاء الاصطناعي')}
-    async function refreshState(){sources.value=await dbAll('sources');profiles.value=await dbAll('profiles');unknowns.value=await dbAll('unknown');if(activeTabId.value&&!allTabs.value.some(x=>x.id===activeTabId.value))activeTabId.value='';if(!activeTabId.value&&allTabs.value.length)activeTabId.value=allTabs.value[0].id}
+    function isWafarlyName(value){const n=normalizeText(value).replace(/\s+/g,'');return n.includes('وفرلي')||n.includes('وفريلي')||n.includes('wafarly')||n.includes('wafrly')||n.includes('wafri')}
+    async function promoteWafarlyUnknowns(){
+      const candidates=unknowns.value.filter(u=>isWafarlyName(u.aiAppName)||isWafarlyName(u.fileFamily)||isWafarlyName(u.fileName));let changed=false;
+      for(const u of candidates){
+        const mapping=u.detectedMapping||{};if(!REQUIRED_FIELDS.every(k=>mapping[k]))continue;
+        let parsed=[];try{parsed=rowsFromCandidate({matrix:u.matrix,headerRow:u.headerRow,headers:u.headers},mapping)}catch{parsed=[]}
+        if(!parsed.length)continue;
+        const sourceName='وفرلي',id='custom:'+simpleHash(normalizeText(sourceName)+'|'+u.signature+'|'+u.fileFamily),now=new Date().toISOString();
+        const profile={id,name:sourceName,kind:'custom',signature:u.signature,marker:u.marker||'',fileFamily:u.fileFamily,mapping,createdAt:now,updatedAt:now};
+        const hash=await hashRows(parsed);
+        const source={id,name:sourceName,readerId:id,readerKind:'custom',signature:u.signature,fileName:u.fileName,fileFamily:u.fileFamily,fileType:u.fileType,sheetName:u.sheetName,headerRow:u.headerRow,contentHash:hash,rows:parsed,updatedAt:now};
+        await dbPut('profiles',profile);await dbPut('sources',source);await dbDelete('unknown',u.id);changed=true;
+      }
+      return changed;
+    }
+    async function refreshState(){
+      sources.value=await dbAll('sources');profiles.value=await dbAll('profiles');unknowns.value=await dbAll('unknown');
+      if(await promoteWafarlyUnknowns()){sources.value=await dbAll('sources');profiles.value=await dbAll('profiles');unknowns.value=await dbAll('unknown');window.dispatchEvent(new Event('accounts-identities-updated'))}
+      if(activeTabId.value&&!allTabs.value.some(x=>x.id===activeTabId.value))activeTabId.value='';if(!activeTabId.value&&allTabs.value.length)activeTabId.value=allTabs.value[0].id
+    }
     async function saveUnknownMeta(){const u=activeUnknown.value;if(!u)return;u.updatedAt=new Date().toISOString();await dbPut('unknown',JSON.parse(JSON.stringify(u)))}
     async function reanalyzeUnknown(){const u=activeUnknown.value;if(!u)return;const c=candidateForTable({sheetName:u.sheetName,matrix:u.matrix});if(!c){setMessage('تعذر إعادة تحليل البيانات المحفوظة.','err');return}await processAnalysis({file:{name:u.fileName},fileType:u.fileType,candidate:c,tablesCount:1})}
     function detectedMappingHeaders(c){return Object.fromEntries(Object.entries(c.mapping||{}).map(([k,v])=>[k,v.header]))}
