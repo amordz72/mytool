@@ -174,6 +174,7 @@ createApp({
     function setMessage(text,type='ok'){message.value=text;messageType.value=type}
     function pickFile(){fileInput.value?.click()}
     function selectTab(tab){activeTabId.value=tab.id;viewMode.value=tab.kind==='source'?'accounts':'unknown';goalTarget.value=0;goalText.value='';window.dispatchEvent(new CustomEvent('accounts-source-selected',{detail:{id:tab.id,kind:tab.kind}}))}
+    function linkOrAdd(customer){const s=activeSource.value;if(!s||!customer)return;window.dispatchEvent(new CustomEvent('accounts-link-request',{detail:{sourceId:s.id,rowKey:String(customer.key)}}))}
     function displayName(c){return[c.first,c.last].filter(Boolean).join(' ').trim()||c.store||'بدون اسم'}
     function normalizeGoal(){goalTarget.value=Math.max(0,numeric(goalText.value));goalText.value=goalTarget.value?String(goalTarget.value):''}
     function summaryText(){const s=activeSource.value;if(!s)return'';let out=s.name+' — مراجعة الحسابات\nإجمالي الديون: '+displayNumber(totalDebt.value)+'\nإجمالي الأرصدة: '+displayNumber(totalBalance.value)+'\nإجمالي الأرباح: '+displayNumber(totalProfit.value);if(goalTarget.value>0){out+='\n\nهدف التحصيل: '+displayNumber(goalTarget.value)+'\nالمجموع المقترح: '+displayNumber(goalPlan.value.total)+'\nالعملاء:';goalPlan.value.customers.forEach((c,i)=>{out+='\n'+(i+1)+'. '+displayName(c)+' | '+(c.username||'—')+' | '+displayNumber(c.debt)})}return out}
@@ -227,6 +228,6 @@ createApp({
     }
     watch([activeTabId,()=>activeSource.value?.id,()=>activeUnknown.value?.id],()=>nextTick(configureNav));
     onMounted(async()=>{window.addEventListener('accounts-total-selected',()=>{activeTabId.value=''});window.addEventListener('accounts-shared-selected',()=>{activeTabId.value=''});try{await refreshState();setMessage(allTabs.value.length?'تم تحميل البيانات المحفوظة من هذا الجهاز.':'أضف أول ملف من الشريط السفلي.');configureNav()}catch(error){setMessage('تعذر فتح التخزين المحلي: '+(error?.message||''),'err')}});
-    return{fileInput,sources,profiles,unknowns,allTabs,activeTabId,activeSource,activeUnknown,viewMode,message,messageType,limit,goalText,goalTarget,rows,sourceAccounts,totalDebt,totalBalance,totalProfit,visibleDebtors,goalPlan,unknownPreview,unknownTotals,mappingOpen,mappingDraft,pickFile,readFiles,selectTab,displayName,displayNumber,normalizeGoal,copySummary,copyDiagnostic,copyAiPrompt,openMapping,saveMapping,saveUnknownMeta,reanalyzeUnknown,deleteActive};
+    return{fileInput,sources,profiles,unknowns,allTabs,activeTabId,activeSource,activeUnknown,viewMode,message,messageType,limit,goalText,goalTarget,rows,sourceAccounts,totalDebt,totalBalance,totalProfit,visibleDebtors,goalPlan,unknownPreview,unknownTotals,mappingOpen,mappingDraft,pickFile,readFiles,selectTab,linkOrAdd,displayName,displayNumber,normalizeGoal,copySummary,copyDiagnostic,copyAiPrompt,openMapping,saveMapping,saveUnknownMeta,reanalyzeUnknown,deleteActive};
   }
 }).mount('#app');
