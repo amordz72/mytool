@@ -45,9 +45,9 @@
     </section>
 
     <section v-if="viewMode==='summary'" class="summary">
-      <div class="stat debt"><span>إجمالي الديون</span><strong>{{ displayNumber(totalDebt) }}</strong></div>
-      <div class="stat balance"><span>إجمالي الأرصدة</span><strong>{{ displayNumber(totalBalance) }}</strong></div>
-      <div class="stat profit"><span>إجمالي الأرباح</span><strong>{{ displayNumber(totalProfit) }}</strong></div>
+      <div class="stat debt"><span>ديون {{ activeSource.name }}</span><strong>{{ displayNumber(totalDebt) }}</strong></div>
+      <div class="stat balance"><span>أرصدة {{ activeSource.name }}</span><strong>{{ displayNumber(totalBalance) }}</strong></div>
+      <div class="stat profit"><span>أرباح {{ activeSource.name }}</span><strong>{{ displayNumber(totalProfit) }}</strong></div>
     </section>
 
     <section v-if="viewMode==='goal'" class="panel">
@@ -131,7 +131,7 @@
   </dialog>
 </main>
 <script type="module" src="./app.js?v=20260916-smart1"></script>
-<script src="./accounts-advanced.js?v=20260920-all1" defer></script>
+<script src="./accounts-advanced.js?v=20260920-context2" defer></script>
 <script src="./selection.js?v=20260916-select2" defer></script>
 <script src="./accounts-identities.js?v=20260916-links1" defer></script>
 <script src="./accounts-link-core.js?v=20260916-links1" defer></script>
