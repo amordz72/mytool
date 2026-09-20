@@ -72,6 +72,7 @@
             <span class="metric debt">الدين <b>{{ displayNumber(customer.debt) }}</b></span>
             <span class="metric balance">الرصيد <b>{{ displayNumber(customer.balance) }}</b></span>
             <span class="metric profit">الأرباح <b>{{ displayNumber(customer.profit) }}</b></span>
+            <button class="source-link-btn" type="button" @click="linkOrAdd(customer)">🔗 إضافة / ربط</button>
           </footer>
         </article>
         <div v-if="!sourceAccounts.length" class="empty">لا توجد حسابات في هذا المصدر.</div>
