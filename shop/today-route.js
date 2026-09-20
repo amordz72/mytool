@@ -222,7 +222,7 @@ async function identify() {
   }
   ShopShell.mountRoleNavigation({ role: isAdmin ? 'admin' : 'worker', permissions: { can_record_money: true } }, 'today-route');
   document.querySelectorAll('.shell-identity').forEach(el => {
-    el.textContent = (me.nickname || (isAdmin ? 'مدير' : 'عامل')) + ' · وضع الاستمرارية';
+    el.textContent = (me.nickname || (isAdmin ? 'مدير' : 'عامل'));
   });
   renderSyncState();
 }
