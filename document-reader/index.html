@@ -20,7 +20,7 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
 .preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
-.detected{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}
+.detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
 .results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}
 .notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}
 .error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
@@ -68,7 +68,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <section id="resultCard" class="card hidden">
   <div class="detected">
     <div class="pill"><small>لغة الوثيقة</small><b id="languageValue">—</b></div>
-    <div class="pill"><small>نوع الوثيقة</small><b id="templateValue">—</b></div>
+    <div class="pill"><small>نوع الوثيقة المستخدم</small><b id="templateValue">—</b></div>
+    <div class="pill"><small>تصحيح نوع الوثيقة</small>
+      <select id="templateSelect" aria-label="تصحيح نوع الوثيقة">
+        <option value="auto">تلقائي</option>
+        <option value="bna">BNA — Bordereau de versement espèces</option>
+        <option value="bdl">BDL — Avis de versement</option>
+      </select>
+    </div>
   </div>
 
   <div id="resultNotice" class="notice hidden"></div>
@@ -100,6 +107,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const progressBox = $('progressBox');
   const progressTitle = $('progressTitle');
   const progressText = $('progressText');
+  const templateSelect = $('templateSelect');
 
   let objectUrl = '';
   let sourceImage = null;
@@ -221,6 +229,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const tests=[
       [/banque nationale|\bbna\b/,3],
       [/bordereau/,3],
+      [/avis\s+de\s+versement/,3],
+      [/raison\s+sociale/,2],
+      [/libelle|libellé/,2],
+      [/date\s+de\s+valeur/,1],
       [/versement/,2],
       [/montant/,2],
       [/dzd/,2],
@@ -235,14 +247,32 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function detectLanguage(text){
     const t=cleanText(text).toLowerCase();
     let fr=0;
-    ['bordereau','versement','montant','agence','compte','motif','guichet','caisse','dinars','algérie','algerie'].forEach(k=>{if(t.includes(k))fr++;});
+    ['bordereau','avis de versement','versement','montant','agence','compte','motif','guichet','caisse','raison sociale','libelle','libellé','date de valeur','dinars','algérie','algerie'].forEach(k=>{if(t.includes(k))fr++;});
     return fr>=2?'الفرنسية':'غير واضحة';
   }
 
-  function detectTemplate(text){
+  function templateLabel(id){
+    if(id==='bna')return 'BNA — Bordereau de versement espèces';
+    if(id==='bdl')return 'BDL — Avis de versement';
+    return 'غير معروف / غير مدعوم';
+  }
+
+  function detectTemplateId(text){
     const t=cleanText(text).toLowerCase();
-    const isBna=(t.includes('banque nationale')||/\bbna\b/.test(t))&&t.includes('bordereau')&&t.includes('versement');
-    return isBna?'BNA — Bordereau de versement espèces':'غير معروف / غير مدعوم';
+    const isBna=(t.includes('banque nationale')||/\bbna\b/.test(t))
+      &&t.includes('bordereau')&&t.includes('versement');
+    if(isBna)return 'bna';
+
+    const bdlSignals=[
+      /avis\s+de\s+versement/.test(t),
+      /nom\s+ou\s+raison\s+sociale/.test(t),
+      /libelle|libellé/.test(t),
+      /date\s+de\s+valeur/.test(t),
+      /num[ée]ro\s+de\s+compte/.test(t)
+    ].filter(Boolean).length;
+    if(bdlSignals>=4)return 'bdl';
+
+    return 'unknown';
   }
 
   function findLineValue(lines,labelRegex){
@@ -328,6 +358,60 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return out;
   }
 
+  function extractBdl(text){
+    const normalized=cleanText(text);
+    const oneLine=normalized.replace(/\n+/g,' ');
+    const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
+    const out={};
+
+    out.bank={value:'BDL — Banque de Développement Local',source:'قالب BDL المعتمد: Avis de versement'};
+
+    const doc=oneLine.match(/AVIS\s+DE\s+VERSEMENT\s*N\s*[°ºo.]?\s*[:.]?\s*(\d{5,14})/i);
+    out.documentNumber=doc?{value:doc[1],source:'AVIS DE VERSEMENT N°'}:null;
+
+    const date=parseFrenchDate(oneLine);
+    out.date=date?{value:date,source:'تاريخ الوثيقة بعد Le:'}:null;
+
+    let recipient=findLineValue(lines,/^.*?Nom\s+ou\s+Raison\s+Sociale\s*[:.]?/i);
+    recipient=cleanLine(recipient);
+    out.recipient=recipient&&recipient.length<=100
+      ? {value:recipient,source:'Nom ou Raison Sociale'}
+      : null;
+
+    let amountMatch=oneLine.match(/\bTOTAL\s*[:.]?\s*([0-9][0-9\s.,]{1,22})\s*(?:DZD|DA)\b/i);
+    if(!amountMatch)amountMatch=oneLine.match(/\bMontant\s*[:.]?\s*([0-9][0-9\s.,]{1,22})\s*(?:DZD|DA)\b/i);
+    const amount=amountMatch?parseAmountValue(amountMatch[1]):null;
+    out.amount=amount!==null
+      ? {value:new Intl.NumberFormat('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2}).format(amount)+' DZD',raw:amount,source:amountMatch[0].toUpperCase().startsWith('TOTAL')?'TOTAL':'Montant'}
+      : null;
+
+    const libelleIndex=lines.findIndex(line=>/\bLIBELLE\b|\bLIBELLÉ\b/i.test(line));
+    const senderLines=[];
+    if(libelleIndex>=0){
+      for(let i=libelleIndex+1;i<Math.min(lines.length,libelleIndex+5);i++){
+        const line=cleanLine(lines[i]);
+        if(/\b(Montant|Commis|Commission|Taxes?|TOTAL|Signature|Date\s+de\s+valeur|DZD|DA)\b/i.test(line))break;
+        if(/\d/.test(line))break;
+        if(!/[A-Za-zÀ-ÿ]/.test(line))continue;
+        if(line.length>60)break;
+        senderLines.push(line);
+      }
+    }
+    const sender=cleanLine(senderLines.join(' '));
+    const senderWords=sender.match(/[A-Za-zÀ-ÿ]{2,}/g)||[];
+    out.sender=sender&&sender.length<=100&&senderWords.length>=2
+      ? {value:sender,source:'الاسم الظاهر بعد LIBELLE : VERSEMENT ESP/TIERS'}
+      : null;
+
+    return out;
+  }
+
+  function parseByTemplate(id,text){
+    if(id==='bna')return extractBna(text);
+    if(id==='bdl')return extractBdl(text);
+    return emptyExtraction();
+  }
+
   function emptyExtraction(){
     return {date:null,recipient:null,amount:null,documentNumber:null,bank:null,sender:null};
   }
@@ -335,7 +419,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function renderResult(payload){
     currentResult=payload;
     $('languageValue').textContent=payload.language;
-    $('templateValue').textContent=payload.template;
+    $('templateValue').textContent=payload.template+(payload.manualOverride?' — تصحيح يدوي':'');
     $('rawText').textContent=payload.rawText||'';
     resultsEl.innerHTML='';
 
@@ -352,8 +436,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     const missing=fields.filter(([key])=>!(payload.fields[key]&&payload.fields[key].value)).length;
     const notice=$('resultNotice');
-    if(payload.template.startsWith('غير معروف')){
-      notice.textContent='لم يتم التعرف على قالب مدعوم. لن يطبّق القارئ قواعد BNA على وثيقة مختلفة.';
+    if(payload.templateId==='unknown'){
+      notice.textContent='لم يتم التعرف على قالب مدعوم. اختر نوع الوثيقة يدويًا فقط إذا كنت متأكدًا منه؛ القارئ لن يخمّن.';
       notice.classList.remove('hidden');
     }else if(missing){
       notice.textContent='بعض الحقول غير واضحة. تركها القارئ فارغة بدل التخمين.';
@@ -418,12 +502,17 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       updatePreview();
 
       const language=detectLanguage(best.text);
-      const template=detectTemplate(best.text);
-      const extracted=template.startsWith('BNA')?extractBna(best.text):emptyExtraction();
+      const detectedTemplateId=detectTemplateId(best.text);
+      const manualOverride=templateSelect.value!=='auto';
+      const templateId=manualOverride?templateSelect.value:detectedTemplateId;
+      const extracted=parseByTemplate(templateId,best.text);
 
       renderResult({
         language,
-        template,
+        templateId,
+        detectedTemplateId,
+        manualOverride,
+        template:templateLabel(templateId),
         rawText:best.text,
         fields:extracted,
         ocrConfidence:best.confidence,
@@ -439,6 +528,21 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       if(worker){try{await worker.terminate();}catch(_e){}}
       setBusy(false);
     }
+  }
+
+  function reparseCurrent(){
+    if(!currentResult||!currentResult.rawText)return;
+    const detectedTemplateId=detectTemplateId(currentResult.rawText);
+    const manualOverride=templateSelect.value!=='auto';
+    const templateId=manualOverride?templateSelect.value:detectedTemplateId;
+    renderResult({
+      ...currentResult,
+      detectedTemplateId,
+      manualOverride,
+      templateId,
+      template:templateLabel(templateId),
+      fields:parseByTemplate(templateId,currentResult.rawText)
+    });
   }
 
   function copyResults(){
@@ -463,6 +567,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!file)return;
     clearError();
     resetResults();
+    templateSelect.value='auto';
 
     if(!/^image\//i.test(file.type)){
       showError('الملف المختار ليس صورة مدعومة.');
@@ -494,6 +599,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     resetResults();
   });
 
+  templateSelect.addEventListener('change',reparseCurrent);
   analyzeBtn.addEventListener('click',analyze);
   clearBtn.addEventListener('click',clearAll);
   copyBtn.addEventListener('click',copyResults);
