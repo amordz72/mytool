@@ -75,6 +75,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         <option value="bna">BNA — Bordereau de versement espèces</option>
         <option value="bdl">BDL — Avis de versement</option>
         <option value="poste">Algérie Poste — Reçu de l'opération</option>
+        <option value="baridimob">Algérie Poste — BaridiMob Transfer</option>
       </select>
     </div>
   </div>
@@ -262,7 +263,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function qualityMessages(payload){
     const critical=['date','recipient','amount','documentNumber','sender'];
-    const missing=critical.filter(key=>!(payload.fields?.[key]?.value));
+    const missing=critical.filter(key=>!(payload.fields?.[key]?.value)&&payload.fields?.[key]?.status!=='absent');
     const reviewFields=critical.filter(key=>payload.fields?.[key]?.status==='review');
     const messages=[];
     let level='ok';
@@ -326,6 +327,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       [/donneur\s+d.?ordre/,3],
       [/b[ée]n[ée]fic/i,2],
       [/re[çc]u|reeu|op[ée]ration/,1],
+      [/baridimob/,4],
+      [/date\s+de\s+transaction/,2],
+      [/destinataire/,2],
+      [/identifiant\s+de\s+transa(?:c|)tion/,2],
+      [/transfer/,1],
       [/versement/,2],
       [/montant/,2],
       [/dzd/,2],
@@ -340,7 +346,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function detectLanguage(text){
     const t=cleanText(text).toLowerCase();
     let fr=0;
-    ['bordereau','avis de versement','versement','montant','agence','compte','motif','guichet','caisse','raison sociale','libelle','libellé','date de valeur','donneur d ordre',"donneur d'ordre",'beneficiaire','bénéficiaire','reference','référence','operation','opération','dinars','algérie','algerie'].forEach(k=>{if(t.includes(k))fr++;});
+    ['bordereau','avis de versement','versement','montant','agence','compte','motif','guichet','caisse','raison sociale','libelle','libellé','date de valeur','date de transaction','destinataire','identifiant de transaction','identifiant de transation','type d operation',"type d'opération",'donneur d ordre',"donneur d'ordre",'beneficiaire','bénéficiaire','reference','référence','operation','opération','dinars','algérie','algerie','baridimob'].forEach(k=>{if(t.includes(k))fr++;});
     return fr>=2?'الفرنسية':'غير واضحة';
   }
 
@@ -348,6 +354,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(id==='bna')return 'BNA — Bordereau de versement espèces';
     if(id==='bdl')return 'BDL — Avis de versement';
     if(id==='poste')return "Algérie Poste — Reçu de l'opération";
+    if(id==='baridimob')return 'Algérie Poste — BaridiMob Transfer';
     return 'غير معروف / غير مدعوم';
   }
 
@@ -366,6 +373,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(/\bagence\b/.test(t))bdlScore+=1;
     if(/\btotal\b/.test(t)&&/dzd/.test(t))bdlScore+=1;
     if(bdlScore>=5)return 'bdl';
+
+    const baridiSignals=[
+      /baridimob/.test(t),
+      /re[çc]u\s+de\s+transa(?:c|)tion/.test(t),
+      /date\s+de\s+transaction/.test(t),
+      /destinataire/.test(t),
+      /identifiant\s+de\s+transa(?:c|)tion/.test(t),
+      /type\s+d.?op[ée]ration/.test(t)
+    ].filter(Boolean).length;
+    if(baridiSignals>=4)return 'baridimob';
 
     const posteSignals=[
       /donneur\s+d.?ordre/.test(t),
@@ -602,10 +619,49 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return out;
   }
 
+  function extractBaridiMob(text){
+    const normalized=cleanText(text);
+    const oneLine=normalized.replace(/\n+/g,' ');
+    const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
+    const out={};
+
+    out.bank={value:'Algérie Poste — BaridiMob',source:'مستنتج من نوع الوثيقة Reçu de transaction BaridiMob',status:'inferred'};
+
+    const amountLine=lines.find(line=>/^Montant\b/i.test(line))||'';
+    const amountMatch=amountLine.match(/^Montant\s*[:.]?\s*([0-9][0-9\s.,]{1,22})/i);
+    const amountParsed=amountMatch?parseBankMoney(amountMatch[1]):null;
+    out.amount=amountParsed
+      ? {value:new Intl.NumberFormat('fr-DZ',{minimumFractionDigits:0,maximumFractionDigits:2}).format(amountParsed.value)+' DZD',raw:amountParsed.value,source:'Montant',status:amountParsed.heuristic?'review':'read'}
+      : null;
+
+    const dateLine=lines.find(line=>/Date\s+de\s+transaction/i.test(line))||'';
+    const dateMatch=dateLine.match(/Date\s+de\s+transaction\s*[:.]?\s*([0-3]?\d)[.\/-]([01]?\d)[.\/-](20\d{2})(?:\s+([0-2]?\d:[0-5]\d(?::[0-5]\d)?))?/i);
+    out.date=dateMatch
+      ? {value:dateMatch[3]+'-'+String(dateMatch[2]).padStart(2,'0')+'-'+String(dateMatch[1]).padStart(2,'0')+(dateMatch[4]?' '+dateMatch[4]:''),source:'Date de transaction',status:'read'}
+      : null;
+
+    const recipientLine=lines.find(line=>/Destinataire/i.test(line))||'';
+    const recipientMatch=recipientLine.match(/Destinataire\s*[:.]?\s*([0-9]{8,30})/i);
+    out.recipient=recipientMatch
+      ? {value:recipientMatch[1],source:'Destinataire',status:'read'}
+      : null;
+
+    const idLine=lines.find(line=>/Identifiant\s+de\s+transa(?:c|)tion/i.test(line))||'';
+    const idMatch=idLine.match(/Identifiant\s+de\s+transa(?:c|)tion\s*[:.]?\s*([0-9]{6,30})/i);
+    out.documentNumber=idMatch
+      ? {value:idMatch[1],source:'Identifiant de transaction',status:'read'}
+      : null;
+
+    out.sender={value:null,source:'هذا الإيصال لا يعرض اسم أو حساب المرسل؛ لم يتم التخمين',status:'absent'};
+
+    return out;
+  }
+
   function parseByTemplate(id,text){
     if(id==='bna')return extractBna(text);
     if(id==='bdl')return extractBdl(text);
     if(id==='poste')return extractPoste(text);
+    if(id==='baridimob')return extractBaridiMob(text);
     return emptyExtraction();
   }
 
@@ -632,16 +688,19 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         read:['ok','واضح'],
         inferred:['info','من نوع الوثيقة'],
         manual:['warn','تصحيح يدوي'],
-        review:['warn','يحتاج مراجعة']
+        review:['warn','يحتاج مراجعة'],
+        absent:['info','غير موجود']
       };
-      const badge=clear?(labels[state]||labels.read):['bad','غير واضح'];
+      const badge=data?.status==='absent'?labels.absent:(clear?(labels[state]||labels.read):['bad','غير واضح']);
+      const shownValue=data?.status==='absent'?'غير موجود في الوثيقة':(clear?String(data.value):'لا توجد قراءة مؤكدة');
+      const shownSource=data?.status==='absent'?(data.source||'هذا القالب لا يحتوي هذا الحقل'):(clear?String(data.source||''):'لم يتم التخمين أو ملء الحقل تلقائيًا');
       el.innerHTML='<div class="field-head"><span class="field-label">'+label+'</span><span class="status '+badge[0]+'">'+badge[1]+'</span></div>'
-        +'<div class="value">'+escapeHtml(clear?String(data.value):'لا توجد قراءة مؤكدة')+'</div>'
-        +'<div class="source">'+escapeHtml(clear?String(data.source||''):'لم يتم التخمين أو ملء الحقل تلقائيًا')+'</div>';
+        +'<div class="value">'+escapeHtml(shownValue)+'</div>'
+        +'<div class="source">'+escapeHtml(shownSource)+'</div>';
       resultsEl.appendChild(el);
     });
 
-    const missing=fields.filter(([key])=>!(payload.fields[key]&&payload.fields[key].value)).length;
+    const missing=fields.filter(([key])=>!(payload.fields[key]&&payload.fields[key].value)&&payload.fields[key]?.status!=='absent').length;
     const notice=$('resultNotice');
     if(payload.templateId==='unknown'){
       notice.textContent='لم يتم التعرف على قالب مدعوم. اختر نوع الوثيقة يدويًا فقط إذا كنت متأكدًا منه؛ القارئ لن يخمّن.';
@@ -761,7 +820,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       'نوع الوثيقة: '+currentResult.template,
       ...fields.map(([key,label])=>{
         const d=currentResult.fields[key];
-        return label+': '+(d&&d.value?d.value:'غير واضح');
+        return label+': '+(d?.status==='absent'?'غير موجود في الوثيقة':(d&&d.value?d.value:'غير واضح'));
       })
     ];
     navigator.clipboard.writeText(lines.join('\n')).then(()=>{
