@@ -97,6 +97,7 @@
   function bind(){
     const app=document.getElementById('app');if(!app)return;
     app.addEventListener('click',event=>{const tab=event.target.closest('.tabs .tab');if(tab&&!tab.classList.contains('accounts-total-tab'))exitTotal()},true);
+    window.addEventListener('accounts-source-selected',()=>{exitTotal();document.getElementById('accountsTotalPanel')?.setAttribute('hidden','')});
     const input=app.querySelector('input[type="file"][multiple]');if(input)input.addEventListener('change',event=>{const files=[...(event.target.files||[])];if(files.length)enrichFiles(files);setTimeout(cleanupFalseUnknowns,1800)},true);
     window.addEventListener('accounts-activity-updated',()=>setTimeout(ensureTotal,100));
     observer=new MutationObserver(()=>{clearTimeout(observer._t);observer._t=setTimeout(()=>{ensureTotal();if(totalMode)hideForTotal()},120)});observer.observe(app,{childList:true,subtree:true});
