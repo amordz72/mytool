@@ -9,7 +9,8 @@
   const SESSION={
     text:'mytool.cards.session.text',
     filename:'mytool.cards.session.filename',
-    type:'mytool.cards.session.type'
+    type:'mytool.cards.session.type',
+    batchId:'mytool.cards.session.batchId'
   };
   const text=document.getElementById('text'),file=document.getElementById('file'),processBtn=document.getElementById('process'),result=document.getElementById('result'),status=document.getElementById('status'),hint=document.getElementById('hint'),fname=document.getElementById('fname'),tabs=document.getElementById('tabs');
   if(!text||!file||!processBtn)return;
@@ -18,12 +19,17 @@
     if(document.querySelector(`script[data-helper="${src}"]`)){if(next)next();return}
     const s=document.createElement('script');s.src=src;s.dataset.helper=src;s.onload=()=>next&&next();document.body.appendChild(s);
   }
-  loadScript('./whatsapp-cleanup.js',()=>loadScript('./result-ui.js',()=>loadScript('./smart-extractor.js?v=20260910-0926')));
+  loadScript('./whatsapp-cleanup.js',()=>loadScript('./result-ui.js?v=20260920-batch7',()=>loadScript('./smart-extractor.js?v=20260910-0926')));
 
   const read=(key,def=true)=>{try{const v=localStorage.getItem(key);return v===null?def:v!=='0'}catch(e){return def}};
   const write=(key,value)=>{try{localStorage.setItem(key,value?'1':'0')}catch(e){}};
   const sessionGet=key=>{try{return sessionStorage.getItem(key)||''}catch(e){return''}};
   const sessionSet=(key,value)=>{try{sessionStorage.setItem(key,String(value??''))}catch(e){}};
+  const newBatchId=()=>{try{const a=new Uint32Array(1);crypto.getRandomValues(a);return (a[0]%1679616).toString(36).toUpperCase().padStart(4,'0')}catch(e){return Math.random().toString(36).slice(2,6).toUpperCase().padEnd(4,'0')}};
+  function getBatchId(){let id=sessionGet(SESSION.batchId);if(!/^[A-Z0-9]{4}$/.test(id)){id=newBatchId();sessionSet(SESSION.batchId,id)}return id}
+  function startNewBatch(){const id=newBatchId();sessionSet(SESSION.batchId,id);return id}
+  window.getCardBatchId=getBatchId;
+  window.startNewCardBatch=startNewBatch;
   const optionState=window.cardOptionState||{
     trim:{checked:read(KEYS.trim,true)},
     autoDetect:{checked:read(KEYS.detect,true)}
@@ -94,6 +100,7 @@
     sessionSet(SESSION.text,'');
     sessionSet(SESSION.filename,'');
     sessionSet(SESSION.type,'plain');
+    sessionSet(SESSION.batchId,'');
     if(fname)fname.textContent='لم يتم اختيار ملف.';
     if(result)result.innerHTML='';
     routeCurrentContent(false);
@@ -157,6 +164,7 @@
   function restoreSession(){
     const savedText=sessionGet(SESSION.text);
     if(!text.value&&savedText)text.value=savedText;
+    if(text.value.trim())getBatchId();
     const savedFile=sessionGet(SESSION.filename);
     if(savedFile){
       if(fname)fname.textContent='الملف: '+savedFile;
@@ -194,7 +202,9 @@
     routeCurrentContent(true);
   }
 
+  text.addEventListener('paste',()=>startNewBatch(),{capture:true});
   text.addEventListener('input',()=>{
+    if(text.value.trim())getBatchId();
     saveSessionText();
     clearTimeout(timer);
     if(!text.value.trim()){
@@ -211,6 +221,7 @@
   file.addEventListener('change',async()=>{
     const selected=file.files&&file.files[0];
     if(!selected)return;
+    startNewBatch();
     sessionSet(SESSION.filename,selected.name);
     try{text.value=await selected.text();saveSessionText()}catch(e){}
     setTimeout(runAutomatic,0);
