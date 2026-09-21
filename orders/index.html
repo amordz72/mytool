@@ -128,9 +128,83 @@ function renderServiceOptions(selected=''){
 function parseWhatsAppCopy(raw){
   const lines=latinDigits(raw).replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean);
   const messages=[];
-  const dateRe='\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?';
-  const timeRe='\\d{1,2}:\\d{2}';
-  const afterMeta=new RegExp('^(.*?)\\s*\\[('+timeRe+'),\\s*('+dateRe+')\\]\\s*:\\s*(.*)
+  const afterMeta=/^(.*?)\s*\[(\d{1,2}:\d{2}),\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\]\s*:\s*(.*)$/;
+  const beforeMeta=/^(.*?)\s*:\s*(.*?)\s*\[(\d{1,2}:\d{2}),\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\]\s*$/;
+  for(const line of lines){
+    let m=line.match(afterMeta);
+    if(m){messages.push({sender:m[1].trim(),body:m[4].trim(),time:m[2],date:m[3],raw:line});continue}
+    m=line.match(beforeMeta);
+    if(m){messages.push({sender:m[1].trim(),body:m[2].trim(),time:m[3],date:m[4],raw:line});continue}
+  }
+  if(!messages.length)return{detected:false,messages:[],customer_sender:'',operator_messages:[],customer_messages:[]};
+
+  const operatorAliases=['عمر','omar'];
+  const isOperator=sender=>operatorAliases.includes(norm(sender));
+  const customerMessages=messages.filter(m=>!isOperator(m.sender));
+  const operatorMessages=messages.filter(m=>isOperator(m.sender));
+  return{
+    detected:true,
+    messages,
+    customer_sender:customerMessages[0]?.sender||'',
+    customer_messages:customerMessages,
+    operator_messages:operatorMessages,
+    operator_ack:operatorMessages.some(m=>norm(m.body)==='تم'),
+    operator_commands:operatorMessages.map(m=>m.body).filter(Boolean)
+  };
+}
+
+function parseRequest(raw){
+  const whatsapp=parseWhatsAppCopy(raw);
+  const businessText=whatsapp.detected&&whatsapp.customer_messages.length
+    ?whatsapp.customer_messages.map(m=>m.body).join('\n')
+    :latinDigits(raw);
+  const text=latinDigits(businessText);
+  const nt=norm(text);
+  const explicit=[];
+  catalog.filter(x=>x.enabled).forEach(service=>{
+    const aliases=[service.code,service.display_name,...(service.aliases||[])].filter(Boolean).sort((a,b)=>String(b).length-String(a).length);
+    if(aliases.some(alias=>nt.includes(norm(alias))))explicit.push(service.code);
+  });
+  const unique=[...new Set(explicit)];
+
+  const phoneMatch=text.match(/0[5-7](?:[\s.\-]?\d){8}/);
+  const phone=phoneMatch?phoneMatch[0].replace(/\D/g,''):'';
+  let serviceCode=unique.length===1?unique[0]:'';
+  let inferredByPhone=false;
+  if(!serviceCode&&!unique.length&&phone&&serviceBy('FL')){serviceCode='FL';inferredByPhone=true}
+
+  const service=serviceBy(serviceCode);
+  let destination='';
+  const longNumbers=(text.match(/\d{6,20}/g)||[]).filter(x=>x!==phone);
+  if(service?.destination_kind==='phone')destination=phone;
+  else if(service?.destination_kind==='player_id')destination=longNumbers.sort((a,b)=>b.length-a.length)[0]||'';
+  else destination=phone||(longNumbers.sort((a,b)=>b.length-a.length)[0]||'');
+
+  let remainder=text;
+  if(phoneMatch)remainder=remainder.replace(phoneMatch[0],' ');
+  if(destination&&destination!==phone)remainder=remainder.replace(destination,' ');
+
+  const nums=(remainder.match(/\b\d{1,5}\b/g)||[]).filter(x=>Number(x)>0);
+  let packageText=nums[0]||'';
+  if(!packageText){
+    const candidates=remainder
+      .split(/[\n|•]+/)
+      .map(x=>x.replace(/\s+/g,' ').trim())
+      .filter(x=>x&&x.length<=80&&!/^\d+$/.test(x));
+    packageText=candidates[0]||'';
+  }
+
+  return{
+    service_code:serviceCode,
+    package_text:packageText,
+    destination,
+    ambiguous_services:unique.length>1?unique:[],
+    inferred_by_phone:inferredByPhone,
+    phone,
+    numeric_candidates:nums,
+    whatsapp
+  };
+}
 
 function syncDraftClear(){
   const row=$('draftClearRow');
