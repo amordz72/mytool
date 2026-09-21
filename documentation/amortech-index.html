@@ -1,0 +1,60 @@
+<!doctype html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="noindex,nofollow" name="robots"/>
+<title>فهرس AmorTechDZ — MyTool Dev</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="../mytool-bottom-nav.css" rel="stylesheet"/>
+<script data-access="admin" src="../auth-guard.js"></script>
+<style>
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px;text-align:center}.stat b{display:block;font-size:22px}.stat span{font-size:11px;color:var(--muted)}
+    .searchbox{display:grid;grid-template-columns:1fr auto;gap:8px}.searchbox input,.noteSearch{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;background:#fff}.btn2{border:0;border-radius:12px;padding:11px 15px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer}.resultBox{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#f8fafc;line-height:1.7;font-size:13px}.resultBox.ok{background:#ecfdf5;border-color:#a7f3d0}.resultBox.bad{background:#fff7ed;border-color:#fed7aa}.resultBox[hidden]{display:none}
+    .batch{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px;margin:8px 0}.batch.priority{border-color:#f59e0b;background:#fffbeb}.batchHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.batch h3{margin:0 0 5px;font-size:15px;overflow-wrap:anywhere}.meta{font-size:11px;color:var(--muted);line-height:1.7}.countBadge{white-space:nowrap;border-radius:999px;background:#eff6ff;color:#1d4ed8;padding:5px 8px;font-size:10px;font-weight:900}.priority .countBadge{background:#fef3c7;color:#92400e}.alias{margin-top:7px;padding:8px 10px;background:#f8fafc;border-radius:10px;font-size:11px;color:#475569}.cardsMasked{direction:ltr;text-align:left;display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:5px;margin-top:8px;font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.cardsMasked span{border:1px solid var(--line);border-radius:8px;padding:5px 7px;background:#fbfdff}.batch details{margin-top:8px}.batch summary{cursor:pointer;font-size:11px;font-weight:900;color:#31536b}
+    .noteTools{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.noteGroup{margin-top:15px}.noteGroup h2{font-size:17px;margin:0 0 6px}.noteItem{border-right:3px solid var(--blue);background:#fff;border:1px solid var(--line);border-right-width:4px;border-radius:12px;padding:11px;margin:7px 0}.noteItem h3{font-size:14px;margin:0 0 5px}.noteItem p{margin:0;color:#435f75;line-height:1.75;font-size:12px}.sourceTag{display:inline-block;margin-top:6px;border-radius:999px;padding:3px 7px;background:#f1f5f9;color:#475569;font-size:10px;font-weight:800}
+    .security{border-right-color:#dc2626;background:#fff7f7}.mono{direction:ltr;text-align:left;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.empty{padding:14px;text-align:center;color:var(--muted);font-size:12px}
+    @media(max-width:720px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.searchbox,.noteTools{grid-template-columns:1fr}.batchHead{display:block}.countBadge{display:inline-block;margin-top:5px}.cardsMasked{grid-template-columns:repeat(2,minmax(0,1fr));font-size:10px}}
+  </style>
+</head>
+<body data-mytool-app="documentation">
+<header class="top"><div class="top-inner"><div class="brand"><a href="./">← توثيق MyTool</a><small>MyTool Dev · AmorTechDZ</small></div></div></header>
+<main class="wrap">
+<section class="hero">
+<h1>فهرس @AmorTechDZ</h1>
+<p>تلخيص من سجل واتساب الذي استُخدم كملاحظات عمل. الفهرس ثابت بلا قاعدة بيانات، مع دمج المكرر وتتبع دفعات Mobilis بدون نشر أرقام البطاقات الكاملة.</p>
+<div><span class="status now">STATIC / NO DB</span><span class="status reuse">DEDUPED</span><span class="status warn">PRIVATE DATA MASKED</span></div>
+</section>
+<div class="stats" id="stats"></div>
+<section class="card">
+<h2>🔎 ابحث عن بطاقة Mobilis</h2>
+<p>ألصق رقم البطاقة الكامل. البحث محلي داخل الصفحة: يُحسب SHA‑256 في المتصفح ثم يُطابق الفهرس. الرقم الكامل لا يُرسل ولا يوجد داخل مستودع GitHub.</p>
+<div class="searchbox"><input autocomplete="off" id="cardSearch" inputmode="numeric" placeholder="15 رقمًا"/><button class="btn2" id="cardSearchBtn" type="button">اعرف الدفعة</button></div>
+<div class="resultBox" hidden="" id="cardResult"></div>
+</section>
+<section class="card">
+<h2>🎫 دفعات Mobilis</h2>
+<div class="callout">قاعدة التصنيف هنا: Mobilis = 15 رقمًا، ومع ملفات <span class="mono">code,SN</span> نعتمد العمود الأول فقط. النسخ الجزئية وتقسيمات Gemini لا تُسجل كدفعات مستقلة.</div>
+<div id="batches"></div>
+</section>
+<section class="card">
+<h2>🔗 بطاقات مرتبطة بمصدر معروف</h2>
+<p>هذه ليست دفعات جديدة؛ هي بطاقات ظهرت منفردة مع مصدر محدد، محفوظة فقط لتتبع المصدر.</p>
+<div id="tracked"></div>
+</section>
+<section class="card">
+<h2>🧭 المعلومات المستخلصة</h2>
+<div class="noteTools"><input class="noteSearch" id="noteSearch" placeholder="ابحث: TokenStore، جرد، Tehna Connect، ADB..."/><button class="btn2" id="clearSearch" type="button">مسح</button></div>
+<div id="notes"></div>
+</section>
+<section class="card security">
+<h2>🔐 مستبعد أمنيًا من الفهرس العام</h2>
+<p>سجل واتساب يحتوي بيانات حساسة أيضًا. لم تُنسخ إلى MyTool العام، ولم تُعامل كملاحظات عادية.</p>
+<div id="excluded"></div>
+<div class="callout">إذا كان GitHub PAT الموجود في سجل واتساب ما زال صالحًا، الأفضل إلغاؤه/تدويره لأنه ظهر كنص صريح داخل الأرشيف القديم.</div>
+</section>
+</main>
+<script src="amortech-data.js?v=20260921-2"></script><script src="amortech-cards-1.js?v=20260921-1"></script><script src="amortech-cards-2.js?v=20260921-1"></script><script src="amortech-cards-3.js?v=20260921-1"></script><script src="amortech-cards-4.js?v=20260921-1"></script>
+<script src="amortech-index.js?v=20260921-1"></script>
+<script data-app="documentation" data-root="../" src="../mytool-bottom-nav.js"></script>
+</body></html>
