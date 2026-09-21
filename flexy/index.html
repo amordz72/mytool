@@ -34,7 +34,7 @@
     .operation-item{border:1px solid #e0e5ee;border-radius:.65rem;background:#fff}.operation-label{font-size:.72rem;color:#8a98aa}.operation-value{font-weight:700;color:#52657a}
     .offer-modal .modal-content{border:0;border-radius:1rem;box-shadow:0 1rem 3rem rgba(15,23,42,.2)}
     .offer-modal .modal-header{border-bottom:1px solid #edf0f5}.offer-modal .modal-footer{border-top:0}
-    .status-box{background:#f0f2ff;color:#4f5f86}.progress{height:3px}.progress-bar{background:var(--brand);width:0}.execute-bar{border:1px solid #e2e6ef;background:#fff;border-radius:.7rem}.execute-bar .btn{min-width:110px;font-weight:800}
+    .status-box{background:#f0f2ff;color:#4f5f86}.progress{height:3px}.progress-bar{background:var(--brand);width:0}.execute-bar{border:1px solid #e2e6ef;background:#fff;border-radius:.7rem;display:flex}.execute-bar .btn{min-width:110px;font-weight:800}
     .progress.run .progress-bar{animation:hold 7s linear forwards}@keyframes hold{to{width:100%}}
     .mobile-toolbar{min-height:58px;background:#fff}.menu-trigger{width:42px;height:42px;border:0;background:transparent;color:#52657a;font-size:1.55rem;border-radius:.5rem}
     .menu-trigger:hover,.menu-trigger:focus{background:#f0f2ff;color:var(--brand)}
@@ -169,7 +169,7 @@
       <div id="offersList" class="list-group mb-0"></div>
     </section>
 
-    <div id="offerActionBar" class="execute-bar surface d-none mt-3 p-3 d-flex align-items-center justify-content-between gap-3">
+    <div id="offerActionBar" class="execute-bar surface d-none mt-3 p-3 align-items-center justify-content-between gap-3">
       <div class="small">المحدد: <strong id="selectedOfferText">—</strong></div>
       <button id="sendOfferBtn" class="btn btn-primary" type="button">أرسل</button>
     </div>
@@ -205,6 +205,26 @@
 </div>
 
 
+
+<div class="modal fade offer-modal" id="sendOfferModal" tabindex="-1" aria-labelledby="sendOfferTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5 fw-bold" id="sendOfferTitle">تأكيد إرسال العرض</h2>
+        <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">الرقم: <strong id="sendPhone" dir="ltr"></strong></div>
+        <div class="mb-2">العرض: <strong id="sendOfferName"></strong></div>
+        <div>المبلغ: <strong id="sendOfferAmount"></strong></div>
+      </div>
+      <div class="modal-footer d-flex gap-2">
+        <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">إلغاء</button>
+        <button id="confirmSendOfferBtn" type="button" class="btn btn-primary flex-fill">تأكيد الإرسال</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const isAdmin=Boolean(window.MyToolAccessContext?.adminLike);
