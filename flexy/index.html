@@ -275,7 +275,9 @@ operator.addEventListener('click',()=>running?stop():start());
 balanceMode.addEventListener('click',()=>setMode('balance'));
 offersMode.addEventListener('click',()=>setMode('offers'));
 setMode('balance');
-start();
+phone.value='';
+hint.textContent='أدخل رقم الهاتف.';
+operator.classList.add('paused');
 </script>
 <script src="flexy-nav.js?v=20260921-fixed-bottom-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
