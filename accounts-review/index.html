@@ -92,7 +92,6 @@
             <span class="metric debt">الدين <b>{{ displayNumber(customer.debt) }}</b></span>
             <span class="metric balance">الرصيد <b>{{ displayNumber(customer.balance) }}</b></span>
             <span class="metric profit">الأرباح <b>{{ displayNumber(customer.profit) }}</b></span>
-            <button class="source-link-btn" type="button" @click="linkOrAdd(customer)">🔗 إضافة / ربط</button>
           </footer>
         </article>
         <div v-if="!sourceAccounts.length" class="empty">لا توجد حسابات في هذا المصدر.</div>
@@ -192,7 +191,7 @@
 <script src="./selection.js?v=20260920-share4" defer></script>
 <script src="./accounts-identities.js?v=20260916-links1" defer></script>
 <script src="./accounts-link-core.js?v=20260920-multisource2" defer></script>
-<script src="./accounts-link-ui.js?v=20260920-date4" defer></script>
+<script src="./accounts-link-ui.js?v=20260921-linkspace1" defer></script>
 <script src="./accounts-view-router.js?v=20260920-router1" defer></script>
 </body>
 </html>
