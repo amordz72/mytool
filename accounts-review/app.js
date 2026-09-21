@@ -162,7 +162,27 @@ function mergeRowsCumulative(oldRows,incomingRows){
 function overlapRatio(a,b){const A=new Set((a||[]).map(x=>normalizeText(x.username)).filter(Boolean));const B=new Set((b||[]).map(x=>normalizeText(x.username)).filter(Boolean));if(!A.size||!B.size)return 0;let n=0;for(const x of B)if(A.has(x))n++;return n/Math.min(A.size,B.size)}
 function dbOpen(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const db=req.result;for(const s of STORES)if(!db.objectStoreNames.contains(s))db.createObjectStore(s,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 async function dbAll(store){const db=await dbOpen();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly');const req=tx.objectStore(store).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);tx.oncomplete=()=>db.close()})}
-async function dbPut(store,value){const db=await dbOpen();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readwrite');tx.objectStore(store).put(value);tx.oncomplete=()=>{db.close();resolve(value)};tx.onerror=()=>{db.close();reject(tx.error)}})}
+function plainStorageValue(value){
+  if(value===undefined)return null;
+  try{return JSON.parse(JSON.stringify(value))}
+  catch(error){throw new Error('تعذر تجهيز البيانات للحفظ المحلي: '+(error?.message||'بيانات غير قابلة للحفظ'))}
+}
+async function dbPut(store,value){
+  const db=await dbOpen(),stored=plainStorageValue(value);
+  return new Promise((resolve,reject)=>{
+    let tx;
+    try{
+      tx=db.transaction(store,'readwrite');
+      tx.objectStore(store).put(stored);
+    }catch(error){
+      db.close();
+      reject(error);
+      return;
+    }
+    tx.oncomplete=()=>{db.close();resolve(stored)};
+    tx.onabort=tx.onerror=()=>{const error=tx.error||new Error('تعذر حفظ البيانات محليًا');db.close();reject(error)};
+  });
+}
 async function dbDelete(store,id){const db=await dbOpen();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readwrite');tx.objectStore(store).delete(id);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)}})}
 async function copyText(text){try{await navigator.clipboard.writeText(text)}catch{const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}}
 function diagnosticText(u){return[
