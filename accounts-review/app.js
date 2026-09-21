@@ -234,6 +234,7 @@ function aiPromptText(u){return[
 createApp({
   setup(){
     const fileInput=ref(null),sources=ref([]),profiles=ref([]),unknowns=ref([]),activeTabId=ref(''),viewMode=ref('summary'),message=ref(''),messageType=ref('ok'),limit=ref('10'),goalText=ref(''),goalTarget=ref(0),mappingOpen=ref(false),mappingDraft=ref({});
+    let externalTabMode=false;
     const allTabs=computed(()=>[
       ...sources.value.map(x=>({id:x.id,kind:'source',name:x.name,updatedAt:x.updatedAt,count:x.rows?.length||0})),
       ...unknowns.value.map(x=>({id:x.id,kind:'unknown',name:x.aiAppName?('⚠ '+x.aiAppName):'⚠ نوع جديد',updatedAt:x.updatedAt,count:x.dataRowsCount||0}))
@@ -252,7 +253,7 @@ createApp({
     const unknownTotals=computed(()=>({debt:unknownPreview.value.reduce((s,x)=>s+x.debt,0),balance:unknownPreview.value.reduce((s,x)=>s+x.balance,0),profit:unknownPreview.value.reduce((s,x)=>s+x.profit,0)}));
     function setMessage(text,type='ok'){message.value=text;messageType.value=type}
     function pickFile(){fileInput.value?.click()}
-    function selectTab(tab){activeTabId.value=tab.id;viewMode.value=tab.kind==='source'?'accounts':'unknown';goalTarget.value=0;goalText.value='';window.dispatchEvent(new CustomEvent('accounts-source-selected',{detail:{id:tab.id,kind:tab.kind}}))}
+    function selectTab(tab){externalTabMode=false;activeTabId.value=tab.id;viewMode.value=tab.kind==='source'?'accounts':'unknown';goalTarget.value=0;goalText.value='';window.dispatchEvent(new CustomEvent('accounts-source-selected',{detail:{id:tab.id,kind:tab.kind}}))}
     function linkOrAdd(customer){const s=activeSource.value;if(!s||!customer)return;window.dispatchEvent(new CustomEvent('accounts-link-request',{detail:{sourceId:s.id,rowKey:String(customer.key)}}))}
     function displayName(c){return[c.first,c.last].filter(Boolean).join(' ').trim()||c.store||'بدون اسم'}
     function normalizeGoal(){goalTarget.value=Math.max(0,numeric(goalText.value));goalText.value=goalTarget.value?String(goalTarget.value):''}
@@ -275,7 +276,8 @@ createApp({
     async function refreshState(){
       sources.value=await dbAll('sources');profiles.value=await dbAll('profiles');unknowns.value=await dbAll('unknown');
       if(await promoteWafarlyUnknowns()){sources.value=await dbAll('sources');profiles.value=await dbAll('profiles');unknowns.value=await dbAll('unknown');window.dispatchEvent(new Event('accounts-identities-updated'))}
-      if(activeTabId.value&&!allTabs.value.some(x=>x.id===activeTabId.value))activeTabId.value='';if(!activeTabId.value&&allTabs.value.length)activeTabId.value=allTabs.value[0].id
+      if(activeTabId.value&&!allTabs.value.some(x=>x.id===activeTabId.value))activeTabId.value='';
+      if(!externalTabMode&&!activeTabId.value&&allTabs.value.length)activeTabId.value=allTabs.value[0].id
     }
     async function saveUnknownMeta(){const u=activeUnknown.value;if(!u)return;u.updatedAt=new Date().toISOString();await dbPut('unknown',JSON.parse(JSON.stringify(u)))}
     async function reanalyzeUnknown(){const u=activeUnknown.value;if(!u)return;const c=candidateForTable({sheetName:u.sheetName,matrix:u.matrix});if(!c){setMessage('تعذر إعادة تحليل البيانات المحفوظة.','err');return}await processAnalysis({file:{name:u.fileName},fileType:u.fileType,candidate:c,tablesCount:1})}
@@ -309,7 +311,7 @@ createApp({
       const apply=()=>window.MyToolBottomNav?.setActions(actions);if(window.MyToolBottomNav)apply();else window.addEventListener('mytool-bottom-nav-ready',apply,{once:true});
     }
     watch([activeTabId,()=>activeSource.value?.id,()=>activeUnknown.value?.id],()=>nextTick(configureNav));
-    onMounted(async()=>{window.addEventListener('accounts-total-selected',()=>{activeTabId.value=''});window.addEventListener('accounts-shared-selected',()=>{activeTabId.value=''});window.addEventListener('accounts-remote-data-updated',async()=>{await refreshState();await nextTick();configureNav()});try{await refreshState();setMessage(allTabs.value.length?'تم تحميل البيانات المحفوظة من هذا الجهاز.':'اختر ملفات المنصات من زر «اختيار عدة ملفات».');configureNav()}catch(error){setMessage('تعذر فتح التخزين المحلي: '+(error?.message||''),'err')}});
+    onMounted(async()=>{window.addEventListener('accounts-total-selected',()=>{externalTabMode=true;activeTabId.value=''});window.addEventListener('accounts-shared-selected',()=>{externalTabMode=true;activeTabId.value=''});window.addEventListener('accounts-remote-data-updated',async()=>{await refreshState();await nextTick();configureNav()});try{await refreshState();setMessage(allTabs.value.length?'تم تحميل البيانات المحفوظة من هذا الجهاز.':'اختر ملفات المنصات من زر «اختيار عدة ملفات».');configureNav()}catch(error){setMessage('تعذر فتح التخزين المحلي: '+(error?.message||''),'err')}});
     return{fileInput,sources,profiles,unknowns,allTabs,activeTabId,activeSource,activeUnknown,viewMode,message,messageType,limit,goalText,goalTarget,rows,sourceAccounts,totalDebt,totalBalance,totalProfit,visibleDebtors,goalPlan,unknownPreview,unknownTotals,mappingOpen,mappingDraft,pickFile,readFiles,selectTab,linkOrAdd,displayName,displayNumber,normalizeGoal,copySummary,copyDiagnostic,copyAiPrompt,openMapping,saveMapping,saveUnknownMeta,reanalyzeUnknown,deleteActive};
   }
 }).mount('#app');
