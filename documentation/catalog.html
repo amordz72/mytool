@@ -1,21 +1,23 @@
 <!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Catalog والتنفيذ — توثيق MyTool</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="../mytool-bottom-nav.css"><script src="../auth-guard.js" data-access="admin"></script></head><body data-mytool-app="documentation">
-<header class="top"><div class="top-inner"><div class="brand"><a href="index.html">🧭 توثيق المشاريع</a><small>Catalog والتنفيذ</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a></nav></div></header>
-<main class="wrap"><section class="hero"><h1>الثابت في ملفات، والمتغير في قاعدة البيانات</h1><p>Discovery يعرف نوع/مجموعة العرض. بعدها نعرض Catalog ثابت مجرب، ثم Execution Map ثابت للمسار المؤكد.</p></section>
+<header class="top"><div class="top-inner"><div class="brand"><a href="index.html">🧭 توثيق المشاريع</a><small>Catalog والتنفيذ</small></div><nav class="nav"><a href="index.html">الخريطة</a><a href="server.html">السيرفر</a><a href="supabase.html">Supabase</a><a href="station.html">Station</a><a href="core.html">الكود المعاد استخدامه</a><a href="catalog.html">Catalog والتنفيذ</a><a href="flexy-policy.html">سياسة Flexy</a></nav></div></header>
+<main class="wrap"><section class="hero"><h1>الثابت في ملفات، والمتغير في قاعدة البيانات</h1><p>Discovery يحفظ دليل معرفة العرض، Catalog يثبت الهوية التجارية، ثم Execution Routes مستقلة، وبعدها Routing Policy تختار المورد الفعلي.</p></section>
 <section class="card"><h2>التدفق</h2><div class="flow">Phone
  ↓
-Discovery / classification
+Discovery / evidence
  ↓
-Static Catalog
+Canonical Offer
  ↓
-Selected offer
+Presentation Policy
  ↓
-Static Execution Map
+Verified Execution Routes
  ↓
-Dynamic Job in DB
+Routing Policy + Readiness
  ↓
-Station executes
+Execution Decision
  ↓
-Result / history in DB</div></section>
+Dynamic Job / Station
+ ↓
+Result + History</div></section>
 <section class="grid"><article class="card"><h3>ملفات ثابتة</h3><span class="status plan">Git/versioned</span><ul><li>operator/family/amount</li><li>display name</li><li>network index المثبت</li><li>execution template المثبت</li><li>ترتيب العرض</li></ul></article>
 <article class="card"><h3>قاعدة بيانات</h3><span class="status plan">Dynamic only</span><ul><li>station/modem/sim current state</li><li>balance</li><li>job</li><li>result</li><li>history/events</li></ul></article></section>
 <section class="card"><h2>شكل الملفات المقترح</h2><div class="code">flexy-config/
@@ -27,4 +29,4 @@ Result / history in DB</div></section>
   execution/
     mobilis-sama.json
     mobilis-arsselli.json</div><div class="callout">أي قيمة غير مثبتة حيًا لا تدخل الملف كأنها حقيقة؛ تبقى REVIEW حتى الاختبار.</div></section>
-<section class="card"><h2>فصل الهوية عن التنفيذ</h2><p>العرض يُعرف بـoperator + family + amount. أما network_index أو مصدر Sama/Arsselli فهي طريقة تنفيذ، وليست هوية العرض نفسها.</p></section></main><script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
+<section class="card"><h2>فصل الهوية عن التنفيذ</h2><p>العرض يُعرف بـoperator + family + amount. أما network_index أو مصدر Sama/Arsselli أو حساب الموزع فهي بيانات تنفيذ وليست هوية العرض.</p><p><a href="flexy-policy.html">فتح سياسة Flexy المركزية ←</a></p></section></main><script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>
