@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2563eb">
+<title>الطلبات — MyTool</title>
+<script src="../auth-guard.js?v=20260921-orders-v0" data-access="admin"></script>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#64748b;--line:#dbe4ee;--main:#2563eb;--ok:#047857;--warn:#92400e;--bad:#b42318;--soft:#eff6ff}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
+main{max-width:900px;margin:auto;padding:12px 12px 100px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.top h1{font-size:23px;margin:0}.back{color:#1d4ed8;text-decoration:none;font-weight:800}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:0 5px 18px rgba(15,23,42,.04)}
+.muted{font-size:12px;color:var(--muted);line-height:1.6}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.full{grid-column:1/-1}
+label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}textarea,input,select,button{font:inherit}textarea,input,select{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;color:var(--text)}textarea{min-height:98px;resize:vertical}
+.actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.btn{border:0;border-radius:11px;padding:10px 13px;font-weight:900;cursor:pointer;background:var(--main);color:#fff}.btn.secondary{background:#fff;color:#1d4ed8;border:1px solid #bfdbfe}.btn.ok{background:#047857}.btn.warn{background:#92400e}.btn.bad{background:#fff;color:var(--bad);border:1px solid #fecaca}.btn:disabled{opacity:.45;cursor:not-allowed}
+.msg{padding:10px 12px;border-radius:12px;margin-bottom:10px;font-size:12px;background:#eff6ff;color:#1d4ed8}.msg.bad{background:#fff1f2;color:#b42318}.msg.ok{background:#ecfdf5;color:#047857}
+.preview{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}.order{border:1px solid var(--line);border-radius:15px;padding:12px;margin-top:9px;background:#fff}.order-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-title{font-weight:900}.order-raw{margin:8px 0;padding:9px;border-radius:10px;background:#f8fafc;white-space:pre-wrap;word-break:break-word;font-size:13px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}.pill{display:inline-flex;padding:4px 8px;border-radius:999px;background:#f1f5f9;font-size:11px;font-weight:800}.pill.ok{background:#dcfce7;color:#166534}.pill.warn{background:#fef3c7;color:#92400e}.pill.bad{background:#fee2e2;color:#991b1b}
+.order-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}.kv{background:#f8fafc;border-radius:10px;padding:8px}.kv b{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}.kv span{font-size:13px;font-weight:800;word-break:break-word}
+details{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}summary{cursor:pointer;font-weight:800;font-size:12px;color:#334155}.history{margin-top:8px;font-size:11px;color:var(--muted)}.history div{padding:5px 0;border-bottom:1px dashed #e5e7eb}
+.toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.toolbar select{width:auto;min-width:150px}.count{font-size:12px;color:var(--muted);margin-inline-start:auto}
+.settings-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(max-width:620px){main{padding:9px 9px 90px}.grid,.settings-row{grid-template-columns:1fr}.order-grid{grid-template-columns:1fr 1fr}.top h1{font-size:20px}.btn{padding:9px 11px}.count{width:100%;margin:0}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><div><h1>📥 الطلبات</h1><div class="muted">ألصق الطلب، صحّح الفهم عند الحاجة، ثم افتح الخدمة وسجل النتيجة. العملية لا تُحذف.</div></div><a class="back" href="../">الرئيسية</a></div>
+  <div id="message" class="msg" hidden></div>
+
+  <section class="card">
+    <div class="grid">
+      <div class="full"><label for="rawInput">نص الطلب</label><textarea id="rawInput" placeholder="مثال: 100 جوهرة 18255687870&#10;أو: FL • 200 • 0667413435"></textarea></div>
+      <div><label for="sourceKind">المصدر</label><select id="sourceKind"><option value="paste">لصق/رسالة</option><option value="manual">إدخال يدوي</option><option value="screenshot">من صورة</option><option value="whatsapp">واتساب</option><option value="sms">SMS</option><option value="other">آخر</option></select></div>
+      <div><label for="partySearch">بحث عن العميل</label><input id="partySearch" placeholder="اسم / هاتف / اسم آخر"></div>
+      <div><label for="party">العميل</label><select id="party"><option value="">غير محدد الآن</option></select></div>
+      <div><label for="service">الخدمة</label><select id="service"><option value="">غير معروفة</option></select></div>
+      <div><label for="packageText">القيمة / الباقة</label><input id="packageText" placeholder="100"></div>
+      <div><label for="destination">الرقم / Player ID</label><input id="destination" dir="ltr" placeholder="الوجهة"></div>
+    </div>
+    <div id="analysisHint" class="msg preview" hidden></div>
+    <div class="actions">
+      <button id="analyzeBtn" class="btn secondary" type="button">تحليل</button>
+      <button id="saveBtn" class="btn" type="button">حفظ الطلب</button>
+      <a class="btn secondary" href="../shop/customer-links.html">إدارة العملاء</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <select id="statusFilter"><option value="">كل الحالات</option><option value="draft">مسودة</option><option value="ready">جاهز</option><option value="in_progress">جاري التنفيذ</option><option value="success">ناجح</option><option value="review">مراجعة</option><option value="failed">فشل</option><option value="cancelled">ملغى</option></select>
+      <select id="assignmentFilter"><option value="">كل الطلبات</option><option value="unassigned">بدون عميل</option><option value="assigned">مرتبطة بعميل</option></select>
+      <button id="refreshBtn" class="btn secondary" type="button">تحديث</button>
+      <span id="count" class="count">—</span>
+    </div>
+    <div id="ordersList"><div class="muted">جاري التحميل…</div></div>
+  </section>
+
+  <details class="card">
+    <summary>⚙️ إعداد الخدمات والمرادفات</summary>
+    <div class="muted" style="margin:8px 0">هنا تحدد أنت معنى الكلمات والرابط الذي تفتحه كل خدمة. لا يوجد حذف؛ يمكن تعطيل الخدمة.</div>
+    <div class="settings-row">
+      <div><label for="catalogPick">خدمة موجودة</label><select id="catalogPick"><option value="">خدمة جديدة</option></select></div>
+      <div><label for="catalogCode">الرمز</label><input id="catalogCode" dir="ltr" placeholder="FIFA"></div>
+      <div><label for="catalogName">الاسم</label><input id="catalogName" placeholder="FIFA"></div>
+      <div><label for="catalogAliases">المرادفات</label><input id="catalogAliases" placeholder="fifa, فيفا, كورة"></div>
+      <div><label for="catalogDestination">نوع الوجهة</label><select id="catalogDestination"><option value="phone">رقم هاتف</option><option value="player_id">Player ID</option><option value="other">أخرى</option></select></div>
+      <div><label for="catalogAction">الإجراء</label><select id="catalogAction"><option value="manual">يدوي</option><option value="flexy">فتح Flexy</option><option value="open_url">فتح رابط</option></select></div>
+      <div class="full"><label for="catalogUrl">رابط التنفيذ (اختياري)</label><input id="catalogUrl" dir="ltr" placeholder="https://..."></div>
+      <div><label><input id="catalogEnabled" type="checkbox" checked style="width:auto"> مفعلة</label></div>
+    </div>
+    <div class="actions"><button id="catalogSaveBtn" class="btn secondary" type="button">حفظ الخدمة</button></div>
+  </details>
+</main>
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
+const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
+const db=createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let catalog=[],parties=[],orders=[];
+let parseTimer=null;
+
+function show(text,bad=false,good=false){
+  const el=$('message');el.hidden=false;el.textContent=text;el.className='msg '+(bad?'bad':good?'ok':'');
+}
+function hideMessage(){$('message').hidden=true}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function latinDigits(value){
+  return String(value??'').replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+}
+function norm(value){
+  return latinDigits(value).toLowerCase().normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim();
+}
+function requestKey(){return 'intake:'+(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2))}
+function fmtDate(v){try{return new Date(v).toLocaleString('ar-DZ')}catch{return '—'}}
+function serviceBy(code){return catalog.find(x=>x.code===code)||null}
+function partyBy(id){return parties.find(x=>String(x.id)===String(id))||null}
+function statusLabel(v){return ({draft:'مسودة',ready:'جاهز',in_progress:'جاري التنفيذ',success:'ناجح',failed:'فشل',review:'مراجعة',cancelled:'ملغى'})[v]||v}
+function statusClass(v){if(v==='success')return 'ok';if(['ready','in_progress','review'].includes(v))return 'warn';if(['failed','cancelled'].includes(v))return 'bad';return ''}
+function splitAliases(v){return String(v||'').split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean)}
+
+async function requireSession(){
+  const {data}=await db.auth.getSession();
+  if(!data?.session)throw new Error('يلزم دخول الإدارة الرئيسي لاستخدام الطلبات حاليًا.');
+  return data.session;
+}
+
+function renderPartyOptions(filter='',selected=''){
+  const q=norm(filter);
+  const rows=parties.filter(p=>{
+    if(!q)return true;
+    return norm([p.display_name,p.primary_phone,...(p.aliases||[])].join(' ')).includes(q);
+  }).slice(0,120);
+  $('party').innerHTML='<option value="">غير محدد الآن</option>'+rows.map(p=>'<option value="'+p.id+'">'+esc(p.display_name)+(p.primary_phone?' — '+esc(p.primary_phone):'')+'</option>').join('');
+  if(selected&&rows.some(p=>String(p.id)===String(selected)))$('party').value=String(selected);
+}
+
+function renderServiceOptions(selected=''){
+  $('service').innerHTML='<option value="">غير معروفة</option>'+catalog.filter(x=>x.enabled).map(s=>'<option value="'+esc(s.code)+'">'+esc(s.code)+' — '+esc(s.display_name)+'</option>').join('');
+  $('service').value=selected||'';
+}
+
+function parseRequest(raw){
+  const text=latinDigits(raw);
+  const nt=norm(text);
+  const explicit=[];
+  catalog.filter(x=>x.enabled).forEach(service=>{
+    const aliases=[service.code,service.display_name,...(service.aliases||[])].filter(Boolean).sort((a,b)=>String(b).length-String(a).length);
+    if(aliases.some(alias=>nt.includes(norm(alias))))explicit.push(service.code);
+  });
+  const unique=[...new Set(explicit)];
+
+  const phoneMatch=text.match(/0[5-7](?:[\s.\-]?\d){8}/);
+  const phone=phoneMatch?phoneMatch[0].replace(/\D/g,''):'';
+  let serviceCode=unique.length===1?unique[0]:'';
+  let inferredByPhone=false;
+  if(!serviceCode&&!unique.length&&phone&&serviceBy('FL')){serviceCode='FL';inferredByPhone=true}
+
+  const service=serviceBy(serviceCode);
+  let destination='';
+  const longNumbers=(text.match(/\d{6,20}/g)||[]).filter(x=>x!==phone);
+  if(service?.destination_kind==='phone')destination=phone;
+  else if(service?.destination_kind==='player_id')destination=longNumbers.sort((a,b)=>b.length-a.length)[0]||'';
+  else destination=phone||(longNumbers.sort((a,b)=>b.length-a.length)[0]||'');
+
+  let remainder=text;
+  if(phoneMatch)remainder=remainder.replace(phoneMatch[0],' ');
+  if(destination&&destination!==phone)remainder=remainder.replace(destination,' ');
+  const nums=(remainder.match(/\d+/g)||[]).filter(x=>x.length<=5&&Number(x)>0);
+  const packageText=nums[0]||'';
+
+  return {
+    service_code:serviceCode,
+    package_text:packageText,
+    destination,
+    ambiguous_services:unique.length>1?unique:[],
+    inferred_by_phone:inferredByPhone,
+    phone,
+    numeric_candidates:nums
+  };
+}
+
+function applyAnalysis(){
+  const raw=$('rawInput').value.trim();
+  if(!raw){$('analysisHint').hidden=true;return null}
+  const parsed=parseRequest(raw);
+  renderServiceOptions(parsed.service_code);
+  $('packageText').value=parsed.package_text;
+  $('destination').value=parsed.destination;
+  const bits=[];
+  if(parsed.ambiguous_services.length)bits.push('الخدمة غامضة بين: '+parsed.ambiguous_services.join(' / '));
+  else if(parsed.service_code)bits.push('الخدمة: '+parsed.service_code+(parsed.inferred_by_phone?' (اقتراح من شكل رقم الهاتف)':''));
+  else bits.push('الخدمة غير معروفة؛ اخترها يدويًا إذا لزم.');
+  if(parsed.package_text)bits.push('القيمة/الباقة: '+parsed.package_text);
+  if(parsed.destination)bits.push('الوجهة: '+parsed.destination);
+  bits.push('أي تصحيح تقوم به هنا يُحفظ مع الطلب.');
+  $('analysisHint').textContent=bits.join(' · ');
+  $('analysisHint').className='msg preview '+(parsed.ambiguous_services.length?'bad':'');
+  $('analysisHint').hidden=false;
+  return parsed;
+}
+
+async function loadCatalog(){
+  const {data,error}=await db.from('mytool_service_catalog').select('*').order('sort_order').order('code');
+  if(error)throw error;
+  catalog=data||[];
+  renderServiceOptions($('service').value);
+  renderCatalogPicker();
+}
+
+async function loadParties(){
+  const {data,error}=await db.from('money_party_directory')
+    .select('id,display_name,aliases,primary_phone,is_canonical,active,approval_status')
+    .eq('active',true).eq('approval_status','approved').order('display_name').limit(1000);
+  if(error)throw error;
+  parties=data||[];
+  renderPartyOptions($('partySearch').value,$('party').value);
+}
+
+async function saveOrder(){
+  hideMessage();
+  const raw=$('rawInput').value.trim();
+  if(!raw){show('اكتب أو الصق الطلب أولًا.',true);return}
+  const parsed=parseRequest(raw);
+  const partyId=$('party').value?Number($('party').value):null;
+  const serviceCode=$('service').value||null;
+  const service=serviceBy(serviceCode);
+  const destination=$('destination').value.trim()||null;
+  const packageText=$('packageText').value.trim()||null;
+  const ready=Boolean(serviceCode&&destination);
+  const payload={
+    request_key:requestKey(),
+    source_kind:$('sourceKind').value,
+    raw_input:raw,
+    service_code:serviceCode,
+    package_text:packageText,
+    destination,
+    customer_party_id:partyId,
+    customer_resolution:partyId?'confirmed':'unassigned',
+    customer_match_source:partyId?'manual':'unknown',
+    status:ready?'ready':'draft',
+    parsed_payload:parsed,
+    action_snapshot:service?{action_kind:service.action_kind,action_url:service.action_url,destination_kind:service.destination_kind}:{},
+    financial_state:partyId?'not_posted':'blocked_unassigned'
+  };
+  $('saveBtn').disabled=true;
+  try{
+    const {error}=await db.from('mytool_service_orders').insert(payload);
+    if(error)throw error;
+    show(partyId?'تم حفظ الطلب وربطه بالعميل. لا يوجد ترحيل دين تلقائي في V0.':'تم حفظ الطلب بدون عميل. الدين محجوب حتى تحدد العميل.',false,true);
+    $('rawInput').value='';$('packageText').value='';$('destination').value='';$('partySearch').value='';renderPartyOptions();renderServiceOptions();$('analysisHint').hidden=true;
+    await loadOrders();
+  }catch(error){show('تعذر حفظ الطلب: '+(error?.message||error),true)}
+  finally{$('saveBtn').disabled=false}
+}
+
+function orderActionLabel(row){
+  const service=serviceBy(row.service_code);
+  if(!service)return 'لا توجد خدمة';
+  if(service.action_kind==='flexy')return 'فتح Flexy';
+  if(service.action_kind==='open_url')return service.action_url?'فتح موقع التنفيذ':'حدد رابط الخدمة';
+  return 'تنفيذ يدوي';
+}
+
+function editServiceOptions(selected){
+  return '<option value="">غير معروف</option>'+catalog.filter(x=>x.enabled).map(s=>'<option value="'+esc(s.code)+'" '+(s.code===selected?'selected':'')+'>'+esc(s.code)+' — '+esc(s.display_name)+'</option>').join('');
+}
+
+function partyOptions(selected){
+  return '<option value="">غير مسند</option>'+parties.slice(0,500).map(p=>'<option value="'+p.id+'" '+(String(p.id)===String(selected||'')?'selected':'')+'>'+esc(p.display_name)+'</option>').join('');
+}
+
+function renderOrders(){
+  const status=$('statusFilter').value,assignment=$('assignmentFilter').value;
+  const filtered=orders.filter(row=>{
+    if(status&&row.status!==status)return false;
+    if(assignment==='unassigned'&&row.customer_party_id)return false;
+    if(assignment==='assigned'&&!row.customer_party_id)return false;
+    return true;
+  });
+  $('count').textContent=filtered.length+' طلب';
+  if(!filtered.length){$('ordersList').innerHTML='<div class="muted" style="padding:12px 0">لا توجد طلبات في هذا الفلتر.</div>';return}
+  $('ordersList').innerHTML=filtered.map(row=>{
+    const svc=serviceBy(row.service_code),party=partyBy(row.customer_party_id);
+    const financial=row.customer_party_id?'الدين: غير مرحّل بعد':'الدين: محجوب حتى تحديد العميل';
+    return '<article class="order" data-order-id="'+row.id+'">'+
+      '<div class="order-head"><div><div class="order-title">'+esc(svc?.display_name||row.service_code||'خدمة غير معروفة')+(row.package_text?' — '+esc(row.package_text):'')+'</div><div class="muted">'+esc(fmtDate(row.created_at))+'</div></div><div class="pills"><span class="pill '+statusClass(row.status)+'">'+esc(statusLabel(row.status))+'</span><span class="pill '+(row.customer_party_id?'ok':'warn')+'">'+esc(party?.display_name||'بدون عميل')+'</span></div></div>'+
+      '<div class="order-raw">'+esc(row.raw_input)+'</div>'+
+      '<div class="order-grid"><div class="kv"><b>الخدمة</b><span>'+esc(row.service_code||'—')+'</span></div><div class="kv"><b>القيمة</b><span>'+esc(row.package_text||'—')+'</span></div><div class="kv"><b>الوجهة</b><span dir="ltr">'+esc(row.destination||'—')+'</span></div><div class="kv"><b>العميل</b><span>'+esc(party?.display_name||'غير محدد')+'</span></div><div class="kv"><b>الحالة المالية</b><span>'+esc(financial)+'</span></div><div class="kv"><b>المصدر</b><span>'+esc(row.source_kind)+'</span></div></div>'+
+      '<div class="actions"><button class="btn secondary" data-action="open" data-id="'+row.id+'" type="button">'+esc(orderActionLabel(row))+'</button><button class="btn warn" data-action="status" data-status="in_progress" data-id="'+row.id+'" type="button">جاري</button><button class="btn ok" data-action="status" data-status="success" data-id="'+row.id+'" type="button">تم</button><button class="btn secondary" data-action="status" data-status="review" data-id="'+row.id+'" type="button">مراجعة</button></div>'+
+      '<details><summary>ربط/تصحيح العميل</summary><div class="grid" style="margin-top:8px"><div class="full"><select class="row-party">'+partyOptions(row.customer_party_id)+'</select></div></div><div class="actions"><button class="btn secondary" data-action="party-save" data-id="'+row.id+'" type="button">حفظ العميل</button></div></details>'+
+      '<details><summary>تعديل الفهم</summary><div class="grid" style="margin-top:8px"><div><label>الخدمة</label><select class="row-service">'+editServiceOptions(row.service_code)+'</select></div><div><label>القيمة</label><input class="row-package" value="'+esc(row.package_text||'')+'"></div><div class="full"><label>الوجهة</label><input class="row-destination" dir="ltr" value="'+esc(row.destination||'')+'"></div></div><div class="actions"><button class="btn secondary" data-action="interpret-save" data-id="'+row.id+'" type="button">حفظ التصحيح</button></div></details>'+
+      '<details><summary>سجل التغييرات</summary><div class="actions"><button class="btn secondary" data-action="history" data-id="'+row.id+'" type="button">تحميل السجل</button></div><div class="history"></div></details>'+
+    '</article>';
+  }).join('');
+}
+
+async function loadOrders(){
+  const {data,error}=await db.from('mytool_service_orders').select('*').order('created_at',{ascending:false}).limit(60);
+  if(error)throw error;
+  orders=data||[];
+  renderOrders();
+}
+
+async function updateOrder(id,patch){
+  patch.updated_at=new Date().toISOString();
+  const {error}=await db.from('mytool_service_orders').update(patch).eq('id',id);
+  if(error)throw error;
+  await loadOrders();
+}
+
+async function openOrder(row){
+  const service=serviceBy(row.service_code);
+  if(!service){show('حدد الخدمة أولًا.',true);return}
+  if(row.destination&&navigator.clipboard){navigator.clipboard.writeText(row.destination).catch(()=>{})}
+  if(service.action_kind==='flexy'){
+    const q=new URLSearchParams();
+    if(row.destination)q.set('phone',row.destination);
+    if(row.package_text)q.set('amount',row.package_text);
+    q.set('from_order',row.order_uuid);
+    location.href='../flexy/?'+q.toString();
+    return;
+  }
+  if(service.action_kind==='open_url'){
+    const url=String(service.action_url||'').trim();
+    if(!/^https?:\/\//i.test(url)){show('رابط التنفيذ غير محدد لهذه الخدمة. افتح إعداد الخدمات وضع الرابط مرة واحدة.',true);return}
+    location.href=url;
+    return;
+  }
+  show('هذه الخدمة مضبوطة على تنفيذ يدوي. الوجهة نُسخت للحافظة إن أمكن.');
+}
+
+async function loadHistory(id,container){
+  container.textContent='جاري التحميل…';
+  const {data,error}=await db.from('mytool_service_order_history').select('*').eq('order_id',id).order('created_at',{ascending:false}).limit(30);
+  if(error){container.textContent='تعذر تحميل السجل.';return}
+  container.innerHTML=(data||[]).map(h=>'<div><b>'+esc(fmtDate(h.created_at))+'</b> — '+esc(h.event_type)+'<br>'+esc(JSON.stringify(h.changed_fields))+'</div>').join('')||'<div>لا يوجد سجل بعد.</div>';
+}
+
+function renderCatalogPicker(){
+  $('catalogPick').innerHTML='<option value="">خدمة جديدة</option>'+catalog.map(s=>'<option value="'+esc(s.code)+'">'+esc(s.code)+' — '+esc(s.display_name)+'</option>').join('');
+}
+
+function fillCatalog(code=''){
+  const s=serviceBy(code);
+  $('catalogCode').value=s?.code||'';
+  $('catalogCode').disabled=Boolean(s);
+  $('catalogName').value=s?.display_name||'';
+  $('catalogAliases').value=(s?.aliases||[]).join(', ');
+  $('catalogDestination').value=s?.destination_kind||'other';
+  $('catalogAction').value=s?.action_kind||'manual';
+  $('catalogUrl').value=s?.action_url||'';
+  $('catalogEnabled').checked=s?s.enabled:true;
+}
+
+async function saveCatalog(){
+  const code=$('catalogCode').value.trim().toUpperCase();
+  const name=$('catalogName').value.trim();
+  const action=$('catalogAction').value;
+  const url=$('catalogUrl').value.trim()||null;
+  if(!/^[A-Z0-9_]{2,24}$/.test(code)){show('رمز الخدمة يجب أن يكون أحرف/أرقام إنجليزية مثل FF أو FIFA.',true);return}
+  if(!name){show('اكتب اسم الخدمة.',true);return}
+  if(action==='open_url'&&url&&!/^https?:\/\//i.test(url)){show('رابط الخدمة يجب أن يبدأ بـ http:// أو https://',true);return}
+  const payload={
+    code,display_name:name,aliases:splitAliases($('catalogAliases').value),
+    destination_kind:$('catalogDestination').value,action_kind:action,
+    action_url:action==='flexy'?'../flexy/':url,enabled:$('catalogEnabled').checked,
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await db.from('mytool_service_catalog').upsert(payload,{onConflict:'code'});
+  if(error){show('تعذر حفظ الخدمة: '+error.message,true);return}
+  show('تم حفظ الخدمة والمرادفات.',false,true);
+  await loadCatalog();fillCatalog(code);applyAnalysis();renderOrders();
+}
+
+$('analyzeBtn').onclick=applyAnalysis;
+$('saveBtn').onclick=saveOrder;
+$('refreshBtn').onclick=()=>loadOrders().catch(e=>show(e.message,true));
+$('rawInput').addEventListener('input',()=>{clearTimeout(parseTimer);parseTimer=setTimeout(applyAnalysis,350)});
+$('partySearch').addEventListener('input',()=>renderPartyOptions($('partySearch').value,$('party').value));
+$('statusFilter').onchange=renderOrders;
+$('assignmentFilter').onchange=renderOrders;
+$('catalogPick').onchange=()=>fillCatalog($('catalogPick').value);
+$('catalogSaveBtn').onclick=saveCatalog;
+
+$('ordersList').addEventListener('click',async event=>{
+  const btn=event.target.closest('button[data-action]');if(!btn)return;
+  const id=Number(btn.dataset.id),row=orders.find(x=>x.id===id);if(!row)return;
+  btn.disabled=true;
+  try{
+    if(btn.dataset.action==='open')await openOrder(row);
+    else if(btn.dataset.action==='status'){
+      const next=btn.dataset.status;
+      await updateOrder(id,{status:next});
+      if(next==='success')show(row.customer_party_id?'تم تعليم العملية ناجحة. لم يتم ترحيل دين آليًا في V0.':'تم تعليم العملية ناجحة، لكن الدين لن يُرحّل لأن العميل غير محدد.',false,true);
+    }else if(btn.dataset.action==='party-save'){
+      const card=btn.closest('.order'),value=card.querySelector('.row-party').value;
+      const partyId=value?Number(value):null;
+      await updateOrder(id,{
+        customer_party_id:partyId,
+        customer_resolution:partyId?'confirmed':'unassigned',
+        customer_match_source:partyId?'correction':'unknown',
+        financial_state:partyId?'not_posted':'blocked_unassigned'
+      });
+      show(partyId?'تم ربط العملية بالعميل، والتصحيح محفوظ في السجل.':'تم فك ربط العميل. العملية بقيت محفوظة والدين محجوب.',false,true);
+    }else if(btn.dataset.action==='interpret-save'){
+      const card=btn.closest('.order');
+      await updateOrder(id,{
+        service_code:card.querySelector('.row-service').value||null,
+        package_text:card.querySelector('.row-package').value.trim()||null,
+        destination:card.querySelector('.row-destination').value.trim()||null
+      });
+      show('تم حفظ تصحيح الفهم بدون حذف العملية.',false,true);
+    }else if(btn.dataset.action==='history'){
+      await loadHistory(id,btn.closest('details').querySelector('.history'));
+    }
+  }catch(error){show('تعذر تنفيذ العملية: '+(error?.message||error),true)}
+  finally{btn.disabled=false}
+});
+
+(async()=>{
+  try{
+    await requireSession();
+    await Promise.all([loadCatalog(),loadParties()]);
+    await loadOrders();
+  }catch(error){show(error?.message||String(error),true)}
+})();
+</script>
+</body>
+</html>
