@@ -5,10 +5,33 @@
   const rootUrl=script?.dataset?.root?new URL(script.dataset.root,location.href):new URL('./',script?.src||location.href);
   const labels={cards:'البطاقات',qr:'QR',flexy:'فليكسي',programs:'البرامج',shop:'المحل',notes:'الملاحظات','accounts-review':'الحسابات',communication:'التواصل'};
   const rootPath=rootUrl.pathname.endsWith('/')?rootUrl.pathname:rootUrl.pathname+'/';
+  const LAST_ROUTE_KEY='mytool.nav.last_route.v1';
+  const PREVIOUS_ROUTE_KEY='mytool.nav.previous_route.v1';
   const relative=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length):'';
   const currentApp=(document.body?.dataset?.mytoolApp||script?.dataset?.app||relative.split('/').filter(Boolean)[0]||'').trim();
   const appHome=currentApp?new URL(currentApp+'/',rootUrl):rootUrl;
   let nav=null,notesPagerObserver=null,notesFinderObserver=null,optionsPanel=null;
+
+  function routePath(){return location.pathname+location.search+location.hash}
+  function safeStoredRoute(value){
+    try{
+      if(!value)return '';
+      const u=new URL(value,location.origin);
+      if(u.origin!==location.origin||!u.pathname.startsWith(rootPath))return '';
+      return u.pathname+u.search+u.hash;
+    }catch{return ''}
+  }
+  function rememberCurrentRoute(){
+    const current=routePath();
+    const last=safeStoredRoute(localStorage.getItem(LAST_ROUTE_KEY));
+    if(last&&last!==current)localStorage.setItem(PREVIOUS_ROUTE_KEY,last);
+    localStorage.setItem(LAST_ROUTE_KEY,current);
+  }
+  function recentRouteItem(){
+    const previous=safeStoredRoute(localStorage.getItem(PREVIOUS_ROUTE_KEY));
+    if(!previous||previous===routePath())return null;
+    return {href:new URL(previous,location.origin).href,icon:'↩',label:'آخر',title:'الرجوع إلى آخر أداة',autoRecent:true};
+  }
 
   function loadShopAdminNotifications(){
     if(currentApp!=='shop'||document.querySelector('script[data-mytool-admin-notifications]'))return;
@@ -56,6 +79,13 @@
 
   function toolsNavItem(){return {href:rootUrl.href,icon:'🧰',label:'الأدوات',title:'الرجوع إلى أدوات MyTool',autoTools:true}}
 
+  function showFloatingRecent(show,item=null){
+    let a=document.querySelector('.mytool-floating-recent');
+    if(!show||!item?.href){a?.remove();return}
+    if(!a){a=document.createElement('a');a.className='mytool-floating-recent';a.textContent='↩';a.setAttribute('aria-label','الرجوع إلى آخر أداة');document.body.appendChild(a)}
+    a.href=item.href;a.title=item.title||'الرجوع إلى آخر أداة';
+  }
+
   function showFloatingTools(show){
     let a=document.querySelector('.mytool-floating-tools');
     if(!show){a?.remove();return}
@@ -63,6 +93,15 @@
     a=document.createElement('a');
     a.className='mytool-floating-tools';a.href=rootUrl.href;a.textContent='🧰';a.title='الأدوات';a.setAttribute('aria-label','الرجوع إلى أدوات MyTool');
     document.body.appendChild(a);
+  }
+
+  function syncRecentPlacement(){
+    [1,2,4,5].forEach(slot=>{if(state.slots[slot]?.autoRecent)state.slots[slot]=null});
+    const item=recentRouteItem();
+    if(!item){showFloatingRecent(false);return}
+    const freeSlot=[2,1,4,5].find(slot=>!state.slots[slot]);
+    if(freeSlot){state.slots[freeSlot]=item;showFloatingRecent(false,item)}
+    else showFloatingRecent(true,item);
   }
 
   function syncToolsPlacement(){
@@ -174,6 +213,7 @@
   function render(){
     if(!nav)return;
     syncToolsPlacement();
+    syncRecentPlacement();
     for(let slot=1;slot<=5;slot++){
       const holder=nav.querySelector('[data-slot="'+slot+'"]');if(!holder)continue;const item=state.slots[slot];holder.innerHTML=itemHtml(slot,item);
       if(item&&!item.href&&typeof item.onClick==='function'){const button=holder.querySelector('button');if(button){button.addEventListener('click',item.onClick);if(item.optionsTrigger){button.setAttribute('aria-haspopup','menu');button.setAttribute('aria-expanded',optionsPanel?'true':'false')}}}
@@ -203,6 +243,7 @@
 
   function mount(){
     if(!currentApp)return;
+    rememberCurrentRoute();
     loadShopAdminNotifications();loadNotesEditor();loadNotesTabs();
     document.addEventListener('pointerdown',event=>{if(optionsPanel&&!optionsPanel.contains(event.target)&&!nav?.contains(event.target))closeOptions()});
     document.addEventListener('keydown',event=>{if(event.key==='Escape')closeOptions()});
