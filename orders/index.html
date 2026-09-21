@@ -24,6 +24,7 @@ label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}textarea,in
 details{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}summary{cursor:pointer;font-weight:800;font-size:12px;color:#334155}.history{margin-top:8px;font-size:11px;color:var(--muted)}.history div{padding:5px 0;border-bottom:1px dashed #e5e7eb}
 .toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.toolbar select{width:auto;min-width:150px}.count{font-size:12px;color:var(--muted);margin-inline-start:auto}
 .settings-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.draft-clear-row{display:flex;justify-content:flex-start;margin-top:7px}.draft-clear-row .btn{padding:7px 10px;font-size:12px}
+.smart-strip{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:9px 0 3px;padding:8px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0}.smart-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:#fff;border:1px solid #e2e8f0;font-size:12px;font-weight:800}.smart-chip.muted-chip{color:var(--muted);font-weight:700}.brand-icon{width:27px;height:27px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:1000;letter-spacing:-.4px;background:#e2e8f0;color:#0f172a;flex:0 0 auto}.brand-icon.wa{background:#25d366;color:#fff;border-radius:50%;font-size:16px}.brand-icon.ff{background:#111827;color:#ffb000}.brand-icon.fl{background:#2563eb;color:#fff}.brand-icon.pubg{background:#d97706;color:#fff}.brand-icon.mobilis{background:#138a4b;color:#fff}.brand-icon.djezzy{background:#e30613;color:#fff}.brand-icon.ooredoo{background:#ed1c24;color:#fff}.correction{margin-top:9px;border:1px dashed var(--line);border-radius:13px;padding:8px 10px}.correction>summary{border:0;padding:3px 0;font-size:12px}.compact-actions .btn{padding:9px 11px}.order-brand{display:flex;gap:7px;align-items:center}.source-mini{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
 @media(max-width:620px){main{padding:9px 9px 90px}.grid,.settings-row{grid-template-columns:1fr}.order-grid{grid-template-columns:1fr 1fr}.top h1{font-size:20px}.btn{padding:9px 11px}.count{width:100%;margin:0}}
 </style>
 </head>
@@ -37,18 +38,25 @@ details{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}summary
   <section class="card">
     <div class="grid">
       <div class="full"><label for="rawInput">نص الطلب</label><textarea id="rawInput" placeholder="مثال: 100 جوهرة 18255687870&#10;أو: FL • 200 • 0667413435"></textarea></div><div id="draftClearRow" class="full draft-clear-row" hidden><button id="draftClearBtn" class="btn bad" type="button">× مسح الطلب الحالي</button></div>
-      <div><label for="sourceKind">المصدر</label><select id="sourceKind"><option value="paste">لصق/رسالة</option><option value="manual">إدخال يدوي</option><option value="screenshot">من صورة</option><option value="whatsapp">واتساب</option><option value="sms">SMS</option><option value="other">آخر</option></select></div>
-      <div><label for="partySearch">بحث عن العميل</label><input id="partySearch" placeholder="اسم / هاتف / اسم آخر"></div>
-      <div><label for="party">العميل</label><select id="party"><option value="">غير محدد الآن</option></select></div>
-      <div><label for="service">الخدمة</label><select id="service"><option value="">غير معروفة</option></select></div>
-      <div><label for="packageText">القيمة / الباقة</label><input id="packageText" placeholder="100"></div>
-      <div><label for="destination">الرقم / Player ID</label><input id="destination" dir="ltr" placeholder="الوجهة"></div>
     </div>
+    <div id="smartStrip" class="smart-strip" hidden></div>
     <div id="analysisHint" class="msg preview" hidden></div>
-    <div class="actions">
-      <button id="analyzeBtn" class="btn secondary" type="button">تحليل</button>
-      <button id="saveBtn" class="btn" type="button">حفظ الطلب</button>
-      <a class="btn secondary" href="../shop/customer-links.html">إدارة العملاء</a>
+
+    <details id="correctionDetails" class="correction">
+      <summary>✏️ تعديل يدوي عند الحاجة</summary>
+      <div class="grid" style="margin-top:9px">
+        <div><label for="sourceKind">المصدر</label><select id="sourceKind"><option value="paste">لصق/رسالة</option><option value="manual">إدخال يدوي</option><option value="screenshot">من صورة</option><option value="whatsapp">واتساب</option><option value="sms">SMS</option><option value="other">آخر</option></select></div>
+        <div><label for="partySearch">بحث عن العميل</label><input id="partySearch" placeholder="اسم / هاتف / اسم آخر"></div>
+        <div><label for="party">العميل</label><select id="party"><option value="">غير محدد الآن</option></select></div>
+        <div><label for="service">الخدمة</label><select id="service"><option value="">غير معروفة</option></select></div>
+        <div><label for="packageText">القيمة / الباقة</label><input id="packageText" placeholder="100"></div>
+        <div><label for="destination">الرقم / Player ID</label><input id="destination" dir="ltr" placeholder="الوجهة"></div>
+      </div>
+    </details>
+
+    <div class="actions compact-actions">
+      <button id="saveBtn" class="btn" type="button">💾 حفظ</button>
+      <a class="btn secondary" href="../shop/customer-links.html" title="إدارة العملاء">👤 العملاء</a>
     </div>
   </section>
 
@@ -107,6 +115,54 @@ function partyBy(id){return parties.find(x=>String(x.id)===String(id))||null}
 function statusLabel(v){return ({draft:'مسودة',ready:'جاهز',in_progress:'جاري التنفيذ',success:'ناجح',failed:'فشل',review:'مراجعة',cancelled:'ملغى'})[v]||v}
 function statusClass(v){if(v==='success')return 'ok';if(['ready','in_progress','review'].includes(v))return 'warn';if(['failed','cancelled'].includes(v))return 'bad';return ''}
 function splitAliases(v){return String(v||'').split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean)}
+
+function brandIconHtml(code,label=''){
+  const key=String(code||'').toUpperCase();
+  const cls=key==='WHATSAPP'?'wa':key==='FF'?'ff':key==='FL'?'fl':key==='PUBG'?'pubg':key==='MOBILIS'?'mobilis':key==='DJEZZY'?'djezzy':key==='OOREDOO'?'ooredoo':'';
+  const text=key==='WHATSAPP'?'☎':key==='MOBILIS'?'M':key==='DJEZZY'?'D':key==='OOREDOO'?'O':(key||String(label||'?').slice(0,2).toUpperCase());
+  return '<span class="brand-icon '+cls+'">'+esc(text)+'</span>';
+}
+
+function detectOperator(text){
+  const n=norm(text);
+  if(/\bmobilis\b/.test(n)||n.includes('موبيليس')||n.includes('موبيليز'))return 'MOBILIS';
+  if(/\bdjezzy\b/.test(n)||n.includes('جيزي')||n.includes('جازي'))return 'DJEZZY';
+  if(/\booredoo\b/.test(n)||n.includes('اوريدو')||n.includes('أوريدو'))return 'OOREDOO';
+  return '';
+}
+
+function exactPartyCandidate(sender){
+  const q=norm(sender);
+  if(!q)return null;
+  const matches=parties.filter(p=>{
+    const vals=[p.display_name,p.primary_phone,...(p.aliases||[])].filter(Boolean).map(norm);
+    return vals.includes(q);
+  });
+  return matches.length===1?matches[0]:null;
+}
+
+function renderSmartStrip(parsed){
+  const el=$('smartStrip');
+  if(!parsed){el.hidden=true;el.innerHTML='';return}
+  const chips=[];
+  if(parsed.whatsapp?.detected){
+    chips.push('<span class="smart-chip">'+brandIconHtml('WHATSAPP')+'<span>'+esc(parsed.whatsapp.customer_sender||'WhatsApp')+'</span></span>');
+  }else{
+    chips.push('<span class="smart-chip muted-chip">'+brandIconHtml('')+'<span>'+esc($('sourceKind').selectedOptions?.[0]?.textContent||'لصق')+'</span></span>');
+  }
+  if(parsed.operator_code)chips.push('<span class="smart-chip">'+brandIconHtml(parsed.operator_code)+'<span>'+esc(parsed.operator_code)+'</span></span>');
+  if(parsed.service_code){
+    const svc=serviceBy(parsed.service_code);
+    chips.push('<span class="smart-chip">'+brandIconHtml(parsed.service_code,svc?.display_name)+'<span>'+esc(svc?.display_name||parsed.service_code)+'</span></span>');
+  }
+  if(parsed.package_text)chips.push('<span class="smart-chip"><span>📦</span><span>'+esc(parsed.package_text)+'</span></span>');
+  if(parsed.destination)chips.push('<span class="smart-chip" dir="ltr"><span>🎯</span><span>'+esc(parsed.destination)+'</span></span>');
+  const partyId=$('party').value;
+  const party=partyBy(partyId);
+  if(party)chips.push('<span class="smart-chip"><span>👤</span><span>'+esc(party.display_name)+'</span></span>');
+  el.innerHTML=chips.join('');
+  el.hidden=!chips.length;
+}
 
 async function requireSession(){
   const {data,error}=await db.auth.getSession();
@@ -171,6 +227,7 @@ function parseRequest(raw){
     :latinDigits(raw);
   const text=latinDigits(businessText);
   const nt=norm(text);
+  const operatorCode=detectOperator(text);
   const explicit=[];
   catalog.filter(x=>x.enabled).forEach(service=>{
     const aliases=[service.code,service.display_name,...(service.aliases||[])].filter(Boolean).sort((a,b)=>String(b).length-String(a).length);
@@ -213,7 +270,8 @@ function parseRequest(raw){
     inferred_by_phone:inferredByPhone,
     phone,
     numeric_candidates:nums,
-    whatsapp
+    whatsapp,
+    operator_code:operatorCode
   };
 }
 
@@ -233,6 +291,7 @@ function clearDraft(){
   renderPartyOptions();
   renderServiceOptions();
   $('analysisHint').hidden=true;
+  renderSmartStrip(null);
   syncDraftClear();
   $('rawInput').focus();
 }
@@ -246,11 +305,19 @@ function applyAnalysis(){
   $('destination').value=parsed.destination;
   if(parsed.whatsapp?.detected){
     $('sourceKind').value='whatsapp';
-    if(parsed.whatsapp.customer_sender&&!$('party').value&&!$('partySearch').value){
-      $('partySearch').value=parsed.whatsapp.customer_sender;
-      renderPartyOptions(parsed.whatsapp.customer_sender,$('party').value);
+    if(parsed.whatsapp.customer_sender&&!$('party').value){
+      const exact=exactPartyCandidate(parsed.whatsapp.customer_sender);
+      if(exact){
+        $('partySearch').value=parsed.whatsapp.customer_sender;
+        renderPartyOptions(parsed.whatsapp.customer_sender,exact.id);
+        $('party').value=String(exact.id);
+      }else if(!$('partySearch').value){
+        $('partySearch').value=parsed.whatsapp.customer_sender;
+        renderPartyOptions(parsed.whatsapp.customer_sender,$('party').value);
+      }
     }
   }
+  renderSmartStrip(parsed);
   const bits=[];
   if(parsed.ambiguous_services.length)bits.push('الخدمة غامضة بين: '+parsed.ambiguous_services.join(' / '));
   else if(parsed.service_code)bits.push('الخدمة: '+parsed.service_code+(parsed.inferred_by_phone?' (اقتراح من شكل رقم الهاتف)':''));
@@ -288,16 +355,21 @@ async function saveOrder(){
   const raw=$('rawInput').value.trim();
   if(!raw){show('اكتب أو الصق الطلب أولًا.',true);return}
   const parsed=parseRequest(raw);
-  const partyId=$('party').value?Number($('party').value):null;
-  const serviceCode=$('service').value||null;
+  let partyId=$('party').value?Number($('party').value):null;
+  if(!partyId&&parsed.whatsapp?.customer_sender){
+    const exact=exactPartyCandidate(parsed.whatsapp.customer_sender);
+    if(exact)partyId=Number(exact.id);
+  }
+  const serviceCode=$('service').value||parsed.service_code||null;
   const service=serviceBy(serviceCode);
-  const destination=$('destination').value.trim()||null;
-  const packageText=$('packageText').value.trim()||null;
+  const destination=$('destination').value.trim()||parsed.destination||null;
+  const packageText=$('packageText').value.trim()||parsed.package_text||null;
+  const sourceKind=parsed.whatsapp?.detected?'whatsapp':$('sourceKind').value;
   const ready=Boolean(serviceCode&&destination);
   const initialStatus=parsed.whatsapp?.operator_ack?'in_progress':(ready?'ready':'draft');
   const payload={
     request_key:requestKey(),
-    source_kind:$('sourceKind').value,
+    source_kind:sourceKind,
     raw_input:raw,
     service_code:serviceCode,
     package_text:packageText,
@@ -315,7 +387,7 @@ async function saveOrder(){
     const {error}=await db.from('mytool_service_orders').insert(payload);
     if(error)throw error;
     show(partyId?'تم حفظ الطلب وربطه بالعميل. لا يوجد ترحيل دين تلقائي في V0.':'تم حفظ الطلب بدون عميل. الدين محجوب حتى تحدد العميل.',false,true);
-    $('rawInput').value='';$('packageText').value='';$('destination').value='';$('partySearch').value='';renderPartyOptions();renderServiceOptions();$('analysisHint').hidden=true;
+    $('rawInput').value='';$('packageText').value='';$('destination').value='';$('partySearch').value='';renderPartyOptions();renderServiceOptions();$('analysisHint').hidden=true;renderSmartStrip(null);
     await loadOrders();
   }catch(error){show('تعذر حفظ الطلب: '+(error?.message||error),true)}
   finally{$('saveBtn').disabled=false}
@@ -351,10 +423,10 @@ function renderOrders(){
     const svc=serviceBy(row.service_code),party=partyBy(row.customer_party_id);
     const financial=row.customer_party_id?'الدين: غير مرحّل بعد':'الدين: محجوب حتى تحديد العميل';
     return '<article class="order" data-order-id="'+row.id+'">'+
-      '<div class="order-head"><div><div class="order-title">'+esc(svc?.display_name||row.service_code||'خدمة غير معروفة')+(row.package_text?' — '+esc(row.package_text):'')+'</div><div class="muted">'+esc(fmtDate(row.created_at))+'</div></div><div class="pills"><span class="pill '+statusClass(row.status)+'">'+esc(statusLabel(row.status))+'</span><span class="pill '+(row.customer_party_id?'ok':'warn')+'">'+esc(party?.display_name||'بدون عميل')+'</span></div></div>'+
+      '<div class="order-head"><div><div class="order-brand">'+brandIconHtml(row.service_code||'?',svc?.display_name)+'<div><div class="order-title">'+esc(svc?.display_name||row.service_code||'خدمة غير معروفة')+(row.package_text?' — '+esc(row.package_text):'')+'</div><div class="source-mini">'+(row.source_kind==='whatsapp'?brandIconHtml('WHATSAPP'):'')+'<span>'+esc(fmtDate(row.created_at))+'</span></div></div></div></div><div class="pills"><span class="pill '+statusClass(row.status)+'">'+esc(statusLabel(row.status))+'</span><span class="pill '+(row.customer_party_id?'ok':'warn')+'">'+esc(party?.display_name||'بدون عميل')+'</span></div></div>'+
       '<div class="order-raw">'+esc(row.raw_input)+'</div>'+
       '<div class="order-grid"><div class="kv"><b>الخدمة</b><span>'+esc(row.service_code||'—')+'</span></div><div class="kv"><b>القيمة</b><span>'+esc(row.package_text||'—')+'</span></div><div class="kv"><b>الوجهة</b><span dir="ltr">'+esc(row.destination||'—')+'</span></div><div class="kv"><b>العميل</b><span>'+esc(party?.display_name||'غير محدد')+'</span></div><div class="kv"><b>الحالة المالية</b><span>'+esc(financial)+'</span></div><div class="kv"><b>المصدر</b><span>'+esc(row.source_kind)+'</span></div></div>'+
-      '<div class="actions"><button class="btn secondary" data-action="open" data-id="'+row.id+'" type="button">'+esc(orderActionLabel(row))+'</button><button class="btn warn" data-action="status" data-status="in_progress" data-id="'+row.id+'" type="button">جاري</button><button class="btn ok" data-action="status" data-status="success" data-id="'+row.id+'" type="button">تم</button><button class="btn secondary" data-action="status" data-status="review" data-id="'+row.id+'" type="button">مراجعة</button></div>'+
+      '<div class="actions"><button class="btn secondary" data-action="open" data-id="'+row.id+'" type="button">▶ '+esc(orderActionLabel(row))+'</button><button class="btn warn" data-action="status" data-status="in_progress" data-id="'+row.id+'" type="button">⏳ جاري</button><button class="btn ok" data-action="status" data-status="success" data-id="'+row.id+'" type="button">✓ تم</button><button class="btn secondary" data-action="status" data-status="review" data-id="'+row.id+'" type="button">⚠</button></div>'+
       '<details><summary>ربط/تصحيح العميل</summary><div class="grid" style="margin-top:8px"><div class="full"><select class="row-party">'+partyOptions(row.customer_party_id)+'</select></div></div><div class="actions"><button class="btn secondary" data-action="party-save" data-id="'+row.id+'" type="button">حفظ العميل</button></div></details>'+
       '<details><summary>تعديل الفهم</summary><div class="grid" style="margin-top:8px"><div><label>الخدمة</label><select class="row-service">'+editServiceOptions(row.service_code)+'</select></div><div><label>القيمة</label><input class="row-package" value="'+esc(row.package_text||'')+'"></div><div class="full"><label>الوجهة</label><input class="row-destination" dir="ltr" value="'+esc(row.destination||'')+'"></div></div><div class="actions"><button class="btn secondary" data-action="interpret-save" data-id="'+row.id+'" type="button">حفظ التصحيح</button></div></details>'+
       '<details><summary>سجل التغييرات</summary><div class="actions"><button class="btn secondary" data-action="history" data-id="'+row.id+'" type="button">تحميل السجل</button></div><div class="history"></div></details>'+
@@ -441,7 +513,6 @@ async function saveCatalog(){
 }
 
 $('draftClearBtn').onclick=clearDraft;
-$('analyzeBtn').onclick=applyAnalysis;
 $('saveBtn').onclick=saveOrder;
 $('refreshBtn').onclick=()=>loadOrders().catch(e=>show(e.message,true));
 $('rawInput').addEventListener('input',()=>{syncDraftClear();clearTimeout(parseTimer);parseTimer=setTimeout(applyAnalysis,350)});
