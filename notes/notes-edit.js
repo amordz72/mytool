@@ -6,7 +6,8 @@
   const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
   const TYPES={UNCATEGORIZED:'بدون تصنيف',BUG:'خطأ',NEEDS_CONFIRMATION:'يحتاج تأكيد عمر',AI_REQUEST:'طلب للذكاء الاصطناعي',TASK:'مهمة',IDEA:'فكرة',PRODUCT_INVENTORY:'منتج أو مخزون',REFERENCE:'مرجع'};
   const PRIORITIES={NORMAL:'عادي',URGENT:'عاجل',HIGH:'مرتفع',LOW:'منخفض'};
-  const AREAS={MYTOOL:'MyTool',NOTES:'الملاحظات',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'منتج',GENERAL:'عام'};
+  const BASE_AREAS={MYTOOL:'MyTool',NOTES:'الملاحظات',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'منتج',GENERAL:'عام'};
+  const AREAS={...BASE_AREAS};
   let client=null;
 
   function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -24,10 +25,19 @@
 .note-edit-panel label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:800;color:#475569}
 .note-edit-panel textarea,.note-edit-panel input,.note-edit-panel select{width:100%;border:1px solid #cfd8df;border-radius:11px;padding:9px;background:#fff;font:inherit}
 .note-edit-panel textarea{min-height:130px;resize:vertical}.note-edit-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.note-edit-actions button{min-height:40px}
-.note-edit-message{margin-top:8px;font-size:12px;font-weight:800;color:#0f766e}.note-edit-message.error{color:#b42318}.note-edit-help{font-size:11px;color:#64748b;margin-top:6px}
+.note-edit-message{margin-top:8px;font-size:12px;font-weight:800;color:#0f766e}.note-edit-message.error{color:#b42318}.note-edit-help{font-size:11px;color:#64748b;margin-top:6px}.note-head-tools{display:flex;gap:6px;align-items:center}.note-head-tools button{min-width:38px;height:38px;padding:0;border-radius:11px}.note-delete-trigger{color:#b42318!important;border-color:#fecaca!important;background:#fff7f7!important}
 @media(max-width:560px){.note-edit-grid{grid-template-columns:1fr}}
 `;
     document.head.appendChild(style);
+  }
+
+  async function loadAreas(){
+    try{
+      const c=await getClient();
+      const {data,error}=await c.from('mytool_note_area_options').select('value,label').eq('enabled',true).order('label');
+      if(error)throw error;
+      for(const row of data||[]){const value=String(row.value||'').trim();if(value)AREAS[value]=String(row.label||value)}
+    }catch(error){console.warn('MyTool note edit areas unavailable',error)}
   }
 
   async function getClient(){
@@ -65,6 +75,39 @@
     return true;
   }
 
+  async function deleteCurrent(article,ref,button){
+    if(!confirm('حذف هذه الملاحظة نهائيًا؟'))return;
+    button.disabled=true;
+    try{
+      const loaded=await loadNote(ref),data=loaded.note,store=localStore();
+      const remoteId=Number(data.remote_id||data.id||ref.remoteId||0);
+      if(remoteId){
+        const c=await getClient();
+        const images=await c.from('mytool_note_images').select('object_path').eq('note_id',remoteId);
+        if(images.error)throw images.error;
+        const paths=(images.data||[]).map(x=>x.object_path).filter(Boolean);
+        if(paths.length){
+          const removed=await c.storage.from('mytool-note-images').remove(paths);
+          if(removed.error)throw removed.error;
+        }
+        const deleted=await c.from('mytool_notes').delete().eq('id',remoteId);
+        if(deleted.error)throw deleted.error;
+      }
+      if(store&&loaded.key){
+        const localImages=await store.getImagesForNote(loaded.key);
+        for(const image of localImages)await store.deleteImage(image.key);
+        await store.deleteNote(loaded.key);
+      }
+      article.remove();
+      const msg=document.getElementById('message');
+      if(msg){msg.textContent='تم حذف الملاحظة.';msg.className='msg ok'}
+    }catch(error){
+      button.disabled=false;
+      const msg=document.getElementById('message');
+      if(msg){msg.textContent='تعذر حذف الملاحظة: '+(error?.message||error);msg.className='msg err'}
+    }
+  }
+
   async function saveRemote(id,payload){
     if(!id)throw new Error('NOTE_ID_MISSING');
     const c=await getClient();
@@ -79,6 +122,7 @@
     try{
       const loaded=await loadNote(ref);
       const data=loaded.note;
+      if(data.project_area&&!AREAS[data.project_area])AREAS[data.project_area]=data.project_area;
       const panel=document.createElement('div');
       panel.className='note-edit-panel';
       panel.innerHTML='<div class="note-edit-grid">'+
@@ -131,17 +175,19 @@
     const numericValue=Number(pick?.value||0);
     const remoteId=Number.isFinite(numericValue)&&numericValue>0?numericValue:0;
     const actions=article.querySelector('.actions');
-    if((!key&&!remoteId)||!actions)return;
+    const head=article.querySelector('.note-head');
+    if((!key&&!remoteId)||!actions||!head)return;
     article.dataset.noteEditReady='1';
+    const tools=document.createElement('div');tools.className='note-head-tools';
     const button=document.createElement('button');
-    button.type='button';
-    button.className='outline note-edit-trigger note-tool';
-    button.textContent='تعديل';
-    if(remoteId)button.dataset.id=String(remoteId);
-    if(key)button.dataset.key=key;
+    button.type='button';button.className='outline note-edit-trigger note-tool';button.textContent='✎';button.title='تعديل الملاحظة';button.setAttribute('aria-label','تعديل الملاحظة');
+    if(remoteId)button.dataset.id=String(remoteId);if(key)button.dataset.key=key;
     button.onclick=()=>openEditor(article,{key,remoteId},button);
-    const archive=actions.querySelector('.archive');
-    if(archive)actions.insertBefore(button,archive);else actions.appendChild(button);
+    const del=document.createElement('button');
+    del.type='button';del.className='outline note-delete-trigger';del.textContent='×';del.title='حذف الملاحظة';del.setAttribute('aria-label','حذف الملاحظة');
+    del.onclick=()=>deleteCurrent(article,{key,remoteId},del);
+    tools.append(button,del);
+    head.prepend(tools);
   }
 
   function enhanceAll(){document.querySelectorAll('#list > .note').forEach(enhanceArticle)}
@@ -156,6 +202,7 @@
 
   function start(){
     ensureStyles();
+    loadAreas().then(()=>enhanceAll());
     showFlash();
     enhanceAll();
     const list=document.getElementById('list');
