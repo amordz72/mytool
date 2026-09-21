@@ -575,6 +575,39 @@ async function pollRpc(rpcName,jobUuid,token,timeoutMs=50000){
  throw new Error('TIMEOUT');
 }
 
+async function resolveArsselliSimForBalance(supabase){
+ const {data:stations,error:listError}=await supabase.rpc('station_connect_admin_list');
+ if(listError)throw listError;
+ const approved=(Array.isArray(stations)?stations:[]).filter(st=>String(st?.status||'').toLowerCase()==='approved');
+ for(const station of approved){
+  const {data:hardware,error:hardwareError}=await supabase.rpc('station_connect_admin_hardware',{
+   p_station_uuid:station.station_uuid
+  });
+  if(hardwareError)throw hardwareError;
+  const sim=(Array.isArray(hardware)?hardware:[]).find(item=>item?.sim_uuid&&item?.sim_type==='mobilis-arsselli');
+  if(sim)return sim;
+ }
+ throw new Error('ARSSELLI_SIM_NOT_FOUND');
+}
+
+async function refreshArsselliBalanceForFlexy(supabase,token){
+ const sim=await resolveArsselliSimForBalance(supabase);
+ statusBox.textContent='رصيد GTS قديم أو غير جاهز. جاري تحديث رصيد Arsselli قبل الإرسال…';
+ const {data,error}=await supabase.rpc('station_connect_admin_queue_arsselli_balance',{
+  p_sim_uuid:sim.sim_uuid
+ });
+ if(error)throw error;
+ const job=data?.[0]||null;
+ if(!job?.job_uuid)throw new Error('ARSSELLI_BALANCE_JOB_NOT_CREATED');
+ const row=await pollRpc('station_connect_admin_arsselli_balance_job',job.job_uuid,token,80000);
+ if(row.status==='failed')throw new Error(row.result_text||row.result_code||'ARSSELLI_BALANCE_FAILED');
+ if(row.result_code!=='ARSSELLI_BALANCE_SMS'){
+  throw new Error(row.result_text||row.result_code||'ARSSELLI_BALANCE_NOT_CONFIRMED');
+ }
+ statusBox.textContent='تم تحديث رصيد GTS. جاري متابعة طلب الفليكسي…';
+ return row;
+}
+
 async function discoverOffersReal(){
  const value=digits();
  const token=++discoveryToken;
@@ -755,17 +788,36 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
  statusBox.textContent='تم تأكيد العملية. جاري إرسال الفليكسي عبر Mobilis Arsselli — 696 / GTS 04…';
  try{
   const {supabase}=await getApi();
-  const {data,error}=await supabase.rpc('station_connect_admin_create_arsselli_flexy_696',{
-   p_phone:value,
-   p_amount:amount,
-   p_station_uuid:null
-  });
-  if(error)throw error;
-  const job=data?.[0];
-  if(!job?.job_uuid)throw new Error('FLEXY_JOB_NOT_CREATED');
-  bootstrap.Modal.getOrCreateInstance(ordinarySendModal).hide();
   const localToken=discoveryToken;
+  let createData=null;
+  let createError=null;
+
+  for(let attempt=0;attempt<2;attempt++){
+   const created=await supabase.rpc('station_connect_admin_create_arsselli_flexy_696',{
+    p_phone:value,
+    p_amount:amount,
+    p_station_uuid:null
+   });
+   createData=created.data;
+   createError=created.error;
+
+   if(!createError)break;
+
+   const reason=String(createError?.message||createError||'');
+   if(attempt===0&&reason.includes('NO_READY_ARSSELLI_GTS_ROUTE')){
+    await refreshArsselliBalanceForFlexy(supabase,localToken);
+    continue;
+   }
+   throw createError;
+  }
+
+  if(createError)throw createError;
+  const job=createData?.[0];
+  if(!job?.job_uuid)throw new Error('FLEXY_JOB_NOT_CREATED');
+
+  bootstrap.Modal.getOrCreateInstance(ordinarySendModal).hide();
   const row=await pollRpc('station_connect_admin_arsselli_flexy_696_job',job.job_uuid,localToken,60000);
+
   if(row.status==='success'){
    statusBox.textContent='تم إرسال الفليكسي بنجاح.';
    playToggleTone(true);
@@ -778,9 +830,19 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
   }else{
    statusBox.textContent='انتهت العملية بالحالة: '+(row.status||'غير معروفة');
   }
+
   await loadRecentOperations();
  }catch(error){
-  statusBox.textContent='تعذر إرسال الفليكسي: '+(error?.message||error);
+  const reason=String(error?.message||error||'');
+  if(reason.includes('MODEM_BUSY')){
+   statusBox.textContent='مودم Arsselli مشغول بعملية أخرى. انتظر انتهاءها ثم أعد المحاولة.';
+  }else if(reason.includes('BALANCE_SMS_PENDING')||reason.includes('ARSSELLI_BALANCE_NOT_CONFIRMED')){
+   statusBox.textContent='لم يصل تأكيد رصيد GTS الجديد بعد؛ لم يتم إرسال الفليكسي. راجع رصيد Arsselli ثم أعد المحاولة.';
+  }else if(reason.includes('NO_READY_ARSSELLI_GTS_ROUTE')){
+   statusBox.textContent='مسار Arsselli/GTS غير جاهز بعد تحديث الرصيد أو الرصيد غير كافٍ. لم يتم إرسال الفليكسي.';
+  }else{
+   statusBox.textContent='تعذر إرسال الفليكسي: '+reason;
+  }
  }finally{
   ordinaryConfirmBtn.disabled=false;
   ordinaryConfirmBtn.textContent='إرسال الفليكسي';
