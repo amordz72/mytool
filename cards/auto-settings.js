@@ -128,26 +128,34 @@
   }
 
   function ensureTextClearButton(){
-    let wrap=document.getElementById('cardsTextWrap');
-    if(!wrap){
-      wrap=document.createElement('div');
-      wrap.id='cardsTextWrap';
-      wrap.style.cssText='position:relative';
-      text.parentNode.insertBefore(wrap,text);
-      wrap.appendChild(text);
+    let row=document.getElementById('cardsTextClearRow');
+    if(!row){
+      row=document.createElement('div');
+      row.id='cardsTextClearRow';
+      row.style.cssText='display:flex;justify-content:flex-start;align-items:center;margin:6px 0 0;min-height:34px';
+      text.insertAdjacentElement('afterend',row);
     }
     let clearBtn=document.getElementById('clearCurrentWork');
     if(!clearBtn){
       clearBtn=document.createElement('button');
       clearBtn.id='clearCurrentWork';
       clearBtn.type='button';
-      clearBtn.textContent='×';
+      clearBtn.textContent='× مسح المحتوى';
       clearBtn.title='مسح النص والنتائج الحالية';
       clearBtn.setAttribute('aria-label','مسح النص والنتائج الحالية');
-      clearBtn.style.cssText='position:absolute;top:14px;left:8px;z-index:2;width:34px;height:34px;border:1px solid #efb7b7;border-radius:10px;background:#fff7f7;color:#b42318;font-size:24px;line-height:28px;font-weight:bold;cursor:pointer';
-      wrap.appendChild(clearBtn);
+      clearBtn.style.cssText='width:auto;padding:7px 10px;border:1px solid #efb7b7;border-radius:9px;background:#fff7f7;color:#b42318;font-size:12px;font-weight:bold;cursor:pointer';
+      row.appendChild(clearBtn);
     }
-    clearBtn.onclick=clearCurrentWork;
+    const sync=()=>{
+      const hasWork=Boolean(text.value.trim()||(result&&result.textContent.trim()));
+      row.hidden=!hasWork;
+    };
+    clearBtn.onclick=()=>{if(clearCurrentWork())sync()};
+    text.addEventListener('input',sync);
+    text.addEventListener('paste',()=>setTimeout(sync,0));
+    file.addEventListener('change',()=>setTimeout(sync,0));
+    window.addEventListener('pageshow',()=>setTimeout(sync,0));
+    sync();
   }
 
   function ensureActionBar(){
