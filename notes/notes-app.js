@@ -13,6 +13,7 @@
   const store=window.MyToolNotesLocal;
   let supabase=null,user=null,hasSupabaseSession=false,remoteAvailable=false;
   let notes=[],images=[],remoteImages=[];
+  let smartRules=[];
   let localObjectUrls=[];
   let syncRunning=false;
   let smartApplying=false;
@@ -39,6 +40,28 @@
 
   function smartText(v=''){return String(v??'').toLowerCase().normalize('NFKC').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim()}
   function hasAny(text,terms){return terms.some(x=>text.includes(smartText(x)))}
+  function applySavedSmartRules(text,result){
+    const t=smartText(text),used=new Set();
+    for(const rule of smartRules){
+      const kind=String(rule.rule_kind||'').toUpperCase();
+      if(used.has(kind)||rule.enabled===false)continue;
+      const keyword=smartText(rule.keyword||'');
+      if(!keyword||!t.includes(keyword))continue;
+      if(kind==='TYPE'&&TYPES[rule.target_value]){result.note_type=rule.target_value;used.add(kind)}
+      else if(kind==='PRIORITY'&&PRIORITIES[rule.target_value]){result.priority=rule.target_value;used.add(kind)}
+      else if(kind==='AREA'&&AREAS[rule.target_value]){result.project_area=rule.target_value;used.add(kind)}
+    }
+    return result;
+  }
+  async function loadSmartRules(){
+    if(!hasSupabaseSession){smartRules=[];return}
+    try{
+      const c=await getSupabase();
+      const {data,error}=await c.from('mytool_note_smart_rules').select('id,rule_kind,target_value,keyword,enabled').eq('enabled',true);
+      if(error)throw error;
+      smartRules=(data||[]).slice().sort((a,b)=>smartText(b.keyword).length-smartText(a.keyword).length);
+    }catch(error){console.warn('MyTool smart rules unavailable',error);smartRules=[]}
+  }
   function inferNoteMeta(body,current={}){
     const t=smartText(body);
     let note_type=current.note_type||'UNCATEGORIZED',priority=current.priority||'NORMAL',project_area=current.project_area||'MYTOOL';
@@ -58,7 +81,7 @@
     else if(hasAny(t,['صندوق الملاحظات','نظام الملاحظات','قسم الملاحظات','اعدادات الملاحظات','إعدادات الملاحظات','ذكاء الملاحظات','ذكاء الملاحظه','ذكاء الملاحظة','تصنيف الملاحظات','ارشيف الملاحظات','أرشيف الملاحظات','الملاحظات','الملاحظه','الملاحظة']))project_area='NOTES';
     else if(hasAny(t,['mytool','my tool','ماي تول','ماي تولز','معالجه الحسابات','مراجعه الحسابات']))project_area='MYTOOL';
 
-    return{note_type,priority,project_area};
+    return applySavedSmartRules(t,{note_type,priority,project_area});
   }
   function applySmartClassification(){
     const body=$('body')?.value||'';
@@ -386,8 +409,10 @@
   async function init(){
     try{await store.open()}catch(error){notify('تعذر فتح التخزين المحلي: '+(error?.message||error),true);return}
     await detectSession();
+    await loadSmartRules();
     await reload();
-    window.addEventListener('online',async()=>{if(hasSupabaseSession){await syncPending({quiet:true});await reload()}});
+    window.addEventListener('online',async()=>{if(hasSupabaseSession){await loadSmartRules();await syncPending({quiet:true});await reload()}});
+    document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible'&&hasSupabaseSession)await loadSmartRules()});
   }
 
   $('save').onclick=save;
