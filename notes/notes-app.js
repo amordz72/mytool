@@ -52,7 +52,7 @@
     else if(hasAny(t,['فكره','اقتراح']))note_type='IDEA';
     else if(hasAny(t,['مهمه','نفذ','تنفيذ','يجب','لازم']))note_type='TASK';
 
-    if(hasAny(t,['المحل','عامل المحل','الورديه','الكيس']))project_area='SHOP';
+    if(hasAny(t,['المحل','محل','عامل المحل','الورديه','الكيس']))project_area='SHOP';
     else if(hasAny(t,['tehna connect','تهنا كونكت','تهنى كونكت','station connect','ستيشن كونكت','مودم','ussd']))project_area='TEHNA_CONNECT';
     else if(hasAny(t,['منتج','مخزون']))project_area='PRODUCT';
     else if(hasAny(t,['mytool','my tool','ماي تول','ماي تولز','معالجه الحسابات','مراجعه الحسابات','الملاحظات']))project_area='MYTOOL';
