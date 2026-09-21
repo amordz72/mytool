@@ -163,6 +163,17 @@
     document.body.classList.remove('mytool-tools-nav-active');
     document.querySelectorAll('.mytool-tools-source-hidden').forEach(el=>el.classList.remove('mytool-tools-source-hidden'));
   }
+  function ensureChatPaymentsCard(){
+    const quick=document.querySelector('[data-dashboard-section="quick"]');
+    if(!quick||quick.querySelector('a[href="chat-payments-reader/"]'))return;
+    const card=document.createElement('a');
+    card.className='card';
+    card.href='chat-payments-reader/';
+    card.innerHTML='<div class="icon">💬</div><h2>قارئ مدفوعات الدردشة</h2><p>استخرج مدفوعات عميل من WhatsApp بين تاريخين مع مراجعة المطابقات المختصرة قبل الاعتماد.</p><span class="badge">ZIP / TXT / لصق</span>';
+    const after=quick.querySelector('a[href="document-reader/"]');
+    if(after)after.insertAdjacentElement('afterend',card);else quick.prepend(card);
+  }
+
   function render(){
     renderQueued=false;
     if(rendering)return;
@@ -172,6 +183,7 @@
       if(!dashboard||dashboard.hidden){hideEnhancements();return}
       const sources=visibleSourceContainers();
       if(!sources.length){hideEnhancements();return}
+      ensureChatPaymentsCard();
       const items=catalog();
 
       // Root is now a real dashboard. Do not replace it with the old
