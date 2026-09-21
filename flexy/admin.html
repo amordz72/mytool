@@ -27,7 +27,7 @@
 <body>
 <main class="fx-wrap">
   <div class="fx-top">
-    <div><h1 class="fx-title">إدارة Flexy</h1><p class="fx-sub">العروض وسياسات الظهور الآن، وباقي تشغيل Flexy يتجمع هنا تدريجيًا.</p></div>
+    <div><h1 class="fx-title">إدارة Flexy</h1><p class="fx-sub">العروض وسياسات الظهور مستقلة عن مصادر العرض وطرق التنفيذ؛ ظهور العرض لا يعني أنه قابل للإرسال.</p></div>
     <a class="fx-back" href="./">← فليكسي</a>
   </div>
 
@@ -132,7 +132,7 @@ function renderOffers(){
     <div class="fx-offer-head">
       <div><div class="fx-offer-title">${escapeHtml(o.display_name)}</div>
       <div class="fx-offer-sub">${escapeHtml(o.family)} · ${money(o.amount)} دج${o.network_index?' · Index '+escapeHtml(o.network_index):''}</div></div>
-      <span class="fx-pill ${o.source_reference_uuid?'ok':'warn'}">${o.source_reference_uuid?'موثق بالشبكة':'بدون مرجع شبكي'}</span>
+      <span class="fx-pill ${o.source_reference_uuid?'ok':'warn'}">${o.source_reference_uuid?'له مصدر شبكة':'مصدر داخلي/يدوي'}</span>
     </div>
     <div class="fx-offer-controls">
       <div class="fx-field"><label>الإدارة</label><select class="fx-select admin-vis">${visOptions(o.admin_visibility)}</select></div>
@@ -141,7 +141,7 @@ function renderOffers(){
     </div>
     <div class="fx-checks">
       <label><input class="active" type="checkbox" ${o.active?'checked':''}> العرض مفعّل</label>
-      <label><input class="execution" type="checkbox" ${o.execution_enabled?'checked':''}> قابل للتنفيذ</label>
+      <label><input class="execution" type="checkbox" ${o.execution_enabled?'checked':''}> السماح بالتنفيذ عند وجود مسار</label>
     </div>
     <div class="fx-actions" style="margin-top:10px"><button class="fx-btn save-offer" type="button">حفظ العرض</button></div>
   </article>`).join('');
