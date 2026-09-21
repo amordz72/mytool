@@ -34,7 +34,7 @@
     .operation-item{border:1px solid #e0e5ee;border-radius:.65rem;background:#fff}.operation-label{font-size:.72rem;color:#8a98aa}.operation-value{font-weight:700;color:#52657a}
     .offer-modal .modal-content{border:0;border-radius:1rem;box-shadow:0 1rem 3rem rgba(15,23,42,.2)}
     .offer-modal .modal-header{border-bottom:1px solid #edf0f5}.offer-modal .modal-footer{border-top:0}
-    .status-box{background:#f0f2ff;color:#4f5f86}.progress{height:3px}.progress-bar{background:var(--brand);width:0}
+    .status-box{background:#f0f2ff;color:#4f5f86}.progress{height:3px}.progress-bar{background:var(--brand);width:0}.execute-bar{border:1px solid #e2e6ef;background:#fff;border-radius:.7rem}.execute-bar .btn{min-width:110px;font-weight:800}
     .progress.run .progress-bar{animation:hold 7s linear forwards}@keyframes hold{to{width:100%}}
     .mobile-toolbar{min-height:58px;background:#fff}.menu-trigger{width:42px;height:42px;border:0;background:transparent;color:#52657a;font-size:1.55rem;border-radius:.5rem}
     .menu-trigger:hover,.menu-trigger:focus{background:#f0f2ff;color:var(--brand)}
@@ -169,18 +169,16 @@
       <div id="offersList" class="list-group mb-0"></div>
     </section>
 
+    <div id="offerActionBar" class="execute-bar surface d-none mt-3 p-3 d-flex align-items-center justify-content-between gap-3">
+      <div class="small">المحدد: <strong id="selectedOfferText">—</strong></div>
+      <button id="sendOfferBtn" class="btn btn-primary" type="button">أرسل</button>
+    </div>
+
     <h2 class="page-title h4 mt-5 mb-3">آخر العمليات</h2>
     <section class="card surface p-3 p-md-4">
-      <article class="operation-item p-3" aria-label="عملية تجريبية">
-        <div class="row g-3 align-items-center">
-          <div class="col-6 col-md-2"><div class="operation-label">النوع</div><div class="operation-value">عرض</div></div>
-          <div class="col-6 col-md-2"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">06 75 27 80 81</div></div>
-          <div class="col-6 col-md-2"><div class="operation-label">العرض</div><div class="operation-value">PixX 500</div></div>
-          <div class="col-6 col-md-2"><div class="operation-label">المبلغ</div><div class="operation-value">500 دج</div></div>
-          <div class="col-6 col-md-2"><div class="operation-label">الحالة</div><span class="badge text-bg-success">ناجحة</span></div>
-          <div class="col-6 col-md-2"><div class="operation-label">الوضع</div><span class="badge text-bg-light border">معاينة</span></div>
-        </div>
-      </article>
+      <div id="operationsList" class="d-grid gap-2">
+        <div class="small text-muted text-center py-3">جاري تحميل العمليات الحقيقية…</div>
+      </div>
     </section>
   </div>
 </div>
@@ -211,108 +209,402 @@
 <script>
 const isAdmin=Boolean(window.MyToolAccessContext?.adminLike);
 document.querySelectorAll('.admin-only').forEach(el=>{el.hidden=!isAdmin});
+
 const catalog={
  SAMA:{families:[
   {name:'Sama Mix',offers:[
-   {name:'Sama Mix 100',price:'100 دج',index:1,details:'500Mo — يوم واحد'},
-   {name:'Sama Mix 500',price:'500 دج',index:2,details:'5Go — 15 يومًا'},
-   {name:'Sama Mix 1000',price:'1,000 دج',index:3,details:'15Go — 30 يومًا'},
-   {name:'Sama Mix 1500',price:'1,500 دج',index:4,details:'30Go — 30 يومًا'},
-   {name:'Sama Mix 2000',price:'2,000 دج',index:5,details:'50Go — 30 يومًا'}]},
+   {name:'Sama Mix 100',price:'100 دج',index:1,amount:100,details:'500Mo — يوم واحد'},
+   {name:'Sama Mix 500',price:'500 دج',index:2,amount:500,details:'5Go — 15 يومًا'},
+   {name:'Sama Mix 1000',price:'1,000 دج',index:3,amount:1000,details:'15Go — 30 يومًا'},
+   {name:'Sama Mix 1500',price:'1,500 دج',index:4,amount:1500,details:'30Go — 30 يومًا'},
+   {name:'Sama Mix 2000',price:'2,000 دج',index:5,amount:2000,details:'50Go — 30 يومًا'}]},
   {name:'Sama Talk',offers:[
-   {name:'Sama Talk 500',price:'500 دج',index:6,details:'500Mo — 15 يومًا'},
-   {name:'Sama Talk 1000',price:'1,000 دج',index:7,details:'2Go — 30 يومًا'},
-   {name:'Sama Talk 1500',price:'1,500 دج',index:8,details:'3Go — 30 يومًا'},
-   {name:'Sama Talk 2000',price:'2,000 دج',index:9,details:'4Go — 30 يومًا'}]},
+   {name:'Sama Talk 500',price:'500 دج',index:6,amount:500,details:'500Mo — 15 يومًا'},
+   {name:'Sama Talk 1000',price:'1,000 دج',index:7,amount:1000,details:'2Go — 30 يومًا'},
+   {name:'Sama Talk 1500',price:'1,500 دج',index:8,amount:1500,details:'3Go — 30 يومًا'},
+   {name:'Sama Talk 2000',price:'2,000 دج',index:9,amount:2000,details:'4Go — 30 يومًا'}]},
   {name:'Sama Net',offers:[
-   {name:'Sama Net 500',price:'500 دج',index:1,details:'10Go — 15 يومًا'},
-   {name:'Sama Net 1000',price:'1,000 دج',index:2,details:'30Go — 30 يومًا'},
-   {name:'Sama Net 1500',price:'1,500 دج',index:3,details:'60Go — 30 يومًا'},
-   {name:'Sama Net 2000',price:'2,000 دج',index:4,details:'90Go — 30 يومًا'}]}
+   {name:'Sama Net 500',price:'500 دج',index:1,amount:500,details:'10Go — 15 يومًا'},
+   {name:'Sama Net 1000',price:'1,000 دج',index:2,amount:1000,details:'30Go — 30 يومًا'},
+   {name:'Sama Net 1500',price:'1,500 دج',index:3,amount:1500,details:'60Go — 30 يومًا'},
+   {name:'Sama Net 2000',price:'2,000 دج',index:4,amount:2000,details:'90Go — 30 يومًا'}]}
  ]},
  PIXX:{families:[{name:'PixX',offers:[
-  {name:'PixX 50',price:'50 دج',index:1,details:'500Mo — يوم واحد'},
-  {name:'PixX 100 (1Go)',price:'100 دج',index:2,details:'1Go — يوم واحد'},
-  {name:'PixX 500 (5Go)',price:'500 دج',index:3,details:'5Go — 15 يومًا'},
-  {name:'PixX 1000 (13Go)',price:'1,000 دج',index:4,details:'13Go — 30 يومًا'},
-  {name:'PixX 2000 (30Go)',price:'2,000 دج',index:5,details:'30Go'}]}]},
+  {name:'PixX 50',price:'50 دج',index:1,amount:50,details:'500Mo — يوم واحد'},
+  {name:'PixX 100 (1Go)',price:'100 دج',index:2,amount:100,details:'1Go — يوم واحد'},
+  {name:'PixX 500 (5Go)',price:'500 دج',index:3,amount:500,details:'5Go — 15 يومًا'},
+  {name:'PixX 1000 (13Go)',price:'1,000 دج',index:4,amount:1000,details:'13Go — 30 يومًا'},
+  {name:'PixX 2000 (30Go)',price:'2,000 دج',index:5,amount:2000,details:'30Go'}]}]},
  REVOLUTION:{families:[{name:'Revolution',offers:[
-  {name:'Revolution 50',price:'50 دج',index:null,details:'كتالوج خارجي — التنفيذ غير مؤكد'},
-  {name:'Revolution 100',price:'100 دج',index:null,details:'كتالوج خارجي — التنفيذ غير مؤكد'},
-  {name:'Revolution 1000',price:'1,000 دج',index:6,details:''},
-  {name:'Revolution 1200',price:'1,200 دج',index:5,details:''},
-  {name:'Revolution 1500',price:'1,500 دج',index:4,details:''},
-  {name:'Revolution 1800',price:'1,800 دج',index:3,details:''},
-  {name:'Revolution 2000',price:'2,000 دج',index:2,details:''},
-  {name:'Revolution 2500',price:'2,500 دج',index:1,details:''}]}]}
+  {name:'Revolution 50',price:'50 دج',index:null,amount:50,details:'كتالوج خارجي — التنفيذ غير مؤكد'},
+  {name:'Revolution 100',price:'100 دج',index:null,amount:100,details:'كتالوج خارجي — التنفيذ غير مؤكد'},
+  {name:'Revolution 1000',price:'1,000 دج',index:6,amount:1000,details:''},
+  {name:'Revolution 1200',price:'1,200 دج',index:5,amount:1200,details:''},
+  {name:'Revolution 1500',price:'1,500 دج',index:4,amount:1500,details:''},
+  {name:'Revolution 1800',price:'1,800 دج',index:3,amount:1800,details:''},
+  {name:'Revolution 2000',price:'2,000 دج',index:2,amount:2000,details:''},
+  {name:'Revolution 2500',price:'2,500 دج',index:1,amount:2500,details:''}]}]}
 };
-const cases=[{phone:'0660000001',group:'REVOLUTION'},{phone:'0660000002',group:'SAMA'},{phone:'0660000003',group:'PIXX'}];
-const known={'0660000001':'REVOLUTION','0660000002':'SAMA','0660000003':'PIXX','0667028297':'REVOLUTION','0667038943':'SAMA','0675278081':'PIXX'};
-const phone=document.getElementById('phone'),operator=document.getElementById('operator'),hint=document.getElementById('hint'),statusBox=document.getElementById('status'),timer=document.getElementById('timer'),balanceMode=document.getElementById('balanceMode'),offersMode=document.getElementById('offersMode'),results=document.getElementById('results'),offersList=document.getElementById('offersList'),groupTitle=document.getElementById('groupTitle'),detailsModal=document.getElementById('offerDetailsModal'),detailName=document.getElementById('detailName'),detailPrice=document.getElementById('detailPrice'),detailText=document.getElementById('detailText');
-let index=0,timeouts=[],running=false,silent=false,selectedMode='balance',lastItem=null;
-const digits=()=>phone.value.replace(/\D/g,'').slice(0,10),format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
-const clear=()=>{timeouts.forEach(clearTimeout);timeouts=[]};
-const escapeAttr=value=>String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const MIN_WORKER_OFFER_AMOUNT=500;
-const offerAmount=offer=>Number(String(offer?.price||'').replace(/\D/g,''))||0;
+const known={'0667028297':'REVOLUTION','0667038943':'SAMA','0675278081':'PIXX'};
+
+const phone=document.getElementById('phone');
+const operator=document.getElementById('operator');
+const hint=document.getElementById('hint');
+const statusBox=document.getElementById('status');
+const timer=document.getElementById('timer');
+const balanceMode=document.getElementById('balanceMode');
+const offersMode=document.getElementById('offersMode');
+const results=document.getElementById('results');
+const offersList=document.getElementById('offersList');
+const groupTitle=document.getElementById('groupTitle');
+const detailsModal=document.getElementById('offerDetailsModal');
+const detailName=document.getElementById('detailName');
+const detailPrice=document.getElementById('detailPrice');
+const detailText=document.getElementById('detailText');
+const offerActionBar=document.getElementById('offerActionBar');
+const selectedOfferText=document.getElementById('selectedOfferText');
+const sendOfferBtn=document.getElementById('sendOfferBtn');
+const sendOfferModal=document.getElementById('sendOfferModal');
+const sendPhone=document.getElementById('sendPhone');
+const sendOfferName=document.getElementById('sendOfferName');
+const sendOfferAmount=document.getElementById('sendOfferAmount');
+const confirmSendOfferBtn=document.getElementById('confirmSendOfferBtn');
+const operationsList=document.getElementById('operationsList');
+
+let autoDiscovery=true;
+let selectedMode='balance';
+let selectedOffer=null;
+let discoveryToken=0;
 let visibleOfferKeys=null;
+let apiPromise=null;
+
+const getApi=()=>apiPromise||(apiPromise=import('./api.js'));
+const digits=()=>phone.value.replace(/\D/g,'').slice(0,10);
+const format=v=>v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+const escapeAttr=value=>String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const offerAmount=offer=>Number(offer?.amount??String(offer?.price||'').replace(/\D/g,''))||0;
+const MIN_WORKER_OFFER_AMOUNT=500;
 const offerKey=(family,offer)=>String(family||'')+'|'+offerAmount(offer);
 const offerAllowed=(family,offer)=>visibleOfferKeys?visibleOfferKeys.has(offerKey(family,offer)):(isAdmin||offerAmount(offer)>=MIN_WORKER_OFFER_AMOUNT);
-const offerRows=(offers,family)=>offers.filter(offer=>offerAllowed(family,offer)).map(offer=>`<div class="offer-row list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3 text-end" role="button" tabindex="0" aria-label="اختيار ${escapeAttr(offer.name)}" data-network-index="${offer.index??''}" data-offer-name="${escapeAttr(offer.name)}" data-offer-price="${escapeAttr(offer.price)}" data-offer-details="${escapeAttr(offer.details||'التفاصيل غير متوفرة في المعاينة حاليًا.')}"><span class="offer-name">${offer.name}</span><span class="offer-actions"><span class="offer-price"><span>${offer.price}</span><button class="offer-info d-inline-flex align-items-center justify-content-center" type="button" aria-label="تفاصيل ${escapeAttr(offer.name)}" title="تفاصيل العرض">i</button></span></span></div>`).join('');
-const selectOffer=row=>{offersList.querySelectorAll('.offer-row').forEach(y=>y.classList.remove('selected'));row.classList.add('selected')};
-const showDetails=row=>{detailName.textContent=row.dataset.offerName;detailPrice.textContent=row.dataset.offerPrice;detailText.textContent=row.dataset.offerDetails;bootstrap.Modal.getOrCreateInstance(detailsModal).show()};
-const bindOffers=()=>offersList.querySelectorAll('.offer-row').forEach(row=>{row.addEventListener('click',()=>selectOffer(row));row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectOffer(row)}});row.querySelector('.offer-info').addEventListener('click',event=>{event.stopPropagation();showDetails(row)})});
-const render=group=>{
- const data=catalog[group],families=data?.families||[];
- groupTitle.textContent='مجموعة '+group;
- if(group==='SAMA'){
-  offersList.className='accordion mb-0';offersList.id='samaFamilies';
-  offersList.innerHTML=families.map((family,i)=>`<div class="accordion-item"><h3 class="accordion-header"><button class="accordion-button ${i?'collapsed':''} fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#family-${i}">${family.name}</button></h3><div id="family-${i}" class="accordion-collapse collapse ${i===0?'show':''}" data-bs-parent="#samaFamilies"><div class="list-group list-group-flush">${offerRows(family.offers,family.name)}</div></div></div>`).join('');
- }else{
-  offersList.className='list-group mb-0';offersList.removeAttribute('id');offersList.innerHTML=offerRows(families[0]?.offers||[],families[0]?.name||'');
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
+function resetSelection(){
+ selectedOffer=null;
+ offerActionBar.classList.add('d-none');
+ selectedOfferText.textContent='—';
+ offersList.querySelectorAll('.offer-row').forEach(row=>row.classList.remove('selected'));
+}
+
+function offerRows(offers,family){
+ return offers.filter(offer=>offerAllowed(family,offer)).map(offer=>{
+  const amount=offerAmount(offer);
+  const name=offer.name||offer.label||((family||'عرض')+' '+amount);
+  const price=(offer.price||amount.toLocaleString('fr-DZ')+' دج');
+  const index=offer.index??'';
+  const details=offer.details||offer.label||'عرض مكتشف من الشبكة.';
+  return '<div class="offer-row list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3 text-end" role="button" tabindex="0" aria-label="اختيار '+escapeAttr(name)+'" data-offer-family="'+escapeAttr(family)+'" data-network-index="'+escapeAttr(index)+'" data-offer-amount="'+amount+'" data-offer-name="'+escapeAttr(name)+'" data-offer-price="'+escapeAttr(price)+'" data-offer-details="'+escapeAttr(details)+'"><span class="offer-name">'+escapeAttr(name)+'</span><span class="offer-actions"><span class="offer-price"><span>'+escapeAttr(price)+'</span><button class="offer-info d-inline-flex align-items-center justify-content-center" type="button" aria-label="تفاصيل '+escapeAttr(name)+'" title="تفاصيل العرض">i</button></span></span></div>';
+ }).join('');
+}
+
+function selectOffer(row){
+ offersList.querySelectorAll('.offer-row').forEach(y=>y.classList.remove('selected'));
+ row.classList.add('selected');
+ selectedOffer={
+  family:row.dataset.offerFamily||'',
+  index:row.dataset.networkIndex||'',
+  amount:Number(row.dataset.offerAmount||0),
+  name:row.dataset.offerName||'',
+  price:row.dataset.offerPrice||''
+ };
+ selectedOfferText.textContent=selectedOffer.name+' — '+selectedOffer.price;
+ offerActionBar.classList.remove('d-none');
+}
+
+function showDetails(row){
+ detailName.textContent=row.dataset.offerName;
+ detailPrice.textContent=row.dataset.offerPrice;
+ detailText.textContent=row.dataset.offerDetails;
+ bootstrap.Modal.getOrCreateInstance(detailsModal).show();
+}
+
+function bindOffers(){
+ offersList.querySelectorAll('.offer-row').forEach(row=>{
+  row.addEventListener('click',()=>selectOffer(row));
+  row.addEventListener('keydown',event=>{
+   if(event.key==='Enter'||event.key===' '){event.preventDefault();selectOffer(row)}
+  });
+  row.querySelector('.offer-info')?.addEventListener('click',event=>{
+   event.stopPropagation();
+   showDetails(row);
+  });
+ });
+}
+
+function renderFamilies(families,title='العروض المكتشفة'){
+ resetSelection();
+ groupTitle.textContent=title;
+ const usable=families.filter(f=>Array.isArray(f.offers)&&f.offers.some(o=>offerAllowed(f.name,o)));
+ if(!usable.length){
+  offersList.className='list-group mb-0';
+  offersList.removeAttribute('id');
+  offersList.innerHTML='<div class="small text-muted text-center py-3">لم تظهر عروض متاحة حسب سياسة العرض الحالية.</div>';
+  results.classList.remove('d-none');
+  return;
  }
+ if(usable.length>1){
+  offersList.className='accordion mb-0';
+  offersList.id='liveFamilies';
+  offersList.innerHTML=usable.map((family,i)=>'<div class="accordion-item"><h3 class="accordion-header"><button class="accordion-button '+(i?'collapsed':'')+' fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#live-family-'+i+'">'+escapeAttr(family.name)+'</button></h3><div id="live-family-'+i+'" class="accordion-collapse collapse '+(i===0?'show':'')+'" data-bs-parent="#liveFamilies"><div class="list-group list-group-flush">'+offerRows(family.offers,family.name)+'</div></div></div>').join('');
+ }else{
+  offersList.className='list-group mb-0';
+  offersList.removeAttribute('id');
+  offersList.innerHTML=offerRows(usable[0].offers,usable[0].name);
+ }
+ results.classList.remove('d-none');
  bindOffers();
-};
-const stop=()=>{if(!running)return;running=false;clear();timer.classList.remove('run');operator.classList.add('paused');hint.textContent='تم إيقاف العرض. اضغط على شعار Mobilis لتشغيله.'};
-phone.addEventListener('input',()=>{phone.value=format(digits());if(!silent){stop();lastItem=null;results.classList.add('d-none');if(selectedMode==='offers'&&digits().length===10)resolveCurrentOffers();}});
-const setMode=mode=>{selectedMode=mode;const showOffers=mode==='offers';balanceMode.classList.toggle('active',!showOffers);offersMode.classList.toggle('active',showOffers);balanceMode.setAttribute('aria-selected',String(!showOffers));offersMode.setAttribute('aria-selected',String(showOffers));if(showOffers){resolveCurrentOffers()}else{results.classList.add('d-none');timer.classList.remove('run');statusBox.textContent='الفليكسي العادي محدد افتراضيًا. اضغط «عروض» لمشاهدة العروض.'}};
-const prepare=item=>{silent=true;phone.value=format(item.phone);silent=false;results.classList.add('d-none');if(selectedMode==='offers')statusBox.textContent='جاري اكتشاف عروض الرقم التجريبي…';timer.classList.remove('run')};
-const reveal=item=>{lastItem=item;render(item.group);if(selectedMode==='offers'){results.classList.remove('d-none');statusBox.textContent='تم تحميل عروض الرقم.';timer.classList.remove('run')}};
-const resolveCurrentOffers=()=>{const value=digits();lastItem=null;results.classList.add('d-none');timer.classList.remove('run');if(value.length!==10){statusBox.textContent='أدخل رقم هاتف من 10 أرقام لعرض العروض.';return}const group=known[value];if(!group){statusBox.textContent='لم يتم التعرف على عروض هذا الرقم في النسخة الحالية.';return}reveal({phone:value,group})};
-const cycle=()=>{if(!running)return;const item=cases[index];prepare(item);timeouts.push(setTimeout(()=>{if(!running)return;reveal(item);timeouts.push(setTimeout(()=>{if(!running)return;index=(index+1)%cases.length;cycle()},7000))},1000))};
-const start=()=>{clear();running=true;operator.classList.remove('paused');hint.textContent='العرض التلقائي يعمل. اضغط على شعار Mobilis لإيقافه.';cycle()};
-async function loadOfferPolicy(){
- const hint=document.getElementById('offerPolicyHint');
+}
+
+function renderStatic(group){
+ const data=catalog[group];
+ if(!data){results.classList.add('d-none');return}
+ renderFamilies(data.families,'مجموعة '+group);
+}
+
+function normalizeDiscoveredOffers(list){
+ const groups=new Map();
+ (Array.isArray(list)?list:[]).forEach(item=>{
+  const family=String(item?.family||'عرض').trim()||'عرض';
+  const amount=Number(item?.amount||0);
+  if(!amount)return;
+  if(!groups.has(family))groups.set(family,[]);
+  groups.get(family).push({
+   name:String(item?.label||'').trim()||family+' '+amount,
+   label:String(item?.label||'').trim(),
+   price:amount.toLocaleString('fr-DZ')+' دج',
+   amount,
+   index:String(item?.index??'').trim(),
+   details:String(item?.label||'').trim()||'عرض مكتشف من الشبكة.'
+  });
+ });
+ return [...groups.entries()].map(([name,offers])=>({name,offers}));
+}
+
+async function pollRpc(rpcName,jobUuid,token,timeoutMs=50000){
+ const {supabase}=await getApi();
+ const started=Date.now();
+ while(Date.now()-started<timeoutMs){
+  if(token!==discoveryToken)throw new Error('CANCELLED');
+  const {data,error}=await supabase.rpc(rpcName,{p_job_uuid:jobUuid});
+  if(error)throw error;
+  const row=data?.[0]||null;
+  if(row&&!['queued','claimed'].includes(row.status))return row;
+  await sleep(900);
+ }
+ throw new Error('TIMEOUT');
+}
+
+async function discoverOffersReal(){
+ const value=digits();
+ const token=++discoveryToken;
+ resetSelection();
+ results.classList.add('d-none');
+ if(value.length!==10){
+  statusBox.textContent='أدخل رقم هاتف من 10 أرقام لاكتشاف العروض.';
+  timer.classList.remove('run');
+  return;
+ }
+ timer.classList.add('run');
+ statusBox.textContent='جاري الاستكشاف الحقيقي من الشريحة…';
  try{
-  const {supabase}=await import('./api.js');
+  const {supabase}=await getApi();
+  const {data,error}=await supabase.rpc('station_connect_admin_create_offer_discovery',{p_phone:value,p_station_uuid:null});
+  if(error)throw error;
+  const job=data?.[0];
+  if(!job?.job_uuid)throw new Error('DISCOVERY_JOB_NOT_CREATED');
+  const row=await pollRpc('station_connect_admin_offer_discovery_job',job.job_uuid,token);
+  if(token!==discoveryToken)return;
+  timer.classList.remove('run');
+  if(row.status==='success'){
+   const families=normalizeDiscoveredOffers(row.available_offers);
+   renderFamilies(families,row.family?'مجموعة '+row.family:'العروض المكتشفة');
+   statusBox.textContent='تم اكتشاف عروض الرقم من الشبكة فعليًا.';
+  }else{
+   results.classList.add('d-none');
+   statusBox.textContent='انتهى الاستكشاف: '+(row.result_text||row.result_code||row.status);
+  }
+  loadRecentOperations();
+ }catch(error){
+  if(String(error?.message||'')==='CANCELLED')return;
+  timer.classList.remove('run');
+  const group=known[value];
+  if(group){
+   renderStatic(group);
+   statusBox.textContent='تعذر الاستكشاف الحي؛ عُرض المرجع المحفوظ لهذا الرقم. الخطأ: '+(error?.message||error);
+  }else{
+   results.classList.add('d-none');
+   statusBox.textContent='تعذر الاستكشاف الحي: '+(error?.message||error);
+  }
+ }
+}
+
+function resolveCurrentOffers(){
+ if(selectedMode!=='offers')return;
+ if(isAdmin)return discoverOffersReal();
+ const value=digits();
+ resetSelection();
+ results.classList.add('d-none');
+ if(value.length!==10){statusBox.textContent='أدخل رقم هاتف من 10 أرقام لعرض العروض.';return}
+ const group=known[value];
+ if(group){renderStatic(group);statusBox.textContent='تم تحميل المرجع المحفوظ للرقم.'}
+ else statusBox.textContent='هذا الحساب لا يملك استكشافًا حيًا في وضع العامل.';
+}
+
+function setMode(mode){
+ selectedMode=mode;
+ const showOffers=mode==='offers';
+ balanceMode.classList.toggle('active',!showOffers);
+ offersMode.classList.toggle('active',showOffers);
+ balanceMode.setAttribute('aria-selected',String(!showOffers));
+ offersMode.setAttribute('aria-selected',String(showOffers));
+ resetSelection();
+ if(showOffers){
+  resolveCurrentOffers();
+ }else{
+  ++discoveryToken;
+  results.classList.add('d-none');
+  timer.classList.remove('run');
+  statusBox.textContent='الفليكسي العادي محدد افتراضيًا.';
+ }
+}
+
+phone.addEventListener('input',()=>{
+ phone.value=format(digits());
+ ++discoveryToken;
+ resetSelection();
+ results.classList.add('d-none');
+ timer.classList.remove('run');
+ if(selectedMode==='offers'){
+  if(autoDiscovery&&digits().length===10)resolveCurrentOffers();
+  else statusBox.textContent=digits().length===10?'الاستكشاف التلقائي موقوف. اضغط شعار Mobilis لتشغيله.':'أدخل رقم هاتف من 10 أرقام لاكتشاف العروض.';
+ }
+});
+
+operator.addEventListener('click',()=>{
+ autoDiscovery=!autoDiscovery;
+ operator.classList.toggle('paused',!autoDiscovery);
+ hint.textContent=autoDiscovery?'الاستكشاف التلقائي مفعّل.':'الاستكشاف التلقائي موقوف.';
+ if(autoDiscovery&&selectedMode==='offers'&&digits().length===10)resolveCurrentOffers();
+});
+
+balanceMode.addEventListener('click',()=>setMode('balance'));
+offersMode.addEventListener('click',()=>setMode('offers'));
+
+sendOfferBtn.addEventListener('click',()=>{
+ if(!selectedOffer)return;
+ const value=digits();
+ if(value.length!==10){statusBox.textContent='رقم الهاتف غير مكتمل.';return}
+ sendPhone.textContent=format(value);
+ sendOfferName.textContent=selectedOffer.name;
+ sendOfferAmount.textContent=selectedOffer.amount.toLocaleString('fr-DZ')+' دج';
+ bootstrap.Modal.getOrCreateInstance(sendOfferModal).show();
+});
+
+confirmSendOfferBtn.addEventListener('click',async()=>{
+ if(!isAdmin||!selectedOffer)return;
+ const value=digits();
+ confirmSendOfferBtn.disabled=true;
+ confirmSendOfferBtn.textContent='جاري الإرسال…';
+ statusBox.textContent='تم تأكيد العملية. جاري إرسال العرض إلى المحطة…';
+ try{
+  const {supabase}=await getApi();
+  const {data,error}=await supabase.rpc('station_connect_admin_create_offer_execute',{
+   p_phone:value,
+   p_family:selectedOffer.family,
+   p_network_index:String(selectedOffer.index||''),
+   p_amount:selectedOffer.amount,
+   p_station_uuid:null
+  });
+  if(error)throw error;
+  const job=data?.[0];
+  if(!job?.job_uuid)throw new Error('EXECUTE_JOB_NOT_CREATED');
+  bootstrap.Modal.getOrCreateInstance(sendOfferModal).hide();
+  const localToken=discoveryToken;
+  const row=await pollRpc('station_connect_admin_offer_execute_job',job.job_uuid,localToken,60000);
+  if(row.status==='success')statusBox.textContent='تم إرسال العرض بنجاح.';
+  else if(row.status==='review')statusBox.textContent='العملية تحتاج مراجعة: '+(row.result_text||row.result_code||'راجع الرد الخام.');
+  else statusBox.textContent='فشل الإرسال: '+(row.result_text||row.result_code||row.status);
+  await loadRecentOperations();
+ }catch(error){
+  statusBox.textContent='تعذر إرسال العرض: '+(error?.message||error);
+ }finally{
+  confirmSendOfferBtn.disabled=false;
+  confirmSendOfferBtn.textContent='تأكيد الإرسال';
+ }
+});
+
+function statusBadge(status){
+ const map={success:'text-bg-success',failed:'text-bg-danger',review:'text-bg-warning',queued:'text-bg-secondary',claimed:'text-bg-info',unavailable:'text-bg-secondary'};
+ return map[status]||'text-bg-light border';
+}
+function statusText(status){
+ return ({success:'ناجحة',failed:'فاشلة',review:'مراجعة',queued:'في الطابور',claimed:'قيد التنفيذ',unavailable:'غير متاح'})[status]||status||'—';
+}
+async function loadRecentOperations(){
+ if(!isAdmin){
+  operationsList.innerHTML='<div class="small text-muted text-center py-3">العمليات الحقيقية تظهر للإدارة.</div>';
+  return;
+ }
+ try{
+  const {supabase}=await getApi();
+  const {data,error}=await supabase.rpc('station_connect_admin_recent_jobs',{p_limit:5});
+  if(error)throw error;
+  const rows=Array.isArray(data)?data:[];
+  if(!rows.length){
+   operationsList.innerHTML='<div class="small text-muted text-center py-3">لا توجد عمليات بعد.</div>';
+   return;
+  }
+  operationsList.innerHTML=rows.map(row=>{
+   const type=row.amount?'عرض / شحن':'استكشاف';
+   const offer=row.family||(row.result_code||'—');
+   const amount=row.amount?Number(row.amount).toLocaleString('fr-DZ')+' دج':'—';
+   const when=row.created_at?new Date(row.created_at).toLocaleString('ar-DZ'):'—';
+   return '<article class="operation-item p-3"><div class="row g-3 align-items-center"><div class="col-6 col-md-2"><div class="operation-label">النوع</div><div class="operation-value">'+escapeAttr(type)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">'+escapeAttr(format(String(row.phone||'')))+'</div></div><div class="col-6 col-md-2"><div class="operation-label">العرض</div><div class="operation-value">'+escapeAttr(offer)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">المبلغ</div><div class="operation-value">'+escapeAttr(amount)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">الحالة</div><span class="badge '+statusBadge(row.status)+'">'+escapeAttr(statusText(row.status))+'</span></div><div class="col-6 col-md-2"><div class="operation-label">الوقت</div><div class="operation-value small">'+escapeAttr(when)+'</div></div></div></article>';
+  }).join('');
+ }catch(error){
+  operationsList.innerHTML='<div class="small text-danger text-center py-3">تعذر تحميل العمليات الحقيقية: '+escapeAttr(error?.message||error)+'</div>';
+ }
+}
+
+async function loadOfferPolicy(){
+ const policyHint=document.getElementById('offerPolicyHint');
+ try{
+  const {supabase}=await getApi();
   const role=isAdmin?'admin':'worker';
   const {data,error}=await supabase.rpc('flexy_get_visible_offer_catalog',{p_role:role});
   if(error)throw error;
   visibleOfferKeys=new Set((data||[]).map(row=>String(row.family||'')+'|'+Number(row.amount||0)));
-  hint.textContent=isAdmin?'وضع الإدارة: تظهر العروض حسب إعدادات إدارة فليكسي، والافتراضي عرض الجميع.':'العروض تخضع لسياسة العامل والاستثناءات المحفوظة في إدارة فليكسي.';
-  if(lastItem&&selectedMode==='offers')render(lastItem.group);
+  policyHint.textContent=isAdmin?'وضع الإدارة: الاستكشاف حي، والعروض تظهر حسب إعدادات إدارة فليكسي.':'العروض تخضع لسياسة العامل والاستثناءات المحفوظة.';
  }catch(error){
   visibleOfferKeys=null;
-  hint.textContent=isAdmin?'وضع الإدارة: عرض جميع العروض (تعذر تحميل سياسة Supabase).':'وضع احتياطي: العامل يرى 500 دج فأكثر.';
+  policyHint.textContent=isAdmin?'وضع الإدارة: الاستكشاف حي، وتعذر تحميل سياسة الظهور فقط.':'وضع احتياطي: العامل يرى 500 دج فأكثر.';
  }
 }
-operator.addEventListener('click',()=>running?stop():start());
-balanceMode.addEventListener('click',()=>setMode('balance'));
-offersMode.addEventListener('click',()=>setMode('offers'));
+
 const launchParams=new URLSearchParams(location.search);
 const incomingPhone=(launchParams.get('phone')||'').replace(/\D/g,'').slice(0,10);
 const incomingAmount=(launchParams.get('amount')||'').trim();
 setMode('balance');
 if(/^0[5-7]\d{8}$/.test(incomingPhone)){
- silent=true;phone.value=format(incomingPhone);silent=false;
+ phone.value=format(incomingPhone);
  hint.textContent='تم تعبئة الرقم من طلب MyTool'+(incomingAmount?' — القيمة '+incomingAmount:'')+'.';
  statusBox.textContent='طلب جاهز من MyTool'+(incomingAmount?' — القيمة/الباقة: '+incomingAmount:'')+'. راجع البيانات قبل التنفيذ.';
 }else{
  phone.value='';
- hint.textContent='أدخل رقم الهاتف.';
+ hint.textContent='الاستكشاف التلقائي مفعّل.';
 }
-operator.classList.add('paused');
+operator.classList.toggle('paused',!autoDiscovery);
 loadOfferPolicy();
+loadRecentOperations();
 </script>
 <script src="flexy-nav.js?v=20260921-fixed-bottom-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
