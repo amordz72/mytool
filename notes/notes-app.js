@@ -8,7 +8,7 @@
   const TYPES={BUG:'خطأ',NEEDS_CONFIRMATION:'يحتاج تأكيد عمر',AI_REQUEST:'طلب للذكاء الاصطناعي',TASK:'مهمة',IDEA:'فكرة',PRODUCT_INVENTORY:'منتج أو مخزون',REFERENCE:'مرجع',UNCATEGORIZED:'بدون تصنيف'};
   const PRIORITIES={URGENT:'عاجل',HIGH:'مرتفع',NORMAL:'عادي',LOW:'منخفض'};
   const STATUSES={NEW:'جديدة',TRIAGED:'صُنفت',NEEDS_OMAR:'تحتاج عمر',READY:'جاهزة',IN_PROGRESS:'قيد العمل',DONE:'منتهية',ARCHIVED:'مؤرشفة'};
-  const AREAS={MYTOOL:'MyTool',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'منتج',GENERAL:'عام'};
+  const AREAS={MYTOOL:'MyTool',NOTES:'الملاحظات',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'منتج',GENERAL:'عام'};
   const $=id=>document.getElementById(id);
   const store=window.MyToolNotesLocal;
   let supabase=null,user=null,hasSupabaseSession=false,remoteAvailable=false;
@@ -55,7 +55,8 @@
     if(hasAny(t,['المحل','محل','عامل المحل','الورديه','الكيس']))project_area='SHOP';
     else if(hasAny(t,['tehna connect','تهنا كونكت','تهنى كونكت','station connect','ستيشن كونكت','مودم','ussd']))project_area='TEHNA_CONNECT';
     else if(hasAny(t,['منتج','مخزون']))project_area='PRODUCT';
-    else if(hasAny(t,['mytool','my tool','ماي تول','ماي تولز','معالجه الحسابات','مراجعه الحسابات','الملاحظات']))project_area='MYTOOL';
+    else if(hasAny(t,['صندوق الملاحظات','نظام الملاحظات','قسم الملاحظات','اعدادات الملاحظات','إعدادات الملاحظات','ذكاء الملاحظات','ذكاء الملاحظه','ذكاء الملاحظة','تصنيف الملاحظات','ارشيف الملاحظات','أرشيف الملاحظات','الملاحظات','الملاحظه','الملاحظة']))project_area='NOTES';
+    else if(hasAny(t,['mytool','my tool','ماي تول','ماي تولز','معالجه الحسابات','مراجعه الحسابات']))project_area='MYTOOL';
 
     return{note_type,priority,project_area};
   }
