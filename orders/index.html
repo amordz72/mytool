@@ -125,8 +125,597 @@ function renderServiceOptions(selected=''){
   $('service').value=selected||'';
 }
 
+function parseWhatsAppCopy(raw){
+  const lines=latinDigits(raw).replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean);
+  const messages=[];
+  const dateRe='\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?';
+  const timeRe='\\d{1,2}:\\d{2}';
+  const afterMeta=new RegExp('^(.*?)\\s*\\[('+timeRe+'),\\s*('+dateRe+')\\]\\s*:\\s*(.*)
+
+function syncDraftClear(){
+  const row=$('draftClearRow');
+  if(row)row.hidden=!$('rawInput').value.trim();
+}
+
+function clearDraft(){
+  const hasDraft=Boolean($('rawInput').value.trim()||$('packageText').value.trim()||$('destination').value.trim()||$('party').value);
+  if(hasDraft&&!confirm('مسح الطلب الحالي غير المحفوظ؟'))return;
+  clearTimeout(parseTimer);
+  $('rawInput').value='';
+  $('packageText').value='';
+  $('destination').value='';
+  $('partySearch').value='';
+  renderPartyOptions();
+  renderServiceOptions();
+  $('analysisHint').hidden=true;
+  syncDraftClear();
+  $('rawInput').focus();
+}
+
+function applyAnalysis(){
+  const raw=$('rawInput').value.trim();
+  if(!raw){$('analysisHint').hidden=true;return null}
+  const parsed=parseRequest(raw);
+  renderServiceOptions(parsed.service_code);
+  $('packageText').value=parsed.package_text;
+  $('destination').value=parsed.destination;
+  if(parsed.whatsapp?.detected){
+    $('sourceKind').value='whatsapp';
+    if(parsed.whatsapp.customer_sender&&!$('party').value&&!$('partySearch').value){
+      $('partySearch').value=parsed.whatsapp.customer_sender;
+      renderPartyOptions(parsed.whatsapp.customer_sender,$('party').value);
+    }
+  }
+  const bits=[];
+  if(parsed.ambiguous_services.length)bits.push('الخدمة غامضة بين: '+parsed.ambiguous_services.join(' / '));
+  else if(parsed.service_code)bits.push('الخدمة: '+parsed.service_code+(parsed.inferred_by_phone?' (اقتراح من شكل رقم الهاتف)':''));
+  else bits.push('الخدمة غير معروفة؛ اخترها يدويًا إذا لزم.');
+  if(parsed.package_text)bits.push('القيمة/الباقة: '+parsed.package_text);
+  if(parsed.destination)bits.push('الوجهة: '+parsed.destination);
+  if(parsed.whatsapp?.detected&&parsed.whatsapp.customer_sender)bits.push('مرسل واتساب: '+parsed.whatsapp.customer_sender);
+  if(parsed.whatsapp?.operator_ack)bits.push('رد عمر «تم» → حالة تشغيلية: جاري التنفيذ');
+  bits.push('أي تصحيح تقوم به هنا يُحفظ مع الطلب.');
+  $('analysisHint').textContent=bits.join(' · ');
+  $('analysisHint').className='msg preview '+(parsed.ambiguous_services.length?'bad':'');
+  $('analysisHint').hidden=false;
+  return parsed;
+}
+
+async function loadCatalog(){
+  const {data,error}=await db.from('mytool_service_catalog').select('*').order('sort_order').order('code');
+  if(error)throw error;
+  catalog=data||[];
+  renderServiceOptions($('service').value);
+  renderCatalogPicker();
+}
+
+async function loadParties(){
+  const {data,error}=await db.from('money_party_directory')
+    .select('id,display_name,aliases,primary_phone,is_canonical,active,approval_status')
+    .eq('active',true).eq('approval_status','approved').order('display_name').limit(1000);
+  if(error)throw error;
+  parties=data||[];
+  renderPartyOptions($('partySearch').value,$('party').value);
+}
+
+async function saveOrder(){
+  hideMessage();
+  const raw=$('rawInput').value.trim();
+  if(!raw){show('اكتب أو الصق الطلب أولًا.',true);return}
+  const parsed=parseRequest(raw);
+  const partyId=$('party').value?Number($('party').value):null;
+  const serviceCode=$('service').value||null;
+  const service=serviceBy(serviceCode);
+  const destination=$('destination').value.trim()||null;
+  const packageText=$('packageText').value.trim()||null;
+  const ready=Boolean(serviceCode&&destination);
+  const initialStatus=parsed.whatsapp?.operator_ack?'in_progress':(ready?'ready':'draft');
+  const payload={
+    request_key:requestKey(),
+    source_kind:$('sourceKind').value,
+    raw_input:raw,
+    service_code:serviceCode,
+    package_text:packageText,
+    destination,
+    customer_party_id:partyId,
+    customer_resolution:partyId?'confirmed':'unassigned',
+    customer_match_source:partyId?'manual':'unknown',
+    status:initialStatus,
+    parsed_payload:parsed,
+    action_snapshot:service?{action_kind:service.action_kind,action_url:service.action_url,destination_kind:service.destination_kind}:{},
+    financial_state:partyId?'not_posted':'blocked_unassigned'
+  };
+  $('saveBtn').disabled=true;
+  try{
+    const {error}=await db.from('mytool_service_orders').insert(payload);
+    if(error)throw error;
+    show(partyId?'تم حفظ الطلب وربطه بالعميل. لا يوجد ترحيل دين تلقائي في V0.':'تم حفظ الطلب بدون عميل. الدين محجوب حتى تحدد العميل.',false,true);
+    $('rawInput').value='';$('packageText').value='';$('destination').value='';$('partySearch').value='';renderPartyOptions();renderServiceOptions();$('analysisHint').hidden=true;
+    await loadOrders();
+  }catch(error){show('تعذر حفظ الطلب: '+(error?.message||error),true)}
+  finally{$('saveBtn').disabled=false}
+}
+
+function orderActionLabel(row){
+  const service=serviceBy(row.service_code);
+  if(!service)return 'لا توجد خدمة';
+  if(service.action_kind==='flexy')return 'فتح Flexy';
+  if(service.action_kind==='open_url')return service.action_url?'فتح موقع التنفيذ':'حدد رابط الخدمة';
+  return 'تنفيذ يدوي';
+}
+
+function editServiceOptions(selected){
+  return '<option value="">غير معروف</option>'+catalog.filter(x=>x.enabled).map(s=>'<option value="'+esc(s.code)+'" '+(s.code===selected?'selected':'')+'>'+esc(s.code)+' — '+esc(s.display_name)+'</option>').join('');
+}
+
+function partyOptions(selected){
+  return '<option value="">غير مسند</option>'+parties.slice(0,500).map(p=>'<option value="'+p.id+'" '+(String(p.id)===String(selected||'')?'selected':'')+'>'+esc(p.display_name)+'</option>').join('');
+}
+
+function renderOrders(){
+  const status=$('statusFilter').value,assignment=$('assignmentFilter').value;
+  const filtered=orders.filter(row=>{
+    if(status&&row.status!==status)return false;
+    if(assignment==='unassigned'&&row.customer_party_id)return false;
+    if(assignment==='assigned'&&!row.customer_party_id)return false;
+    return true;
+  });
+  $('count').textContent=filtered.length+' طلب';
+  if(!filtered.length){$('ordersList').innerHTML='<div class="muted" style="padding:12px 0">لا توجد طلبات في هذا الفلتر.</div>';return}
+  $('ordersList').innerHTML=filtered.map(row=>{
+    const svc=serviceBy(row.service_code),party=partyBy(row.customer_party_id);
+    const financial=row.customer_party_id?'الدين: غير مرحّل بعد':'الدين: محجوب حتى تحديد العميل';
+    return '<article class="order" data-order-id="'+row.id+'">'+
+      '<div class="order-head"><div><div class="order-title">'+esc(svc?.display_name||row.service_code||'خدمة غير معروفة')+(row.package_text?' — '+esc(row.package_text):'')+'</div><div class="muted">'+esc(fmtDate(row.created_at))+'</div></div><div class="pills"><span class="pill '+statusClass(row.status)+'">'+esc(statusLabel(row.status))+'</span><span class="pill '+(row.customer_party_id?'ok':'warn')+'">'+esc(party?.display_name||'بدون عميل')+'</span></div></div>'+
+      '<div class="order-raw">'+esc(row.raw_input)+'</div>'+
+      '<div class="order-grid"><div class="kv"><b>الخدمة</b><span>'+esc(row.service_code||'—')+'</span></div><div class="kv"><b>القيمة</b><span>'+esc(row.package_text||'—')+'</span></div><div class="kv"><b>الوجهة</b><span dir="ltr">'+esc(row.destination||'—')+'</span></div><div class="kv"><b>العميل</b><span>'+esc(party?.display_name||'غير محدد')+'</span></div><div class="kv"><b>الحالة المالية</b><span>'+esc(financial)+'</span></div><div class="kv"><b>المصدر</b><span>'+esc(row.source_kind)+'</span></div></div>'+
+      '<div class="actions"><button class="btn secondary" data-action="open" data-id="'+row.id+'" type="button">'+esc(orderActionLabel(row))+'</button><button class="btn warn" data-action="status" data-status="in_progress" data-id="'+row.id+'" type="button">جاري</button><button class="btn ok" data-action="status" data-status="success" data-id="'+row.id+'" type="button">تم</button><button class="btn secondary" data-action="status" data-status="review" data-id="'+row.id+'" type="button">مراجعة</button></div>'+
+      '<details><summary>ربط/تصحيح العميل</summary><div class="grid" style="margin-top:8px"><div class="full"><select class="row-party">'+partyOptions(row.customer_party_id)+'</select></div></div><div class="actions"><button class="btn secondary" data-action="party-save" data-id="'+row.id+'" type="button">حفظ العميل</button></div></details>'+
+      '<details><summary>تعديل الفهم</summary><div class="grid" style="margin-top:8px"><div><label>الخدمة</label><select class="row-service">'+editServiceOptions(row.service_code)+'</select></div><div><label>القيمة</label><input class="row-package" value="'+esc(row.package_text||'')+'"></div><div class="full"><label>الوجهة</label><input class="row-destination" dir="ltr" value="'+esc(row.destination||'')+'"></div></div><div class="actions"><button class="btn secondary" data-action="interpret-save" data-id="'+row.id+'" type="button">حفظ التصحيح</button></div></details>'+
+      '<details><summary>سجل التغييرات</summary><div class="actions"><button class="btn secondary" data-action="history" data-id="'+row.id+'" type="button">تحميل السجل</button></div><div class="history"></div></details>'+
+    '</article>';
+  }).join('');
+}
+
+async function loadOrders(){
+  const {data,error}=await db.from('mytool_service_orders').select('*').order('created_at',{ascending:false}).limit(60);
+  if(error)throw error;
+  orders=data||[];
+  renderOrders();
+}
+
+async function updateOrder(id,patch){
+  patch.updated_at=new Date().toISOString();
+  const {error}=await db.from('mytool_service_orders').update(patch).eq('id',id);
+  if(error)throw error;
+  await loadOrders();
+}
+
+async function openOrder(row){
+  const service=serviceBy(row.service_code);
+  if(!service){show('حدد الخدمة أولًا.',true);return}
+  if(row.destination&&navigator.clipboard){navigator.clipboard.writeText(row.destination).catch(()=>{})}
+  if(service.action_kind==='flexy'){
+    const q=new URLSearchParams();
+    if(row.destination)q.set('phone',row.destination);
+    if(row.package_text)q.set('amount',row.package_text);
+    q.set('from_order',row.order_uuid);
+    location.href='../flexy/?'+q.toString();
+    return;
+  }
+  if(service.action_kind==='open_url'){
+    const url=String(service.action_url||'').trim();
+    if(!/^https?:\/\//i.test(url)){show('رابط التنفيذ غير محدد لهذه الخدمة. افتح إعداد الخدمات وضع الرابط مرة واحدة.',true);return}
+    location.href=url;
+    return;
+  }
+  show('هذه الخدمة مضبوطة على تنفيذ يدوي. الوجهة نُسخت للحافظة إن أمكن.');
+}
+
+async function loadHistory(id,container){
+  container.textContent='جاري التحميل…';
+  const {data,error}=await db.from('mytool_service_order_history').select('*').eq('order_id',id).order('created_at',{ascending:false}).limit(30);
+  if(error){container.textContent='تعذر تحميل السجل.';return}
+  container.innerHTML=(data||[]).map(h=>'<div><b>'+esc(fmtDate(h.created_at))+'</b> — '+esc(h.event_type)+'<br>'+esc(JSON.stringify(h.changed_fields))+'</div>').join('')||'<div>لا يوجد سجل بعد.</div>';
+}
+
+function renderCatalogPicker(){
+  $('catalogPick').innerHTML='<option value="">خدمة جديدة</option>'+catalog.map(s=>'<option value="'+esc(s.code)+'">'+esc(s.code)+' — '+esc(s.display_name)+'</option>').join('');
+}
+
+function fillCatalog(code=''){
+  const s=serviceBy(code);
+  $('catalogCode').value=s?.code||'';
+  $('catalogCode').disabled=Boolean(s);
+  $('catalogName').value=s?.display_name||'';
+  $('catalogAliases').value=(s?.aliases||[]).join(', ');
+  $('catalogDestination').value=s?.destination_kind||'other';
+  $('catalogAction').value=s?.action_kind||'manual';
+  $('catalogUrl').value=s?.action_url||'';
+  $('catalogEnabled').checked=s?s.enabled:true;
+}
+
+async function saveCatalog(){
+  const code=$('catalogCode').value.trim().toUpperCase();
+  const name=$('catalogName').value.trim();
+  const action=$('catalogAction').value;
+  const url=$('catalogUrl').value.trim()||null;
+  if(!/^[A-Z0-9_]{2,24}$/.test(code)){show('رمز الخدمة يجب أن يكون أحرف/أرقام إنجليزية مثل FF أو FIFA.',true);return}
+  if(!name){show('اكتب اسم الخدمة.',true);return}
+  if(action==='open_url'&&url&&!/^https?:\/\//i.test(url)){show('رابط الخدمة يجب أن يبدأ بـ http:// أو https://',true);return}
+  const payload={
+    code,display_name:name,aliases:splitAliases($('catalogAliases').value),
+    destination_kind:$('catalogDestination').value,action_kind:action,
+    action_url:action==='flexy'?'../flexy/':url,enabled:$('catalogEnabled').checked,
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await db.from('mytool_service_catalog').upsert(payload,{onConflict:'code'});
+  if(error){show('تعذر حفظ الخدمة: '+error.message,true);return}
+  show('تم حفظ الخدمة والمرادفات.',false,true);
+  await loadCatalog();fillCatalog(code);applyAnalysis();renderOrders();
+}
+
+$('draftClearBtn').onclick=clearDraft;
+$('analyzeBtn').onclick=applyAnalysis;
+$('saveBtn').onclick=saveOrder;
+$('refreshBtn').onclick=()=>loadOrders().catch(e=>show(e.message,true));
+$('rawInput').addEventListener('input',()=>{syncDraftClear();clearTimeout(parseTimer);parseTimer=setTimeout(applyAnalysis,350)});
+$('partySearch').addEventListener('input',()=>renderPartyOptions($('partySearch').value,$('party').value));
+$('statusFilter').onchange=renderOrders;
+$('assignmentFilter').onchange=renderOrders;
+$('catalogPick').onchange=()=>fillCatalog($('catalogPick').value);
+$('catalogSaveBtn').onclick=saveCatalog;
+
+$('ordersList').addEventListener('click',async event=>{
+  const btn=event.target.closest('button[data-action]');if(!btn)return;
+  const id=Number(btn.dataset.id),row=orders.find(x=>x.id===id);if(!row)return;
+  btn.disabled=true;
+  try{
+    if(btn.dataset.action==='open')await openOrder(row);
+    else if(btn.dataset.action==='status'){
+      const next=btn.dataset.status;
+      await updateOrder(id,{status:next});
+      if(next==='success')show(row.customer_party_id?'تم تعليم العملية ناجحة. لم يتم ترحيل دين آليًا في V0.':'تم تعليم العملية ناجحة، لكن الدين لن يُرحّل لأن العميل غير محدد.',false,true);
+    }else if(btn.dataset.action==='party-save'){
+      const card=btn.closest('.order'),value=card.querySelector('.row-party').value;
+      const partyId=value?Number(value):null;
+      await updateOrder(id,{
+        customer_party_id:partyId,
+        customer_resolution:partyId?'confirmed':'unassigned',
+        customer_match_source:partyId?'correction':'unknown',
+        financial_state:partyId?'not_posted':'blocked_unassigned'
+      });
+      show(partyId?'تم ربط العملية بالعميل، والتصحيح محفوظ في السجل.':'تم فك ربط العميل. العملية بقيت محفوظة والدين محجوب.',false,true);
+    }else if(btn.dataset.action==='interpret-save'){
+      const card=btn.closest('.order');
+      await updateOrder(id,{
+        service_code:card.querySelector('.row-service').value||null,
+        package_text:card.querySelector('.row-package').value.trim()||null,
+        destination:card.querySelector('.row-destination').value.trim()||null
+      });
+      show('تم حفظ تصحيح الفهم بدون حذف العملية.',false,true);
+    }else if(btn.dataset.action==='history'){
+      await loadHistory(id,btn.closest('details').querySelector('.history'));
+    }
+  }catch(error){show('تعذر تنفيذ العملية: '+(error?.message||error),true)}
+  finally{btn.disabled=false}
+});
+
+(async()=>{
+  try{
+    syncDraftClear();
+    await requireSession();
+    await Promise.all([loadCatalog(),loadParties()]);
+    await loadOrders();
+  }catch(error){show(error?.message||String(error),true)}
+})();
+</script>
+</body>
+</html>
+);
+  const beforeMeta=new RegExp('^(.*?)\\s*:\\s*(.*?)\\s*\\[('+timeRe+'),\\s*('+dateRe+')\\]\\s*
+
+function syncDraftClear(){
+  const row=$('draftClearRow');
+  if(row)row.hidden=!$('rawInput').value.trim();
+}
+
+function clearDraft(){
+  const hasDraft=Boolean($('rawInput').value.trim()||$('packageText').value.trim()||$('destination').value.trim()||$('party').value);
+  if(hasDraft&&!confirm('مسح الطلب الحالي غير المحفوظ؟'))return;
+  clearTimeout(parseTimer);
+  $('rawInput').value='';
+  $('packageText').value='';
+  $('destination').value='';
+  $('partySearch').value='';
+  renderPartyOptions();
+  renderServiceOptions();
+  $('analysisHint').hidden=true;
+  syncDraftClear();
+  $('rawInput').focus();
+}
+
+function applyAnalysis(){
+  const raw=$('rawInput').value.trim();
+  if(!raw){$('analysisHint').hidden=true;return null}
+  const parsed=parseRequest(raw);
+  renderServiceOptions(parsed.service_code);
+  $('packageText').value=parsed.package_text;
+  $('destination').value=parsed.destination;
+  const bits=[];
+  if(parsed.ambiguous_services.length)bits.push('الخدمة غامضة بين: '+parsed.ambiguous_services.join(' / '));
+  else if(parsed.service_code)bits.push('الخدمة: '+parsed.service_code+(parsed.inferred_by_phone?' (اقتراح من شكل رقم الهاتف)':''));
+  else bits.push('الخدمة غير معروفة؛ اخترها يدويًا إذا لزم.');
+  if(parsed.package_text)bits.push('القيمة/الباقة: '+parsed.package_text);
+  if(parsed.destination)bits.push('الوجهة: '+parsed.destination);
+  bits.push('أي تصحيح تقوم به هنا يُحفظ مع الطلب.');
+  $('analysisHint').textContent=bits.join(' · ');
+  $('analysisHint').className='msg preview '+(parsed.ambiguous_services.length?'bad':'');
+  $('analysisHint').hidden=false;
+  return parsed;
+}
+
+async function loadCatalog(){
+  const {data,error}=await db.from('mytool_service_catalog').select('*').order('sort_order').order('code');
+  if(error)throw error;
+  catalog=data||[];
+  renderServiceOptions($('service').value);
+  renderCatalogPicker();
+}
+
+async function loadParties(){
+  const {data,error}=await db.from('money_party_directory')
+    .select('id,display_name,aliases,primary_phone,is_canonical,active,approval_status')
+    .eq('active',true).eq('approval_status','approved').order('display_name').limit(1000);
+  if(error)throw error;
+  parties=data||[];
+  renderPartyOptions($('partySearch').value,$('party').value);
+}
+
+async function saveOrder(){
+  hideMessage();
+  const raw=$('rawInput').value.trim();
+  if(!raw){show('اكتب أو الصق الطلب أولًا.',true);return}
+  const parsed=parseRequest(raw);
+  const partyId=$('party').value?Number($('party').value):null;
+  const serviceCode=$('service').value||null;
+  const service=serviceBy(serviceCode);
+  const destination=$('destination').value.trim()||null;
+  const packageText=$('packageText').value.trim()||null;
+  const ready=Boolean(serviceCode&&destination);
+  const payload={
+    request_key:requestKey(),
+    source_kind:$('sourceKind').value,
+    raw_input:raw,
+    service_code:serviceCode,
+    package_text:packageText,
+    destination,
+    customer_party_id:partyId,
+    customer_resolution:partyId?'confirmed':'unassigned',
+    customer_match_source:partyId?'manual':'unknown',
+    status:ready?'ready':'draft',
+    parsed_payload:parsed,
+    action_snapshot:service?{action_kind:service.action_kind,action_url:service.action_url,destination_kind:service.destination_kind}:{},
+    financial_state:partyId?'not_posted':'blocked_unassigned'
+  };
+  $('saveBtn').disabled=true;
+  try{
+    const {error}=await db.from('mytool_service_orders').insert(payload);
+    if(error)throw error;
+    show(partyId?'تم حفظ الطلب وربطه بالعميل. لا يوجد ترحيل دين تلقائي في V0.':'تم حفظ الطلب بدون عميل. الدين محجوب حتى تحدد العميل.',false,true);
+    $('rawInput').value='';$('packageText').value='';$('destination').value='';$('partySearch').value='';renderPartyOptions();renderServiceOptions();$('analysisHint').hidden=true;
+    await loadOrders();
+  }catch(error){show('تعذر حفظ الطلب: '+(error?.message||error),true)}
+  finally{$('saveBtn').disabled=false}
+}
+
+function orderActionLabel(row){
+  const service=serviceBy(row.service_code);
+  if(!service)return 'لا توجد خدمة';
+  if(service.action_kind==='flexy')return 'فتح Flexy';
+  if(service.action_kind==='open_url')return service.action_url?'فتح موقع التنفيذ':'حدد رابط الخدمة';
+  return 'تنفيذ يدوي';
+}
+
+function editServiceOptions(selected){
+  return '<option value="">غير معروف</option>'+catalog.filter(x=>x.enabled).map(s=>'<option value="'+esc(s.code)+'" '+(s.code===selected?'selected':'')+'>'+esc(s.code)+' — '+esc(s.display_name)+'</option>').join('');
+}
+
+function partyOptions(selected){
+  return '<option value="">غير مسند</option>'+parties.slice(0,500).map(p=>'<option value="'+p.id+'" '+(String(p.id)===String(selected||'')?'selected':'')+'>'+esc(p.display_name)+'</option>').join('');
+}
+
+function renderOrders(){
+  const status=$('statusFilter').value,assignment=$('assignmentFilter').value;
+  const filtered=orders.filter(row=>{
+    if(status&&row.status!==status)return false;
+    if(assignment==='unassigned'&&row.customer_party_id)return false;
+    if(assignment==='assigned'&&!row.customer_party_id)return false;
+    return true;
+  });
+  $('count').textContent=filtered.length+' طلب';
+  if(!filtered.length){$('ordersList').innerHTML='<div class="muted" style="padding:12px 0">لا توجد طلبات في هذا الفلتر.</div>';return}
+  $('ordersList').innerHTML=filtered.map(row=>{
+    const svc=serviceBy(row.service_code),party=partyBy(row.customer_party_id);
+    const financial=row.customer_party_id?'الدين: غير مرحّل بعد':'الدين: محجوب حتى تحديد العميل';
+    return '<article class="order" data-order-id="'+row.id+'">'+
+      '<div class="order-head"><div><div class="order-title">'+esc(svc?.display_name||row.service_code||'خدمة غير معروفة')+(row.package_text?' — '+esc(row.package_text):'')+'</div><div class="muted">'+esc(fmtDate(row.created_at))+'</div></div><div class="pills"><span class="pill '+statusClass(row.status)+'">'+esc(statusLabel(row.status))+'</span><span class="pill '+(row.customer_party_id?'ok':'warn')+'">'+esc(party?.display_name||'بدون عميل')+'</span></div></div>'+
+      '<div class="order-raw">'+esc(row.raw_input)+'</div>'+
+      '<div class="order-grid"><div class="kv"><b>الخدمة</b><span>'+esc(row.service_code||'—')+'</span></div><div class="kv"><b>القيمة</b><span>'+esc(row.package_text||'—')+'</span></div><div class="kv"><b>الوجهة</b><span dir="ltr">'+esc(row.destination||'—')+'</span></div><div class="kv"><b>العميل</b><span>'+esc(party?.display_name||'غير محدد')+'</span></div><div class="kv"><b>الحالة المالية</b><span>'+esc(financial)+'</span></div><div class="kv"><b>المصدر</b><span>'+esc(row.source_kind)+'</span></div></div>'+
+      '<div class="actions"><button class="btn secondary" data-action="open" data-id="'+row.id+'" type="button">'+esc(orderActionLabel(row))+'</button><button class="btn warn" data-action="status" data-status="in_progress" data-id="'+row.id+'" type="button">جاري</button><button class="btn ok" data-action="status" data-status="success" data-id="'+row.id+'" type="button">تم</button><button class="btn secondary" data-action="status" data-status="review" data-id="'+row.id+'" type="button">مراجعة</button></div>'+
+      '<details><summary>ربط/تصحيح العميل</summary><div class="grid" style="margin-top:8px"><div class="full"><select class="row-party">'+partyOptions(row.customer_party_id)+'</select></div></div><div class="actions"><button class="btn secondary" data-action="party-save" data-id="'+row.id+'" type="button">حفظ العميل</button></div></details>'+
+      '<details><summary>تعديل الفهم</summary><div class="grid" style="margin-top:8px"><div><label>الخدمة</label><select class="row-service">'+editServiceOptions(row.service_code)+'</select></div><div><label>القيمة</label><input class="row-package" value="'+esc(row.package_text||'')+'"></div><div class="full"><label>الوجهة</label><input class="row-destination" dir="ltr" value="'+esc(row.destination||'')+'"></div></div><div class="actions"><button class="btn secondary" data-action="interpret-save" data-id="'+row.id+'" type="button">حفظ التصحيح</button></div></details>'+
+      '<details><summary>سجل التغييرات</summary><div class="actions"><button class="btn secondary" data-action="history" data-id="'+row.id+'" type="button">تحميل السجل</button></div><div class="history"></div></details>'+
+    '</article>';
+  }).join('');
+}
+
+async function loadOrders(){
+  const {data,error}=await db.from('mytool_service_orders').select('*').order('created_at',{ascending:false}).limit(60);
+  if(error)throw error;
+  orders=data||[];
+  renderOrders();
+}
+
+async function updateOrder(id,patch){
+  patch.updated_at=new Date().toISOString();
+  const {error}=await db.from('mytool_service_orders').update(patch).eq('id',id);
+  if(error)throw error;
+  await loadOrders();
+}
+
+async function openOrder(row){
+  const service=serviceBy(row.service_code);
+  if(!service){show('حدد الخدمة أولًا.',true);return}
+  if(row.destination&&navigator.clipboard){navigator.clipboard.writeText(row.destination).catch(()=>{})}
+  if(service.action_kind==='flexy'){
+    const q=new URLSearchParams();
+    if(row.destination)q.set('phone',row.destination);
+    if(row.package_text)q.set('amount',row.package_text);
+    q.set('from_order',row.order_uuid);
+    location.href='../flexy/?'+q.toString();
+    return;
+  }
+  if(service.action_kind==='open_url'){
+    const url=String(service.action_url||'').trim();
+    if(!/^https?:\/\//i.test(url)){show('رابط التنفيذ غير محدد لهذه الخدمة. افتح إعداد الخدمات وضع الرابط مرة واحدة.',true);return}
+    location.href=url;
+    return;
+  }
+  show('هذه الخدمة مضبوطة على تنفيذ يدوي. الوجهة نُسخت للحافظة إن أمكن.');
+}
+
+async function loadHistory(id,container){
+  container.textContent='جاري التحميل…';
+  const {data,error}=await db.from('mytool_service_order_history').select('*').eq('order_id',id).order('created_at',{ascending:false}).limit(30);
+  if(error){container.textContent='تعذر تحميل السجل.';return}
+  container.innerHTML=(data||[]).map(h=>'<div><b>'+esc(fmtDate(h.created_at))+'</b> — '+esc(h.event_type)+'<br>'+esc(JSON.stringify(h.changed_fields))+'</div>').join('')||'<div>لا يوجد سجل بعد.</div>';
+}
+
+function renderCatalogPicker(){
+  $('catalogPick').innerHTML='<option value="">خدمة جديدة</option>'+catalog.map(s=>'<option value="'+esc(s.code)+'">'+esc(s.code)+' — '+esc(s.display_name)+'</option>').join('');
+}
+
+function fillCatalog(code=''){
+  const s=serviceBy(code);
+  $('catalogCode').value=s?.code||'';
+  $('catalogCode').disabled=Boolean(s);
+  $('catalogName').value=s?.display_name||'';
+  $('catalogAliases').value=(s?.aliases||[]).join(', ');
+  $('catalogDestination').value=s?.destination_kind||'other';
+  $('catalogAction').value=s?.action_kind||'manual';
+  $('catalogUrl').value=s?.action_url||'';
+  $('catalogEnabled').checked=s?s.enabled:true;
+}
+
+async function saveCatalog(){
+  const code=$('catalogCode').value.trim().toUpperCase();
+  const name=$('catalogName').value.trim();
+  const action=$('catalogAction').value;
+  const url=$('catalogUrl').value.trim()||null;
+  if(!/^[A-Z0-9_]{2,24}$/.test(code)){show('رمز الخدمة يجب أن يكون أحرف/أرقام إنجليزية مثل FF أو FIFA.',true);return}
+  if(!name){show('اكتب اسم الخدمة.',true);return}
+  if(action==='open_url'&&url&&!/^https?:\/\//i.test(url)){show('رابط الخدمة يجب أن يبدأ بـ http:// أو https://',true);return}
+  const payload={
+    code,display_name:name,aliases:splitAliases($('catalogAliases').value),
+    destination_kind:$('catalogDestination').value,action_kind:action,
+    action_url:action==='flexy'?'../flexy/':url,enabled:$('catalogEnabled').checked,
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await db.from('mytool_service_catalog').upsert(payload,{onConflict:'code'});
+  if(error){show('تعذر حفظ الخدمة: '+error.message,true);return}
+  show('تم حفظ الخدمة والمرادفات.',false,true);
+  await loadCatalog();fillCatalog(code);applyAnalysis();renderOrders();
+}
+
+$('draftClearBtn').onclick=clearDraft;
+$('analyzeBtn').onclick=applyAnalysis;
+$('saveBtn').onclick=saveOrder;
+$('refreshBtn').onclick=()=>loadOrders().catch(e=>show(e.message,true));
+$('rawInput').addEventListener('input',()=>{syncDraftClear();clearTimeout(parseTimer);parseTimer=setTimeout(applyAnalysis,350)});
+$('partySearch').addEventListener('input',()=>renderPartyOptions($('partySearch').value,$('party').value));
+$('statusFilter').onchange=renderOrders;
+$('assignmentFilter').onchange=renderOrders;
+$('catalogPick').onchange=()=>fillCatalog($('catalogPick').value);
+$('catalogSaveBtn').onclick=saveCatalog;
+
+$('ordersList').addEventListener('click',async event=>{
+  const btn=event.target.closest('button[data-action]');if(!btn)return;
+  const id=Number(btn.dataset.id),row=orders.find(x=>x.id===id);if(!row)return;
+  btn.disabled=true;
+  try{
+    if(btn.dataset.action==='open')await openOrder(row);
+    else if(btn.dataset.action==='status'){
+      const next=btn.dataset.status;
+      await updateOrder(id,{status:next});
+      if(next==='success')show(row.customer_party_id?'تم تعليم العملية ناجحة. لم يتم ترحيل دين آليًا في V0.':'تم تعليم العملية ناجحة، لكن الدين لن يُرحّل لأن العميل غير محدد.',false,true);
+    }else if(btn.dataset.action==='party-save'){
+      const card=btn.closest('.order'),value=card.querySelector('.row-party').value;
+      const partyId=value?Number(value):null;
+      await updateOrder(id,{
+        customer_party_id:partyId,
+        customer_resolution:partyId?'confirmed':'unassigned',
+        customer_match_source:partyId?'correction':'unknown',
+        financial_state:partyId?'not_posted':'blocked_unassigned'
+      });
+      show(partyId?'تم ربط العملية بالعميل، والتصحيح محفوظ في السجل.':'تم فك ربط العميل. العملية بقيت محفوظة والدين محجوب.',false,true);
+    }else if(btn.dataset.action==='interpret-save'){
+      const card=btn.closest('.order');
+      await updateOrder(id,{
+        service_code:card.querySelector('.row-service').value||null,
+        package_text:card.querySelector('.row-package').value.trim()||null,
+        destination:card.querySelector('.row-destination').value.trim()||null
+      });
+      show('تم حفظ تصحيح الفهم بدون حذف العملية.',false,true);
+    }else if(btn.dataset.action==='history'){
+      await loadHistory(id,btn.closest('details').querySelector('.history'));
+    }
+  }catch(error){show('تعذر تنفيذ العملية: '+(error?.message||error),true)}
+  finally{btn.disabled=false}
+});
+
+(async()=>{
+  try{
+    syncDraftClear();
+    await requireSession();
+    await Promise.all([loadCatalog(),loadParties()]);
+    await loadOrders();
+  }catch(error){show(error?.message||String(error),true)}
+})();
+</script>
+</body>
+</html>
+);
+  for(const line of lines){
+    let m=line.match(afterMeta);
+    if(m){messages.push({sender:m[1].trim(),body:m[4].trim(),time:m[2],date:m[3],raw:line});continue}
+    m=line.match(beforeMeta);
+    if(m){messages.push({sender:m[1].trim(),body:m[2].trim(),time:m[3],date:m[4],raw:line});continue}
+  }
+  if(!messages.length)return{detected:false,messages:[],customer_sender:'',operator_messages:[],customer_messages:[]};
+
+  const operatorAliases=['عمر','omar'];
+  const isOperator=sender=>operatorAliases.includes(norm(sender));
+  const customerMessages=messages.filter(m=>!isOperator(m.sender));
+  const operatorMessages=messages.filter(m=>isOperator(m.sender));
+  const customerSender=customerMessages[0]?.sender||'';
+  return{
+    detected:true,
+    messages,
+    customer_sender:customerSender,
+    customer_messages:customerMessages,
+    operator_messages:operatorMessages,
+    operator_ack:operatorMessages.some(m=>norm(m.body)==='تم'),
+    operator_commands:operatorMessages.map(m=>m.body).filter(Boolean)
+  };
+}
+
 function parseRequest(raw){
-  const text=latinDigits(raw);
+  const whatsapp=parseWhatsAppCopy(raw);
+  const businessText=whatsapp.detected&&whatsapp.customer_messages.length
+    ?whatsapp.customer_messages.map(m=>m.body).join('\n')
+    :latinDigits(raw);
+  const text=latinDigits(businessText);
   const nt=norm(text);
   const explicit=[];
   catalog.filter(x=>x.enabled).forEach(service=>{
@@ -151,8 +740,16 @@ function parseRequest(raw){
   let remainder=text;
   if(phoneMatch)remainder=remainder.replace(phoneMatch[0],' ');
   if(destination&&destination!==phone)remainder=remainder.replace(destination,' ');
-  const nums=(remainder.match(/\d+/g)||[]).filter(x=>x.length<=5&&Number(x)>0);
-  const packageText=nums[0]||'';
+
+  const nums=(remainder.match(/\b\d{1,5}\b/g)||[]).filter(x=>Number(x)>0);
+  let packageText=nums[0]||'';
+  if(!packageText){
+    const candidates=remainder
+      .split(/[\n|•]+/)
+      .map(x=>x.replace(/\s+/g,' ').trim())
+      .filter(x=>x&&x.length<=80&&!/^\d+$/.test(x));
+    packageText=candidates[0]||'';
+  }
 
   return {
     service_code:serviceCode,
@@ -161,7 +758,8 @@ function parseRequest(raw){
     ambiguous_services:unique.length>1?unique:[],
     inferred_by_phone:inferredByPhone,
     phone,
-    numeric_candidates:nums
+    numeric_candidates:nums,
+    whatsapp
   };
 }
 
