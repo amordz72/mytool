@@ -21,7 +21,7 @@ label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}textarea,in
 .order-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}.kv{background:#f8fafc;border-radius:10px;padding:8px}.kv b{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}.kv span{font-size:13px;font-weight:800;word-break:break-word}
 details{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}summary{cursor:pointer;font-weight:800;font-size:12px;color:#334155}.history{margin-top:8px;font-size:11px;color:var(--muted)}.history div{padding:5px 0;border-bottom:1px dashed #e5e7eb}
 .toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.toolbar select{width:auto;min-width:150px}.count{font-size:12px;color:var(--muted);margin-inline-start:auto}
-.settings-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.settings-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.draft-clear-row{display:flex;justify-content:flex-start;margin-top:7px}.draft-clear-row .btn{padding:7px 10px;font-size:12px}
 @media(max-width:620px){main{padding:9px 9px 90px}.grid,.settings-row{grid-template-columns:1fr}.order-grid{grid-template-columns:1fr 1fr}.top h1{font-size:20px}.btn{padding:9px 11px}.count{width:100%;margin:0}}
 </style>
 </head>
@@ -32,7 +32,7 @@ details{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}summary
 
   <section class="card">
     <div class="grid">
-      <div class="full"><label for="rawInput">نص الطلب</label><textarea id="rawInput" placeholder="مثال: 100 جوهرة 18255687870&#10;أو: FL • 200 • 0667413435"></textarea></div>
+      <div class="full"><label for="rawInput">نص الطلب</label><textarea id="rawInput" placeholder="مثال: 100 جوهرة 18255687870&#10;أو: FL • 200 • 0667413435"></textarea></div><div id="draftClearRow" class="full draft-clear-row" hidden><button id="draftClearBtn" class="btn bad" type="button">× مسح الطلب الحالي</button></div>
       <div><label for="sourceKind">المصدر</label><select id="sourceKind"><option value="paste">لصق/رسالة</option><option value="manual">إدخال يدوي</option><option value="screenshot">من صورة</option><option value="whatsapp">واتساب</option><option value="sms">SMS</option><option value="other">آخر</option></select></div>
       <div><label for="partySearch">بحث عن العميل</label><input id="partySearch" placeholder="اسم / هاتف / اسم آخر"></div>
       <div><label for="party">العميل</label><select id="party"><option value="">غير محدد الآن</option></select></div>
@@ -163,6 +163,26 @@ function parseRequest(raw){
     phone,
     numeric_candidates:nums
   };
+}
+
+function syncDraftClear(){
+  const row=$('draftClearRow');
+  if(row)row.hidden=!$('rawInput').value.trim();
+}
+
+function clearDraft(){
+  const hasDraft=Boolean($('rawInput').value.trim()||$('packageText').value.trim()||$('destination').value.trim()||$('party').value);
+  if(hasDraft&&!confirm('مسح الطلب الحالي غير المحفوظ؟'))return;
+  clearTimeout(parseTimer);
+  $('rawInput').value='';
+  $('packageText').value='';
+  $('destination').value='';
+  $('partySearch').value='';
+  renderPartyOptions();
+  renderServiceOptions();
+  $('analysisHint').hidden=true;
+  syncDraftClear();
+  $('rawInput').focus();
 }
 
 function applyAnalysis(){
@@ -358,10 +378,11 @@ async function saveCatalog(){
   await loadCatalog();fillCatalog(code);applyAnalysis();renderOrders();
 }
 
+$('draftClearBtn').onclick=clearDraft;
 $('analyzeBtn').onclick=applyAnalysis;
 $('saveBtn').onclick=saveOrder;
 $('refreshBtn').onclick=()=>loadOrders().catch(e=>show(e.message,true));
-$('rawInput').addEventListener('input',()=>{clearTimeout(parseTimer);parseTimer=setTimeout(applyAnalysis,350)});
+$('rawInput').addEventListener('input',()=>{syncDraftClear();clearTimeout(parseTimer);parseTimer=setTimeout(applyAnalysis,350)});
 $('partySearch').addEventListener('input',()=>renderPartyOptions($('partySearch').value,$('party').value));
 $('statusFilter').onchange=renderOrders;
 $('assignmentFilter').onchange=renderOrders;
@@ -405,6 +426,7 @@ $('ordersList').addEventListener('click',async event=>{
 
 (async()=>{
   try{
+    syncDraftClear();
     await requireSession();
     await Promise.all([loadCatalog(),loadParties()]);
     await loadOrders();
