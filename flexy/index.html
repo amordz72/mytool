@@ -180,7 +180,7 @@
           <button id="ordinarySendBtn" class="btn btn-primary px-4" type="button">إرسال</button>
         </div>
       </div>
-      <div id="ordinaryHint" class="form-text mt-2">إرسال رصيد عادي عبر Mobilis Arsselli بعد تأكيد الإدارة.</div>
+      <div id="ordinaryHint" class="form-text mt-2">إرسال عبر Mobilis Arsselli — المسار 696 / حساب GTS 04 — بعد تأكيد الإدارة.</div>
     </section>
 
     <div id="status" class="status-box rounded-3 p-3 mb-3 small">الفليكسي العادي محدد افتراضيًا. اضغط «عروض» لمشاهدة العروض.</div>
@@ -752,10 +752,10 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
  }
  ordinaryConfirmBtn.disabled=true;
  ordinaryConfirmBtn.textContent='جاري الإرسال…';
- statusBox.textContent='تم تأكيد العملية. جاري إرسال الفليكسي عبر Mobilis Arsselli…';
+ statusBox.textContent='تم تأكيد العملية. جاري إرسال الفليكسي عبر Mobilis Arsselli — 696 / GTS 04…';
  try{
   const {supabase}=await getApi();
-  const {data,error}=await supabase.rpc('station_connect_admin_create_flexy_ordinary',{
+  const {data,error}=await supabase.rpc('station_connect_admin_create_arsselli_flexy_696',{
    p_phone:value,
    p_amount:amount,
    p_station_uuid:null
@@ -765,7 +765,7 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
   if(!job?.job_uuid)throw new Error('FLEXY_JOB_NOT_CREATED');
   bootstrap.Modal.getOrCreateInstance(ordinarySendModal).hide();
   const localToken=discoveryToken;
-  const row=await pollRpc('station_connect_admin_flexy_ordinary_job',job.job_uuid,localToken,60000);
+  const row=await pollRpc('station_connect_admin_arsselli_flexy_696_job',job.job_uuid,localToken,60000);
   if(row.status==='success'){
    statusBox.textContent='تم إرسال الفليكسي بنجاح.';
    playToggleTone(true);
