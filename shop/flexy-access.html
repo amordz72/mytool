@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0f766e">
+  <title>فليكسي — MyTool</title>
+  <link rel="stylesheet" href="shop-common.css?v=20260916-1915">
+  <script src="shop-routes.js?v=20260921-flexy-access-1"></script>
+  <script src="shop-shell.js?v=20260921-flexy-access-1"></script>
+  <style>
+    :root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--good:#047857;--warn:#92400e}
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
+    main{max-width:760px;margin:auto;padding:10px 10px 115px}.hidden{display:none!important}
+    .hero,.section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:10px}
+    .hero{background:linear-gradient(135deg,#0f172a,#134e4a);color:#fff;border:0}
+    h2,h3{margin:0 0 8px}.muted{color:var(--muted);font-size:12px}.hero .muted{color:#cbd5e1}
+    .status{display:inline-flex;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.12);font-size:11px;font-weight:800}
+    .platforms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    .platform{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff}
+    .platform strong{display:block;font-size:16px}.balance{font-size:23px;font-weight:900;margin-top:8px}.platform small{display:block;color:var(--muted);margin-top:3px}
+    .platform.has-balance{border-color:#a7f3d0;background:#ecfdf5}.platform.unavailable{opacity:.55;pointer-events:none}
+    .direct{border:1px dashed #f59e0b;background:#fffbeb}.direct strong{color:#92400e}
+    .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:0;border-radius:12px;padding:10px 13px;font-weight:900;background:var(--main);color:#fff}
+    .btn.disabled{background:#cbd5e1;color:#475569;pointer-events:none}
+    .message{padding:10px 12px;border-radius:12px;background:#eff6ff;color:#1d4ed8;font-size:12px;margin-bottom:10px}
+    @media(max-width:520px){.platforms{grid-template-columns:1fr}.balance{font-size:21px}}
+  </style>
+</head>
+<body data-screen="flexy-access">
+<main>
+  <div id="top"></div>
+  <section class="hero">
+    <span class="status" id="modeStatus">جاري التحقق…</span>
+    <h2 style="margin-top:10px">فليكسي</h2>
+    <div class="muted">إذا تعذر الشحن المباشر من منصتنا، تبقى عندك المنصات البديلة بدون الرجوع للإدارة.</div>
+  </section>
+
+  <div id="message" class="message">جاري تحميل الخيارات…</div>
+
+  <section class="section">
+    <h3>المنصات المتاحة</h3>
+    <div class="muted" style="margin-bottom:10px">المنصات التي عندها رصيد تظهر أولًا.</div>
+    <div id="platforms" class="platforms"></div>
+  </section>
+
+  <section class="section direct">
+    <h3>الشحن المباشر</h3>
+    <div id="directText" class="muted">الشحن المباشر عبر كمبيوتر المحطة غير متاح للعامل حاليًا.</div>
+    <div style="margin-top:10px">
+      <a id="directBtn" class="btn disabled" href="../flexy/" aria-disabled="true">فتح الشحن المباشر</a>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co'
+const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj'
+const s=createClient(SUPABASE_URL,SUPABASE_KEY)
+const TOKEN_KEY='mytool_shop_worker_token',EXP_KEY='mytool_shop_worker_expires_at'
+const $=id=>document.getElementById(id)
+const money=v=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(Number(v||0))+' دج'
+
+// Temporary routing policy. Later this flag is replaced by worker-safe Station health/config.
+const INTERNAL_DIRECT_ENABLED=false
+const CHANNELS=[
+  {key:'tehna_pay',name:'تهنى باي',match:['تهنى باي','Tehna Pay'],url:'https://tehnapay.com/login',active:true},
+  {key:'hanii_rohek',name:'هني روحك',match:['هني روحك','Hanii Rohek','Hanii rouhek'],url:'https://haniirohek.com/login',active:true}
+]
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function balanceFor(channel,rows){
+  const found=(rows||[]).find(row=>channel.match.some(name=>String(row.source_name||'').trim().toLowerCase()===name.toLowerCase()))
+  return found?Number(found.balance_amount||0):0
+}
+function renderChannels(rows){
+  const available=CHANNELS.filter(x=>x.active).map(ch=>({...ch,balance:balanceFor(ch,rows)})).sort((a,b)=>(b.balance>0)-(a.balance>0)||b.balance-a.balance||a.name.localeCompare(b.name,'ar'))
+  if(!available.length){$('platforms').innerHTML='<div class="muted">لا توجد منصة بديلة مفعلة حاليًا.</div>';return}
+  if(!INTERNAL_DIRECT_ENABLED&&available.length===1){
+    location.replace(available[0].url)
+    return
+  }
+  $('platforms').innerHTML=available.map(ch=>'<a class="platform '+(ch.balance>0?'has-balance':'')+'" href="'+esc(ch.url)+'" target="_blank" rel="noopener"><strong>'+esc(ch.name)+'</strong><div class="balance">'+money(ch.balance)+'</div><small>'+(ch.balance>0?'رصيد متاح حسب آخر لقطة':'الرصيد غير متوفر في آخر لقطة')+' · فتح المنصة ↗</small></a>').join('')
+}
+
+async function init(){
+  const exp=Number(localStorage.getItem(EXP_KEY)||0),token=exp>Date.now()?(localStorage.getItem(TOKEN_KEY)||''):''
+  if(!token)return location.replace('../')
+
+  const ctx=await s.rpc('worker_get_context',{p_session_token:token})
+  if(ctx.error||!ctx.data?.length)return location.replace('../')
+  const row=ctx.data[0]
+  const permissions={
+    sell:!!row.can_sell,purchase:!!row.can_purchase,view_stock:!!row.can_view_stock,inventory:!!row.can_inventory,
+    manage_products:!!row.can_manage_products,view_sales:!!row.can_view_sales,record_money:!!row.can_record_money
+  }
+  ShopShell.mountStandalone('top',{role:'worker',permissions,active:'flexy-access'})
+  const identity=$('standaloneIdentity');if(identity)identity.textContent=(row.nickname||'العامل')+' — فليكسي'
+
+  const overview=await s.rpc('worker_get_financial_overview_v1',{p_session_token:token})
+  const platforms=!overview.error?(overview.data?.platforms||[]):[]
+  renderChannels(platforms)
+
+  if(INTERNAL_DIRECT_ENABLED){
+    $('modeStatus').textContent='الشحن المباشر متاح'
+    $('directText').textContent='منصتنا متاحة الآن. يمكنك فتح الشحن المباشر.'
+    $('directBtn').classList.remove('disabled');$('directBtn').removeAttribute('aria-disabled')
+  }else{
+    $('modeStatus').textContent='البدائل جاهزة'
+  }
+  $('message').classList.add('hidden')
+}
+init().catch(e=>{$('message').textContent='تعذر تحميل فليكسي: '+(e?.message||'خطأ غير معروف')})
+</script>
+</body>
+</html>
