@@ -180,11 +180,6 @@
       <div id="offersList" class="list-group mb-0"></div>
     </section>
 
-    <div id="offerActionBar" class="execute-bar surface d-none mt-3 p-3 align-items-center justify-content-between gap-3">
-      <div class="small">المحدد: <strong id="selectedOfferText">—</strong></div>
-      <button id="sendOfferBtn" class="btn btn-primary" type="button">تنفيذ</button>
-    </div>
-
     <h2 class="page-title h4 mt-5 mb-3">آخر العمليات</h2>
     <section class="card surface p-3 p-md-4">
       <div id="operationsList" class="d-grid gap-2">
@@ -221,7 +216,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title fs-5 fw-bold" id="sendOfferTitle">تأكيد تنفيذ العرض</h2>
+        <h2 class="modal-title fs-5 fw-bold" id="sendOfferTitle">تأكيد تفعيل العرض</h2>
         <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="إغلاق"></button>
       </div>
       <div class="modal-body">
@@ -231,7 +226,7 @@
       </div>
       <div class="modal-footer d-flex gap-2">
         <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">إلغاء</button>
-        <button id="confirmSendOfferBtn" type="button" class="btn btn-primary flex-fill">تأكيد التنفيذ</button>
+        <button id="confirmSendOfferBtn" type="button" class="btn btn-primary flex-fill">تفعيل العرض</button>
       </div>
     </div>
   </div>
@@ -293,9 +288,6 @@ const detailsModal=document.getElementById('offerDetailsModal');
 const detailName=document.getElementById('detailName');
 const detailPrice=document.getElementById('detailPrice');
 const detailText=document.getElementById('detailText');
-const offerActionBar=document.getElementById('offerActionBar');
-const selectedOfferText=document.getElementById('selectedOfferText');
-const sendOfferBtn=document.getElementById('sendOfferBtn');
 const sendOfferModal=document.getElementById('sendOfferModal');
 const sendPhone=document.getElementById('sendPhone');
 const sendOfferName=document.getElementById('sendOfferName');
@@ -309,6 +301,7 @@ const unknownOfferRaw=document.getElementById('unknownOfferRaw');
 let autoDiscovery=true;
 let selectedMode='balance';
 let selectedOffer=null;
+let offerConfirmAccepted=false;
 let discoveryToken=0;
 let visibleOfferKeys=null;
 let executionByKey=new Map();
@@ -359,8 +352,6 @@ function showUnknownOfferNotice(unknown,row){
 }
 function resetSelection(){
  selectedOffer=null;
- offerActionBar.classList.add('d-none');
- selectedOfferText.textContent='—';
  offersList.querySelectorAll('.offer-row').forEach(row=>{
   row.classList.remove('selected');
   const toggle=row.querySelector('.offer-toggle');
@@ -382,6 +373,28 @@ function offerRows(offers,family){
  }).join('');
 }
 
+function openSelectedOfferConfirm(){
+ if(!selectedOffer)return;
+ if(!selectedOffer.executionAvailable){
+  statusBox.textContent='هذا العرض ظاهر لكنه غير مربوط بطريقة تنفيذ معتمدة.';
+  playToggleTone(false);
+  resetSelection();
+  return;
+ }
+ const value=digits();
+ if(value.length!==10){
+  statusBox.textContent='رقم الهاتف غير مكتمل.';
+  resetSelection();
+  return;
+ }
+ sendPhone.textContent=format(value);
+ sendOfferName.textContent=selectedOffer.name;
+ sendOfferAmount.textContent=selectedOffer.amount.toLocaleString('fr-DZ')+' دج';
+ offerConfirmAccepted=false;
+ statusBox.textContent='راجع العرض في نافذة التأكيد.';
+ bootstrap.Modal.getOrCreateInstance(sendOfferModal).show();
+}
+
 function selectOffer(row){
  offersList.querySelectorAll('.offer-row').forEach(y=>{
   const active=y===row;
@@ -400,11 +413,7 @@ function selectOffer(row){
   executionAvailable,
   simTypes
  };
- selectedOfferText.textContent=selectedOffer.name+' — '+selectedOffer.price;
- sendOfferBtn.disabled=false;
- sendOfferBtn.textContent=executionAvailable?'تنفيذ':'تنفيذ غير مربوط';
- offerActionBar.classList.remove('d-none');
- if(executionAvailable)statusBox.textContent='العرض جاهز للتنفيذ. اضغط «تنفيذ» للتأكيد.';
+ openSelectedOfferConfirm();
 }
 
 function showDetails(row){
@@ -628,19 +637,9 @@ operator.addEventListener('click',()=>{
 balanceMode.addEventListener('click',()=>setMode('balance'));
 offersMode.addEventListener('click',()=>setMode('offers'));
 
-sendOfferBtn.addEventListener('click',()=>{
- if(!selectedOffer)return;
- if(!selectedOffer.executionAvailable){
-  statusBox.textContent='العرض محدد، لكن طريقة التنفيذ لم تُربط بعد.';
-  playToggleTone(false);
-  return;
- }
- const value=digits();
- if(value.length!==10){statusBox.textContent='رقم الهاتف غير مكتمل.';return}
- sendPhone.textContent=format(value);
- sendOfferName.textContent=selectedOffer.name;
- sendOfferAmount.textContent=selectedOffer.amount.toLocaleString('fr-DZ')+' دج';
- bootstrap.Modal.getOrCreateInstance(sendOfferModal).show();
+sendOfferModal.addEventListener('hidden.bs.modal',()=>{
+ if(!offerConfirmAccepted)resetSelection();
+ offerConfirmAccepted=false;
 });
 
 confirmSendOfferBtn.addEventListener('click',async()=>{
@@ -664,7 +663,9 @@ confirmSendOfferBtn.addEventListener('click',async()=>{
   if(error)throw error;
   const job=data?.[0];
   if(!job?.job_uuid)throw new Error('EXECUTE_JOB_NOT_CREATED');
+  offerConfirmAccepted=true;
   bootstrap.Modal.getOrCreateInstance(sendOfferModal).hide();
+  resetSelection();
   const localToken=discoveryToken;
   const row=await pollRpc('station_connect_admin_offer_execute_job',job.job_uuid,localToken,60000);
   if(row.status==='success'){statusBox.textContent='تم تنفيذ العرض بنجاح.';playToggleTone(true);}
@@ -675,7 +676,7 @@ confirmSendOfferBtn.addEventListener('click',async()=>{
   statusBox.textContent='تعذر إرسال العرض: '+(error?.message||error);
  }finally{
   confirmSendOfferBtn.disabled=false;
-  confirmSendOfferBtn.textContent='تأكيد التنفيذ';
+  confirmSendOfferBtn.textContent='تفعيل العرض';
  }
 });
 
