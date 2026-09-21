@@ -39,7 +39,7 @@
     .operation-item{border:1px solid #e0e5ee;border-radius:.65rem;background:#fff}.operation-label{font-size:.72rem;color:#8a98aa}.operation-value{font-weight:700;color:#52657a}
     .offer-modal .modal-content{border:0;border-radius:1rem;box-shadow:0 1rem 3rem rgba(15,23,42,.2)}
     .offer-modal .modal-header{border-bottom:1px solid #edf0f5}.offer-modal .modal-footer{border-top:0}
-    .status-box{background:#f0f2ff;color:#4f5f86}.progress{height:3px}.progress-bar{background:var(--brand);width:0}.execute-bar{border:1px solid #e2e6ef;background:#fff;border-radius:.7rem;display:flex}.execute-bar .btn{min-width:110px;font-weight:800}
+    .status-box{background:#f0f2ff;color:#4f5f86}.discovery-alert{background:#fff8e6;border:1px solid #f3d38a;color:#6b571d}.discovery-raw{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.5 monospace;max-height:180px;overflow:auto}.progress{height:3px}.progress-bar{background:var(--brand);width:0}.execute-bar{border:1px solid #e2e6ef;background:#fff;border-radius:.7rem;display:flex}.execute-bar .btn{min-width:110px;font-weight:800}
     @media(max-width:1399.98px){.execute-bar{position:fixed;right:.75rem;left:.75rem;bottom:72px;z-index:1049;box-shadow:0 .55rem 1.4rem rgba(15,23,42,.18)}}
     .progress.run .progress-bar{animation:hold 7s linear forwards}@keyframes hold{to{width:100%}}
     .mobile-toolbar{min-height:58px;background:#fff}.menu-trigger{width:42px;height:42px;border:0;background:transparent;color:#52657a;font-size:1.55rem;border-radius:.5rem}
@@ -168,6 +168,11 @@
     <div id="offerPolicyHint" class="form-text text-center mb-3">جاري تحميل سياسة ظهور العروض…</div>
 
     <div id="status" class="status-box rounded-3 p-3 mb-3 small">الفليكسي العادي محدد افتراضيًا. اضغط «عروض» لمشاهدة العروض.</div>
+    <div id="unknownOfferNotice" class="discovery-alert rounded-3 p-3 mb-3 small d-none">
+      <strong id="unknownOfferTitle">تم اكتشاف عرض غير موجود في الكاتالوج.</strong>
+      <div class="mt-1">لم يتم حفظه، ولم يتم إنشاء تنفيذ له.</div>
+      <details class="mt-2"><summary>الرد الخام</summary><pre id="unknownOfferRaw" class="discovery-raw mt-2 mb-0"></pre></details>
+    </div>
     <div id="timer" class="progress mb-3"><div class="progress-bar"></div></div>
 
     <section id="results" class="card surface offers-card p-3 p-md-4 d-none">
@@ -263,7 +268,8 @@ const catalog={
   {name:'PixX 2000 (30Go)',price:'2,000 دج',index:5,amount:2000,details:'30Go'}]}]},
  REVOLUTION:{families:[{name:'Revolution',offers:[
   {name:'Revolution 50',price:'50 دج',index:null,amount:50,details:'كتالوج خارجي — التنفيذ غير مؤكد'},
-  {name:'Revolution 100',price:'100 دج',index:null,amount:100,details:'كتالوج خارجي — التنفيذ غير مؤكد'},
+  {name:'Revolution 100',price:'100 دج',index:null,amount:100,details:'عرض معروف يدويًا — التنفيذ عبر Arsselli معروف، والربط البرمجي لم يجهز بعد'},
+  {name:'Revolution 500',price:'500 دج',index:null,amount:500,details:'عرض معروف يدويًا — التنفيذ عبر Arsselli معروف، والربط البرمجي لم يجهز بعد'},
   {name:'Revolution 1000',price:'1,000 دج',index:6,amount:1000,details:''},
   {name:'Revolution 1200',price:'1,200 دج',index:5,amount:1200,details:''},
   {name:'Revolution 1500',price:'1,500 دج',index:4,amount:1500,details:''},
@@ -296,6 +302,9 @@ const sendOfferName=document.getElementById('sendOfferName');
 const sendOfferAmount=document.getElementById('sendOfferAmount');
 const confirmSendOfferBtn=document.getElementById('confirmSendOfferBtn');
 const operationsList=document.getElementById('operationsList');
+const unknownOfferNotice=document.getElementById('unknownOfferNotice');
+const unknownOfferTitle=document.getElementById('unknownOfferTitle');
+const unknownOfferRaw=document.getElementById('unknownOfferRaw');
 
 let autoDiscovery=true;
 let selectedMode='balance';
@@ -303,6 +312,7 @@ let selectedOffer=null;
 let discoveryToken=0;
 let visibleOfferKeys=null;
 let executionByKey=new Map();
+let visibleCatalogRows=[];
 let apiPromise=null;
 
 const getApi=()=>apiPromise||(apiPromise=import('./api.js'));
@@ -331,6 +341,22 @@ function playToggleTone(on=true){
  }catch{}
 }
 
+function hideUnknownOfferNotice(){
+ unknownOfferNotice.classList.add('d-none');
+ unknownOfferTitle.textContent='تم اكتشاف عرض غير موجود في الكاتالوج.';
+ unknownOfferRaw.textContent='';
+}
+function showUnknownOfferNotice(unknown,row){
+ const labels=unknown.map(item=>{
+  const family=String(item?.family||'عرض').trim()||'عرض';
+  const amount=Number(item?.amount||0);
+  const label=String(item?.label||'').trim();
+  return label||family+' '+amount;
+ }).filter(Boolean);
+ unknownOfferTitle.textContent='عرض جديد غير مسجل: '+labels.join('، ');
+ unknownOfferRaw.textContent=String(row?.result_text||JSON.stringify(row?.available_offers||unknown,null,2));
+ unknownOfferNotice.classList.remove('d-none');
+}
 function resetSelection(){
  selectedOffer=null;
  offerActionBar.classList.add('d-none');
@@ -457,6 +483,32 @@ function normalizeDiscoveredOffers(list){
  return [...groups.entries()].map(([name,offers])=>({name,offers}));
 }
 
+function catalogFamiliesFor(discoveredFamilies){
+ const names=[...new Set((discoveredFamilies||[]).map(f=>String(f?.name||'').trim()).filter(Boolean))];
+ return names.map(name=>{
+  const offers=visibleCatalogRows
+   .filter(row=>String(row.family||'')===name)
+   .sort((a,b)=>(Number(a.sort_index)||0)-(Number(b.sort_index)||0)||(Number(a.amount)||0)-(Number(b.amount)||0))
+   .map(row=>({
+    name:row.display_name||name+' '+row.amount,
+    price:Number(row.amount||0).toLocaleString('fr-DZ')+' دج',
+    amount:Number(row.amount||0),
+    index:row.network_index??'',
+    details:row.details||'عرض محفوظ في الكاتالوج.'
+   }));
+  return {name,offers};
+ }).filter(f=>f.offers.length);
+}
+
+function unknownDiscoveredOffers(list){
+ return (Array.isArray(list)?list:[]).filter(item=>{
+  const family=String(item?.family||'').trim();
+  const amount=Number(item?.amount||0);
+  if(!family||!amount)return false;
+  return !visibleOfferKeys?.has(family+'|'+amount);
+ });
+}
+
 async function pollRpc(rpcName,jobUuid,token,timeoutMs=50000){
  const {supabase}=await getApi();
  const started=Date.now();
@@ -475,6 +527,7 @@ async function discoverOffersReal(){
  const value=digits();
  const token=++discoveryToken;
  resetSelection();
+ hideUnknownOfferNotice();
  results.classList.add('d-none');
  if(value.length!==10){
   statusBox.textContent='أدخل رقم هاتف من 10 أرقام لاكتشاف العروض.';
@@ -493,9 +546,17 @@ async function discoverOffersReal(){
   if(token!==discoveryToken)return;
   timer.classList.remove('run');
   if(row.status==='success'){
-   const families=normalizeDiscoveredOffers(row.available_offers);
-   renderFamilies(families,row.family?'مجموعة '+row.family:'العروض المكتشفة');
-   statusBox.textContent='تم اكتشاف عروض الرقم من الشبكة فعليًا.';
+   const discoveredFamilies=normalizeDiscoveredOffers(row.available_offers);
+   const unknown=unknownDiscoveredOffers(row.available_offers);
+   const families=catalogFamiliesFor(discoveredFamilies);
+   if(families.length)renderFamilies(families,row.family?'مجموعة '+row.family:'العروض المتاحة');
+   else results.classList.add('d-none');
+   if(unknown.length){
+    showUnknownOfferNotice(unknown,row);
+    statusBox.textContent='تم الاستكشاف. يوجد عرض جديد غير مسجل؛ لم يتم حفظه أو تنفيذه.';
+   }else{
+    statusBox.textContent='تم الاستكشاف. تم عرض العروض المعروفة في الكاتالوج فقط.';
+   }
   }else{
    results.classList.add('d-none');
    statusBox.textContent='انتهى الاستكشاف: '+(row.result_text||row.result_code||row.status);
@@ -659,6 +720,7 @@ async function loadOfferPolicy(){
   const {data,error}=await supabase.rpc('flexy_get_visible_offer_catalog_v2',{p_role:role});
   if(error)throw error;
   const rows=Array.isArray(data)?data:[];
+  visibleCatalogRows=rows;
   visibleOfferKeys=new Set(rows.map(row=>String(row.family||'')+'|'+Number(row.amount||0)));
   executionByKey=new Map(rows.map(row=>[
     String(row.family||'')+'|'+Number(row.amount||0),
@@ -668,6 +730,7 @@ async function loadOfferPolicy(){
   if(selectedMode==='offers'&&digits().length===10)resolveCurrentOffers();
  }catch(error){
   visibleOfferKeys=null;
+  visibleCatalogRows=[];
   executionByKey=new Map();
   policyHint.textContent=isAdmin?'تعذر تحميل مصفوفة الظهور والتنفيذ؛ لن نعتبر أي عرض قابلًا للإرسال.':'وضع احتياطي للظهور فقط؛ الإرسال غير مفعل.';
  }
