@@ -8,12 +8,14 @@
   const TYPES={BUG:'خطأ',NEEDS_CONFIRMATION:'يحتاج تأكيد عمر',AI_REQUEST:'طلب للذكاء الاصطناعي',TASK:'مهمة',IDEA:'فكرة',PRODUCT_INVENTORY:'منتج أو مخزون',REFERENCE:'مرجع',UNCATEGORIZED:'بدون تصنيف'};
   const PRIORITIES={URGENT:'عاجل',HIGH:'مرتفع',NORMAL:'عادي',LOW:'منخفض'};
   const STATUSES={NEW:'جديدة',TRIAGED:'صُنفت',NEEDS_OMAR:'تحتاج عمر',READY:'جاهزة',IN_PROGRESS:'قيد العمل',DONE:'منتهية',ARCHIVED:'مؤرشفة'};
-  const AREAS={MYTOOL:'MyTool',NOTES:'الملاحظات',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'منتج',GENERAL:'عام'};
+  const BASE_AREAS={MYTOOL:'MyTool',NOTES:'الملاحظات',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'منتج',GENERAL:'عام'};
+  const AREAS={...BASE_AREAS};
   const $=id=>document.getElementById(id);
   const store=window.MyToolNotesLocal;
   let supabase=null,user=null,hasSupabaseSession=false,remoteAvailable=false;
   let notes=[],images=[],remoteImages=[];
   let smartRules=[];
+  let areaOptions=[];
   let localObjectUrls=[];
   let syncRunning=false;
   let smartApplying=false;
@@ -40,6 +42,60 @@
 
   function smartText(v=''){return String(v??'').toLowerCase().normalize('NFKC').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim()}
   function hasAny(text,terms){return terms.some(x=>text.includes(smartText(x)))}
+  function areaLabel(value){return AREAS[value]||String(value||'')}
+  function registerArea(value,label=value){
+    const key=String(value||'').trim(),shown=String(label||value||'').trim();
+    if(!key||key.length>80)return '';
+    AREAS[key]=shown||key;
+    return key;
+  }
+  function syncAreaSelect(selected){
+    const select=$('area');if(!select)return;
+    const current=selected??select.value??'MYTOOL';
+    select.innerHTML=Object.entries(AREAS).map(([v,l])=>'<option value="'+esc(v)+'">'+esc(l)+'</option>').join('');
+    select.value=Object.prototype.hasOwnProperty.call(AREAS,current)?current:'MYTOOL';
+  }
+  function cleanExplicitArea(value=''){
+    let text=String(value).replace(/[»«"'“”]/g,' ').replace(/\s+/g,' ').trim();
+    text=text.split(/\s+(?:ثم|بعدها|يقوم|تقوم|ضع|حط|النوع|الاولويه|الأولوية|او\s+خدمه|أو\s+خدمة|حتى|لكي)\b/i)[0].trim();
+    text=text.replace(/^(?:الى|إلى|في|تحت)\s+/,'').trim();
+    if(['كذا','كذا كذا','شيء','شىء','حاجه','حاجة'].includes(smartText(text)))return '';
+    return text.slice(0,80).trim();
+  }
+  function extractExplicitArea(body=''){
+    const matches=[...String(body).matchAll(/(?:تحت\s+)?(?:قسم|القسم)\s*[:：\-]?\s*([^\n،,.!?]{2,100})/gi)];
+    let found='';
+    for(const match of matches){const candidate=cleanExplicitArea(match[1]);if(candidate)found=candidate}
+    return found;
+  }
+  async function loadAreaOptions(){
+    Object.keys(AREAS).forEach(key=>{if(!BASE_AREAS[key])delete AREAS[key]});
+    areaOptions=[];
+    if(hasSupabaseSession){
+      try{
+        const c=await getSupabase();
+        const {data,error}=await c.from('mytool_note_area_options').select('value,label,enabled,is_system').eq('enabled',true).order('is_system',{ascending:false}).order('label');
+        if(error)throw error;
+        areaOptions=data||[];
+        areaOptions.forEach(row=>registerArea(row.value,row.label));
+      }catch(error){console.warn('MyTool note areas unavailable',error)}
+    }
+    syncAreaSelect();
+  }
+  async function ensureAreaOption(value){
+    const key=registerArea(value,value);if(!key||BASE_AREAS[key]||!hasSupabaseSession)return key;
+    try{
+      const c=await getSupabase();
+      const {error}=await c.from('mytool_note_area_options').upsert({value:key,label:key,is_system:false,enabled:true,created_by:user.id,updated_at:new Date().toISOString()},{onConflict:'value'});
+      if(error)throw error;
+      const existing=await c.from('mytool_note_smart_rules').select('id').eq('rule_kind','AREA').eq('target_value',key).ilike('keyword',key).limit(1);
+      if(!existing.error&&!existing.data?.length){
+        const created=await c.from('mytool_note_smart_rules').insert({rule_kind:'AREA',target_value:key,keyword:key,enabled:true,created_by:user.id});
+        if(created.error)console.warn('MyTool area keyword rule was not created',created.error);
+      }
+    }catch(error){console.warn('MyTool custom area save failed',error)}
+    return key;
+  }
   function applySavedSmartRules(text,result){
     const t=smartText(text),used=new Set();
     for(const rule of smartRules){
@@ -49,7 +105,7 @@
       if(!keyword||!t.includes(keyword))continue;
       if(kind==='TYPE'&&TYPES[rule.target_value]){result.note_type=rule.target_value;used.add(kind)}
       else if(kind==='PRIORITY'&&PRIORITIES[rule.target_value]){result.priority=rule.target_value;used.add(kind)}
-      else if(kind==='AREA'&&AREAS[rule.target_value]){result.project_area=rule.target_value;used.add(kind)}
+      else if(kind==='AREA'&&String(rule.target_value||'').trim()){registerArea(rule.target_value,rule.target_value);result.project_area=rule.target_value;used.add(kind)}
     }
     return result;
   }
@@ -81,7 +137,10 @@
     else if(hasAny(t,['صندوق الملاحظات','نظام الملاحظات','قسم الملاحظات','اعدادات الملاحظات','إعدادات الملاحظات','ذكاء الملاحظات','ذكاء الملاحظه','ذكاء الملاحظة','تصنيف الملاحظات','ارشيف الملاحظات','أرشيف الملاحظات','الملاحظات','الملاحظه','الملاحظة']))project_area='NOTES';
     else if(hasAny(t,['mytool','my tool','ماي تول','ماي تولز','معالجه الحسابات','مراجعه الحسابات']))project_area='MYTOOL';
 
-    return applySavedSmartRules(t,{note_type,priority,project_area});
+    const result=applySavedSmartRules(t,{note_type,priority,project_area});
+    const explicitArea=extractExplicitArea(body);
+    if(explicitArea){registerArea(explicitArea,explicitArea);result.project_area=explicitArea}
+    return result;
   }
   function applySmartClassification(){
     const body=$('body')?.value||'';
@@ -90,10 +149,10 @@
     smartApplying=true;
     if(!smartLocks.type)$('type').value=inferred.note_type;
     if(!smartLocks.priority)$('priority').value=inferred.priority;
-    if(!smartLocks.area)$('area').value=inferred.project_area;
+    if(!smartLocks.area){if(!AREAS[inferred.project_area])registerArea(inferred.project_area,inferred.project_area);syncAreaSelect(inferred.project_area);$('area').value=inferred.project_area;}
     smartApplying=false;
     const hint=$('smartHint');
-    if(hint)hint.textContent='تصنيف ذكي: '+(TYPES[$('type').value]||$('type').value)+' · '+(PRIORITIES[$('priority').value]||$('priority').value)+' · '+(AREAS[$('area').value]||$('area').value);
+    if(hint)hint.textContent='تصنيف ذكي: '+(TYPES[$('type').value]||$('type').value)+' · '+(PRIORITIES[$('priority').value]||$('priority').value)+' · '+areaLabel($('area').value);
     window.VisualChoices?.syncAll();
   }
 
@@ -201,6 +260,8 @@
     }
 
     notes=[...outMap.values()].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+    notes.forEach(n=>{if(n.project_area&&!AREAS[n.project_area])registerArea(n.project_area,n.project_area)});
+    syncAreaSelect();
     remoteImages=remoteImageRows||[];
     const localImgs=await localDisplayImages(notes,remoteImages);
     images=[...remoteImages.map(x=>({...x,_local:false})),...localImgs];
@@ -283,7 +344,8 @@
     $('save').disabled=true;notify('جاري الحفظ المحلي…');
     try{
       const uuid=crypto.randomUUID(),key=store.noteKey(uuid,null),now=new Date().toISOString();
-      await store.putNote({key,client_uuid:uuid,remote_id:null,body,note_type:$('type').value,priority:$('priority').value,status:'NEW',project_area:$('area').value,ai_request:$('ai').value.trim()||null,created_at:now,updated_at:now,sync_state:'pending',sync_error:null,last_remote_updated_at:null});
+      const selectedArea=await ensureAreaOption($('area').value);
+      await store.putNote({key,client_uuid:uuid,remote_id:null,body,note_type:$('type').value,priority:$('priority').value,status:'NEW',project_area:selectedArea||'MYTOOL',ai_request:$('ai').value.trim()||null,created_at:now,updated_at:now,sync_state:'pending',sync_error:null,last_remote_updated_at:null});
       for(const file of files){
         const imageUuid=crypto.randomUUID();
         await store.putImage({key:store.imageKey(imageUuid,null),client_uuid:imageUuid,remote_id:null,note_key:key,blob:file,original_name:file.name,mime_type:file.type,byte_size:file.size,object_path:null,sync_state:'pending',sync_error:null,created_at:now});
@@ -409,9 +471,10 @@
   async function init(){
     try{await store.open()}catch(error){notify('تعذر فتح التخزين المحلي: '+(error?.message||error),true);return}
     await detectSession();
+    await loadAreaOptions();
     await loadSmartRules();
     await reload();
-    window.addEventListener('online',async()=>{if(hasSupabaseSession){await loadSmartRules();await syncPending({quiet:true});await reload()}});
+    window.addEventListener('online',async()=>{if(hasSupabaseSession){await loadAreaOptions();await loadSmartRules();await syncPending({quiet:true});await reload()}});
     document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible'&&hasSupabaseSession)await loadSmartRules()});
   }
 
