@@ -57,6 +57,12 @@ const KIND_LABEL={AREA:'القسم',PRIORITY:'الأولوية',TYPE:'النوع
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function notify(text,error=false){const m=$('message');m.textContent=text;m.className='msg '+(error?'err':'ok')}
+async function loadAreas(){
+  const {data,error}=await db.from('mytool_note_area_options').select('value,label').eq('enabled',true).order('label');
+  if(error){notify('تعذر تحميل الأقسام المحفوظة: '+error.message,true);return}
+  TARGETS.AREA={};
+  for(const row of data||[])TARGETS.AREA[row.value]=row.label||row.value;
+}
 function renderTargets(){const kind=$('kind').value;$('target').innerHTML=Object.entries(TARGETS[kind]).map(([v,l])=>'<option value="'+v+'">'+l+'</option>').join('')}
 async function load(){
   const {data,error}=await db.from('mytool_note_smart_rules').select('id,rule_kind,target_value,keyword,enabled,created_at').order('created_at',{ascending:false});
@@ -94,7 +100,7 @@ $('add').onclick=async()=>{
   }
   $('keyword').value='';notify('تم حفظ القاعدة في Supabase.');await load();
 };
-renderTargets();await load();
+await loadAreas();renderTargets();await load();
 </script>
 </body>
 </html>
