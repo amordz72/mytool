@@ -11,7 +11,12 @@ const FIELD_ALIASES={
   store:['اسم المحل','المحل','store','shop','magasin','commerce'],
   balance:['رصيد','الرصيد','balance','solde','account balance'],
   debt:['ديون','الدين','debt','debts','dette','dettes','creance','créance','creances','créances'],
-  profit:['ارباح','أرباح','الارباح','الأرباح','profit','profits','benefice','bénéfice','benefices','bénéfices']
+  profit:['ارباح','أرباح','الارباح','الأرباح','profit','profits','benefice','bénéfice','benefices','bénéfices'],
+  phone:['الهاتف','رقم الهاتف','هاتف','phone','telephone','téléphone'],
+  email:['البريد الإلكتروني','البريد الالكتروني','بريد إلكتروني','email','e-mail'],
+  externalId:['المعرف','معرف الحساب','account id','external id','uid'],
+  sourceCreatedAt:['تاريخ الإنشاء','تاريخ الانشاء','joined at','created at','date creation','date de création'],
+  sourceUpdatedAt:['تاريخ التحديث','updated at','last updated','modified at']
 };
 const HANI_MARKERS=['bfs hanii rohek','hanii rohek','هني روحك','هاني روحك'];
 const HANI_UNIQUE=['معرف الشبكة','اسم المحل','الحد الأقصى للديون'];
@@ -21,6 +26,14 @@ const WAFARLY_HEADERS=['uid','joined at','user','رصيد','مقترض','مقت�
 function normalizeText(v){return String(v??'').replace(/^\uFEFF/,'').trim().toLowerCase().normalize('NFKC').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ')}
 function cleanHeader(v){return normalizeText(v).replace(/[.:؛،]+$/g,'')}
 function numeric(v){const s=String(v??'').trim().replace(/[\s\u00a0]/g,'').replace(/,/g,'').replace(/٫/g,'.');const n=Number(s);return Number.isFinite(n)?n:0}
+function parseSourceDate(value){
+  const raw=String(value??'').replace(/[\u200e\u200f]/g,'').trim();if(!raw)return null;
+  const iso=raw.match(/^(20\d{2})[-\/]([01]?\d)[-\/]([0-3]?\d)(?:[ T]([0-2]?\d):([0-5]\d))?/);
+  if(iso){const d=new Date(Number(iso[1]),Number(iso[2])-1,Number(iso[3]),Number(iso[4]||0),Number(iso[5]||0));return Number.isNaN(d.getTime())?null:d.toISOString()}
+  const ar=raw.match(/(\d{1,2})\/(\d{1,2})\/(20\d{2})[^\d]*(\d{1,2}):(\d{2})\s*([صم])/);
+  if(ar){let h=Number(ar[4]);if(ar[6]==='م'&&h<12)h+=12;if(ar[6]==='ص'&&h===12)h=0;const d=new Date(Number(ar[3]),Number(ar[2])-1,Number(ar[1]),h,Number(ar[5]));return Number.isNaN(d.getTime())?null:d.toISOString()}
+  const d=new Date(raw);return Number.isNaN(d.getTime())?null:d.toISOString();
+}
 function displayNumber(value){return new Intl.NumberFormat('ar-DZ',{minimumFractionDigits:0,maximumFractionDigits:2}).format(Number(value)||0)}
 function simpleHash(text){let h=2166136261;for(const ch of String(text||'')){h^=ch.codePointAt(0);h=Math.imul(h,16777619)}return (h>>>0).toString(36)}
 function headerSignature(headers){return [...new Set(headers.map(cleanHeader).filter(Boolean))].sort().join('|')}
@@ -96,14 +109,17 @@ function rowsFromCandidate(c,mapping){
   const dedup=new Map();let auto=0;
   for(const r of c.matrix.slice(c.headerRow+1)){
     const username=String(r[idx.username]??'').trim();const first=idx.first!==undefined?String(r[idx.first]??'').trim():'';const last=idx.last!==undefined?String(r[idx.last]??'').trim():'';const store=idx.store!==undefined?String(r[idx.store]??'').trim():'';
+    const phone=idx.phone!==undefined?String(r[idx.phone]??'').trim():'';const email=idx.email!==undefined?String(r[idx.email]??'').trim():'';const externalId=idx.externalId!==undefined?String(r[idx.externalId]??'').trim():'';
+    const sourceCreatedAt=idx.sourceCreatedAt!==undefined?parseSourceDate(r[idx.sourceCreatedAt]):null;const sourceUpdatedAt=idx.sourceUpdatedAt!==undefined?parseSourceDate(r[idx.sourceUpdatedAt]):null;
+    const sourceStatus=idx.sourceStatus!==undefined?String(r[idx.sourceStatus]??'').trim():'';
     const balance=numeric(r[idx.balance]),debt=numeric(r[idx.debt]),profit=numeric(r[idx.profit]);
-    if(!username&&!first&&!last&&!store&&!balance&&!debt&&!profit)continue;
-    const key=normalizeText(username)||('row-'+(++auto));dedup.set(key,{key,username,first,last,store,balance,debt,profit});
+    if(!username&&!first&&!last&&!store&&!phone&&!email&&!externalId&&!balance&&!debt&&!profit)continue;
+    const key=normalizeText(username)||externalId||('row-'+(++auto));dedup.set(key,{key,username,first,last,store,phone,email,externalId,sourceCreatedAt,sourceUpdatedAt,sourceStatus,balance,debt,profit});
   }
   return[...dedup.values()].map((x,index)=>({...x,index}));
 }
 function rowsFromWafarly(c){
-  const hs=c.headers.map(cleanHeader),at=h=>hs.indexOf(cleanHeader(h)),uidI=at('UID'),userI=at('User'),balanceI=at('رصيد'),debtI=at('مقترض'),authDebtI=at('مقترض (المفوض)');
+  const hs=c.headers.map(cleanHeader),at=h=>hs.indexOf(cleanHeader(h)),uidI=at('UID'),joinedI=at('Joined At'),userI=at('User'),balanceI=at('رصيد'),debtI=at('مقترض'),authDebtI=at('مقترض (المفوض)');
   if(userI<0||balanceI<0||(debtI<0&&authDebtI<0))throw new Error('صيغة وفرلي ناقصة الحقول المطلوبة.');
   const out=[];let auto=0;
   for(const r of c.matrix.slice(c.headerRow+1)){
@@ -112,12 +128,13 @@ function rowsFromWafarly(c){
     const pm=rawUser.match(/(?:-|\s)?(\+?213\d{9}|0[5-7]\d{8})\s*$/),phone=pm?pm[1].trim():'';
     const name=(pm?rawUser.slice(0,pm.index):rawUser).replace(/[\s-]+$/,'').trim()||rawUser;
     const balance=numeric(r[balanceI]),debt=(debtI>=0?numeric(r[debtI]):0)+(authDebtI>=0?numeric(r[authDebtI]):0),profit=0;
+    const sourceCreatedAt=joinedI>=0?parseSourceDate(r[joinedI]):null;
     const key=uid||phone||normalizeText(name)||('row-'+(++auto));
-    out.push({key,username:name,first:name,last:'',store:'',phone,balance,debt,profit,profitKnown:false,index:out.length});
+    out.push({key,username:name,first:name,last:'',store:'',phone,externalId:uid,sourceCreatedAt,balance,debt,profit,profitKnown:false,index:out.length});
   }
   return out;
 }
-async function hashRows(rows){const stable=rows.map(r=>[normalizeText(r.username),r.first,r.last,r.store,r.balance,r.debt,r.profit]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])));const text=JSON.stringify(stable);if(crypto?.subtle){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}return simpleHash(text)}
+async function hashRows(rows){const stable=rows.map(r=>[normalizeText(r.username),r.first,r.last,r.store,r.phone,r.email,r.externalId,r.sourceCreatedAt,r.sourceUpdatedAt,r.balance,r.debt,r.profit]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])));const text=JSON.stringify(stable);if(crypto?.subtle){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}return simpleHash(text)}
 function strongIdentityKeys(r){
   const out=[];
   const key=String(r?.key??'').trim();if(key)out.push('k:'+normalizeText(key));
@@ -272,17 +289,17 @@ createApp({
       if(!profile){const reason=complete?'صيغة حسابات قابلة للقراءة لكنها غير معرفة كمصدر بعد.':'صيغة جديدة وتحتاج تعريف بعض الأعمدة.';await saveUnknown(unknownRecord(analysis,reason,parsed));setMessage(complete?'تم فهم البيانات تلقائيًا. أعطِ النوع اسمًا من «تعريف» ليُحفظ كقارئ دائم.':'تم تسجيل نوع جديد ويحتاج تعريفًا.','ok');return}
       if(!parsed.length)throw new Error('Reader معروف لكن لم ينتج سجلات صالحة.');
       const hash=await hashRows(parsed);const existing=sources.value.find(x=>x.id===profile.id);
-      if(existing&&existing.contentHash===hash){activeTabId.value=existing.id;setMessage('هذا الملف مطابق لآخر دفعة محفوظة؛ لم يتم إنشاء نسخة مكررة.');return}
+      if(existing&&existing.contentHash===hash){activeTabId.value=existing.id;setMessage('هذا الملف مطابق لآخر دفعة محفوظة؛ لم يتم إنشاء نسخة مكررة.');if(!existing.remoteSyncedAt||existing.remoteSyncHash!==hash)window.dispatchEvent(new CustomEvent('accounts-source-updated',{detail:{sourceId:existing.id}}));return}
       const merged=mergeRowsCumulative(existing?.rows||[],parsed);
       const now=new Date().toISOString();
       const imports=[...(existing?.imports||[]),{fileName:analysis.file.name,fileFamily:family,contentHash:hash,importedAt:now,rows:parsed.length,added:merged.added,updated:merged.updated,unchanged:merged.unchanged,needsReview:merged.reviews.length}].slice(-200);
       const source={...(existing||{}),id:profile.id,name:profile.name,readerId:profile.id,readerKind:profile.kind||'custom',signature:c.signature,fileName:analysis.file.name,fileFamily:family,fileType:analysis.fileType,sheetName:c.sheetName||'',headerRow:c.headerRow,contentHash:hash,rows:merged.rows,identityReviews:merged.reviews,imports,updatedAt:now};
-      await dbPut('sources',source);await refreshState();activeTabId.value=source.id;viewMode.value='summary';
+      await dbPut('sources',source);window.dispatchEvent(new CustomEvent('accounts-source-updated',{detail:{sourceId:source.id}}));await refreshState();activeTabId.value=source.id;viewMode.value='summary';
       setMessage((existing?'تم دمج التحديث داخل ':'تم إنشاء ')+source.name+': جديد '+merged.added+' · تحديث '+merged.updated+' · بدون تغيير '+merged.unchanged+(merged.reviews.length?' · يحتاج مراجعة هوية '+merged.reviews.length:'')+'. الحسابات الغائبة من الملف لم تُحذف.');
     }
     async function readFiles(event){const files=[...(event.target.files||[])];if(!files.length)return;let ok=0;const detected=[],failed=[];for(const file of files){try{const analysis=await analyzeFile(file),family=normalizeFileFamily(file.name),profile=builtinProfile(analysis.candidate)||customProfileMatch(analysis.candidate,profiles.value,family),label=profile?.name||'نوع جديد يحتاج تعريف';await processAnalysis(analysis);ok++;detected.push(file.name+' → '+label)}catch(error){failed.push(file.name+': '+(error?.message||'تعذر قراءة الملف.'))}}event.target.value='';if(failed.length)setMessage('تمت معالجة '+ok+' من '+files.length+' ملفات. تعذر: '+failed.join(' | '),'err');else setMessage('تمت معالجة '+ok+' ملفات وحفظها محليًا: '+detected.join(' | '));await nextTick();configureNav()}
     function openMapping(){const u=activeUnknown.value;if(!u)return;mappingDraft.value={sourceName:u.aiAppName||'',sourcePath:u.aiPath||'accounts-review/',username:u.detectedMapping?.username||'',first:u.detectedMapping?.first||'',last:u.detectedMapping?.last||'',store:u.detectedMapping?.store||'',balance:u.detectedMapping?.balance||'',debt:u.detectedMapping?.debt||'',profit:u.detectedMapping?.profit||''};mappingOpen.value=true}
-    async function saveMapping(){const u=activeUnknown.value;if(!u)return;const d=mappingDraft.value;const sourceName=String(d.sourceName||'').trim();if(!sourceName){setMessage('اكتب اسم التطبيق أو المصدر أولًا.','err');return}const mapping={};for(const k of ['username','first','last','store','balance','debt','profit'])if(d[k])mapping[k]=d[k];const missing=REQUIRED_FIELDS.filter(k=>!mapping[k]);if(missing.length){setMessage('عرّف الحقول المطلوبة: '+missing.join('، '),'err');return}const id='custom:'+simpleHash(normalizeText(sourceName)+'|'+u.signature+'|'+u.fileFamily);const profile={id,name:sourceName,kind:'custom',signature:u.signature,marker:u.marker||'',fileFamily:u.fileFamily,mapping,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};const c={matrix:u.matrix,headerRow:u.headerRow,headers:u.headers};const parsed=rowsFromCandidate(c,mapping);if(!parsed.length){setMessage('لم ينتج التعريف أي حسابات.','err');return}const hash=await hashRows(parsed);const source={id,name:sourceName,readerId:id,readerKind:'custom',signature:u.signature,fileName:u.fileName,fileFamily:u.fileFamily,fileType:u.fileType,sheetName:u.sheetName,headerRow:u.headerRow,contentHash:hash,rows:parsed,updatedAt:new Date().toISOString()};await dbPut('profiles',profile);await dbPut('sources',source);await dbDelete('unknown',u.id);mappingOpen.value=false;await refreshState();activeTabId.value=id;viewMode.value='summary';setMessage('تم حفظ Reader جديد باسم «'+sourceName+'». الملفات القادمة من نفس الصيغة ستُقرأ تلقائيًا.')}
+    async function saveMapping(){const u=activeUnknown.value;if(!u)return;const d=mappingDraft.value;const sourceName=String(d.sourceName||'').trim();if(!sourceName){setMessage('اكتب اسم التطبيق أو المصدر أولًا.','err');return}const mapping={};for(const k of ['username','first','last','store','balance','debt','profit'])if(d[k])mapping[k]=d[k];const missing=REQUIRED_FIELDS.filter(k=>!mapping[k]);if(missing.length){setMessage('عرّف الحقول المطلوبة: '+missing.join('، '),'err');return}const id='custom:'+simpleHash(normalizeText(sourceName)+'|'+u.signature+'|'+u.fileFamily);const profile={id,name:sourceName,kind:'custom',signature:u.signature,marker:u.marker||'',fileFamily:u.fileFamily,mapping,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};const c={matrix:u.matrix,headerRow:u.headerRow,headers:u.headers};const parsed=rowsFromCandidate(c,mapping);if(!parsed.length){setMessage('لم ينتج التعريف أي حسابات.','err');return}const hash=await hashRows(parsed);const source={id,name:sourceName,readerId:id,readerKind:'custom',signature:u.signature,fileName:u.fileName,fileFamily:u.fileFamily,fileType:u.fileType,sheetName:u.sheetName,headerRow:u.headerRow,contentHash:hash,rows:parsed,updatedAt:new Date().toISOString()};await dbPut('profiles',profile);await dbPut('sources',source);window.dispatchEvent(new CustomEvent('accounts-source-updated',{detail:{sourceId:source.id}}));await dbDelete('unknown',u.id);mappingOpen.value=false;await refreshState();activeTabId.value=id;viewMode.value='summary';setMessage('تم حفظ Reader جديد باسم «'+sourceName+'». الملفات القادمة من نفس الصيغة ستُقرأ تلقائيًا.')}
     async function deleteActive(){const s=activeSource.value,u=activeUnknown.value;if(!s&&!u)return;const name=s?.name||u?.fileName||'هذا العنصر';if(!confirm('حذف البيانات المحلية لـ «'+name+'» من هذا الجهاز؟'))return;if(s)await dbDelete('sources',s.id);else await dbDelete('unknown',u.id);activeTabId.value='';await refreshState();setMessage('تم حذف البيانات المحلية.')}
     function configureNav(){
       const actions=[{slot:2,icon:'📂',label:'ملفات',title:'اختيار عدة ملفات وتحديث المصادر تلقائيًا',onClick:pickFile}];
@@ -291,7 +308,7 @@ createApp({
       const apply=()=>window.MyToolBottomNav?.setActions(actions);if(window.MyToolBottomNav)apply();else window.addEventListener('mytool-bottom-nav-ready',apply,{once:true});
     }
     watch([activeTabId,()=>activeSource.value?.id,()=>activeUnknown.value?.id],()=>nextTick(configureNav));
-    onMounted(async()=>{window.addEventListener('accounts-total-selected',()=>{activeTabId.value=''});window.addEventListener('accounts-shared-selected',()=>{activeTabId.value=''});try{await refreshState();setMessage(allTabs.value.length?'تم تحميل البيانات المحفوظة من هذا الجهاز.':'اختر ملفات المنصات من زر «اختيار عدة ملفات».');configureNav()}catch(error){setMessage('تعذر فتح التخزين المحلي: '+(error?.message||''),'err')}});
+    onMounted(async()=>{window.addEventListener('accounts-total-selected',()=>{activeTabId.value=''});window.addEventListener('accounts-shared-selected',()=>{activeTabId.value=''});window.addEventListener('accounts-remote-data-updated',async()=>{await refreshState();await nextTick();configureNav()});try{await refreshState();setMessage(allTabs.value.length?'تم تحميل البيانات المحفوظة من هذا الجهاز.':'اختر ملفات المنصات من زر «اختيار عدة ملفات».');configureNav()}catch(error){setMessage('تعذر فتح التخزين المحلي: '+(error?.message||''),'err')}});
     return{fileInput,sources,profiles,unknowns,allTabs,activeTabId,activeSource,activeUnknown,viewMode,message,messageType,limit,goalText,goalTarget,rows,sourceAccounts,totalDebt,totalBalance,totalProfit,visibleDebtors,goalPlan,unknownPreview,unknownTotals,mappingOpen,mappingDraft,pickFile,readFiles,selectTab,linkOrAdd,displayName,displayNumber,normalizeGoal,copySummary,copyDiagnostic,copyAiPrompt,openMapping,saveMapping,saveUnknownMeta,reanalyzeUnknown,deleteActive};
   }
 }).mount('#app');
