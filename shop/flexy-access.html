@@ -64,8 +64,7 @@ const TOKEN_KEY='mytool_shop_worker_token',EXP_KEY='mytool_shop_worker_expires_a
 const $=id=>document.getElementById(id)
 const money=v=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(Number(v||0))+' دج'
 
-// Temporary routing policy. Later this flag is replaced by worker-safe Station health/config.
-const INTERNAL_DIRECT_ENABLED=false
+let internalDirectAvailable=false
 const CHANNELS=[
   {key:'tehna_pay',name:'تهنى باي',match:['تهنى باي','Tehna Pay'],url:'https://tehnapay.com/login',active:true},
   {key:'hanii_rohek',name:'هني روحك',match:['هني روحك','Hanii Rohek','Hanii rouhek'],url:'https://haniirohek.com/login',active:true}
@@ -79,7 +78,7 @@ function balanceFor(channel,rows){
 function renderChannels(rows){
   const available=CHANNELS.filter(x=>x.active).map(ch=>({...ch,balance:balanceFor(ch,rows)})).sort((a,b)=>(b.balance>0)-(a.balance>0)||b.balance-a.balance||a.name.localeCompare(b.name,'ar'))
   if(!available.length){$('platforms').innerHTML='<div class="muted">لا توجد منصة بديلة مفعلة حاليًا.</div>';return}
-  if(!INTERNAL_DIRECT_ENABLED&&available.length===1){
+  if(!internalDirectAvailable&&available.length===1){
     location.replace(available[0].url)
     return
   }
@@ -100,16 +99,29 @@ async function init(){
   ShopShell.mountStandalone('top',{role:'worker',permissions,active:'flexy-access'})
   const identity=$('standaloneIdentity');if(identity)identity.textContent=(row.nickname||'العامل')+' — فليكسي'
 
-  const overview=await s.rpc('worker_get_financial_overview_v1',{p_session_token:token})
+  const [overview,state]=await Promise.all([
+    s.rpc('worker_get_financial_overview_v1',{p_session_token:token}),
+    s.rpc('worker_flexy_entry_state_v1',{p_session_token:token})
+  ])
   const platforms=!overview.error?(overview.data?.platforms||[]):[]
+  internalDirectAvailable=!state.error&&Boolean(state.data?.internal_available)
+
+  const params=new URLSearchParams(location.search)
+  const fallbackOnly=params.get('mode')==='fallback'
+  if(internalDirectAvailable&&!fallbackOnly){
+    location.replace('../flexy/')
+    return
+  }
+
   renderChannels(platforms)
 
-  if(INTERNAL_DIRECT_ENABLED){
+  if(internalDirectAvailable){
     $('modeStatus').textContent='الشحن المباشر متاح'
-    $('directText').textContent='منصتنا متاحة الآن. يمكنك فتح الشحن المباشر.'
+    $('directText').textContent='منصتنا متاحة الآن. يمكنك الرجوع إلى الشحن المباشر.'
     $('directBtn').classList.remove('disabled');$('directBtn').removeAttribute('aria-disabled')
   }else{
-    $('modeStatus').textContent='البدائل جاهزة'
+    $('modeStatus').textContent='المنصة الداخلية غير متاحة'
+    $('directText').textContent='استعمل إحدى المنصات البديلة الظاهرة أعلاه.'
   }
   $('message').classList.add('hidden')
 }
