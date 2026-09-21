@@ -9,6 +9,7 @@
   const BASE_AREAS={MYTOOL:'MyTool',NOTES:'الملاحظات',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'منتج',GENERAL:'عام'};
   const AREAS={...BASE_AREAS};
   let client=null;
+  let areasReady=false;
 
   function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function options(map,current){return Object.entries(map).map(([value,label])=>'<option value="'+esc(value)+'" '+(value===current?'selected':'')+'>'+esc(label)+'</option>').join('')}
@@ -190,7 +191,7 @@
     head.prepend(tools);
   }
 
-  function enhanceAll(){document.querySelectorAll('#list > .note').forEach(enhanceArticle)}
+  function enhanceAll(){if(!areasReady)return;document.querySelectorAll('#list > .note').forEach(enhanceArticle)}
 
   function showFlash(){
     let text='';
@@ -202,9 +203,8 @@
 
   function start(){
     ensureStyles();
-    loadAreas().then(()=>enhanceAll());
     showFlash();
-    enhanceAll();
+    loadAreas().finally(()=>{areasReady=true;enhanceAll()});
     const list=document.getElementById('list');
     if(list)new MutationObserver(()=>enhanceAll()).observe(list,{childList:true});
   }
