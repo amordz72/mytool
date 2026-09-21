@@ -36,6 +36,20 @@
     </form>
   </section>
   <section class="fx-card">
+    <h2>سياسة الشحن الذاتي</h2>
+    <form id="policyForm" class="fx-form">
+      <div class="fx-fields">
+        <div class="fx-field"><label>الشحن الذاتي</label><select class="fx-select" name="allow_self_recharge"><option value="false">غير مسموح</option><option value="true">مسموح</option></select></div>
+        <div class="fx-field"><label>السقف اليومي</label><input class="fx-input" name="daily_limit" type="number" min="0" step="0.01" placeholder="بدون سقف"></div>
+        <div class="fx-field"><label>السقف الكلي</label><input class="fx-input" name="total_limit" type="number" min="0" step="0.01" placeholder="بدون سقف"></div>
+        <div class="fx-field"><label>أقل مبلغ</label><input class="fx-input" name="min_amount" type="number" min="0" step="0.01" value="500"></div>
+        <div class="fx-field"><label>مضاعفات المبلغ</label><input class="fx-input" name="amount_multiple" type="number" min="0.01" step="0.01" placeholder="مثال 50 أو 100"></div>
+      </div>
+      <div class="fx-meta">هذه القواعد محفوظة على الحساب. تطبيقها على تنفيذ الشحن الحقيقي سيتم عند ربط مسار الطلب Worker-safe بها.</div>
+      <div class="fx-actions"><button class="fx-btn" type="submit">حفظ سياسة الشحن</button></div>
+    </form>
+  </section>
+  <section class="fx-card">
     <h2>حركة مالية</h2>
     <form id="moneyForm" class="fx-form">
       <div class="fx-fields">
@@ -74,6 +88,18 @@ async function loadAccount(){
   f.display_name.value=current.display_name||'';f.username.value=current.username||'';f.rate.value=Number(current.account_rate_percent||0);
   f.allow_debt.value=String(Boolean(current.allow_debt));f.status.value=current.status||'active';f.notes.value=current.notes||'';
 }
+async function loadPolicy(){
+  if(!id)return;
+  const rows=await rpc('admin_flexy_get_account_policy_v1',{p_account_uuid:id});
+  const policy=rows?.[0]||null;
+  if(!policy)return;
+  const f=document.getElementById('policyForm');
+  f.allow_self_recharge.value=String(Boolean(policy.allow_self_recharge));
+  f.daily_limit.value=policy.daily_limit==null?'':Number(policy.daily_limit);
+  f.total_limit.value=policy.total_limit==null?'':Number(policy.total_limit);
+  f.min_amount.value=policy.min_amount==null?500:Number(policy.min_amount);
+  f.amount_multiple.value=policy.amount_multiple==null?'':Number(policy.amount_multiple);
+}
 async function loadEvents(){
   if(!id)return;
   events.innerHTML='<div class="fx-empty">جاري التحميل…</div>';
@@ -93,6 +119,21 @@ document.getElementById('settingsForm').addEventListener('submit',async event=>{
     show('تم حفظ إعدادات الحساب.');await loadAccount();
   }catch(error){show(String(error?.message||error),true)}finally{btn.disabled=false}
 });
+document.getElementById('policyForm').addEventListener('submit',async event=>{
+  event.preventDefault();const fd=new FormData(event.currentTarget);const btn=event.currentTarget.querySelector('button');btn.disabled=true;
+  const nullableNumber=name=>{const raw=String(fd.get(name)||'').trim();return raw===''?null:Number(raw)};
+  try{
+    await rpc('admin_flexy_update_account_policy_v1',{
+      p_account_uuid:id,
+      p_allow_self_recharge:String(fd.get('allow_self_recharge'))==='true',
+      p_daily_limit:nullableNumber('daily_limit'),
+      p_total_limit:nullableNumber('total_limit'),
+      p_min_amount:Number(fd.get('min_amount')||0),
+      p_amount_multiple:nullableNumber('amount_multiple')
+    });
+    show('تم حفظ سياسة الشحن الذاتي.');await loadPolicy();
+  }catch(error){show(String(error?.message||error),true)}finally{btn.disabled=false}
+});
 document.getElementById('moneyForm').addEventListener('submit',async event=>{
   event.preventDefault();const fd=new FormData(event.currentTarget),type=String(fd.get('type')),amount=Number(fd.get('amount')),note=String(fd.get('note')||'').trim()||null;
   const btn=event.currentTarget.querySelector('button');btn.disabled=true;
@@ -108,6 +149,6 @@ document.getElementById('moneyForm').addEventListener('submit',async event=>{
 });
 document.getElementById('prev').onclick=()=>{if(page>0){page--;loadEvents()}};
 document.getElementById('next').onclick=()=>{if((page+1)*PAGE_SIZE<total){page++;loadEvents()}};
-(async()=>{try{await loadAccount();await loadEvents()}catch(error){show(String(error?.message||error),true)}})();
+(async()=>{try{await Promise.all([loadAccount(),loadPolicy(),loadEvents()])}catch(error){show(String(error?.message||error),true)}})();
 </script>
 </body></html>
