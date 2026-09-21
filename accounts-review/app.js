@@ -16,7 +16,8 @@ const FIELD_ALIASES={
   email:['البريد الإلكتروني','البريد الالكتروني','بريد إلكتروني','email','e-mail'],
   externalId:['المعرف','معرف الحساب','account id','external id','uid'],
   sourceCreatedAt:['تاريخ الإنشاء','تاريخ الانشاء','joined at','created at','date creation','date de création'],
-  sourceUpdatedAt:['تاريخ التحديث','updated at','last updated','modified at']
+  sourceUpdatedAt:['تاريخ التحديث','updated at','last updated','modified at'],
+  sourceStatus:['حالة الحساب','الحالة','status','account status']
 };
 const HANI_MARKERS=['bfs hanii rohek','hanii rohek','هني روحك','هاني روحك'];
 const HANI_UNIQUE=['معرف الشبكة','اسم المحل','الحد الأقصى للديون'];
@@ -267,7 +268,7 @@ createApp({
         if(!parsed.length)continue;
         const sourceName='وفرلي',id='builtin:wafarly',now=new Date().toISOString(),hash=await hashRows(parsed);
         const source={id,name:sourceName,readerId:id,readerKind:'builtin-wafarly',signature:u.signature,fileName:u.fileName,fileFamily:u.fileFamily,fileType:u.fileType,sheetName:u.sheetName,headerRow:u.headerRow,contentHash:hash,rows:parsed,updatedAt:now};
-        await dbPut('sources',source);await dbDelete('unknown',u.id);changed=true;
+        await dbPut('sources',source);window.dispatchEvent(new CustomEvent('accounts-source-updated',{detail:{sourceId:source.id}}));await dbDelete('unknown',u.id);changed=true;
       }
       return changed;
     }
