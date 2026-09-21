@@ -1,0 +1,23 @@
+{
+  "id": "/mytool/",
+  "name": "MyTool - أدوات العمل",
+  "short_name": "MyTool",
+  "description": "أدوات العمل اليومية: الطلبات، البطاقات، فليكسي، الحسابات والملاحظات.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/mytool/",
+  "scope": "/mytool/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#2ea8e6",
+  "prefer_related_applications": false,
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ],
+  "shortcuts": [
+    {"name": "الطلبات", "short_name": "الطلبات", "url": "/mytool/orders/?source=pwa", "icons": [{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"}]},
+    {"name": "معالج البطاقات", "short_name": "البطاقات", "url": "/mytool/cards/", "icons": [{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"}]},
+    {"name": "فليكسي", "short_name": "فليكسي", "url": "/mytool/flexy/", "icons": [{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"}]}
+  ]
+}
