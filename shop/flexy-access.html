@@ -49,7 +49,7 @@
     <h3>الشحن المباشر</h3>
     <div id="directText" class="muted">الشحن المباشر عبر كمبيوتر المحطة غير متاح للعامل حاليًا.</div>
     <div style="margin-top:10px">
-      <a id="directBtn" class="btn disabled" href="../flexy/" aria-disabled="true">فتح الشحن المباشر</a>
+      <a id="directBtn" class="btn disabled" href="../flexy/?v=20260921-empty-phone-2" aria-disabled="true">فتح الشحن المباشر</a>
     </div>
   </section>
 </main>
@@ -109,7 +109,7 @@ async function init(){
   const params=new URLSearchParams(location.search)
   const fallbackOnly=params.get('mode')==='fallback'
   if(internalDirectAvailable&&!fallbackOnly){
-    location.replace('../flexy/')
+    location.replace('../flexy/?v=20260921-empty-phone-2')
     return
   }
 
