@@ -15,6 +15,8 @@
   let notes=[],images=[],remoteImages=[];
   let localObjectUrls=[];
   let syncRunning=false;
+  let smartApplying=false;
+  let smartLocks={type:false,priority:false,area:false};
 
   if(!store){console.error('MyToolNotesLocal missing');return}
 
@@ -34,6 +36,42 @@
   function isPendingState(state){return ['pending','pending_update','pending_images','sync_error'].includes(state)}
   function noteKeyFromRemote(n){return store.noteKey(n.client_uuid||null,n.id)}
   function noteFields(n){return {body:n.body,note_type:n.note_type,priority:n.priority,status:n.status,ai_request:n.ai_request||null,project_area:n.project_area,created_at:n.created_at,updated_at:n.updated_at}}
+
+  function smartText(v=''){return String(v??'').toLowerCase().normalize('NFKC').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim()}
+  function hasAny(text,terms){return terms.some(x=>text.includes(smartText(x)))}
+  function inferNoteMeta(body,current={}){
+    const t=smartText(body);
+    let note_type=current.note_type||'UNCATEGORIZED',priority=current.priority||'NORMAL',project_area=current.project_area||'MYTOOL';
+    if(hasAny(t,['غير مستعجل','غير عاجل','ليست مهمه','ليس مهم','غير مهم','غير اساسي','غير اساسيه','اولويه منخفضه']))priority='LOW';
+    else if(hasAny(t,['عاجل','مستعجل','فورا','فوري','ضروري جدا','اولويه عاجله']))priority='URGENT';
+    else if(hasAny(t,['مهم جدا','مهمه مهمه','مهمه عاليه','اولويه عاليه','مهمه اساسيه','مهمة أساسية']))priority='HIGH';
+
+    if(hasAny(t,['خطا','مشكله','مشكل','bug','لا يعمل','لا تشتغل','تعطل','يتعطل','فشل']))note_type='BUG';
+    else if(hasAny(t,['مخزون','منتج','stock','inventory']))note_type='PRODUCT_INVENTORY';
+    else if(hasAny(t,['الذكاء الاصطناعي','ذكاء اصطناعي','ai request','طلب للذكاء']))note_type='AI_REQUEST';
+    else if(hasAny(t,['فكره','اقتراح']))note_type='IDEA';
+    else if(hasAny(t,['مهمه','نفذ','تنفيذ','يجب','لازم']))note_type='TASK';
+
+    if(hasAny(t,['المحل','عامل المحل','الورديه','الكيس']))project_area='SHOP';
+    else if(hasAny(t,['tehna connect','تهنا كونكت','تهنى كونكت','station connect','ستيشن كونكت','مودم','ussd']))project_area='TEHNA_CONNECT';
+    else if(hasAny(t,['منتج','مخزون']))project_area='PRODUCT';
+    else if(hasAny(t,['mytool','my tool','ماي تول','ماي تولز','معالجه الحسابات','مراجعه الحسابات','الملاحظات']))project_area='MYTOOL';
+
+    return{note_type,priority,project_area};
+  }
+  function applySmartClassification(){
+    const body=$('body')?.value||'';
+    if(!body.trim())return;
+    const inferred=inferNoteMeta(body,{note_type:$('type').value,priority:$('priority').value,project_area:$('area').value});
+    smartApplying=true;
+    if(!smartLocks.type)$('type').value=inferred.note_type;
+    if(!smartLocks.priority)$('priority').value=inferred.priority;
+    if(!smartLocks.area)$('area').value=inferred.project_area;
+    smartApplying=false;
+    const hint=$('smartHint');
+    if(hint)hint.textContent='تصنيف ذكي: '+(TYPES[$('type').value]||$('type').value)+' · '+(PRIORITIES[$('priority').value]||$('priority').value)+' · '+(AREAS[$('area').value]||$('area').value);
+    window.VisualChoices?.syncAll();
+  }
 
   async function getSupabase(){
     if(supabase)return supabase;
@@ -214,6 +252,7 @@
   }
 
   async function save(){
+    applySmartClassification();
     const body=$('body').value.trim(),files=[...$('files').files];
     if(!body)return notify('اكتب الملاحظة أولًا.',true);
     const fileError=validateFiles(files);if(fileError)return notify(fileError,true);
@@ -234,7 +273,7 @@
     }catch(error){notify('تعذر الحفظ المحلي: '+(error?.message||error),true)}finally{$('save').disabled=false}
   }
 
-  function clearForm(){$('body').value='';$('ai').value='';$('files').value='';$('type').value='UNCATEGORIZED';$('priority').value='NORMAL';$('area').value='MYTOOL';window.VisualChoices?.syncAll()}
+  function clearForm(){$('body').value='';$('ai').value='';$('files').value='';$('type').value='UNCATEGORIZED';$('priority').value='NORMAL';$('area').value='MYTOOL';smartLocks={type:false,priority:false,area:false};const hint=$('smartHint');if(hint)hint.textContent='اكتب الملاحظة وسيقترح MyTool النوع والأولوية والقسم تلقائيًا.';window.VisualChoices?.syncAll()}
 
   async function checkConflict(rec){
     if(!rec.remote_id||!rec.last_remote_updated_at||rec.sync_state!=='pending_update')return false;
@@ -352,6 +391,8 @@
 
   $('save').onclick=save;
   $('clear').onclick=clearForm;
+  $('body').addEventListener('input',applySmartClassification);
+  [['type','type'],['priority','priority'],['area','area']].forEach(([id,key])=>$(id).addEventListener('change',()=>{if(!smartApplying)smartLocks[key]=true}));
   $('copy').onclick=copySelected;
   $('txt').onclick=()=>{const r=selected();if(!r.length)return notify('حدد ملاحظة واحدة على الأقل.',true);download('mytool-notes.txt','text/plain;charset=utf-8','\ufeff'+exportText(r))};
   $('json').onclick=()=>{const r=selected();if(!r.length)return notify('حدد ملاحظة واحدة على الأقل.',true);download('mytool-notes.json','application/json',JSON.stringify(r.map(n=>({...n,images:noteImages(n).map(i=>({object_path:i.object_path||null,original_name:i.original_name,mime_type:i.mime_type,byte_size:i.byte_size,sync_state:i.sync_state||'synced'}))})),null,2))};
