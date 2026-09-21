@@ -56,7 +56,7 @@
       const current=latestBottomNavOptions.active||document.body?.dataset?.screen||'index';
       const isWorker=context.role==='worker';
       const actions=[
-        {slot:1,href:isWorker?'flexy-access.html':'../flexy/',icon:'📱',label:'فليكسي',title:'فليكسي',home:current==='flexy-access'},
+        {slot:1,href:isWorker?'flexy-access.html':'../flexy/?v=20260921-empty-phone-2',icon:'📱',label:'فليكسي',title:'فليكسي',home:current==='flexy-access'},
         {slot:2,href:'sale.html',icon:'＋',label:'بيع',title:'تسجيل بيع',home:current==='sale'},
         {slot:4,href:'stock.html',icon:'▦',label:'المخزون',title:'المخزون',home:current==='stock'},
         isWorker
