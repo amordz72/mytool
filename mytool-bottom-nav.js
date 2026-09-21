@@ -179,6 +179,17 @@
       if(item&&!item.href&&typeof item.onClick==='function'){const button=holder.querySelector('button');if(button){button.addEventListener('click',item.onClick);if(item.optionsTrigger){button.setAttribute('aria-haspopup','menu');button.setAttribute('aria-expanded',optionsPanel?'true':'false')}}}
     }
   }
+  function setHome(item={}){
+    state.slots[3]={
+      href:item.href||appHome.href,
+      icon:item.icon||'⌂',
+      label:item.label||'الرئيسية',
+      title:item.title||'الرئيسية',
+      home:item.home!==false
+    };
+    render();
+  }
+
   function setActions(actions=[]){
     closeOptions();state.options=[];
     [1,2,4,5].forEach(slot=>state.slots[slot]=null);
@@ -202,6 +213,6 @@
   }
 
   if(currentApp==='notes')window.addEventListener('mytool-notes-tab-change',()=>setNotesNav());
-  window.MyToolBottomNav={setActions,setOptions,closeOptions,toast,get currentApp(){return currentApp},get appHome(){return appHome.href},get root(){return rootUrl.href}};
+  window.MyToolBottomNav={setActions,setHome,setOptions,closeOptions,toast,get currentApp(){return currentApp},get appHome(){return appHome.href},get root(){return rootUrl.href}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
