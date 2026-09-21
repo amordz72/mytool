@@ -9,7 +9,6 @@
 <link rel="manifest" href="../manifest.webmanifest?v=20260921-pwa1">
 <link rel="icon" href="../icons/icon-192.png" sizes="192x192" type="image/png">
 <title>الطلبات — MyTool</title>
-<script src="../auth-guard.js?v=20260921-orders-v4" data-access="admin"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#64748b;--line:#dbe4ee;--main:#2563eb;--ok:#047857;--warn:#92400e;--bad:#b42318;--soft:#eff6ff}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
@@ -29,9 +28,11 @@ details{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}summary
 </style>
 </head>
 <body>
+<script>document.documentElement.style.visibility='';</script>
 <main>
   <div class="top"><div><h1>📥 الطلبات</h1><div class="muted">ألصق الطلب، صحّح الفهم عند الحاجة، ثم افتح الخدمة وسجل النتيجة. العملية لا تُحذف.</div></div><a class="back" href="../">الرئيسية</a></div>
   <div id="message" class="msg" hidden></div>
+  <div id="ordersAuthNotice" class="msg bad" hidden>جلسة الإدارة غير متاحة هنا. ارجع للرئيسية وافتح MyTool بحساب الإدارة ثم ادخل الطلبات من جديد.</div>
 
   <section class="card">
     <div class="grid">
@@ -108,8 +109,15 @@ function statusClass(v){if(v==='success')return 'ok';if(['ready','in_progress','
 function splitAliases(v){return String(v||'').split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean)}
 
 async function requireSession(){
-  const {data}=await db.auth.getSession();
-  if(!data?.session)throw new Error('يلزم دخول الإدارة الرئيسي لاستخدام الطلبات حاليًا.');
+  const {data,error}=await db.auth.getSession();
+  if(error)throw error;
+  if(!data?.session){
+    const notice=$('ordersAuthNotice');
+    if(notice)notice.hidden=false;
+    throw new Error('جلسة الإدارة غير متاحة. ارجع للرئيسية وسجل الدخول ثم افتح الطلبات من جديد.');
+  }
+  const notice=$('ordersAuthNotice');
+  if(notice)notice.hidden=true;
   return data.session;
 }
 
