@@ -18,7 +18,7 @@
 <main id="app" class="wrap" v-cloak>
   <section class="hero">
     <h1>📊 مراجعة الحسابات</h1>
-    <p>مصادر متعددة، حفظ محلي، واكتشاف ذكي للصيغ الجديدة بدون إعادة تحميل الملفات كل مرة.</p>
+    <p>مصادر متعددة، قراءة الملفات محليًا، حفظ النتائج في Supabase، واكتشاف ذكي للصيغ الجديدة بدون تكرار الحسابات.</p>
   </section>
 
   <div v-if="message" class="msg" :class="messageType">{{ message }}</div>
@@ -48,7 +48,7 @@
         {{ tab.name }} <small v-if="tab.count">({{ tab.count }})</small>
       </button>
     </div>
-    <div class="privacy">كل البيانات والتعريفات تحفظ محليًا في IndexedDB على هذا الجهاز. لا تُرفع ملفات الحسابات إلى GitHub.</div>
+    <div class="privacy">الملفات نفسها لا تُرفع. تُقرأ محليًا، ثم تُحفظ النتائج والسجلات الموحّدة في Supabase مع نسخة IndexedDB للعمل دون اتصال. <span id="accountsCloudStatus">Supabase: جاري التحقق…</span></div>
   </section>
 
   <template v-if="activeSource">
@@ -186,7 +186,8 @@
     </div>
   </dialog>
 </main>
-<script type="module" src="./app.js?v=20260921-idbclone1"></script>
+<script type="module" src="./app.js?v=20260921-cloudsync2"></script>
+<script type="module" src="./supabase-sync.js?v=20260921-cloudsync2"></script>
 <script src="./accounts-advanced.js?v=20260920-fullreport6" defer></script>
 <script src="./selection.js?v=20260920-share4" defer></script>
 <script src="./accounts-identities.js?v=20260916-links1" defer></script>
