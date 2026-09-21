@@ -53,9 +53,25 @@
     const apply=()=>{
       if(!window.MyToolBottomNav||!window.ShopRoutes||!latestBottomNavOptions)return false;
       const context={role:latestBottomNavOptions.role||'admin',permissions:latestBottomNavOptions.permissions||{}},current=latestBottomNavOptions.active||document.body?.dataset?.screen||'index';
-      const candidates=['sale','stock','inventory','daily','money','purchase','transfers'].map(id=>window.ShopRoutes.get(id)).filter(route=>route&&window.ShopRoutes.allowed(route,context)).slice(0,3);
-      const slots=[1,2,4];
-      const actions=candidates.map((route,index)=>({slot:slots[index],href:route.path,icon:route.icon,label:route.shortLabel||route.label,title:route.label,home:route.id===current}));
+      let actions=[];
+      if(context.role==='worker'){
+        // Worker invariant: Flexy is always the far-right fixed action.
+        actions.push({slot:1,href:'flexy-access.html',icon:'📱',label:'فليكسي',title:'فليكسي',home:current==='flexy-access'});
+        const preferred=['sale','stock','inventory','daily','money','purchase','transfers']
+          .map(id=>window.ShopRoutes.get(id))
+          .filter(route=>route&&window.ShopRoutes.allowed(route,context));
+        const sale=preferred.find(route=>route.id==='sale');
+        const stock=preferred.find(route=>route.id==='stock');
+        const remaining=preferred.filter(route=>route.id!=='sale'&&route.id!=='stock');
+        const second=sale||remaining.shift()||stock||null;
+        const fourth=stock&&stock!==second?stock:(remaining.shift()||null);
+        if(second)actions.push({slot:2,href:second.path,icon:second.icon,label:second.shortLabel||second.label,title:second.label,home:second.id===current});
+        if(fourth)actions.push({slot:4,href:fourth.path,icon:fourth.icon,label:fourth.shortLabel||fourth.label,title:fourth.label,home:fourth.id===current});
+      }else{
+        const candidates=['sale','stock','inventory','daily','money','purchase','transfers'].map(id=>window.ShopRoutes.get(id)).filter(route=>route&&window.ShopRoutes.allowed(route,context)).slice(0,3);
+        const slots=[1,2,4];
+        actions=candidates.map((route,index)=>({slot:slots[index],href:route.path,icon:route.icon,label:route.shortLabel||route.label,title:route.label,home:route.id===current}));
+      }
       actions.push({slot:5,icon:'⋯',label:'المزيد',title:'فتح قائمة المحل',onClick(){document.querySelector('#drawerOpen,.menu-toggle')?.click()}});
       window.MyToolBottomNav.setActions(actions);
       const homeItem=document.querySelector('.mytool-bottom-nav [data-slot="3"] .mytool-bottom-nav-item');if(homeItem)homeItem.classList.toggle('is-home',current==='index');
