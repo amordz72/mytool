@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>سياسة Flexy — توثيق MyTool</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../mytool-bottom-nav.css">
+<script src="../auth-guard.js" data-access="admin"></script>
+</head>
+<body data-mytool-app="documentation">
+<header class="top"><div class="top-inner">
+  <div class="brand"><a href="index.html">🧭 توثيق MyTool</a><small>سياسة Flexy المركزية</small></div>
+  <nav class="nav"><a href="index.html">الخريطة</a><a href="catalog.html">Catalog والتنفيذ</a><a href="flexy-policy.html">سياسة Flexy</a></nav>
+</div></header>
+<main class="wrap">
+<section class="hero">
+  <h1>مصدر الحقيقة لسياسة Flexy</h1>
+  <p>هذه الصفحة لا تكرر المنطق يدويًا؛ تقرأ نفس الملف المنظم الموجود داخل <b>flexy/policy/current-policy.json</b>.</p>
+  <div><span class="status now">CURRENT</span><span class="status reuse">Source of Truth</span></div>
+</section>
+
+<section class="grid">
+  <article class="card"><h3>هوية العرض</h3><div id="identity" class="flow">جاري التحميل…</div></article>
+  <article class="card"><h3>ترتيب السلطة</h3><div id="authority" class="flow">جاري التحميل…</div></article>
+</section>
+
+<section class="card"><h2>الطبقات — ممنوع الخلط</h2><div id="layers" class="flow">جاري التحميل…</div></section>
+
+<section class="grid">
+  <article class="card"><h3>قواعد ثابتة</h3><ul id="invariants"></ul></article>
+  <article class="card"><h3>اختيار Route</h3><ul id="routing"></ul></article>
+</section>
+
+<section class="grid">
+  <article class="card"><h3>Mobilis SAMA</h3><div id="sama" class="flow"></div></article>
+  <article class="card"><h3>Mobilis Arsselli</h3><div id="arsselli" class="flow"></div></article>
+</section>
+
+<section class="card">
+  <h2>الملفات المرجعية</h2>
+  <p><code>flexy/policy/CURRENT-POLICY.md</code> للقواعد الحالية، و<code>flexy/policy/SOURCES.md</code> لأصل القرارات والتعارضات، و<code>current-policy.json</code> للنسخة المنظمة.</p>
+  <div class="callout">Developer والمشاريع القديمة تبقى أدلة وتاريخ. التنفيذ الجديد يبدأ من سياسة MyTool Dev ثم يراجع الكود وقاعدة البيانات الحالية.</div>
+</section>
+
+<section class="card"><h2>النسخة المنظمة</h2><pre id="raw" class="code">جاري التحميل…</pre></section>
+</main>
+<script>
+const yesNo=v=>v===true?'نعم':v===false?'لا':String(v);
+const line=a=>Array.isArray(a)?a.join(' → '):String(a??'—');
+(async()=>{
+ try{
+  const res=await fetch('../flexy/policy/current-policy.json?v=20260921-policy1',{cache:'no-store'});
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const p=await res.json();
+  document.getElementById('identity').textContent=(p.offer_identity?.fields||[]).join(' + ');
+  document.getElementById('authority').textContent=(p.authority?.precedence||[]).join(' → ');
+  document.getElementById('layers').textContent=line(p.layers);
+  document.getElementById('invariants').innerHTML=Object.entries(p.invariants||{}).map(([k,v])=>'<li><b>'+k+'</b>: '+yesNo(v)+'</li>').join('');
+  document.getElementById('routing').innerHTML=(p.routing?.candidate_requires||[]).map(x=>'<li>'+x+'</li>').join('')+
+    '<li><b>الترتيب:</b> '+line(p.routing?.order_by)+'</li>'+
+    '<li><b>عند غياب Route:</b> '+(p.routing?.no_candidate||'—')+'</li>';
+  document.getElementById('sama').textContent='Index: '+(p.mobilis_sama?.index_scope||'—')+'\n'+line(p.mobilis_sama?.execution_flow);
+  const a=p.mobilis_arsselli||{};
+  document.getElementById('arsselli').textContent=
+    'Template: '+(a.template||'—')+'\n'+
+    'Accounts: '+Object.entries(a.distributor_accounts||{}).map(([k,v])=>k+'='+v).join('، ')+'\n'+
+    'Supported: '+(a.supported||[]).join('، ')+'\n'+
+    'Unsupported: '+(a.unsupported||[]).join('، ');
+  document.getElementById('raw').textContent=JSON.stringify(p,null,2);
+ }catch(e){
+  document.querySelectorAll('#identity,#authority,#layers,#raw').forEach(el=>el.textContent='تعذر تحميل ملف السياسة: '+e.message);
+ }
+})();
+</script>
+<script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script>
+</body></html>
