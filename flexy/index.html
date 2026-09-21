@@ -73,19 +73,20 @@
 <body>
 <aside class="sidebar d-none d-xxl-flex position-fixed top-0 vh-100 flex-column p-3" style="right:0!important;left:auto!important">
   <div class="sidebar-logo d-flex align-items-center justify-content-center">
-    <div class="text-center"><div class="fs-2">⚡</div><strong>Tehna Connect</strong></div>
+    <div class="text-center"><div class="fs-2">⚡</div><strong>تميز</strong></div>
   </div>
   <nav class="nav nav-pills flex-column gap-1">
-    <a class="nav-link" href="../">⌂&nbsp;&nbsp; الصفحة الرئيسية</a>
+    <a class="nav-link" href="home.html">⌂&nbsp;&nbsp; الرئيسية</a>
     <a class="nav-link" href="../shop/">▣&nbsp;&nbsp; Shop</a>
     <div class="sidebar-label">الخدمات</div>
     <a class="nav-link active" href="./">☎&nbsp;&nbsp; فليكسي</a>
     <a class="nav-link disabled" href="#">◉&nbsp;&nbsp; فليكسي جملة</a>
-    <a class="nav-link disabled" href="#">●&nbsp;&nbsp; تعبئة المودم</a>
+    <a class="nav-link disabled" href="#">●&nbsp;&nbsp; تعبئة إيدوم</a>
     <div class="sidebar-label">البطاقات</div>
-    <a class="nav-link disabled" href="#">▣&nbsp;&nbsp; بطاقات</a>
+    <a class="nav-link" href="../cards/">▣&nbsp;&nbsp; بطاقات</a>
     <div class="sidebar-label">العمليات</div>
     <a class="nav-link admin-only" hidden href="accounts.html">◎&nbsp;&nbsp; الحسابات</a>
+    <a class="nav-link admin-only" hidden href="orders.html">▤&nbsp;&nbsp; الطابور</a>
     <a class="nav-link disabled" href="#">▤&nbsp;&nbsp; كل العمليات</a>
     <a class="nav-link disabled" href="#">◎&nbsp;&nbsp; الاستهلاك</a>
   </nav>
@@ -93,7 +94,7 @@
 
 <div class="offcanvas offcanvas-start mobile-sidebar d-xxl-none" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarTitle">
   <div class="offcanvas-header border-bottom">
-    <h2 class="offcanvas-title h5 fw-bold mb-0" id="mobileSidebarTitle">Tehna Connect</h2>
+    <h2 class="offcanvas-title h5 fw-bold mb-0" id="mobileSidebarTitle">تميز</h2>
     <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="offcanvas" aria-label="إغلاق"></button>
   </div>
   <div class="offcanvas-body">
@@ -108,6 +109,7 @@
       <a class="nav-link disabled" href="#">▣&nbsp;&nbsp; بطاقات</a>
       <div class="sidebar-label">العمليات</div>
       <a class="nav-link admin-only" hidden href="accounts.html">◎&nbsp;&nbsp; الحسابات</a>
+      <a class="nav-link admin-only" hidden href="orders.html">▤&nbsp;&nbsp; الطابور</a>
       <a class="nav-link disabled" href="#">▤&nbsp;&nbsp; كل العمليات</a>
       <a class="nav-link disabled" href="#">◎&nbsp;&nbsp; الاستهلاك</a>
     </nav>
@@ -199,13 +201,7 @@
   </div>
 </div>
 
-<nav class="bottom-nav d-xxl-none fixed-bottom border-top align-items-center" aria-label="التنقل السفلي">
-  <a href="./" class="active"><div class="fs-5">☎</div>فليكسي</a>
-  <a href="#"><div class="fs-5">▣</div>البطاقات</a>
-  <a href="../" class="home-center"><div class="home-icon d-flex align-items-center justify-content-center">⌂</div>الرئيسية</a>
-  <a href="#"><div class="fs-5">◇</div>الأدوات</a>
-  <button type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar"><div class="fs-5">☰</div>القائمة</button>
-</nav>
+
 
 <script>
 document.querySelectorAll('.admin-only').forEach(el=>{el.hidden=!Boolean(window.MyToolAccessContext?.adminLike)});
@@ -281,6 +277,7 @@ offersMode.addEventListener('click',()=>setMode('offers'));
 setMode('balance');
 start();
 </script>
+<script src="flexy-nav.js?v=20260921-fixed-bottom-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
