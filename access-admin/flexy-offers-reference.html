@@ -87,6 +87,7 @@ const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let rows=[];
+let routesByOffer=new Map();
 
 function escapeHtml(value){
   return String(value??'').replace(/[&<>"']/g,c=>({
@@ -115,9 +116,16 @@ function simLabel(value){
   return value||'غير مرتبط بشريحة';
 }
 function executionText(row){
-  const sims=Array.isArray(row.execution_sim_types)?row.execution_sim_types:[];
-  if(!row.execution_available||!sims.length)return 'لا توجد طريقة إرسال معتمدة';
-  return 'يُنفذ عبر: '+sims.map(simLabel).join('، ');
+  const routes=routesByOffer.get(row.offer_uuid)||[];
+  const ready=routes.filter(r=>r.enabled&&r.status==='verified');
+  if(ready.length){
+    return 'تنفيذ جاهز عبر: '+[...new Set(ready.map(r=>simLabel(r.sim_type)))].join('، ');
+  }
+  const known=routes.filter(r=>r.status==='draft');
+  if(known.length){
+    return 'معروف أنه ينفذ عبر: '+[...new Set(known.map(r=>simLabel(r.sim_type)))].join('، ')+' — الربط البرمجي غير جاهز';
+  }
+  return 'لا توجد طريقة تنفيذ مسجلة';
 }
 
 function render(){
@@ -168,13 +176,23 @@ async function load(){
 
     const family=$('family').value||null;
     const simType=$('simType').value||null;
-    const {data,error}=await supabase.rpc('admin_flexy_offer_source_matrix',{
-      p_operator:'mobilis',
-      p_family:family,
-      p_observed_via_sim_type:simType
+    const [sourceRes,routeRes]=await Promise.all([
+      supabase.rpc('admin_flexy_offer_source_matrix',{
+        p_operator:'mobilis',
+        p_family:family,
+        p_observed_via_sim_type:simType
+      }),
+      supabase.rpc('admin_flexy_offer_execution_routes',{p_offer_uuid:null})
+    ]);
+    if(sourceRes.error)throw sourceRes.error;
+    if(routeRes.error)throw routeRes.error;
+    rows=Array.isArray(sourceRes.data)?sourceRes.data:[];
+    routesByOffer=new Map();
+    (Array.isArray(routeRes.data)?routeRes.data:[]).forEach(route=>{
+      const list=routesByOffer.get(route.offer_uuid)||[];
+      list.push(route);
+      routesByOffer.set(route.offer_uuid,list);
     });
-    if(error)throw error;
-    rows=Array.isArray(data)?data:[];
     render();
   }catch(error){
     rows=[];
