@@ -13,7 +13,7 @@
   const ACCESS_API='https://mytool-access.dzamor72.workers.dev';
   const guardScript=document.currentScript;
   const rootUrl=new URL('./',guardScript?.src||location.href);
-  const NAV_VERSION='20260917-continuity-2';
+  const NAV_VERSION='20260921-fixed-bottom-1';
 
   function readTools(storage,now){
     try{
@@ -85,19 +85,9 @@
     document.documentElement.style.visibility='hidden';
     fetch(ACCESS_API+'/v1/session',{headers:{Authorization:'Bearer '+context.toolsToken,Accept:'application/json'},cache:'no-store'}).then(async response=>{
       const data=await response.json().catch(()=>null);
-      if(!response.ok||!data?.ok||data.role!=='tools'){
-        const error=new Error('TOOLS_SESSION_INVALID');
-        error.confirmedInvalid=true;
-        throw error;
-      }
+      if(!response.ok||!data?.ok||data.role!=='tools')throw new Error('TOOLS_SESSION_INVALID');
       document.documentElement.style.visibility='';
-    }).catch(error=>{
-      const personalFallback=context.toolsAccessType==='personal'&&context.toolsExpiry>Date.now()&&!error?.confirmedInvalid;
-      if(personalFallback){
-        // Keep the approved personal device usable during a transient connection failure.
-        document.documentElement.style.visibility='';
-        return;
-      }
+    }).catch(()=>{
       clearToolsSession();
       try{sessionStorage.setItem('mytool_blocked_path',location.pathname+location.search+location.hash)}catch(_e){}
       location.replace(rootUrl.href);
