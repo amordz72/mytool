@@ -11,7 +11,7 @@
 header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}header h1{font-size:20px;margin:0}.back{color:var(--teal);text-decoration:none;font-weight:700}
 main{max-width:900px;margin:auto;padding:16px}.panel,.note{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 6px 20px #102a4310}
 textarea,input,select,button{font:inherit}textarea,input,select{width:100%;border:1px solid #cfd8df;border-radius:14px;padding:12px;background:#fff}textarea{min-height:118px;resize:vertical}.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}.full{grid-column:1/-1}
-button{border:0;border-radius:14px;padding:11px 15px;font-weight:700;cursor:pointer}.primary{background:linear-gradient(135deg,var(--teal),var(--mint));color:#fff}.outline{background:#fff;color:var(--teal);border:1px solid var(--teal)}
+button{border:0;border-radius:14px;padding:11px 15px;font-weight:700;cursor:pointer}.primary{background:linear-gradient(135deg,var(--teal),var(--mint));color:#fff}.outline{background:#fff;color:var(--teal);border:1px solid var(--teal)}.settings-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border-radius:12px;padding:9px 12px;font-weight:800}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.msg{display:none;margin:10px 0;padding:12px;border-radius:12px}.msg.ok{display:block;background:#e9fbf6;color:#06715f}.msg.err{display:block;background:#fff0ef;color:var(--red)}
 .toolbar{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}.note-head{display:flex;gap:8px;align-items:center;justify-content:space-between}.badges{display:flex;gap:6px;flex-wrap:wrap}.badge{font-size:12px;background:#eef4f7;border-radius:999px;padding:6px 9px}.urgent{background:#fee4e2;color:var(--red)}.high{background:#fff3dc;color:var(--amber)}
 .badge.sync{font-weight:800}.badge.sync.pending,.badge.sync.pending_update,.badge.sync.pending_images{background:#fff7ed;color:#9a3412}.badge.sync.sync_error,.badge.sync.conflict{background:#fff1f2;color:#b42318}.badge.sync.synced{background:#ecfdf5;color:#047857}
@@ -26,7 +26,7 @@ button{border:0;border-radius:14px;padding:11px 15px;font-weight:700;cursor:poin
 <header><h1>📝 صندوق الملاحظات</h1><a class="back" href="../">الرئيسية ←</a></header>
 <main>
 <section class="panel">
-<h2 style="margin-top:0">ملاحظة سريعة</h2>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h2 style="margin:0">ملاحظة سريعة</h2><a class="outline settings-link" href="settings.html">⚙️ إعدادات الذكاء</a></div>
 <div class="sync-wrap"><div id="syncState" class="sync-state">جاري تحديد وضع الحفظ…</div><button id="syncNow" class="outline" type="button" hidden>↻ مزامنة الآن</button></div>
 <textarea id="body" maxlength="10000" placeholder="اكتب الملاحظة بدل إرسالها في واتساب…"></textarea>
 <div id="smartHint" class="summary">اكتب الملاحظة وسيقترح MyTool النوع والأولوية والقسم تلقائيًا.</div>
@@ -49,6 +49,6 @@ button{border:0;border-radius:14px;padding:11px 15px;font-weight:700;cursor:poin
 <script src="visual-choice.js?v=20260914-2045"></script>
 <script src="notes-list-tools.js?v=20260916-0013"></script>
 <script src="notes-local-store.js?v=20260917-localfirst-1"></script>
-<script src="notes-app.js?v=20260921-notes-area-1"></script>
+<script src="notes-app.js?v=20260921-smart-rules-1"></script>
 <script src="notes-edit.js?v=20260921-notes-area-1" data-mytool-notes-edit="1"></script>
 </body></html>
