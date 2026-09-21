@@ -792,26 +792,24 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
   let createData=null;
   let createError=null;
 
-  for(let attempt=0;attempt<2;attempt++){
-   const created=await supabase.rpc('station_connect_admin_create_arsselli_flexy_696',{
-    p_phone:value,
-    p_amount:amount,
-    p_station_uuid:null
-   });
-   createData=created.data;
-   createError=created.error;
+  const created=await supabase.rpc('station_connect_admin_create_arsselli_flexy_696',{
+   p_phone:value,
+   p_amount:amount,
+   p_station_uuid:null
+  });
+  createData=created.data;
+  createError=created.error;
 
-   if(!createError)break;
-
+  if(createError){
    const reason=String(createError?.message||createError||'');
-   if(attempt===0&&reason.includes('NO_READY_ARSSELLI_GTS_ROUTE')){
+   if(reason.includes('NO_READY_ARSSELLI_GTS_ROUTE')){
     await refreshArsselliBalanceForFlexy(supabase,localToken);
-    continue;
+    statusBox.textContent='تم تحديث رصيد GTS فقط. لم يتم إنشاء طلب فليكسي. راجع الرصيد ثم اضغط إرسال من جديد إذا أردت.';
+    bootstrap.Modal.getOrCreateInstance(ordinarySendModal).hide();
+    return;
    }
    throw createError;
   }
-
-  if(createError)throw createError;
   const job=createData?.[0];
   if(!job?.job_uuid)throw new Error('FLEXY_JOB_NOT_CREATED');
 
