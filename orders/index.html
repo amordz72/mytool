@@ -146,14 +146,15 @@ function renderSmartStrip(parsed){
   if(!parsed){el.hidden=true;el.innerHTML='';return}
   const chips=[];
   if(parsed.whatsapp?.detected){
-    chips.push('<span class="smart-chip">'+brandIconHtml('WHATSAPP')+'<span>'+esc(parsed.whatsapp.customer_sender||'WhatsApp')+'</span></span>');
+    chips.push('<span class="smart-chip" title="WhatsApp">'+brandIconHtml('WHATSAPP')+'</span>');
+    if(parsed.whatsapp.customer_sender)chips.push('<span class="smart-chip"><span>👤</span><span>'+esc(parsed.whatsapp.customer_sender)+'</span></span>');
   }else{
     chips.push('<span class="smart-chip muted-chip">'+brandIconHtml('')+'<span>'+esc($('sourceKind').selectedOptions?.[0]?.textContent||'لصق')+'</span></span>');
   }
-  if(parsed.operator_code)chips.push('<span class="smart-chip">'+brandIconHtml(parsed.operator_code)+'<span>'+esc(parsed.operator_code)+'</span></span>');
+  if(parsed.operator_code)chips.push('<span class="smart-chip" title="'+esc(parsed.operator_code)+'">'+brandIconHtml(parsed.operator_code)+'</span>');
   if(parsed.service_code){
     const svc=serviceBy(parsed.service_code);
-    chips.push('<span class="smart-chip">'+brandIconHtml(parsed.service_code,svc?.display_name)+'<span>'+esc(svc?.display_name||parsed.service_code)+'</span></span>');
+    chips.push('<span class="smart-chip" title="'+esc(svc?.display_name||parsed.service_code)+'">'+brandIconHtml(parsed.service_code,svc?.display_name)+'</span>');
   }
   if(parsed.package_text)chips.push('<span class="smart-chip"><span>📦</span><span>'+esc(parsed.package_text)+'</span></span>');
   if(parsed.destination)chips.push('<span class="smart-chip" dir="ltr"><span>🎯</span><span>'+esc(parsed.destination)+'</span></span>');
@@ -193,14 +194,17 @@ function renderServiceOptions(selected=''){
 }
 
 function parseWhatsAppCopy(raw){
-  const lines=latinDigits(raw).replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean);
+  const lines=latinDigits(raw).replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g,'').replace(/\r\n?/g,'\n').split('\n').map(x=>x.trim()).filter(Boolean);
   const messages=[];
-  const afterMeta=/^(.*?)\s*\[(\d{1,2}:\d{2}),\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\]\s*:\s*(.*)$/;
-  const beforeMeta=/^(.*?)\s*:\s*(.*?)\s*\[(\d{1,2}:\d{2}),\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\]\s*$/;
+  const timeFirst=/^(.*?)\s*\[(\d{1,2}:\d{2})\s*[,،]\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\]\s*:\s*(.*)$/;
+  const trailingMeta=/^(.*?)\s*:\s*(.*?)\s*\[(\d{1,2}:\d{2})\s*[,،]\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\]\s*$/;
+  const dateFirst=/^\[(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s*[,،]\s*(\d{1,2}:\d{2})\]\s*(.*?)\s*:\s*(.*)$/;
   for(const line of lines){
-    let m=line.match(afterMeta);
+    let m=line.match(dateFirst);
+    if(m){messages.push({sender:m[3].trim(),body:m[4].trim(),time:m[2],date:m[1],raw:line});continue}
+    m=line.match(timeFirst);
     if(m){messages.push({sender:m[1].trim(),body:m[4].trim(),time:m[2],date:m[3],raw:line});continue}
-    m=line.match(beforeMeta);
+    m=line.match(trailingMeta);
     if(m){messages.push({sender:m[1].trim(),body:m[2].trim(),time:m[3],date:m[4],raw:line});continue}
   }
   if(!messages.length)return{detected:false,messages:[],customer_sender:'',operator_messages:[],customer_messages:[]};
@@ -253,13 +257,16 @@ function parseRequest(raw){
   if(destination&&destination!==phone)remainder=remainder.replace(destination,' ');
 
   const nums=(remainder.match(/\b\d{1,5}\b/g)||[]).filter(x=>Number(x)>0);
-  let packageText=nums[0]||'';
-  if(!packageText){
-    const candidates=remainder
-      .split(/[\n|•]+/)
-      .map(x=>x.replace(/\s+/g,' ').trim())
-      .filter(x=>x&&x.length<=80&&!/^\d+$/.test(x));
-    packageText=candidates[0]||'';
+  let packageText='';
+  if(serviceCode){
+    packageText=nums[0]||'';
+    if(!packageText){
+      const candidates=remainder
+        .split(/[\n|•]+/)
+        .map(x=>x.replace(/\s+/g,' ').trim())
+        .filter(x=>x&&x.length<=80&&!/^\d+$/.test(x));
+      packageText=candidates[0]||'';
+    }
   }
 
   return{
@@ -425,7 +432,7 @@ function renderOrders(){
     return '<article class="order" data-order-id="'+row.id+'">'+
       '<div class="order-head"><div><div class="order-brand">'+brandIconHtml(row.service_code||'?',svc?.display_name)+'<div><div class="order-title">'+esc(svc?.display_name||row.service_code||'خدمة غير معروفة')+(row.package_text?' — '+esc(row.package_text):'')+'</div><div class="source-mini">'+(row.source_kind==='whatsapp'?brandIconHtml('WHATSAPP'):'')+'<span>'+esc(fmtDate(row.created_at))+'</span></div></div></div></div><div class="pills"><span class="pill '+statusClass(row.status)+'">'+esc(statusLabel(row.status))+'</span><span class="pill '+(row.customer_party_id?'ok':'warn')+'">'+esc(party?.display_name||'بدون عميل')+'</span></div></div>'+
       '<div class="order-raw">'+esc(row.raw_input)+'</div>'+
-      '<div class="order-grid"><div class="kv"><b>الخدمة</b><span>'+esc(row.service_code||'—')+'</span></div><div class="kv"><b>القيمة</b><span>'+esc(row.package_text||'—')+'</span></div><div class="kv"><b>الوجهة</b><span dir="ltr">'+esc(row.destination||'—')+'</span></div><div class="kv"><b>العميل</b><span>'+esc(party?.display_name||'غير محدد')+'</span></div><div class="kv"><b>الحالة المالية</b><span>'+esc(financial)+'</span></div><div class="kv"><b>المصدر</b><span>'+esc(row.source_kind)+'</span></div></div>'+
+      '<div class="order-grid"><div class="kv"><b>الخدمة</b><span>'+esc(row.service_code||'—')+'</span></div><div class="kv"><b>القيمة</b><span>'+esc(row.package_text||'—')+'</span></div><div class="kv"><b>الوجهة</b><span dir="ltr">'+esc(row.destination||'—')+'</span></div><div class="kv"><b>العميل</b><span>'+esc(party?.display_name||'غير محدد')+'</span></div><div class="kv"><b>الحالة المالية</b><span>'+esc(financial)+'</span></div></div>'+
       '<div class="actions"><button class="btn secondary" data-action="open" data-id="'+row.id+'" type="button">▶ '+esc(orderActionLabel(row))+'</button><button class="btn warn" data-action="status" data-status="in_progress" data-id="'+row.id+'" type="button">⏳ جاري</button><button class="btn ok" data-action="status" data-status="success" data-id="'+row.id+'" type="button">✓ تم</button><button class="btn secondary" data-action="status" data-status="review" data-id="'+row.id+'" type="button">⚠</button></div>'+
       '<details><summary>ربط/تصحيح العميل</summary><div class="grid" style="margin-top:8px"><div class="full"><select class="row-party">'+partyOptions(row.customer_party_id)+'</select></div></div><div class="actions"><button class="btn secondary" data-action="party-save" data-id="'+row.id+'" type="button">حفظ العميل</button></div></details>'+
       '<details><summary>تعديل الفهم</summary><div class="grid" style="margin-top:8px"><div><label>الخدمة</label><select class="row-service">'+editServiceOptions(row.service_code)+'</select></div><div><label>القيمة</label><input class="row-package" value="'+esc(row.package_text||'')+'"></div><div class="full"><label>الوجهة</label><input class="row-destination" dir="ltr" value="'+esc(row.destination||'')+'"></div></div><div class="actions"><button class="btn secondary" data-action="interpret-save" data-id="'+row.id+'" type="button">حفظ التصحيح</button></div></details>'+
