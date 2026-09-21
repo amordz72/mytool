@@ -93,6 +93,8 @@
   }
 
   function clearCurrentWork(){
+    const hasWork=Boolean(text.value.trim()||(result&&result.textContent.trim()));
+    if(hasWork&&!confirm('مسح النص والنتائج الحالية وبدء عمل جديد؟'))return false;
     clearTimeout(timer);
     text.value='';
     try{file.value=''}catch(e){}
@@ -104,8 +106,48 @@
     if(fname)fname.textContent='لم يتم اختيار ملف.';
     if(result)result.innerHTML='';
     routeCurrentContent(false);
-    setTimeout(()=>{if(status)status.textContent='تم تنظيف النص والنتائج. جاهز للاستخراج الذكي.'},0);
+    setTimeout(()=>{if(status)status.textContent='تم مسح النص والنتائج. جاهز لعمل جديد.'},0);
     text.focus();
+    return true;
+  }
+
+  function quickResultAction(kind){
+    if(!result)return;
+    const suffix=kind==='copy'?'copy':'download';
+    const buttons=[...result.querySelectorAll('.group .actions button[id$="'+suffix+'"]')].filter(x=>!x.disabled);
+    if(!buttons.length){if(status)status.textContent='لا توجد نتيجة جاهزة بعد.';return}
+    if(kind==='copy'&&buttons.length>1){if(status)status.textContent='هناك أكثر من مجموعة؛ اختر «نسخ» من المجموعة المطلوبة حتى لا تختلط البطاقات.';return}
+    if(kind==='download'&&buttons.length>1){
+      const all=document.getElementById('downloadAllFiles');
+      if(all){all.click();return}
+      buttons.forEach((button,index)=>setTimeout(()=>button.click(),index*350));
+      if(status)status.textContent='تم إرسال '+buttons.length+' ملفات للتحميل.';
+      return;
+    }
+    buttons[0].click();
+  }
+
+  function ensureTextClearButton(){
+    let wrap=document.getElementById('cardsTextWrap');
+    if(!wrap){
+      wrap=document.createElement('div');
+      wrap.id='cardsTextWrap';
+      wrap.style.cssText='position:relative';
+      text.parentNode.insertBefore(wrap,text);
+      wrap.appendChild(text);
+    }
+    let clearBtn=document.getElementById('clearCurrentWork');
+    if(!clearBtn){
+      clearBtn=document.createElement('button');
+      clearBtn.id='clearCurrentWork';
+      clearBtn.type='button';
+      clearBtn.textContent='×';
+      clearBtn.title='مسح النص والنتائج الحالية';
+      clearBtn.setAttribute('aria-label','مسح النص والنتائج الحالية');
+      clearBtn.style.cssText='position:absolute;top:14px;left:8px;z-index:2;width:34px;height:34px;border:1px solid #efb7b7;border-radius:10px;background:#fff7f7;color:#b42318;font-size:24px;line-height:28px;font-weight:bold;cursor:pointer';
+      wrap.appendChild(clearBtn);
+    }
+    clearBtn.onclick=clearCurrentWork;
   }
 
   function ensureActionBar(){
@@ -114,22 +156,26 @@
     if(!bar){
       bar=document.createElement('div');
       bar.id='cardsActionBar';
-      bar.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%';
+      bar.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%';
       if(row)row.insertBefore(bar,processBtn);else processBtn.insertAdjacentElement('beforebegin',bar);
     }
     if(processBtn.parentElement!==bar)bar.appendChild(processBtn);
-    let clearBtn=document.getElementById('clearCurrentWork');
-    if(!clearBtn){
-      clearBtn=document.createElement('button');
-      clearBtn.id='clearCurrentWork';
-      clearBtn.type='button';
-      clearBtn.className='btn';
-      clearBtn.textContent='🧹 تنظيف';
-      clearBtn.style.cssText='width:100%;background:#6b7c89';
-      bar.appendChild(clearBtn);
+    let copyBtn=document.getElementById('cardsQuickCopy');
+    if(!copyBtn){
+      copyBtn=document.createElement('button');
+      copyBtn.id='cardsQuickCopy';copyBtn.type='button';copyBtn.className='btn green';copyBtn.textContent='نسخ';
+      copyBtn.style.width='100%';bar.appendChild(copyBtn);
     }
-    clearBtn.onclick=clearCurrentWork;
+    copyBtn.onclick=()=>quickResultAction('copy');
+    let txtBtn=document.getElementById('cardsQuickTxt');
+    if(!txtBtn){
+      txtBtn=document.createElement('button');
+      txtBtn.id='cardsQuickTxt';txtBtn.type='button';txtBtn.className='btn gold';txtBtn.textContent='TXT';
+      txtBtn.style.width='100%';bar.appendChild(txtBtn);
+    }
+    txtBtn.onclick=()=>quickResultAction('download');
     processBtn.style.width='100%';
+    ensureTextClearButton();
     return bar;
   }
 
