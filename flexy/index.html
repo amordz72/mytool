@@ -167,6 +167,22 @@
     </ul>
     <div id="offerPolicyHint" class="form-text text-center mb-3">جاري تحميل سياسة ظهور العروض…</div>
 
+    <section id="ordinaryAdminPanel" class="card surface p-3 mb-3 d-none">
+      <div class="row g-2 align-items-end">
+        <div class="col">
+          <label for="ordinaryAmount" class="form-label fw-bold mb-1">مبلغ الفليكسي</label>
+          <div class="input-group" dir="ltr">
+            <input id="ordinaryAmount" class="form-control" type="number" inputmode="numeric" min="1" max="50000" step="1" placeholder="مثال: 100">
+            <span class="input-group-text">دج</span>
+          </div>
+        </div>
+        <div class="col-auto">
+          <button id="ordinarySendBtn" class="btn btn-primary px-4" type="button">إرسال</button>
+        </div>
+      </div>
+      <div id="ordinaryHint" class="form-text mt-2">إرسال رصيد عادي عبر Mobilis Arsselli بعد تأكيد الإدارة.</div>
+    </section>
+
     <div id="status" class="status-box rounded-3 p-3 mb-3 small">الفليكسي العادي محدد افتراضيًا. اضغط «عروض» لمشاهدة العروض.</div>
     <div id="unknownOfferNotice" class="discovery-alert rounded-3 p-3 mb-3 small d-none">
       <strong id="unknownOfferTitle">تم اكتشاف عرض غير موجود في الكاتالوج.</strong>
@@ -232,9 +248,36 @@
   </div>
 </div>
 
+
+<div class="modal fade offer-modal" id="ordinarySendModal" tabindex="-1" aria-labelledby="ordinarySendTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5 fw-bold" id="ordinarySendTitle">تأكيد إرسال فليكسي</h2>
+        <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">الرقم: <strong id="ordinaryConfirmPhone" dir="ltr"></strong></div>
+        <div>المبلغ: <strong id="ordinaryConfirmAmount"></strong></div>
+      </div>
+      <div class="modal-footer d-flex gap-2">
+        <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">إلغاء</button>
+        <button id="ordinaryConfirmBtn" type="button" class="btn btn-primary flex-fill">إرسال الفليكسي</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const isAdmin=Boolean(window.MyToolAccessContext?.adminLike);
 document.querySelectorAll('.admin-only').forEach(el=>{el.hidden=!isAdmin});
+const ordinaryAdminPanel=document.getElementById('ordinaryAdminPanel');
+const ordinaryAmount=document.getElementById('ordinaryAmount');
+const ordinarySendBtn=document.getElementById('ordinarySendBtn');
+const ordinarySendModal=document.getElementById('ordinarySendModal');
+const ordinaryConfirmPhone=document.getElementById('ordinaryConfirmPhone');
+const ordinaryConfirmAmount=document.getElementById('ordinaryConfirmAmount');
+const ordinaryConfirmBtn=document.getElementById('ordinaryConfirmBtn');
 
 const catalog={
  SAMA:{families:[
@@ -600,6 +643,7 @@ function resolveCurrentOffers(){
 function setMode(mode){
  selectedMode=mode;
  const showOffers=mode==='offers';
+ if(ordinaryAdminPanel)ordinaryAdminPanel.classList.toggle('d-none',!(isAdmin&&!showOffers));
  balanceMode.classList.toggle('active',!showOffers);
  offersMode.classList.toggle('active',showOffers);
  balanceMode.setAttribute('aria-selected',String(!showOffers));
@@ -677,6 +721,69 @@ confirmSendOfferBtn.addEventListener('click',async()=>{
  }finally{
   confirmSendOfferBtn.disabled=false;
   confirmSendOfferBtn.textContent='تفعيل العرض';
+ }
+});
+
+
+ordinarySendBtn?.addEventListener('click',()=>{
+ if(!isAdmin)return;
+ const value=digits();
+ const amount=Number(ordinaryAmount?.value||0);
+ if(value.length!==10){
+  statusBox.textContent='أدخل رقم هاتف من 10 أرقام قبل إرسال الفليكسي.';
+  return;
+ }
+ if(!Number.isInteger(amount)||amount<=0||amount>50000){
+  statusBox.textContent='أدخل مبلغ فليكسي صحيح.';
+  return;
+ }
+ ordinaryConfirmPhone.textContent=format(value);
+ ordinaryConfirmAmount.textContent=amount.toLocaleString('fr-DZ')+' دج';
+ bootstrap.Modal.getOrCreateInstance(ordinarySendModal).show();
+});
+
+ordinaryConfirmBtn?.addEventListener('click',async()=>{
+ if(!isAdmin)return;
+ const value=digits();
+ const amount=Number(ordinaryAmount?.value||0);
+ if(value.length!==10||!Number.isInteger(amount)||amount<=0||amount>50000){
+  statusBox.textContent='بيانات الفليكسي غير صالحة.';
+  return;
+ }
+ ordinaryConfirmBtn.disabled=true;
+ ordinaryConfirmBtn.textContent='جاري الإرسال…';
+ statusBox.textContent='تم تأكيد العملية. جاري إرسال الفليكسي عبر Mobilis Arsselli…';
+ try{
+  const {supabase}=await getApi();
+  const {data,error}=await supabase.rpc('station_connect_admin_create_flexy_ordinary',{
+   p_phone:value,
+   p_amount:amount,
+   p_station_uuid:null
+  });
+  if(error)throw error;
+  const job=data?.[0];
+  if(!job?.job_uuid)throw new Error('FLEXY_JOB_NOT_CREATED');
+  bootstrap.Modal.getOrCreateInstance(ordinarySendModal).hide();
+  const localToken=discoveryToken;
+  const row=await pollRpc('station_connect_admin_flexy_ordinary_job',job.job_uuid,localToken,60000);
+  if(row.status==='success'){
+   statusBox.textContent='تم إرسال الفليكسي بنجاح.';
+   playToggleTone(true);
+  }else if(row.status==='failed'){
+   statusBox.textContent='فشل إرسال الفليكسي: '+(row.result_text||row.result_code||'راجع الرد.');
+  }else if(row.status==='review'){
+   statusBox.textContent=row.result_code==='MOBILIS_FLEXY_SMS_RESULT_PENDING'
+    ?'تم إرسال طلب الفليكسي إلى Mobilis، والنتيجة النهائية تحتاج تأكيد SMS.'
+    :'تم إرسال الطلب لكن النتيجة تحتاج مراجعة: '+(row.result_text||row.result_code||'راجع الرد الخام.');
+  }else{
+   statusBox.textContent='انتهت العملية بالحالة: '+(row.status||'غير معروفة');
+  }
+  await loadRecentOperations();
+ }catch(error){
+  statusBox.textContent='تعذر إرسال الفليكسي: '+(error?.message||error);
+ }finally{
+  ordinaryConfirmBtn.disabled=false;
+  ordinaryConfirmBtn.textContent='إرسال الفليكسي';
  }
 });
 
