@@ -37,7 +37,7 @@
     <div class="mt-page-icon">≡</div>
     <div class="mt-page-copy">
       <h1>مرجع عروض Flexy</h1>
-      <p>مرجع داخلي للعروض الحقيقية التي ثبتناها من صور أو جلسات حية.</p>
+      <p>مصادر معرفة العروض: صورة، استكشاف حي أو إدخال يدوي. ظهور العرض عبر شريحة لا يعني أنها تستطيع إرساله.</p>
     </div>
   </div>
   <button id="refreshBtn" class="mt-btn secondary mt-page-action" type="button">تحديث</button>
@@ -51,15 +51,15 @@
 <section class="mt-card">
   <div class="mt-section-head" style="margin-top:0">
     <div class="mt-section-copy">
-      <h2>الشريحة الحالية</h2>
-      <p>اليوم عندنا Mobilis SAMA. مستقبلاً نضيف Ooredoo / Djezzy بنفس المرجع.</p>
+      <h2>مصدر ظهور العرض</h2>
+      <p>نفصل بين «شوهد عبر» و«يُنفذ عبر». طريقة الإرسال تُضاف لاحقًا كمسار تنفيذ مستقل.</p>
     </div>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
     <label class="mt-search">
       <select id="simType" style="width:100%;border:0;outline:0;background:transparent;font:inherit">
-        <option value="mobilis-sama">Mobilis SAMA</option>
+        <option value="">كل مصادر الشرائح</option><option value="mobilis-sama">شوهد عبر Mobilis SAMA</option>
       </select>
     </label>
     <label class="mt-search">
@@ -93,7 +93,6 @@ function escapeHtml(value){
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[c]));
 }
-
 function showMessage(title,text,type=''){
   const box=$('pageMessage');
   box.className='mt-alert'+(type?' '+type:'');
@@ -101,48 +100,63 @@ function showMessage(title,text,type=''){
   $('pageMessageText').textContent=text;
   box.hidden=false;
 }
-
 function hideMessage(){ $('pageMessage').hidden=true; }
 
 function sourceLabel(value){
-  if(value==='live_image')return 'صورة حية';
-  if(value==='live_agent')return 'Agent حي';
+  if(value==='live_discovery')return 'استكشاف حي';
+  if(value==='image')return 'صورة';
+  if(value==='external')return 'مرجع خارجي';
+  if(value==='import')return 'استيراد';
   return 'يدوي';
+}
+function simLabel(value){
+  if(value==='mobilis-sama')return 'Mobilis SAMA';
+  if(value==='mobilis-arsselli')return 'Mobilis Arsselli';
+  return value||'غير مرتبط بشريحة';
+}
+function executionText(row){
+  const sims=Array.isArray(row.execution_sim_types)?row.execution_sim_types:[];
+  if(!row.execution_available||!sims.length)return 'لا توجد طريقة إرسال معتمدة';
+  return 'يُنفذ عبر: '+sims.map(simLabel).join('، ');
 }
 
 function render(){
   const groups={};
-  rows.filter(r=>r.active).forEach(r=>{
-    const key=r.family+'|'+r.route_template;
-    (groups[key] ||= {family:r.family,route:r.route_template,rows:[]}).rows.push(r);
+  rows.forEach(r=>{
+    const key=r.family;
+    (groups[key] ||= {family:r.family,rows:[]}).rows.push(r);
   });
 
   const html=Object.values(groups).map(group=>{
     const cards=group.rows
-      .sort((a,b)=>(a.sort_index||0)-(b.sort_index||0))
+      .sort((a,b)=>(a.amount||0)-(b.amount||0))
       .map(row=>
         '<div class="ref-offer">'+
           '<div class="mt-row">'+
-            '<div><strong>'+escapeHtml(row.raw_label)+'</strong>'+
-              '<div class="mt-meta">Network Index: '+escapeHtml(row.network_index)+
-              '<br>Sort: '+escapeHtml(row.sort_index)+
-              '<br>المصدر: '+escapeHtml(sourceLabel(row.source_type))+'</div></div>'+
-            '<span class="mt-chip primary">'+escapeHtml(row.amount)+'</span>'+
+            '<div><strong>'+escapeHtml(row.display_name)+'</strong>'+
+              '<div class="mt-meta">'+
+              'المصدر: '+escapeHtml(sourceLabel(row.source_kind))+
+              (row.source_name?'<br>الاسم: '+escapeHtml(row.source_name):'')+
+              '<br>شوهد عبر: '+escapeHtml(simLabel(row.observed_via_sim_type))+
+              '<br>'+escapeHtml(executionText(row))+
+              (row.network_index?'<br>Network Index: '+escapeHtml(row.network_index):'')+
+              '</div></div>'+
+            '<span class="mt-chip '+(row.execution_available?'success':'primary')+'">'+escapeHtml(row.amount)+'</span>'+
           '</div>'+
         '</div>'
       ).join('');
 
+    const executable=group.rows.filter(r=>r.execution_available).length;
     return '<section class="mt-card">'+
       '<div class="mt-section-head" style="margin-top:0">'+
         '<div class="mt-section-copy"><h2>'+escapeHtml(group.family)+'</h2>'+
-        '<p class="ref-route">'+escapeHtml(group.route)+'</p></div>'+
-        '<span class="mt-chip success">'+group.rows.length+' عروض</span>'+
+        '<p>مصادر: '+group.rows.length+' — قابل للإرسال الآن: '+executable+'</p></div>'+
       '</div>'+
       '<div class="ref-grid">'+cards+'</div>'+
     '</section>';
   }).join('');
 
-  $('groups').innerHTML=html||'<div class="mt-alert"><div class="mt-alert-icon">📭</div><div class="mt-alert-copy"><h3>لا توجد عروض</h3><p>لم نسجل عروضًا لهذه المجموعة بعد.</p></div></div>';
+  $('groups').innerHTML=html||'<div class="mt-alert"><div class="mt-alert-icon">📭</div><div class="mt-alert-copy"><h3>لا توجد عروض</h3><p>لم نسجل مصادر لهذه المجموعة بعد.</p></div></div>';
 }
 
 async function load(){
@@ -154,10 +168,10 @@ async function load(){
 
     const family=$('family').value||null;
     const simType=$('simType').value||null;
-    const {data,error}=await supabase.rpc('flexy_admin_offer_reference',{
+    const {data,error}=await supabase.rpc('admin_flexy_offer_source_matrix',{
       p_operator:'mobilis',
-      p_sim_type:simType,
-      p_family:family
+      p_family:family,
+      p_observed_via_sim_type:simType
     });
     if(error)throw error;
     rows=Array.isArray(data)?data:[];
