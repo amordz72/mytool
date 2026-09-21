@@ -510,6 +510,15 @@ function firstValue(obj,names){
   }
   return '';
 }
+function amountValue(v){const n=Number(String(v??'').trim().replace(/[\s\u00a0,]/g,'').replace(/٫/g,'.'));return Number.isFinite(n)?n:0}
+function sourceDateValue(v){
+  const raw=String(v??'').replace(/[\u200e\u200f]/g,'').trim();if(!raw)return null;
+  const iso=raw.match(/^(20\d{2})[-\/]([01]?\d)[-\/]([0-3]?\d)(?:[ T]([0-2]?\d):([0-5]\d))?/);
+  if(iso){const d=new Date(Number(iso[1]),Number(iso[2])-1,Number(iso[3]),Number(iso[4]||0),Number(iso[5]||0));return Number.isNaN(d.getTime())?null:d.toISOString()}
+  const ar=raw.match(/(\d{1,2})\/(\d{1,2})\/(20\d{2})[^\d]*(\d{1,2}):(\d{2})\s*([صم])/);
+  if(ar){let h=Number(ar[4]);if(ar[6]==='م'&&h<12)h+=12;if(ar[6]==='ص'&&h===12)h=0;const d=new Date(Number(ar[3]),Number(ar[2])-1,Number(ar[1]),h,Number(ar[5]));return Number.isNaN(d.getTime())?null:d.toISOString()}
+  return null;
+}
 function headerSignature(headers){return headers.map(norm).filter(Boolean).join('|')}
 function detectPlatformFromMatrix(matrix,headerIndex,headers){
   const h=new Set(headers.map(norm));
@@ -557,14 +566,21 @@ function rowsToAccounts(matrix){
     if(!email&&username.includes('@')&&username.includes('.'))email=username;
     const status=firstValue(obj,['حالة الحساب','الحالة','status']);
     const external=firstValue(obj,['المعرف','معرف الحساب','account id','id']);
-    const updated=firstValue(obj,['تاريخ التحديث','تاريخ الإنشاء','created at','updated at']);
+    const updated=sourceDateValue(firstValue(obj,['تاريخ التحديث','updated at','last updated']));
+    const created=sourceDateValue(firstValue(obj,['تاريخ الإنشاء','joined at','created at']));
+    const balance=amountValue(firstValue(obj,['رصيد','الرصيد','balance','solde']));
+    let debt=amountValue(firstValue(obj,['ديون','الدين','debt','مقترض']));
+    if(detectedPlatform==='wafarly')debt=amountValue(firstValue(obj,['مقترض']))+amountValue(firstValue(obj,['مقترض (المفوض)']));
+    const profit=amountValue(firstValue(obj,['ارباح','أرباح','الأرباح','profit','profits']));
     const disabled=/معطل|disabled|inactive/i.test(status);
     return {
       username:uid||username,
       external_account_id:external||uid||null,
       display_name:shop||[first,last].filter(Boolean).join(' ').trim()||username,
       first_name:first||null,last_name:last||null,phone:phone||null,email:email||null,
-      source_status:status||null,source_updated_at:updated||null,active:!disabled,raw_data:obj
+      source_status:status||null,source_updated_at:updated,source_created_at:created,active:!disabled,
+      balance,debt,profit,
+      raw_data:{username:uid||username,display_name:shop||[first,last].filter(Boolean).join(' ').trim()||username,phone:phone||null,email:email||null,balance,debt,profit,source_created_at:created}
     };
   }).filter(Boolean);
   return {accounts,detectedPlatform,headers,headerSignature:headerSignature(headers)};
@@ -639,7 +655,7 @@ async function importSources(){
       throw new Error('هذا الملف سبق تحميله لمنصة «'+existing+'» ولا يمكن تحميله مرة أخرى كمنصة «'+requested+'».');
     }
     if(!accounts.length)throw new Error('لم أجد حسابات صالحة في الملف.');
-    let processed=0,inserted=0,updated=0,reviews=0,conflicts=0,stale=0;
+    let processed=0,inserted=0,updated=0,unchanged=0,reviews=0,conflicts=0,stale=0;
     for(let i=0;i<accounts.length;i+=150){
       const chunk=accounts.slice(i,i+150);
       const {data,error}=await adminRpc('admin_customer_upsert_source_accounts','workspace_admin_upsert_source_accounts',{
@@ -648,7 +664,7 @@ async function importSources(){
       if(error)throw error;
       processed+=Number(data?.processed||chunk.length);
       inserted+=Number(data?.inserted||0);
-      updated+=Number(data?.updated||0);
+      updated+=Number(data?.updated||0);unchanged+=Number(data?.unchanged||0);
       reviews+=Number(data?.identity_reviews||0);conflicts+=Number(data?.identity_conflicts||0);stale+=Number(data?.stale_skipped||0);
     }
     const sig=parsed.headerSignature;
@@ -664,7 +680,7 @@ async function importSources(){
       msg('تم تحديث '+processed+' حساب. بقيت بعض حالات الربط للمراجعة، ولم تتوقف الصفحة.','warn');
     }else{
       const repeat=registration?.status==='same_platform'?' · إعادة تحديث لنفس المصدر':'';
-      msg('تمت معالجة '+processed+' سطر: جديد '+inserted+' · تحديث '+updated+' · مراجعة هوية '+reviews+' · تعارض '+conflicts+' · أقدم من المحفوظ '+stale+' · ربط أولي '+Number(boot?.created||0)+' · دمج تلقائي قوي '+Number(smart?.auto_merged||0)+' · اقتراحات '+Number(smart?.pending||0)+repeat+'.','ok');
+      msg('تمت معالجة '+processed+' سطر: جديد '+inserted+' · تغيّر '+updated+' · بدون تغيير '+unchanged+' · مراجعة هوية '+reviews+' · تعارض '+conflicts+' · أقدم من المحفوظ '+stale+' · ربط أولي '+Number(boot?.created||0)+' · دمج تلقائي قوي '+Number(smart?.auto_merged||0)+' · اقتراحات '+Number(smart?.pending||0)+repeat+'.','ok');
     }
   }catch(error){
     msg('تعذر الاستيراد: '+safeError(error),'error');
