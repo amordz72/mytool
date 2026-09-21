@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#6366f1">
+<title>تميز — الرئيسية</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+<style>
+body{font-family:Tahoma,Arial,sans-serif;background:#f5f6fb;color:#334155;min-height:100vh;padding-bottom:90px}
+.wrap{max-width:850px;margin:auto;padding:12px}.top{background:#fff;border-radius:16px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 .15rem .55rem #28375014}
+.menu{border:0;background:#eef2ff;border-radius:12px;width:44px;height:44px;font-size:22px}.brand{font-weight:900;font-size:21px}.hero{margin-top:12px;background:linear-gradient(135deg,#312e81,#6366f1);color:#fff;border-radius:20px;padding:22px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.cardx{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;text-decoration:none;color:inherit;min-height:110px}.cardx b{display:block;font-size:18px;margin-bottom:6px}.muted{color:#64748b;font-size:13px}
+@media(max-width:520px){.grid{grid-template-columns:1fr}}
+</style>
+<script src="../auth-guard.js?v=20260921-fixed-bottom-1" data-access="worker"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <button class="menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu">☰</button>
+    <div class="brand">تميز</div><span style="width:44px"></span>
+  </header>
+  <section class="hero"><h1 class="h3 fw-bold mb-2">الرئيسية</h1><div>نواة التشغيل للشحن، الحسابات، البطاقات والخدمات.</div></section>
+  <section class="grid">
+    <a class="cardx" href="./"><b>☎ فليكسي</b><span class="muted">الشحن والعروض المتاحة.</span></a>
+    <a class="cardx" href="../shop/sale.html"><b>＋ بيع</b><span class="muted">الرجوع مباشرة للبيع في Shop.</span></a>
+    <a class="cardx" href="../cards/"><b>▣ بطاقات</b><span class="muted">أدوات ومعالجة البطاقات.</span></a>
+    <a id="roleCard" class="cardx" href="my-account.html"><b>◉ حسابي</b><span class="muted">الرصيد والدين وسياسة الشحن.</span></a>
+  </section>
+</div>
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="menu">
+  <div class="offcanvas-header"><h2 class="offcanvas-title h5 fw-bold">تميز</h2><button class="btn-close ms-0 me-auto" data-bs-dismiss="offcanvas"></button></div>
+  <div class="offcanvas-body">
+    <nav class="nav nav-pills flex-column gap-2">
+      <a class="nav-link active" href="home.html">⌂ الرئيسية</a>
+      <a class="nav-link" href="../shop/">▣ Shop</a>
+      <a class="nav-link" href="./">☎ فليكسي</a>
+      <a class="nav-link" href="../cards/">▣ بطاقات</a>
+      <a class="nav-link admin-only" hidden href="accounts.html">◎ إدارة الحسابات</a>
+      <a class="nav-link admin-only" hidden href="orders.html">▤ الطابور</a>
+      <a class="nav-link admin-only" hidden href="../">🧰 الأدوات</a>
+    </nav>
+  </div>
+</div>
+
+<script>
+const isAdmin=Boolean(window.MyToolAccessContext?.adminLike);
+document.querySelectorAll('.admin-only').forEach(el=>el.hidden=!isAdmin);
+if(isAdmin){const c=document.getElementById('roleCard');c.href='accounts.html';c.querySelector('b').textContent='◎ الحسابات';c.querySelector('.muted').textContent='إدارة حسابات تميز والسياسات.'}
+</script>
+<script src="flexy-nav.js?v=20260921-fixed-bottom-1"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+</body></html>
