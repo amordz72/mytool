@@ -6,7 +6,7 @@
   const SUPABASE_PUBLISHABLE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
   const TYPES={UNCATEGORIZED:'بدون تصنيف',BUG:'خطأ',NEEDS_CONFIRMATION:'يحتاج تأكيد عمر',AI_REQUEST:'طلب للذكاء الاصطناعي',TASK:'مهمة',IDEA:'فكرة',PRODUCT_INVENTORY:'منتج أو مخزون',REFERENCE:'مرجع'};
   const PRIORITIES={NORMAL:'عادي',URGENT:'عاجل',HIGH:'مرتفع',LOW:'منخفض'};
-  const BASE_AREAS={MYTOOL:'MyTool',NOTES:'الملاحظات',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'منتج',GENERAL:'عام'};
+  const BASE_AREAS={MYTOOL:'MyTool',NOTES:'الملاحظات',CARDS:'معالج البطاقات',ACCOUNTS:'الحسابات',FLEXY:'فليكسي',TEHNA_CONNECT:'Tehna Connect',SHOP:'المحل',PRODUCT:'المنتج والمخزون',GENERAL:'عام',UNCLASSIFIED:'غير مصنف'};
   const AREAS={...BASE_AREAS};
   let client=null;
   let areasReady=false;
