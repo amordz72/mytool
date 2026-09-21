@@ -25,7 +25,7 @@
       {slot:2,href:new URL('../shop/sale.html',flexyRoot).href,icon:'＋',label:'بيع',title:'البيع في Shop'},
       {slot:4,href:new URL('../cards/',flexyRoot).href,icon:'▣',label:'بطاقات',title:'البطاقات'},
       isAdmin
-        ? {slot:5,href:myToolRoot.href,icon:'🧰',label:'الأدوات',title:'أدوات MyTool'}
+        ? {slot:5,href:new URL('admin.html',flexyRoot).href,icon:'⚙',label:'الإدارة',title:'إدارة Flexy',home:current==='admin.html'}
         : {slot:5,href:new URL('my-account.html',flexyRoot).href,icon:'◉',label:'حسابي',title:'حسابي في تميز',home:current==='my-account.html'}
     ]);
     return true;
