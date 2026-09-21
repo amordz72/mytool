@@ -299,9 +299,18 @@ async function loadOfferPolicy(){
 operator.addEventListener('click',()=>running?stop():start());
 balanceMode.addEventListener('click',()=>setMode('balance'));
 offersMode.addEventListener('click',()=>setMode('offers'));
+const launchParams=new URLSearchParams(location.search);
+const incomingPhone=(launchParams.get('phone')||'').replace(/\D/g,'').slice(0,10);
+const incomingAmount=(launchParams.get('amount')||'').trim();
 setMode('balance');
-phone.value='';
-hint.textContent='أدخل رقم الهاتف.';
+if(/^0[5-7]\d{8}$/.test(incomingPhone)){
+ silent=true;phone.value=format(incomingPhone);silent=false;
+ hint.textContent='تم تعبئة الرقم من طلب MyTool'+(incomingAmount?' — القيمة '+incomingAmount:'')+'.';
+ statusBox.textContent='طلب جاهز من MyTool'+(incomingAmount?' — القيمة/الباقة: '+incomingAmount:'')+'. راجع البيانات قبل التنفيذ.';
+}else{
+ phone.value='';
+ hint.textContent='أدخل رقم الهاتف.';
+}
 operator.classList.add('paused');
 loadOfferPolicy();
 </script>
