@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#6366f1">
+<title>حسابي — تميز</title>
+<style>
+body{font-family:Tahoma,Arial,sans-serif;background:#f5f6fb;color:#172033;margin:0;padding:0 0 95px}.wrap{max-width:760px;margin:auto;padding:14px}.top{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:13px;margin-bottom:10px}.top a{text-decoration:none;color:#4f46e5;font-weight:800}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat,.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px}.stat .v{font-size:22px;font-weight:900;margin-top:5px}.muted{color:#64748b;font-size:12px}.card{margin-top:10px}.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #eef2f7}.row:last-child{border-bottom:0}.good{color:#047857;font-weight:900}.bad{color:#b91c1c;font-weight:900}.event{padding:10px 0;border-bottom:1px solid #eef2f7}.event:last-child{border-bottom:0}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.stat .v{font-size:20px}}
+</style>
+<script src="../auth-guard.js?v=20260921-fixed-bottom-1" data-access="worker"></script>
+</head>
+<body>
+<main class="wrap">
+  <header class="top"><a href="home.html">← تميز</a><strong>حسابي</strong><span></span></header>
+  <div id="message" class="card">جاري التحميل…</div>
+  <section id="content" hidden>
+    <div class="grid">
+      <div class="stat"><div class="muted">الرصيد</div><div id="credit" class="v">0</div></div>
+      <div class="stat"><div class="muted">الدين</div><div id="debt" class="v">0</div></div>
+      <div class="stat"><div class="muted">المتاح</div><div id="available" class="v">0</div></div>
+    </div>
+    <section class="card"><h2 style="margin-top:0">الشحن الذاتي</h2>
+      <div class="row"><span>الحالة</span><b id="self"></b></div>
+      <div class="row"><span>أقل مبلغ</span><b id="min"></b></div>
+      <div class="row"><span>السقف اليومي</span><b id="daily"></b></div>
+      <div class="row"><span>السقف الكلي</span><b id="total"></b></div>
+      <div class="row"><span>مضاعفات المبلغ</span><b id="multiple"></b></div>
+    </section>
+    <section class="card"><h2 style="margin-top:0">آخر عمليات حسابي</h2><div id="events"></div></section>
+  </section>
+</main>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const s=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
+const token=localStorage.getItem('mytool_shop_worker_token')||'';
+const exp=Number(localStorage.getItem('mytool_shop_worker_expires_at')||0);
+const M=v=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(Number(v||0))+' دج';
+const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const label=t=>({credit:'رصيد',debt:'دين',payment:'دفع',refund:'إرجاع',adjustment:'تسوية',order_capture:'طلب',order_release:'تحرير حجز'})[t]||t||'عملية';
+if(!token||exp<=Date.now())location.replace('../');
+else{
+  const {data,error}=await s.rpc('worker_flexy_my_account_v1',{p_session_token:token});
+  const msg=document.getElementById('message');
+  if(error||!data?.linked){msg.textContent=error?'تعذر تحميل الحساب.':'لا يوجد حساب Flexy مرتبط بهذه الهوية.'}
+  else{
+    msg.hidden=true;document.getElementById('content').hidden=false;
+    const a=data.account||{};
+    document.getElementById('credit').textContent=M(a.credit_balance);
+    document.getElementById('debt').textContent=M(a.debt_balance);
+    document.getElementById('available').textContent=M(a.available_credit);
+    const self=document.getElementById('self');self.textContent=a.allow_self_recharge?'مسموح':'غير مسموح';self.className=a.allow_self_recharge?'good':'bad';
+    document.getElementById('min').textContent=M(a.min_amount);
+    document.getElementById('daily').textContent=a.daily_limit==null?'بدون سقف':M(a.daily_limit);
+    document.getElementById('total').textContent=a.total_limit==null?'بدون سقف':M(a.total_limit);
+    document.getElementById('multiple').textContent=a.amount_multiple==null?'بدون شرط':M(a.amount_multiple);
+    const events=data.recent_events||[];
+    document.getElementById('events').innerHTML=events.length?events.map(e=>'<div class="event"><b>'+esc(label(e.event_type))+'</b> — '+esc(M(e.amount))+'<div class="muted">'+esc(new Date(e.created_at).toLocaleString('ar-DZ'))+(e.note?' — '+esc(e.note):'')+'</div></div>').join(''):'<div class="muted">لا توجد عمليات بعد.</div>';
+  }
+}
+</script>
+<script src="flexy-nav.js?v=20260921-fixed-bottom-1"></script>
+</body></html>
