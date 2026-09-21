@@ -25,6 +25,7 @@ details{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}summary
 .toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.toolbar select{width:auto;min-width:150px}.count{font-size:12px;color:var(--muted);margin-inline-start:auto}
 .settings-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.draft-clear-row{display:flex;justify-content:flex-start;margin-top:7px}.draft-clear-row .btn{padding:7px 10px;font-size:12px}
 .smart-strip{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:9px 0 3px;padding:8px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0}.smart-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:#fff;border:1px solid #e2e8f0;font-size:12px;font-weight:800}.smart-chip.muted-chip{color:var(--muted);font-weight:700}.brand-icon{width:27px;height:27px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:1000;letter-spacing:-.4px;background:#e2e8f0;color:#0f172a;flex:0 0 auto}.brand-icon.wa{background:#25d366;color:#fff;border-radius:50%;font-size:16px}.brand-icon.ff{background:#111827;color:#ffb000}.brand-icon.fl{background:#2563eb;color:#fff}.brand-icon.pubg{background:#d97706;color:#fff}.brand-icon.mobilis{background:#138a4b;color:#fff}.brand-icon.djezzy{background:#e30613;color:#fff}.brand-icon.ooredoo{background:#ed1c24;color:#fff}.correction{margin-top:9px;border:1px dashed var(--line);border-radius:13px;padding:8px 10px}.correction>summary{border:0;padding:3px 0;font-size:12px}.compact-actions .btn{padding:9px 11px}.order-brand{display:flex;gap:7px;align-items:center}.source-mini{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.candidate-box{margin-top:8px;padding:10px 11px;border:1px solid #bfdbfe;border-radius:13px;background:#eff6ff;font-size:12px;color:#1e3a8a}.candidate-box strong{display:block;color:#172033;font-size:13px;margin-bottom:4px}.candidate-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.candidate-meta span{padding:3px 7px;border-radius:999px;background:#fff;border:1px solid #dbeafe;color:#334155}.candidate-actions{display:flex;gap:7px;margin-top:8px}.candidate-actions button{width:auto;padding:7px 10px;font-size:12px}.intent-chip{background:#fff7ed!important;border-color:#fed7aa!important;color:#9a3412!important}
 @media(max-width:620px){main{padding:9px 9px 90px}.grid,.settings-row{grid-template-columns:1fr}.order-grid{grid-template-columns:1fr 1fr}.top h1{font-size:20px}.btn{padding:9px 11px}.count{width:100%;margin:0}}
 </style>
 </head>
@@ -40,6 +41,7 @@ details{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}summary
       <div class="full"><label for="rawInput">نص الطلب</label><textarea id="rawInput" placeholder="مثال: 100 جوهرة 18255687870&#10;أو: FL • 200 • 0667413435"></textarea></div><div id="draftClearRow" class="full draft-clear-row" hidden><button id="draftClearBtn" class="btn bad" type="button">× مسح الطلب الحالي</button></div>
     </div>
     <div id="smartStrip" class="smart-strip" hidden></div>
+    <div id="customerCandidateBox" class="candidate-box" hidden></div>
     <div id="analysisHint" class="msg preview" hidden></div>
 
     <details id="correctionDetails" class="correction">
@@ -94,8 +96,8 @@ const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
 const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
 const db=createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
-let catalog=[],parties=[],orders=[];
-let parseTimer=null;
+let catalog=[],parties=[],orders=[],customerSources=[],identityRules=[];
+let parseTimer=null,lastParsed=null,currentCustomerCandidate=null;
 
 function show(text,bad=false,good=false){
   const el=$('message');el.hidden=false;el.textContent=text;el.className='msg '+(bad?'bad':good?'ok':'');
@@ -115,6 +117,144 @@ function partyBy(id){return parties.find(x=>String(x.id)===String(id))||null}
 function statusLabel(v){return ({draft:'مسودة',ready:'جاهز',in_progress:'جاري التنفيذ',success:'ناجح',failed:'فشل',review:'مراجعة',cancelled:'ملغى'})[v]||v}
 function statusClass(v){if(v==='success')return 'ok';if(['ready','in_progress','review'].includes(v))return 'warn';if(['failed','cancelled'].includes(v))return 'bad';return ''}
 function splitAliases(v){return String(v||'').split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean)}
+function identityKey(v){
+  return norm(v).replace(/[^\p{L}\p{N}]+/gu,' ').replace(/\s+/g,' ').trim();
+}
+function phoneticToken(v){
+  let s=String(v||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+  const arabicMap={
+    'ا':'a','أ':'a','إ':'a','آ':'a','ب':'b','ت':'t','ث':'th','ج':'j','ح':'h','خ':'kh','د':'d','ذ':'dh',
+    'ر':'r','ز':'z','س':'s','ش':'sh','ص':'s','ض':'d','ط':'t','ظ':'z','ع':'a','غ':'gh','ف':'f','ق':'q',
+    'ك':'k','ل':'l','م':'m','ن':'n','ه':'h','ة':'h','و':'w','ؤ':'w','ي':'i','ى':'i','ئ':'i'
+  };
+  s=[...s].map(ch=>arabicMap[ch]??ch).join('');
+  s=s.replace(/ch/g,'sh').replace(/ph/g,'f').replace(/ou/g,'u').replace(/gh/g,'g');
+  s=s.replace(/[^a-z0-9]+/g,' ').trim();
+  return s.split(/\s+/).map(t=>{
+    t=t.replace(/^al(?=[a-z]{3,})/,'');
+    return t.replace(/[aeiouy]/g,'');
+  }).filter(t=>t.length>=3);
+}
+function platformLabel(v){
+  return ({hanii_rohek:'هني روحك',tehna_pay:'تهنى باي',wafarly:'وفرلي'}[v]||v||'منصة');
+}
+function sourceFinancialText(source){
+  if(!source)return [];
+  const parts=[];
+  const debt=Number(source.debt_amount||0),balance=Number(source.balance_amount||0);
+  if(Number.isFinite(debt)&&debt!==0)parts.push('دين '+debt.toLocaleString('ar-DZ'));
+  if(Number.isFinite(balance)&&balance!==0)parts.push('رصيد '+balance.toLocaleString('ar-DZ'));
+  return parts;
+}
+function approvedIdentityRule(sender){
+  const key=identityKey(sender);
+  return identityRules.find(r=>r.status==='approved'&&r.source_kind==='whatsapp'&&r.identity_normalized===key)||null;
+}
+function matchScore(sender,source){
+  const q=identityKey(sender);
+  if(!q)return 0;
+  const vals=[source.display_name,source.first_name,source.last_name,source.username,source.phone,source.email,source.linked_party_name].filter(Boolean);
+  const normalized=vals.map(identityKey);
+  if(normalized.includes(q))return 100;
+  const qTokens=phoneticToken(sender);
+  if(!qTokens.length)return 0;
+  const sTokens=[...new Set(vals.flatMap(phoneticToken))];
+  let matched=0,strongest=0;
+  for(const token of qTokens){
+    if(sTokens.includes(token)){matched++;strongest=Math.max(strongest,86);continue}
+    if(sTokens.some(t=>(t.includes(token)||token.includes(t))&&Math.min(t.length,token.length)>=4)){
+      matched++;strongest=Math.max(strongest,72);
+    }
+  }
+  if(!matched)return 0;
+  return Math.min(96,strongest+(matched-1)*6);
+}
+function discoverCustomerCandidate(sender){
+  if(!sender)return null;
+  const rule=approvedIdentityRule(sender);
+  if(rule){
+    const party=partyBy(rule.party_id);
+    if(party){
+      const source=customerSources.find(s=>Number(s.id)===Number(rule.source_account_id))
+        ||customerSources.find(s=>Number(s.linked_party_id||0)===Number(rule.party_id));
+      return {party_id:Number(rule.party_id),party_name:party.display_name,score:100,approved:true,reason:'قاعدة معتمدة',source};
+    }
+  }
+  const exact=exactPartyCandidate(sender);
+  if(exact)return {party_id:Number(exact.id),party_name:exact.display_name,score:96,approved:false,reason:'اسم مطابق',source:customerSources.find(s=>Number(s.linked_party_id||0)===Number(exact.id))||null};
+  const ranked=customerSources
+    .filter(s=>Number(s.linked_party_id||0)>0)
+    .map(s=>({source:s,score:matchScore(sender,s)}))
+    .filter(x=>x.score>=70)
+    .sort((a,b)=>b.score-a.score);
+  if(!ranked.length)return null;
+  const best=ranked[0],second=ranked[1];
+  if(second&&best.score-second.score<8&&best.score<90)return null;
+  return {
+    party_id:Number(best.source.linked_party_id),
+    party_name:best.source.linked_party_name||partyBy(best.source.linked_party_id)?.display_name||'عميل مقترح',
+    score:best.score,approved:false,reason:'تشابه هوية/اسم',source:best.source
+  };
+}
+function renderCustomerCandidate(candidate,sender=''){
+  const box=$('customerCandidateBox');
+  currentCustomerCandidate=candidate;
+  if(!candidate||candidate.approved){box.hidden=true;box.innerHTML='';return}
+  const source=candidate.source;
+  const meta=[];
+  if(source?.platform_key)meta.push(platformLabel(source.platform_key));
+  if(source?.username)meta.push('@'+source.username);
+  meta.push(...sourceFinancialText(source));
+  box.innerHTML='<strong>اقتراح عميل: '+esc(candidate.party_name)+'</strong>'
+    +'<div>مرسل واتساب: '+esc(sender)+' · ثقة '+candidate.score+'%</div>'
+    +(meta.length?'<div class="candidate-meta">'+meta.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div>':'')
+    +'<div class="candidate-actions"><button id="acceptCustomerCandidate" class="btn secondary" type="button">✓ اعتماد هذا العميل</button></div>';
+  box.hidden=false;
+  const btn=$('acceptCustomerCandidate');
+  if(btn)btn.onclick=()=>approveCustomerCandidate(sender,candidate);
+}
+async function rememberIdentity(sender,partyId,candidate=null){
+  const value=String(sender||'').trim(),key=identityKey(value);
+  if(!value||!key||!partyId)return;
+  const source=candidate?.source||customerSources.find(s=>Number(s.linked_party_id||0)===Number(partyId))||null;
+  const payload={
+    source_kind:'whatsapp',identity_value:value,identity_normalized:key,party_id:Number(partyId),
+    source_platform_key:source?.platform_key||null,source_account_id:source?.id?Number(source.id):null,
+    status:'approved',confidence:100,
+    evidence:{method:candidate?.reason||'manual',score:candidate?.score||100}
+  };
+  const {data,error}=await db.from('mytool_customer_identity_rules').upsert(payload,{onConflict:'source_kind,identity_normalized'}).select().single();
+  if(error)throw error;
+  const i=identityRules.findIndex(r=>r.source_kind==='whatsapp'&&r.identity_normalized===key);
+  if(i>=0)identityRules[i]=data;else identityRules.push(data);
+}
+async function approveCustomerCandidate(sender,candidate){
+  try{
+    $('partySearch').value=sender||candidate.party_name;
+    renderPartyOptions('',candidate.party_id);
+    $('party').value=String(candidate.party_id);
+    await rememberIdentity(sender,candidate.party_id,candidate);
+    candidate.approved=true;
+    currentCustomerCandidate=candidate;
+    renderCustomerCandidate(null);
+    if(lastParsed)renderSmartStrip(lastParsed);
+    show('تم اعتماد ربط «'+sender+'» بـ «'+candidate.party_name+'». المرة القادمة يتعرف عليه مباشرة.',false,true);
+  }catch(error){show('تعذر اعتماد ربط العميل: '+(error?.message||error),true)}
+}
+function extractFinancialIntent(text){
+  const raw=latinDigits(text||'');
+  const n=norm(raw);
+  const rules=[
+    {type:'promise',label:'وعد تحويل',re:/(?:نبعثلك|نحولك|نخلصك|نصيبك|نمدلك)\s*([0-9]+(?:[.,][0-9]+)?)/},
+    {type:'claim',label:'يقول تم الدفع',re:/(?:بعثتلك|حولتلك|خلصتلك|صبيتلك)\s*([0-9]+(?:[.,][0-9]+)?)/}
+  ];
+  for(const rule of rules){
+    const m=n.match(rule.re);
+    if(m)return {type:rule.type,label:rule.label,amount:m[1]||'',confirmed:false};
+  }
+  return null;
+}
+
 
 function brandIconHtml(code,label=''){
   const key=String(code||'').toUpperCase();
@@ -158,6 +298,7 @@ function renderSmartStrip(parsed){
   }
   if(parsed.package_text)chips.push('<span class="smart-chip"><span>📦</span><span>'+esc(parsed.package_text)+'</span></span>');
   if(parsed.destination)chips.push('<span class="smart-chip" dir="ltr"><span>🎯</span><span>'+esc(parsed.destination)+'</span></span>');
+  if(parsed.financial_intent)chips.push('<span class="smart-chip intent-chip"><span>💬</span><span>'+esc(parsed.financial_intent.label+(parsed.financial_intent.amount?' '+parsed.financial_intent.amount:''))+'</span></span>');
   const partyId=$('party').value;
   const party=partyBy(partyId);
   if(party)chips.push('<span class="smart-chip"><span>👤</span><span>'+esc(party.display_name)+'</span></span>');
@@ -232,6 +373,7 @@ function parseRequest(raw){
   const text=latinDigits(businessText);
   const nt=norm(text);
   const operatorCode=detectOperator(text);
+  const financialIntent=extractFinancialIntent(text);
   const explicit=[];
   catalog.filter(x=>x.enabled).forEach(service=>{
     const aliases=[service.code,service.display_name,...(service.aliases||[])].filter(Boolean).sort((a,b)=>String(b).length-String(a).length);
@@ -278,7 +420,8 @@ function parseRequest(raw){
     phone,
     numeric_candidates:nums,
     whatsapp,
-    operator_code:operatorCode
+    operator_code:operatorCode,
+    financial_intent:financialIntent
   };
 }
 
@@ -299,6 +442,8 @@ function clearDraft(){
   renderServiceOptions();
   $('analysisHint').hidden=true;
   renderSmartStrip(null);
+  renderCustomerCandidate(null);
+  lastParsed=null;currentCustomerCandidate=null;
   syncDraftClear();
   $('rawInput').focus();
 }
@@ -310,19 +455,28 @@ function applyAnalysis(){
   renderServiceOptions(parsed.service_code);
   $('packageText').value=parsed.package_text;
   $('destination').value=parsed.destination;
+  lastParsed=parsed;
   if(parsed.whatsapp?.detected){
     $('sourceKind').value='whatsapp';
-    if(parsed.whatsapp.customer_sender&&!$('party').value){
-      const exact=exactPartyCandidate(parsed.whatsapp.customer_sender);
-      if(exact){
-        $('partySearch').value=parsed.whatsapp.customer_sender;
-        renderPartyOptions(parsed.whatsapp.customer_sender,exact.id);
-        $('party').value=String(exact.id);
-      }else if(!$('partySearch').value){
-        $('partySearch').value=parsed.whatsapp.customer_sender;
-        renderPartyOptions(parsed.whatsapp.customer_sender,$('party').value);
+    const sender=parsed.whatsapp.customer_sender;
+    if(sender&&!$('party').value){
+      const candidate=discoverCustomerCandidate(sender);
+      if(candidate?.approved){
+        $('partySearch').value=sender;
+        renderPartyOptions('',candidate.party_id);
+        $('party').value=String(candidate.party_id);
+        currentCustomerCandidate=candidate;
+        renderCustomerCandidate(null);
+      }else{
+        if(!$('partySearch').value)$('partySearch').value=sender;
+        renderPartyOptions($('partySearch').value,$('party').value);
+        renderCustomerCandidate(candidate,sender);
       }
+    }else{
+      renderCustomerCandidate(null);
     }
+  }else{
+    renderCustomerCandidate(null);
   }
   renderSmartStrip(parsed);
   const bits=[];
@@ -333,6 +487,8 @@ function applyAnalysis(){
   if(parsed.destination)bits.push('الوجهة: '+parsed.destination);
   if(parsed.whatsapp?.detected&&parsed.whatsapp.customer_sender)bits.push('مرسل واتساب: '+parsed.whatsapp.customer_sender);
   if(parsed.whatsapp?.operator_ack)bits.push('رد عمر «تم» → حالة تشغيلية: جاري التنفيذ');
+  if(parsed.financial_intent)bits.push(parsed.financial_intent.label+(parsed.financial_intent.amount?' '+parsed.financial_intent.amount:'')+' — إشارة فقط، لا تُسجل كدفع تلقائيًا');
+  if(currentCustomerCandidate&&!currentCustomerCandidate.approved)bits.push('اقتراح عميل: '+currentCustomerCandidate.party_name+' — يحتاج اعتماد مرة واحدة');
   bits.push('أي تصحيح تقوم به هنا يُحفظ مع الطلب.');
   $('analysisHint').textContent=bits.join(' · ');
   $('analysisHint').className='msg preview '+(parsed.ambiguous_services.length?'bad':'');
@@ -356,16 +512,38 @@ async function loadParties(){
   parties=data||[];
   renderPartyOptions($('partySearch').value,$('party').value);
 }
+async function loadCustomerDiscovery(){
+  const [rulesRes,linkingRes]=await Promise.all([
+    db.from('mytool_customer_identity_rules').select('*').eq('status','approved'),
+    db.rpc('admin_customer_list_linking')
+  ]);
+  if(!rulesRes.error)identityRules=rulesRes.data||[];
+  if(!linkingRes.error){
+    customerSources=Array.isArray(linkingRes.data?.sources)?linkingRes.data.sources:[];
+    return;
+  }
+  try{
+    const cached=JSON.parse(localStorage.getItem('mytool_customer_linking_service_cache_v1')||'null');
+    customerSources=Array.isArray(cached?.sources)?cached.sources:[];
+  }catch(_){customerSources=[]}
+}
 
 async function saveOrder(){
   hideMessage();
   const raw=$('rawInput').value.trim();
   if(!raw){show('اكتب أو الصق الطلب أولًا.',true);return}
   const parsed=parseRequest(raw);
+  const sender=parsed.whatsapp?.customer_sender||'';
   let partyId=$('party').value?Number($('party').value):null;
-  if(!partyId&&parsed.whatsapp?.customer_sender){
-    const exact=exactPartyCandidate(parsed.whatsapp.customer_sender);
-    if(exact)partyId=Number(exact.id);
+  if(!partyId&&sender){
+    const candidate=discoverCustomerCandidate(sender);
+    if(candidate?.approved)partyId=Number(candidate.party_id);
+    if(candidate&&!candidate.approved){
+      parsed.customer_candidate={
+        party_id:candidate.party_id,party_name:candidate.party_name,score:candidate.score,
+        platform_key:candidate.source?.platform_key||null,source_account_id:candidate.source?.id||null
+      };
+    }
   }
   const serviceCode=$('service').value||parsed.service_code||null;
   const service=serviceBy(serviceCode);
@@ -383,7 +561,7 @@ async function saveOrder(){
     destination,
     customer_party_id:partyId,
     customer_resolution:partyId?'confirmed':'unassigned',
-    customer_match_source:partyId?'manual':'unknown',
+    customer_match_source:partyId?(approvedIdentityRule(sender)?'source':'manual'):'unknown',
     status:initialStatus,
     parsed_payload:parsed,
     action_snapshot:service?{action_kind:service.action_kind,action_url:service.action_url,destination_kind:service.destination_kind}:{},
@@ -393,8 +571,11 @@ async function saveOrder(){
   try{
     const {error}=await db.from('mytool_service_orders').insert(payload);
     if(error)throw error;
-    show(partyId?'تم حفظ الطلب وربطه بالعميل. لا يوجد ترحيل دين تلقائي في V0.':'تم حفظ الطلب بدون عميل. الدين محجوب حتى تحدد العميل.',false,true);
-    $('rawInput').value='';$('packageText').value='';$('destination').value='';$('partySearch').value='';renderPartyOptions();renderServiceOptions();$('analysisHint').hidden=true;renderSmartStrip(null);
+    if(partyId&&sender&&!approvedIdentityRule(sender)){
+      try{await rememberIdentity(sender,partyId,currentCustomerCandidate)}catch(_e){}
+    }
+    show(partyId?'تم حفظ الطلب وربطه بالعميل. لا يوجد ترحيل دين تلقائي في V0.':'تم حفظ الطلب بدون عميل. إذا ظهر اقتراح عميل تقدر تعتمده مرة واحدة.',false,true);
+    $('rawInput').value='';$('packageText').value='';$('destination').value='';$('partySearch').value='';renderPartyOptions();renderServiceOptions();$('analysisHint').hidden=true;renderSmartStrip(null);renderCustomerCandidate(null);lastParsed=null;currentCustomerCandidate=null;
     await loadOrders();
   }catch(error){show('تعذر حفظ الطلب: '+(error?.message||error),true)}
   finally{$('saveBtn').disabled=false}
@@ -524,6 +705,7 @@ $('saveBtn').onclick=saveOrder;
 $('refreshBtn').onclick=()=>loadOrders().catch(e=>show(e.message,true));
 $('rawInput').addEventListener('input',()=>{syncDraftClear();clearTimeout(parseTimer);parseTimer=setTimeout(applyAnalysis,350)});
 $('partySearch').addEventListener('input',()=>renderPartyOptions($('partySearch').value,$('party').value));
+$('party').onchange=()=>{if(lastParsed)renderSmartStrip(lastParsed)};
 $('statusFilter').onchange=renderOrders;
 $('assignmentFilter').onchange=renderOrders;
 $('catalogPick').onchange=()=>fillCatalog($('catalogPick').value);
@@ -569,6 +751,7 @@ $('ordersList').addEventListener('click',async event=>{
     syncDraftClear();
     await requireSession();
     await Promise.all([loadCatalog(),loadParties()]);
+    await loadCustomerDiscovery();
     await loadOrders();
   }catch(error){show(error?.message||String(error),true)}
 })();
