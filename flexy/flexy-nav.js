@@ -21,7 +21,7 @@
       home:current==='home.html'
     });
     window.MyToolBottomNav.setActions([
-      {slot:1,href:new URL('./?v=20260921-empty-phone-2',flexyRoot).href,icon:'☎',label:'فليكسي',title:'فليكسي',home:current==='index.html'||current===''},
+      {slot:1,href:new URL('./?v=20260921-offers-fix-3',flexyRoot).href,icon:'☎',label:'فليكسي',title:'فليكسي',home:current==='index.html'||current===''},
       {slot:2,href:new URL('../shop/sale.html',flexyRoot).href,icon:'＋',label:'بيع',title:'البيع في Shop'},
       {slot:4,href:new URL('../cards/',flexyRoot).href,icon:'▣',label:'بطاقات',title:'البطاقات'},
       isAdmin
