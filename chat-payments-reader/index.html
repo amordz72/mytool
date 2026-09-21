@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="theme-color" content="#2ea8e6">
+<title>قارئ مدفوعات الدردشة - MyTool</title>
+<script src="../auth-guard.js" data-access="admin"></script>
+<style>
+:root{--o:#ff8a1f;--b:#2ea8e6;--t:#163047;--m:#61778a;--l:#dbe7f0;--ok:#18794e;--warn:#9a6700;--bad:#b42318;--bg:#f7fbfd}
+*{box-sizing:border-box}body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear-gradient(135deg,#fff7ef,#eef9ff);color:var(--t);min-height:100vh}
+.wrap{max-width:920px;margin:auto}.back{display:block;text-decoration:none;color:var(--t);font-weight:800;background:#fff;border:1px solid var(--l);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.hero{background:linear-gradient(135deg,var(--o),#7fd3ff);color:#fff;border-radius:18px;padding:18px;box-shadow:0 8px 24px #16304718}.hero h1{margin:0 0 5px;font-size:23px}.hero p{margin:0;font-size:12px;line-height:1.7}
+.card{margin-top:12px;background:#fff;border:1px solid var(--l);border-radius:16px;padding:14px;box-shadow:0 5px 16px #1630470d}.security{display:flex;gap:10px;align-items:flex-start;background:#effaf5;border-color:#b7e3cd}.security b{color:var(--ok)}.security p{margin:2px 0 0;color:#416956;font-size:12px;line-height:1.65}
+.grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}.field label{display:block;font-size:11px;font-weight:900;color:var(--m);margin-bottom:5px}.field input,.field textarea{width:100%;border:1px solid #bed7e4;border-radius:11px;padding:11px;font:inherit;color:var(--t);background:#fff}.field textarea{min-height:170px;resize:vertical;line-height:1.65;font-size:12px;direction:rtl}
+.file-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px;align-items:center}.file-name{padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:10px;padding:10px 12px;font-weight:800;font-size:12px;cursor:pointer}.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--o),var(--b))}.btn.danger{border-color:#f1b8b3;background:#fff4f2;color:var(--bad)}.btn:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.hint{margin-top:8px;color:var(--m);font-size:11px;line-height:1.65}.message{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:12px;line-height:1.65}.message.warn{background:#fff9e8;border:1px solid #f1d28a;color:#755b13}.message.bad{background:#fff4f2;border:1px solid #f0b6b1;color:var(--bad)}.message.ok{background:#effaf5;border:1px solid #b7e3cd;color:#17643f}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.stat{background:#f8fbfd;border:1px solid var(--l);border-radius:13px;padding:11px}.stat small{display:block;color:var(--m);font-size:10px;margin-bottom:4px}.stat b{font-size:17px}.stat.warn b{color:#8a5b00}
+.table-wrap{overflow:auto;border:1px solid var(--l);border-radius:13px;margin-top:10px}table{width:100%;border-collapse:collapse;min-width:720px;background:#fff}th,td{padding:10px 9px;border-bottom:1px solid #e7eef3;text-align:right;font-size:11px;vertical-align:top}th{background:#f4f9fc;color:#34566c;position:sticky;top:0;z-index:1}.status{display:inline-block;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:900}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.raw{max-width:330px;white-space:pre-wrap;word-break:break-word;color:#425f70}.money{white-space:nowrap;font-weight:900}.muted{color:var(--m)}.empty{text-align:center;padding:24px;color:var(--m);font-size:12px}.check{width:18px;height:18px}
+@media(max-width:680px){body{padding:9px}.grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.actions .btn{flex:1}.hero{padding:15px}.file-row{grid-template-columns:1fr}.file-row .btn{width:100%}}
+</style>
+</head>
+<body><main class="wrap">
+<a class="back" href="../">← لوحة الأدوات</a>
+<section class="hero"><h1>💬 قارئ مدفوعات الدردشة</h1><p>اقرأ تصدير WhatsApp أو الصق المحادثة، ثم استخرج مدفوعات عميل بين تاريخين مع تمييز المطابقة المؤكدة عن المرشحة.</p></section>
+<section class="card security"><div style="font-size:24px">🔒</div><div><b>الدردشة تبقى على جهازك</b><p>الملف والنص لا يُرفعان إلى قاعدة البيانات ولا GitHub. التحليل يتم داخل المتصفح، ولا يتم حفظ شيء تلقائيًا. راجع المرشحات قبل اعتمادها.</p></div></section>
+<section class="card">
+  <div class="grid">
+    <div class="field"><label for="customer">اسم العميل</label><input id="customer" placeholder="مثال: شعيب رمزي" autocomplete="off"></div>
+    <div class="field"><label for="dateFrom">من تاريخ</label><input id="dateFrom" type="date"></div>
+    <div class="field"><label for="dateTo">إلى تاريخ</label><input id="dateTo" type="date"></div>
+  </div>
+  <div class="file-row"><div id="fileName" class="file-name">يمكنك رفع ZIP/TXT أو لصق النص مباشرة</div><label class="btn" for="fileInput">📂 اختيار ملف</label><input id="fileInput" type="file" accept=".zip,.txt,text/plain,application/zip" hidden></div>
+  <div class="field" style="margin-top:10px"><label for="chatText">نص الدردشة</label><textarea id="chatText" placeholder="الصق هنا نص تصدير WhatsApp..."></textarea></div>
+  <div class="actions"><button id="analyzeBtn" class="btn primary" type="button">استخراج المدفوعات</button><button id="copyBtn" class="btn" type="button" disabled>نسخ النتائج</button><button id="csvBtn" class="btn" type="button" disabled>CSV</button><button id="clearBtn" class="btn danger" type="button">مسح</button></div>
+  <div class="hint">المبالغ الصريحة مثل «3 ملاين ونص» و«2 مليون» تُحوّل إلى دج. الأرقام القصيرة بلا وحدة لا تُخمن. إذا وُجد الاسم مختصرًا فقط، تظهر العملية كمرشح للمراجعة.</div>
+  <div id="message" hidden></div>
+</section>
+<section id="resultCard" class="card" hidden>
+  <div class="summary">
+    <div class="stat"><small>العمليات المعروضة</small><b id="countStat">0</b></div>
+    <div class="stat"><small>الإجمالي المحدد</small><b id="totalStat">0 دج</b></div>
+    <div class="stat"><small>مؤكد</small><b id="confirmedStat">0 دج</b></div>
+    <div class="stat warn"><small>مرشح للمراجعة</small><b id="candidateStat">0 دج</b></div>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>✓</th><th>التاريخ</th><th>المبلغ</th><th>المطابقة</th><th>النص الأصلي</th></tr></thead><tbody id="rows"></tbody></table></div>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+(() => {
+'use strict';
+const $=id=>document.getElementById(id);
+let results=[];
+const marks=/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
+function clean(s){return String(s||'').replace(marks,'').replace(/\s+/g,' ').trim()}
+function norm(s){return clean(s).toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function ymd(y,m,d){return String(y).padStart(4,'0')+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
+function displayDate(s){const [y,m,d]=s.split('-');return d+'/'+m+'/'+y}
+function parseChat(text){
+  const lines=String(text||'').replace(/\r\n?/g,'\n').split('\n');
+  const out=[]; let current=null;
+  const re=/^(\d{1,2})\/(\d{1,2})\/(\d{4})[،,]\s*(\d{1,2}):(\d{2})\s*-\s*([^:]+):\s*(.*)$/;
+  for(const raw of lines){
+    const line=raw.replace(marks,'');
+    const m=line.match(re);
+    if(m){current={date:ymd(+m[3],+m[2],+m[1]),time:m[4].padStart(2,'0')+':'+m[5],sender:clean(m[6]),body:clean(m[7]),raw:clean(m[7])};out.push(current)}
+    else if(current&&clean(line)){current.body=clean(current.body+' '+line);current.raw=clean(current.raw+' '+line)}
+  }
+  return out;
+}
+const wordNums=new Map([['نص',0.5],['نصف',0.5],['واحد',1],['وحد',1],['زوج',2],['اثنين',2],['اثنان',2],['ثلاث',3],['ثلاثه',3],['ثلاثة',3],['اربعه',4],['اربعة',4],['خمسه',5],['خمسة',5],['سته',6],['ستة',6],['سبعه',7],['سبعة',7],['ثمانيه',8],['ثمانية',8],['تسعه',9],['تسعة',9],['عشره',10],['عشرة',10]]);
+function numberWordValue(token){const t=norm(token);if(wordNums.has(t))return wordNums.get(t);const n=Number(t.replace(',','.'));return Number.isFinite(n)?n:null}
+function extractAmount(body){
+  const s=norm(body).replace(/ملايين/g,'ملاين').replace(/مليونين/g,'مليون').replace(/مليون/g,'مليون');
+  let m=s.match(/(\d+(?:[.,]\d+)?|زوج|اثنين|اثنان|ثلاث(?:ه|ة)?|ارب(?:عه|عة)|خمس(?:ه|ة)|ست(?:ه|ة)|سبع(?:ه|ة)|ثمان(?:يه|ية)|تسع(?:ه|ة)|عشر(?:ه|ة)?)\s*(?:ملاين|مليون|مل)\b(?:\s*(?:و)?\s*(نص|نصف))?/);
+  if(m){const base=numberWordValue(m[1]);if(base!=null){const half=m[2]?0.5:0;return {amount:Math.round((base+half)*10000),confidence:'explicit',source:m[0]}}}
+  m=s.match(/\b(?:مليون|ملاين)\s*(?:و)?\s*(نص|نصف)\b/);
+  if(m)return {amount:15000,confidence:'explicit',source:m[0]};
+  m=s.match(/(\d+(?:[.,]\d+)?)\s*(?:الف|ألف)\b/);
+  if(m)return {amount:Math.round(Number(m[1].replace(',','.'))*1000),confidence:'explicit',source:m[0]};
+  m=s.match(/\b(\d{4,9})\s*(?:دج|da|dzd)?\b/i);
+  if(m)return {amount:Number(m[1]),confidence:'numeric',source:m[0]};
+  return {amount:null,confidence:'unknown',source:''};
+}
+function tokenFreq(entries,tokens){
+  const map=new Map(tokens.map(t=>[t,0]));
+  for(const e of entries){const b=' '+norm(e.body)+' ';for(const t of tokens)if(b.includes(' '+t+' '))map.set(t,map.get(t)+1)}
+  return map;
+}
+function matchName(body,tokens,freq){
+  const b=' '+norm(body)+' '; const hits=tokens.filter(t=>b.includes(' '+t+' '));
+  if(hits.length===tokens.length)return {type:'confirmed',label:'مؤكد'};
+  if(tokens.length>1&&hits.length===1){
+    const min=Math.min(...tokens.map(t=>freq.get(t)||0));
+    if((freq.get(hits[0])||0)===min)return {type:'candidate',label:'مرشح: اسم مختصر'};
+  }
+  return null;
+}
+function collect(){
+  const text=$('chatText').value.trim(), query=norm($('customer').value), from=$('dateFrom').value, to=$('dateTo').value;
+  if(!text||!query||!from||!to){show('أدخل اسم العميل والفترة ونص الدردشة أو الملف.','bad');return}
+  if(from>to){show('تاريخ البداية أكبر من تاريخ النهاية.','bad');return}
+  const tokens=[...new Set(query.split(' ').filter(t=>t.length>=2))];
+  const entries=parseChat(text).filter(e=>e.date>=from&&e.date<=to);
+  const freq=tokenFreq(entries,tokens), found=[];
+  entries.forEach((e,i)=>{
+    const match=matchName(e.body,tokens,freq); if(!match)return;
+    let amt=extractAmount(e.body), source=e;
+    if(amt.amount==null){
+      for(let j=i+1;j<Math.min(entries.length,i+3);j++){
+        const n=entries[j]; if(n.date!==e.date||n.sender!==e.sender)break;
+        const nextAmt=extractAmount(n.body);
+        if(nextAmt.amount!=null){amt=nextAmt;source={...e,body:e.body+' | '+n.body,raw:e.raw+' | '+n.raw};break}
+      }
+    }
+    if(amt.amount==null)return;
+    found.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+i),date:e.date,time:e.time,amount:amt.amount,match:match.type,label:match.label,raw:source.raw,selected:true});
+  });
+  const dedup=[]; const seen=new Set();
+  for(const r of found){const key=r.date+'|'+r.amount+'|'+norm(r.raw);if(!seen.has(key)){seen.add(key);dedup.push(r)}}
+  results=dedup; render();
+  if(!results.length)show('لم أجد مدفوعات صريحة لهذا الاسم داخل الفترة المحددة. جرّب الاسم كما يظهر في الدردشة أو راجع النص.','warn');
+  else show('تم استخراج '+results.length+' عملية. المرشحات مميزة للمراجعة قبل النسخ أو الاعتماد.','ok');
+}
+function render(){
+  $('resultCard').hidden=false;
+  const body=$('rows');body.innerHTML='';
+  if(!results.length){body.innerHTML='<tr><td colspan="5" class="empty">لا توجد نتائج</td></tr>'}
+  for(const r of results){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td><input class="check" type="checkbox" '+(r.selected?'checked':'')+' data-id="'+esc(r.id)+'"></td>'+
+      '<td><b>'+displayDate(r.date)+'</b><div class="muted">'+esc(r.time)+'</div></td>'+
+      '<td class="money">'+r.amount.toLocaleString('en-US')+' دج</td>'+
+      '<td><span class="status '+(r.match==='confirmed'?'ok':'warn')+'">'+esc(r.label)+'</span></td>'+
+      '<td class="raw">'+esc(r.raw)+'</td>';
+    body.appendChild(tr);
+  }
+  body.querySelectorAll('.check').forEach(c=>c.addEventListener('change',()=>{const r=results.find(x=>x.id===c.dataset.id);if(r)r.selected=c.checked;updateStats()}));
+  updateStats();
+  $('copyBtn').disabled=!results.length;$('csvBtn').disabled=!results.length;
+}
+function updateStats(){
+  const sel=results.filter(r=>r.selected), total=sel.reduce((s,r)=>s+r.amount,0), conf=sel.filter(r=>r.match==='confirmed').reduce((s,r)=>s+r.amount,0), cand=sel.filter(r=>r.match==='candidate').reduce((s,r)=>s+r.amount,0);
+  $('countStat').textContent=sel.length;$('totalStat').textContent=total.toLocaleString('en-US')+' دج';$('confirmedStat').textContent=conf.toLocaleString('en-US')+' دج';$('candidateStat').textContent=cand.toLocaleString('en-US')+' دج';
+}
+function copyText(){
+  const sel=results.filter(r=>r.selected), name=clean($('customer').value), from=displayDate($('dateFrom').value), to=displayDate($('dateTo').value);
+  const total=sel.reduce((s,r)=>s+r.amount,0), conf=sel.filter(r=>r.match==='confirmed').reduce((s,r)=>s+r.amount,0), cand=sel.filter(r=>r.match==='candidate').reduce((s,r)=>s+r.amount,0);
+  const lines=[name+' — من '+from+' إلى '+to,''];
+  sel.forEach(r=>lines.push(displayDate(r.date)+' — '+r.amount.toLocaleString('en-US')+' دج — '+r.label));
+  lines.push('', 'المجموع: '+total.toLocaleString('en-US')+' دج', 'المؤكد: '+conf.toLocaleString('en-US')+' دج', 'المرشح للمراجعة: '+cand.toLocaleString('en-US')+' دج');
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>show('تم نسخ النتائج.','ok')).catch(()=>show('تعذر النسخ التلقائي.','bad'));
+}
+function csv(){
+  const sel=results.filter(r=>r.selected), rows=[['date','time','amount_dzd','match','raw'],...sel.map(r=>[r.date,r.time,r.amount,r.match,r.raw])];
+  const content='\ufeff'+rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));a.download='chat-payments-'+$('dateFrom').value+'-'+$('dateTo').value+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function loadFile(file){
+  $('fileName').textContent=file.name;
+  try{
+    if(/\.zip$/i.test(file.name)||file.type==='application/zip'){
+      if(!window.JSZip)throw new Error('مكتبة ZIP غير متاحة الآن. يمكنك فك الملف واختيار TXT أو لصق النص.');
+      const zip=await JSZip.loadAsync(file);const names=Object.keys(zip.files).filter(n=>/\.txt$/i.test(n)&&!zip.files[n].dir);
+      if(!names.length)throw new Error('لم أجد ملف TXT داخل ZIP.');
+      $('chatText').value=await zip.files[names[0]].async('string');
+      show('تم تحميل '+names[0]+' من ملف ZIP.','ok');
+    }else{$('chatText').value=await file.text();show('تم تحميل ملف النص.','ok')}
+  }catch(err){show(err?.message||'تعذر قراءة الملف.','bad')}
+}
+function show(text,type){const el=$('message');el.hidden=false;el.className='message '+type;el.textContent=text}
+function clearAll(){$('chatText').value='';$('customer').value='';$('fileInput').value='';$('fileName').textContent='يمكنك رفع ZIP/TXT أو لصق النص مباشرة';results=[];$('resultCard').hidden=true;$('copyBtn').disabled=true;$('csvBtn').disabled=true;$('message').hidden=true}
+$('fileInput').addEventListener('change',e=>{const f=e.target.files?.[0];if(f)loadFile(f)});
+$('analyzeBtn').addEventListener('click',collect);$('copyBtn').addEventListener('click',copyText);$('csvBtn').addEventListener('click',csv);$('clearBtn').addEventListener('click',clearAll);
+const now=new Date();$('dateTo').value=ymd(now.getFullYear(),now.getMonth()+1,now.getDate());$('dateFrom').value=ymd(now.getFullYear(),now.getMonth()+1,1);
+})();
+</script>
+</body>
+</html>
