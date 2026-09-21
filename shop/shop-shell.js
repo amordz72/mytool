@@ -95,9 +95,18 @@
         if(second)actions.push({slot:2,href:second.path,icon:second.icon,label:second.shortLabel||second.label,title:second.label,home:second.id===current});
         if(fourth)actions.push({slot:4,href:fourth.path,icon:fourth.icon,label:fourth.shortLabel||fourth.label,title:fourth.label,home:fourth.id===current});
       }else{
-        const candidates=['sale','stock','inventory','daily','money','purchase','transfers'].map(id=>window.ShopRoutes.get(id)).filter(route=>route&&window.ShopRoutes.allowed(route,context)).slice(0,3);
-        const slots=[1,2,4];
-        actions=candidates.map((route,index)=>({slot:slots[index],href:route.path,icon:route.icon,label:route.shortLabel||route.label,title:route.label,home:route.id===current}));
+        // Admin invariant: Flexy also stays fixed at the far-right, but opens the admin platform.
+        actions.push({slot:1,href:'../flexy/accounts.html',icon:'📱',label:'فليكسي',title:'إدارة Flexy'});
+        const preferred=['sale','stock','inventory','daily','money','purchase','transfers']
+          .map(id=>window.ShopRoutes.get(id))
+          .filter(route=>route&&window.ShopRoutes.allowed(route,context));
+        const sale=preferred.find(route=>route.id==='sale');
+        const stock=preferred.find(route=>route.id==='stock');
+        const remaining=preferred.filter(route=>route.id!=='sale'&&route.id!=='stock');
+        const second=sale||remaining.shift()||stock||null;
+        const fourth=stock&&stock!==second?stock:(remaining.shift()||null);
+        if(second)actions.push({slot:2,href:second.path,icon:second.icon,label:second.shortLabel||second.label,title:second.label,home:second.id===current});
+        if(fourth)actions.push({slot:4,href:fourth.path,icon:fourth.icon,label:fourth.shortLabel||fourth.label,title:fourth.label,home:fourth.id===current});
       }
       actions.push({slot:5,icon:'⋯',label:'المزيد',title:'فتح قائمة المحل',onClick(){document.querySelector('#drawerOpen,.menu-toggle')?.click()}});
       window.MyToolBottomNav.setActions(actions);
