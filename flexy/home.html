@@ -11,7 +11,7 @@ body{font-family:Tahoma,Arial,sans-serif;background:#f5f6fb;color:#334155;min-he
 .menu{border:0;background:#eef2ff;border-radius:12px;width:44px;height:44px;font-size:22px}.brand{font-weight:900;font-size:21px}.hero{margin-top:12px;background:linear-gradient(135deg,#312e81,#6366f1);color:#fff;border-radius:20px;padding:22px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.cardx{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;text-decoration:none;color:inherit;min-height:110px}.cardx b{display:block;font-size:18px;margin-bottom:6px}.muted{color:#64748b;font-size:13px}
 @media(max-width:520px){.grid{grid-template-columns:1fr}}
 </style>
-<script src="../auth-guard.js?v=20260922-shell-2" data-access="worker"></script>
+<script src="../auth-guard.js?v=20260922-shell-3" data-access="worker"></script>
 </head>
 <body>
 <div class="wrap">
@@ -48,6 +48,6 @@ const isAdmin=Boolean(window.MyToolAccessContext?.adminLike);
 document.querySelectorAll('.admin-only').forEach(el=>el.hidden=!isAdmin);
 if(isAdmin){const c=document.getElementById('roleCard');c.href='accounts.html';c.querySelector('b').textContent='◎ الحسابات';c.querySelector('.muted').textContent='إدارة حسابات تميز والسياسات.'}
 </script>
-<script src="flexy-nav.js?v=20260922-shell-2"></script>
+<script src="flexy-nav.js?v=20260922-shell-3"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
 </body></html>
