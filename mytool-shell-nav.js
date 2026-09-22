@@ -67,7 +67,7 @@
       ['home','⌂','رئيسية My Tools',''],
       ['shop','🧾','حساب المحل','shop/'],
       ['flexy','📱','تميز / فليكسي','flexy/home.html'],
-      ['orders','📥','الطلبات','orders/'],
+      ['orders','📥','الطلبات','orders/?v=20260922-digital-sale2'],
       ['cards','🎫','معالج البطاقات','cards/'],
       ['accounts-review','📊','الحسابات','accounts-review/'],
       ['notes','📝','الملاحظات','notes/'],
