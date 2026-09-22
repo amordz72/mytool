@@ -8,6 +8,8 @@ const CACHE_KEY = 'mytool_today_route_cache_v1';
 const IDENTITY_KEY = 'mytool_today_route_identity_v1';
 const QUEUE_KEY = 'mytool_today_route_queue_v1';
 const ROUTE_CUSTOMERS_CACHE = 'mytool_route_customer_directory_v1';
+const OWNER_BRIDGE_TOKEN = 'mytool_today_route_owner_bridge_token_v1';
+const OWNER_BRIDGE_EXPIRES = 'mytool_today_route_owner_bridge_expires_v1';
 const $ = id => document.getElementById(id);
 const money = value => new Intl.NumberFormat('ar-DZ', { maximumFractionDigits: 2 }).format(Number(value || 0)) + ' دج';
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -197,20 +199,72 @@ function applyQueuedStateLocally() {
   }
 }
 
+async function openOwnerBridge() {
+  if (!navigator.onLine) return false;
+
+  const cachedToken = sessionStorage.getItem(OWNER_BRIDGE_TOKEN) || '';
+  const cachedExpires = Number(sessionStorage.getItem(OWNER_BRIDGE_EXPIRES) || 0);
+  if (cachedToken && cachedExpires > Date.now()) {
+    const status = await s.rpc('workspace_session_status', { p_session_token: cachedToken });
+    if (!status.error && status.data?.length && status.data[0].account_role === 'workspace_admin') {
+      token = cachedToken;
+      me = status.data[0];
+      return true;
+    }
+    sessionStorage.removeItem(OWNER_BRIDGE_TOKEN);
+    sessionStorage.removeItem(OWNER_BRIDGE_EXPIRES);
+  }
+
+  const auth = await s.auth.getSession();
+  if (!auth.data?.session) return false;
+
+  const bridge = await s.rpc('owner_workspace_bridge_session');
+  if (bridge.error || !bridge.data?.length) return false;
+  const row = bridge.data[0];
+  if (!row.session_token || row.account_role !== 'workspace_admin') return false;
+
+  token = row.session_token;
+  me = {
+    worker_id: row.worker_id,
+    nickname: row.nickname || 'الإدارة',
+    account_role: row.account_role,
+    workspace_code: row.workspace_code || 'REAL',
+    pin_set: false,
+    pin_required: false
+  };
+  sessionStorage.setItem(OWNER_BRIDGE_TOKEN, token);
+  sessionStorage.setItem(OWNER_BRIDGE_EXPIRES, String(Date.parse(row.expires_at) || (Date.now() + 2 * 60 * 60 * 1000)));
+  return true;
+}
+
 async function identify() {
   token = localStorage.getItem(TOKEN) || '';
-  if (!token) throw new Error('NO_SESSION');
-  try {
-    const response = await s.rpc('workspace_session_status', { p_session_token: token });
-    if (response.error || !response.data?.length) throw response.error || new Error('NO_SESSION');
-    me = response.data[0];
-    if (me.pin_required) throw new Error('PIN_REQUIRED');
-    saveIdentity();
-  } catch (error) {
-    if (!isConnectivityError(error)) throw error;
-    me = loadCachedIdentity();
-    if (!me) throw new Error('OFFLINE_NO_CACHE');
+  let localError = null;
+
+  if (token) {
+    try {
+      const response = await s.rpc('workspace_session_status', { p_session_token: token });
+      if (response.error || !response.data?.length) throw response.error || new Error('NO_SESSION');
+      me = response.data[0];
+      if (me.pin_required) throw new Error('PIN_REQUIRED');
+    } catch (error) {
+      localError = error;
+      if (isConnectivityError(error)) {
+        me = loadCachedIdentity();
+        if (!me) throw new Error('OFFLINE_NO_CACHE');
+      } else {
+        token = '';
+        me = null;
+      }
+    }
   }
+
+  if (!me) {
+    const bridged = await openOwnerBridge();
+    if (!bridged) throw localError || new Error('NO_SESSION');
+  }
+
+  saveIdentity();
 
   const isAdmin = me.account_role === 'workspace_admin';
   $('subtitle').textContent = isAdmin
@@ -1044,7 +1098,7 @@ document.addEventListener('visibilitychange', () => {
     else if (error.message === 'OFFLINE_NO_CACHE') stat('لا يوجد اتصال ولا توجد جولة محفوظة سابقًا على هذا الجهاز. افتح الجولة مرة واحدة أثناء الاتصال.', 'err');
     else {
       stat('انتهت الجلسة أو لا توجد صلاحية.', 'err');
-      if (navigator.onLine) setTimeout(() => location.replace('../'), 1200);
+      if (navigator.onLine) setTimeout(() => location.replace('index.html'), 1200);
     }
   }
 })();
