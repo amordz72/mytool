@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2ea8e6">
+<title>روابط العمل - MyTool</title>
+<style>
+:root{--o:#ff8a1f;--b:#2ea8e6;--t:#163047;--m:#61778a;--l:#dbe7f0;--soft:#f7fbfe}
+*{box-sizing:border-box}body{margin:0;padding:10px;font-family:Arial,Tahoma,sans-serif;color:var(--t);background:linear-gradient(135deg,#fff7ef,#eef9ff);min-height:100vh}
+.wrap{max-width:900px;margin:auto}.top{display:flex;gap:8px;margin-bottom:10px}.back{display:block;text-decoration:none;color:var(--t);font-weight:bold;background:#fff;border:1px solid var(--l);border-radius:12px;padding:10px 14px}
+.hero{background:linear-gradient(135deg,var(--o),#7fd3ff);color:#fff;border-radius:20px;padding:16px;box-shadow:0 8px 24px #16304718}.hero h1{font-size:22px;margin:0}.hero p{margin:5px 0 0;font-size:13px;line-height:1.6}
+.panel{margin-top:10px;background:#fff;border:1px solid var(--l);border-radius:18px;padding:10px;box-shadow:0 6px 18px #16304710}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}th{font-size:11px;color:var(--m);text-align:right;padding:0 10px}td{background:var(--soft);border-top:1px solid var(--l);border-bottom:1px solid var(--l);padding:10px}
+td:first-child{border-right:1px solid var(--l);border-radius:0 12px 12px 0}td:last-child{border-left:1px solid var(--l);border-radius:12px 0 0 12px}
+.initial{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;background:#fff;border:1px solid var(--l);direction:ltr}
+.name{font-weight:800}.note{font-size:11px;color:var(--m);margin-top:3px}.category{font-size:11px;color:#14729f;background:#edf8ff;border-radius:99px;padding:4px 7px;display:inline-block}
+.open{display:inline-block;text-decoration:none;background:linear-gradient(135deg,#147fb2,var(--b));color:#fff;font-weight:800;border-radius:10px;padding:9px 12px;white-space:nowrap}
+.empty{text-align:center;color:var(--m);padding:24px}.hint{font-size:11px;color:var(--m);margin:7px 3px 0}
+@media(max-width:640px){body{padding:8px}.panel{padding:7px}th:nth-child(3),td:nth-child(3){display:none}td{padding:8px}.open{padding:8px 10px}.name{font-size:13px}.note{font-size:10px}}
+</style>
+<script src="../auth-guard.js?v=20260922-work-links-1" data-access="admin"></script>
+</head>
+<body>
+<main class="wrap">
+<div class="top"><a class="back" href="../">← My Tools</a></div>
+<section class="hero">
+  <h1>روابط العمل</h1>
+  <p>مكان واحد للروابط الثابتة التي نحتاجها كثيرًا. كل رابط يفتح في صفحة جديدة حتى تبقى MyTool مفتوحة.</p>
+</section>
+<section class="panel">
+<table>
+<thead><tr><th></th><th>الموقع</th><th>القسم</th><th></th></tr></thead>
+<tbody id="linksBody"></tbody>
+</table>
+<div id="empty" class="empty" hidden>لا توجد روابط مفعلة.</div>
+<div class="hint">الروابط محفوظة في ملف واحد داخل MyTool، ونضيف Token Store ومنصة Flexy وباقي المواقع عندما ترسل روابطها.</div>
+</section>
+</main>
+<script>
+(async()=>{
+  const body=document.getElementById('linksBody'),empty=document.getElementById('empty');
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  try{
+    const r=await fetch('links.json?v=20260922-1',{cache:'no-store'});
+    if(!r.ok)throw new Error('LOAD_FAILED');
+    const all=await r.json();
+    const links=(Array.isArray(all)?all:[]).filter(x=>x&&x.active!==false&&x.url).sort((a,b)=>Number(a.order||0)-Number(b.order||0));
+    if(!links.length){empty.hidden=false;return}
+    body.innerHTML=links.map(x=>`<tr>
+      <td><div class="initial">${esc(x.short||String(x.name||'?').trim().charAt(0).toUpperCase())}</div></td>
+      <td><div class="name">${esc(x.name)}</div><div class="note">${esc(x.note||'')}</div></td>
+      <td><span class="category">${esc(x.category||'عام')}</span></td>
+      <td><a class="open" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">فتح</a></td>
+    </tr>`).join('');
+  }catch(e){empty.hidden=false;empty.textContent='تعذر تحميل قائمة الروابط.'}
+})();
+</script>
+</body>
+</html>
