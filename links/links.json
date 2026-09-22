@@ -1,46 +1,74 @@
-[
-  {
-    "id": "supabase-mytool",
-    "name": "Supabase — MyTool",
-    "short": "S",
-    "url": "https://supabase.com/dashboard/project/wqyebqzbbpohbnznqdjj",
-    "category": "إدارة",
-    "note": "قاعدة بيانات MyTool ولوحة المشروع",
-    "external": true,
-    "active": true,
-    "order": 10
-  },
-  {
-    "id": "gmail",
-    "name": "Gmail",
-    "short": "G",
-    "url": "https://mail.google.com/",
-    "category": "تواصل",
-    "note": "فتح البريد في صفحة جديدة",
-    "external": true,
-    "active": true,
-    "order": 20
-  },
-  {
-    "id": "cards",
-    "name": "معالج البطاقات",
-    "short": "B",
-    "url": "../cards/",
-    "category": "MyTool",
-    "note": "استخراج وتنظيم البطاقات",
-    "external": false,
-    "active": true,
-    "order": 30
-  },
-  {
-    "id": "chat-reader",
-    "name": "قارئ مدفوعات الدردشة",
-    "short": "C",
-    "url": "../chat-payments-reader/",
-    "category": "MyTool",
-    "note": "قراءة محادثات المدفوعات",
-    "external": false,
-    "active": true,
-    "order": 40
-  }
-]
+{
+  "groups": [
+    {
+      "id": "admin",
+      "name": "إدارة وتطوير",
+      "icon": "⚙️",
+      "order": 10
+    },
+    {
+      "id": "communication",
+      "name": "التواصل والبريد",
+      "icon": "✉️",
+      "order": 20
+    },
+    {
+      "id": "card-platforms",
+      "name": "شراء البطاقات والمنصات",
+      "icon": "🛒",
+      "order": 30
+    },
+    {
+      "id": "mytool",
+      "name": "أدوات MyTool",
+      "icon": "🧰",
+      "order": 40
+    }
+  ],
+  "links": [
+    {
+      "id": "supabase-mytool",
+      "name": "Supabase — MyTool",
+      "short": "SB",
+      "url": "https://supabase.com/dashboard/project/wqyebqzbbpohbnznqdjj",
+      "group": "admin",
+      "note": "قاعدة بيانات MyTool ولوحة المشروع",
+      "external": true,
+      "active": true,
+      "order": 10
+    },
+    {
+      "id": "gmail",
+      "name": "Gmail",
+      "short": "GM",
+      "url": "https://mail.google.com/",
+      "group": "communication",
+      "note": "فتح البريد في صفحة جديدة",
+      "external": true,
+      "active": true,
+      "order": 10
+    },
+    {
+      "id": "cards",
+      "name": "معالج البطاقات",
+      "short": "BC",
+      "url": "../cards/",
+      "group": "mytool",
+      "note": "استخراج وتنظيم البطاقات",
+      "external": false,
+      "active": true,
+      "order": 10
+    },
+    {
+      "id": "chat-reader",
+      "name": "قارئ مدفوعات الدردشة",
+      "short": "CH",
+      "url": "../chat-payments-reader/",
+      "group": "mytool",
+      "note": "قراءة محادثات المدفوعات",
+      "external": false,
+      "active": true,
+      "order": 20
+    }
+  ]
+}
