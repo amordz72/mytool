@@ -58,6 +58,7 @@ details{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}summary
 
     <div class="actions compact-actions">
       <button id="saveBtn" class="btn" type="button">💾 حفظ</button>
+      <button id="saveSaleBtn" class="btn secondary" type="button">🧾 حفظ وفتح البيع</button>
       <a class="btn secondary" href="../shop/customer-links.html" title="إدارة العملاء">👤 العملاء</a>
     </div>
   </section>
@@ -97,7 +98,7 @@ const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
 const db=createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let catalog=[],parties=[],orders=[],customerSources=[],identityRules=[];
-let parseTimer=null,lastParsed=null,currentCustomerCandidate=null;
+let parseTimer=null,lastParsed=null,currentCustomerCandidate=null,incomingIntakeMeta=null;
 
 function show(text,bad=false,good=false){
   const el=$('message');el.hidden=false;el.textContent=text;el.className='msg '+(bad?'bad':good?'ok':'');
@@ -384,6 +385,7 @@ function parseRequest(raw){
   const phoneMatch=text.match(/0[5-7](?:[\s.\-]?\d){8}/);
   const phone=phoneMatch?phoneMatch[0].replace(/\D/g,''):'';
   let serviceCode=unique.length===1?unique[0]:'';
+  if(!serviceCode&&!unique.length&&/(?:جوهرة|جواهر|diamond(?:s)?)/i.test(text)&&serviceBy('FF'))serviceCode='FF';
   let inferredByPhone=false;
   if(!serviceCode&&!unique.length&&phone&&serviceBy('FL')){serviceCode='FL';inferredByPhone=true}
 
@@ -425,6 +427,47 @@ function parseRequest(raw){
   };
 }
 
+function parsedObject(value){
+  if(!value)return{};
+  if(typeof value==='object')return value;
+  try{return JSON.parse(value)}catch(_){return{}}
+}
+
+function sourceMessageMeta(parsed){
+  const p=parsedObject(parsed);
+  const rows=(p.whatsapp?.customer_messages?.length?p.whatsapp.customer_messages:p.whatsapp?.messages)||[];
+  return rows.map(m=>({sender:m.sender||'',date:m.date||'',time:m.time||'',raw:m.raw||''}));
+}
+
+function sourceMessageTimeText(parsed){
+  const rows=sourceMessageMeta(parsed);
+  const last=rows[rows.length-1];
+  if(!last)return'';
+  return [last.date,last.time].filter(Boolean).join(' ');
+}
+
+function orderSourceTime(row){
+  const parsed=parsedObject(row?.parsed_payload);
+  return parsed.intake_meta?.source_message_at_text||sourceMessageTimeText(parsed);
+}
+
+function consumeQuickIntake(){
+  let envelope=null;
+  try{envelope=JSON.parse(sessionStorage.getItem('mytool_smart_intake_draft_v1')||'null')}catch(_){envelope=null}
+  if(!envelope?.raw_input)return false;
+  $('rawInput').value=String(envelope.raw_input);
+  incomingIntakeMeta={
+    captured_at:envelope.captured_at||new Date().toISOString(),
+    origin:envelope.origin||'mytool_home',
+    source_kind:envelope.source_kind||'paste'
+  };
+  if($('sourceKind')&&incomingIntakeMeta.source_kind)$('sourceKind').value=incomingIntakeMeta.source_kind;
+  syncDraftClear();
+  applyAnalysis();
+  sessionStorage.removeItem('mytool_smart_intake_draft_v1');
+  return true;
+}
+
 function syncDraftClear(){
   const row=$('draftClearRow');
   if(row)row.hidden=!$('rawInput').value.trim();
@@ -443,7 +486,7 @@ function clearDraft(){
   $('analysisHint').hidden=true;
   renderSmartStrip(null);
   renderCustomerCandidate(null);
-  lastParsed=null;currentCustomerCandidate=null;
+  lastParsed=null;currentCustomerCandidate=null;incomingIntakeMeta=null;
   syncDraftClear();
   $('rawInput').focus();
 }
@@ -528,11 +571,14 @@ async function loadCustomerDiscovery(){
   }catch(_){customerSources=[]}
 }
 
-async function saveOrder(){
+async function saveOrder(openSale=false){
   hideMessage();
-  const raw=$('rawInput').value.trim();
-  if(!raw){show('اكتب أو الصق الطلب أولًا.',true);return}
+  const rawOriginal=$('rawInput').value;
+  if(!rawOriginal.trim()){show('اكتب أو الصق الطلب أولًا.',true);return}
+  const raw=rawOriginal;
   const parsed=parseRequest(raw);
+  const capturedAt=incomingIntakeMeta?.captured_at||new Date().toISOString();
+  parsed.intake_meta={captured_at:capturedAt,origin:incomingIntakeMeta?.origin||'orders',source_message_at_text:sourceMessageTimeText(parsed),source_message_times:sourceMessageMeta(parsed)};
   const sender=parsed.whatsapp?.customer_sender||'';
   let partyId=$('party').value?Number($('party').value):null;
   if(!partyId&&sender){
@@ -568,17 +614,19 @@ async function saveOrder(){
     financial_state:partyId?'not_posted':'blocked_unassigned'
   };
   $('saveBtn').disabled=true;
+  if($('saveSaleBtn'))$('saveSaleBtn').disabled=true;
   try{
-    const {error}=await db.from('mytool_service_orders').insert(payload);
+    const {data:savedOrder,error}=await db.from('mytool_service_orders').insert(payload).select('*').single();
     if(error)throw error;
     if(partyId&&sender&&!approvedIdentityRule(sender)){
       try{await rememberIdentity(sender,partyId,currentCustomerCandidate)}catch(_e){}
     }
+    if(openSale&&savedOrder){handoffToSale(savedOrder);return}
     show(partyId?'تم حفظ الطلب وربطه بالعميل. لا يوجد ترحيل دين تلقائي في V0.':'تم حفظ الطلب بدون عميل. إذا ظهر اقتراح عميل تقدر تعتمده مرة واحدة.',false,true);
-    $('rawInput').value='';$('packageText').value='';$('destination').value='';$('partySearch').value='';renderPartyOptions();renderServiceOptions();$('analysisHint').hidden=true;renderSmartStrip(null);renderCustomerCandidate(null);lastParsed=null;currentCustomerCandidate=null;
+    $('rawInput').value='';$('packageText').value='';$('destination').value='';$('partySearch').value='';renderPartyOptions();renderServiceOptions();$('analysisHint').hidden=true;renderSmartStrip(null);renderCustomerCandidate(null);lastParsed=null;currentCustomerCandidate=null;incomingIntakeMeta=null;
     await loadOrders();
   }catch(error){show('تعذر حفظ الطلب: '+(error?.message||error),true)}
-  finally{$('saveBtn').disabled=false}
+  finally{$('saveBtn').disabled=false;if($('saveSaleBtn'))$('saveSaleBtn').disabled=false}
 }
 
 function orderActionLabel(row){
@@ -610,11 +658,12 @@ function renderOrders(){
   $('ordersList').innerHTML=filtered.map(row=>{
     const svc=serviceBy(row.service_code),party=partyBy(row.customer_party_id);
     const financial=row.customer_party_id?'الدين: غير مرحّل بعد':'الدين: محجوب حتى تحديد العميل';
+    const sourceTime=orderSourceTime(row);
     return '<article class="order" data-order-id="'+row.id+'">'+
-      '<div class="order-head"><div><div class="order-brand">'+brandIconHtml(row.service_code||'?',svc?.display_name)+'<div><div class="order-title">'+esc(svc?.display_name||row.service_code||'خدمة غير معروفة')+(row.package_text?' — '+esc(row.package_text):'')+'</div><div class="source-mini">'+(row.source_kind==='whatsapp'?brandIconHtml('WHATSAPP'):'')+'<span>'+esc(fmtDate(row.created_at))+'</span></div></div></div></div><div class="pills"><span class="pill '+statusClass(row.status)+'">'+esc(statusLabel(row.status))+'</span><span class="pill '+(row.customer_party_id?'ok':'warn')+'">'+esc(party?.display_name||'بدون عميل')+'</span></div></div>'+
+      '<div class="order-head"><div><div class="order-brand">'+brandIconHtml(row.service_code||'?',svc?.display_name)+'<div><div class="order-title">'+esc(svc?.display_name||row.service_code||'خدمة غير معروفة')+(row.package_text?' — '+esc(row.package_text):'')+'</div><div class="source-mini">'+(row.source_kind==='whatsapp'?brandIconHtml('WHATSAPP'):'')+'<span>'+(sourceTime?'وقت الرسالة: '+esc(sourceTime)+' · ':'')+'سُجل: '+esc(fmtDate(row.created_at))+'</span></div></div></div></div><div class="pills"><span class="pill '+statusClass(row.status)+'">'+esc(statusLabel(row.status))+'</span><span class="pill '+(row.customer_party_id?'ok':'warn')+'">'+esc(party?.display_name||'بدون عميل')+'</span></div></div>'+
       '<div class="order-raw">'+esc(row.raw_input)+'</div>'+
       '<div class="order-grid"><div class="kv"><b>الخدمة</b><span>'+esc(row.service_code||'—')+'</span></div><div class="kv"><b>القيمة</b><span>'+esc(row.package_text||'—')+'</span></div><div class="kv"><b>الوجهة</b><span dir="ltr">'+esc(row.destination||'—')+'</span></div><div class="kv"><b>العميل</b><span>'+esc(party?.display_name||'غير محدد')+'</span></div><div class="kv"><b>الحالة المالية</b><span>'+esc(financial)+'</span></div></div>'+
-      '<div class="actions"><button class="btn secondary" data-action="open" data-id="'+row.id+'" type="button">▶ '+esc(orderActionLabel(row))+'</button><button class="btn warn" data-action="status" data-status="in_progress" data-id="'+row.id+'" type="button">⏳ جاري</button><button class="btn ok" data-action="status" data-status="success" data-id="'+row.id+'" type="button">✓ تم</button><button class="btn secondary" data-action="status" data-status="review" data-id="'+row.id+'" type="button">⚠</button></div>'+
+      '<div class="actions"><button class="btn secondary" data-action="sale" data-id="'+row.id+'" type="button">🧾 تسجيل بيع</button><button class="btn secondary" data-action="open" data-id="'+row.id+'" type="button">▶ '+esc(orderActionLabel(row))+'</button><button class="btn warn" data-action="status" data-status="in_progress" data-id="'+row.id+'" type="button">⏳ جاري</button><button class="btn ok" data-action="status" data-status="success" data-id="'+row.id+'" type="button">✓ تم</button><button class="btn secondary" data-action="status" data-status="review" data-id="'+row.id+'" type="button">⚠</button></div>'+
       '<details><summary>ربط/تصحيح العميل</summary><div class="grid" style="margin-top:8px"><div class="full"><select class="row-party">'+partyOptions(row.customer_party_id)+'</select></div></div><div class="actions"><button class="btn secondary" data-action="party-save" data-id="'+row.id+'" type="button">حفظ العميل</button></div></details>'+
       '<details><summary>تعديل الفهم</summary><div class="grid" style="margin-top:8px"><div><label>الخدمة</label><select class="row-service">'+editServiceOptions(row.service_code)+'</select></div><div><label>القيمة</label><input class="row-package" value="'+esc(row.package_text||'')+'"></div><div class="full"><label>الوجهة</label><input class="row-destination" dir="ltr" value="'+esc(row.destination||'')+'"></div></div><div class="actions"><button class="btn secondary" data-action="interpret-save" data-id="'+row.id+'" type="button">حفظ التصحيح</button></div></details>'+
       '<details><summary>سجل التغييرات</summary><div class="actions"><button class="btn secondary" data-action="history" data-id="'+row.id+'" type="button">تحميل السجل</button></div><div class="history"></div></details>'+
@@ -634,6 +683,35 @@ async function updateOrder(id,patch){
   const {error}=await db.from('mytool_service_orders').update(patch).eq('id',id);
   if(error)throw error;
   await loadOrders();
+}
+
+function operationTypeForOrder(row){
+  const service=serviceBy(row?.service_code);
+  const code=String(row?.service_code||'').toUpperCase();
+  if(service?.action_kind==='flexy'||code==='FL')return'external_flexy';
+  if(service?.destination_kind==='player_id'||['FF','FREEFIRE','PUBG','FIFA'].includes(code))return'game';
+  return'service';
+}
+
+function handoffToSale(row){
+  const service=serviceBy(row?.service_code);
+  const party=partyBy(row?.customer_party_id);
+  const envelope={
+    version:1,handoff_at:new Date().toISOString(),
+    order_id:row?.id||null,order_uuid:row?.order_uuid||null,
+    operation_type:operationTypeForOrder(row),
+    service_code:row?.service_code||null,service_name:service?.display_name||row?.service_code||'',
+    package_text:row?.package_text||'',destination:row?.destination||'',
+    customer_party_id:row?.customer_party_id||null,customer_name:party?.display_name||'',
+    source_kind:row?.source_kind||'',source_message_at_text:orderSourceTime(row),
+    order_created_at:row?.created_at||null,raw_input:row?.raw_input||'',
+    parsed_payload:parsedObject(row?.parsed_payload)
+  };
+  sessionStorage.setItem('mytool_sale_handoff_v1',JSON.stringify(envelope));
+  const q=new URLSearchParams();
+  if(envelope.order_uuid)q.set('from_order',envelope.order_uuid);
+  q.set('operation',envelope.operation_type);
+  location.href='../shop/sale.html?'+q.toString();
 }
 
 async function openOrder(row){
@@ -701,7 +779,8 @@ async function saveCatalog(){
 }
 
 $('draftClearBtn').onclick=clearDraft;
-$('saveBtn').onclick=saveOrder;
+$('saveBtn').onclick=()=>saveOrder(false);
+$('saveSaleBtn').onclick=()=>saveOrder(true);
 $('refreshBtn').onclick=()=>loadOrders().catch(e=>show(e.message,true));
 $('rawInput').addEventListener('input',()=>{syncDraftClear();clearTimeout(parseTimer);parseTimer=setTimeout(applyAnalysis,350)});
 $('partySearch').addEventListener('input',()=>renderPartyOptions($('partySearch').value,$('party').value));
@@ -716,7 +795,8 @@ $('ordersList').addEventListener('click',async event=>{
   const id=Number(btn.dataset.id),row=orders.find(x=>x.id===id);if(!row)return;
   btn.disabled=true;
   try{
-    if(btn.dataset.action==='open')await openOrder(row);
+    if(btn.dataset.action==='sale')handoffToSale(row);
+    else if(btn.dataset.action==='open')await openOrder(row);
     else if(btn.dataset.action==='status'){
       const next=btn.dataset.status;
       await updateOrder(id,{status:next});
@@ -752,6 +832,7 @@ $('ordersList').addEventListener('click',async event=>{
     await requireSession();
     await Promise.all([loadCatalog(),loadParties()]);
     await loadCustomerDiscovery();
+    consumeQuickIntake();
     await loadOrders();
   }catch(error){show(error?.message||String(error),true)}
 })();
