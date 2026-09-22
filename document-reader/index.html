@@ -8,7 +8,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="mytool-build" content="20260922-docflow12">
+<meta name="mytool-build" content="20260922-docflow13">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -41,7 +41,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <body><main class="wrap">
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>رفع → تحليل → حفظ <span class="hero-version">نسخة 17</span></p>
+  <p>رفع → تحليل → حفظ <span class="hero-version">نسخة 18</span></p>
 </section>
 
 <section class="card security">
@@ -146,27 +146,30 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   </details>
 </section>
 <details id="managementPanel" class="card recipient-context management-card">
-  <summary class="management-summary">المتابعة والمنصات <span>السجل · الإرسال · الأرشيف</span></summary>
+  <summary class="management-summary">المتابعة والمنصات <span>الوصولات أولًا · ثم المنصات</span></summary>
   <div class="management-body">
-  <div class="context-top">
-    <label class="recipient-box">
-      <span>إرسال لمنصة <small style="font-weight:400">— بعد حفظ الوصل</small></span>
-      <div class="recipient-select-row">
-        <select id="recipientSelect" aria-label="اختيار المستلم"></select>
-        <button id="recipientAddBtn" class="recipient-add" type="button" title="إضافة مستلم">+</button>
-      </div>
-    </label>
-    <label class="date-box"><span>تاريخ الوصل</span><input id="receiptDate" type="date"><div id="receiptDateHint" class="date-hint"></div></label>
+    <div class="history-title">الوصولات والمتابعة — ما يحتاج قرارًا أو إكمالًا يظهر هنا أولًا</div>
+    <div class="history-search-wrap"><input id="historySearch" class="history-search" type="search" placeholder="بحث: رقم الوصل، المبلغ، البنك، المنصة، التاريخ…" autocomplete="off"></div>
+    <div id="recipientTabs" class="recipient-tabs" role="tablist" aria-label="المورد في السجل"></div>
+    <div id="platformHistoryTabs" class="platform-history-tabs hidden" role="tablist" aria-label="حالة سجل المنصة"></div>
+    <div id="operationHistory" class="operation-history"></div>
+    <div id="recipientContextText" class="context-body"></div>
+
+    <div class="history-title">المنصة والتسوية — بعد مراجعة الوصولات</div>
+    <div class="context-top">
+      <label class="recipient-box">
+        <span>إرسال لمنصة <small style="font-weight:400">— بعد حفظ الوصل</small></span>
+        <div class="recipient-select-row">
+          <select id="recipientSelect" aria-label="اختيار المستلم"></select>
+          <button id="recipientAddBtn" class="recipient-add" type="button" title="إضافة مستلم">+</button>
+        </div>
+      </label>
+      <label class="date-box"><span>تاريخ الوصل</span><input id="receiptDate" type="date"><div id="receiptDateHint" class="date-hint"></div></label>
+    </div>
+
+    <div class="history-title">ملخص المنصات — الإرسال واستلام المال والديون</div>
+    <div id="settlementSummary" class="settlement-summary"></div>
   </div>
-  <div class="history-title">ملخص الإرسال واستلام المال — السجل الدائم في Supabase عند اتصال الإدارة</div>
-  <div id="settlementSummary" class="settlement-summary"></div>
-  <div class="history-title">المتابعة — العمليات المفتوحة من الأيام السابقة تبقى ظاهرة حتى تنهيها، ولا تُحذف بتغيّر اليوم</div>
-  <div class="history-search-wrap"><input id="historySearch" class="history-search" type="search" placeholder="بحث: رقم الوصل، المبلغ، البنك، المنصة، التاريخ…" autocomplete="off"></div>
-  <div id="recipientTabs" class="recipient-tabs" role="tablist" aria-label="المورد في السجل"></div>
-  <div id="platformHistoryTabs" class="platform-history-tabs hidden" role="tablist" aria-label="حالة سجل المنصة"></div>
-  <div id="operationHistory" class="operation-history"></div>
-  <div id="recipientContextText" class="context-body"></div>
-</div>
 </details>
 
 </main>
