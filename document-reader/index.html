@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-docflow6">
+<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-docflow7">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -14,7 +14,7 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .wrap{max-width:820px;margin:auto}.back{display:block;text-decoration:none;color:var(--t);font-weight:700;background:#fff;border:1px solid var(--l);border-radius:12px;padding:10px 12px;margin-bottom:10px}
 .hero{background:linear-gradient(135deg,var(--o),#7fd3ff);color:#fff;border-radius:18px;padding:18px;box-shadow:0 8px 24px #16304718}.hero h1{margin:0 0 5px;font-size:23px}.hero p{margin:0;font-size:12px;line-height:1.7}
 .card{margin-top:12px;background:#fff;border:1px solid var(--l);border-radius:16px;padding:14px;box-shadow:0 5px 16px #1630470d}
-.security{display:flex;gap:10px;align-items:flex-start;background:#effaf5;border-color:#b7e3cd}.security b{color:var(--ok)}.security p{margin:2px 0 0;color:#416956;font-size:12px;line-height:1.65}.security-main{flex:1;min-width:0}.security-actions{margin-top:8px;display:flex;gap:7px;flex-wrap:wrap}.usage-settings{margin-top:10px;border-top:1px solid #cfe6d8;padding-top:10px;display:grid;gap:8px}.usage-status{font-size:11px;line-height:1.6;color:#416956;background:#fff;border:1px solid #d7ebe0;border-radius:10px;padding:9px 10px}.usage-danger{border:1px solid #f0b6b1;background:#fff7f6;border-radius:11px;padding:10px}.usage-danger b{color:var(--bad)}.usage-danger p{margin:4px 0 8px;color:#7c4c48;font-size:10px;line-height:1.55}
+.security{display:flex;gap:10px;align-items:flex-start;background:#effaf5;border-color:#b7e3cd}.security b{color:var(--ok)}.security p{margin:2px 0 0;color:#416956;font-size:12px;line-height:1.65}.security-main{flex:1;min-width:0}.security-actions{margin-top:8px;display:flex;gap:7px;flex-wrap:wrap}.usage-settings{margin-top:10px;border-top:1px solid #cfe6d8;padding-top:10px;display:grid;gap:8px}.usage-status{font-size:11px;line-height:1.6;color:#416956;background:#fff;border:1px solid #d7ebe0;border-radius:10px;padding:9px 10px}.usage-danger{border:1px solid #f0b6b1;background:#fff7f6;border-radius:11px;padding:10px}.usage-danger b{color:var(--bad)}.usage-danger p{margin:4px 0 8px;color:#7c4c48;font-size:10px;line-height:1.55}.usage-recovery{border:1px solid #f0d58c;background:#fff9e8;border-radius:11px;padding:10px;font-size:11px;line-height:1.6;color:#6d571a}.usage-recovery code{display:block;direction:ltr;text-align:center;letter-spacing:1.3px;font-size:15px;font-weight:900;background:#fff;border:1px dashed #d9b95d;border-radius:8px;padding:9px;margin:7px 0;word-break:break-all}.security-modal{position:fixed;inset:0;background:#10283a88;z-index:10020;display:flex;align-items:center;justify-content:center;padding:16px}.security-dialog{width:min(420px,100%);background:#fff;border-radius:16px;border:1px solid #dbe7f0;box-shadow:0 18px 50px #10283a44;padding:16px}.security-dialog h3{margin:0 0 6px;font-size:17px}.security-dialog p{margin:0 0 10px;color:var(--m);font-size:11px;line-height:1.6}.security-dialog input{width:100%;border:1px solid #b9d5e3;border-radius:10px;padding:11px 12px;font:inherit;font-size:16px;direction:ltr;text-align:center;letter-spacing:2px}.security-dialog .security-confirm-input{margin-top:8px}.security-dialog-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}.security-dialog-error{margin-top:8px;color:var(--bad);font-size:10px;min-height:14px}
 .file-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.file-name{min-width:0;padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:10px;padding:10px 12px;font-weight:700;font-size:12px;cursor:pointer}.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--o),var(--b))}.btn.danger{border-color:#f1b8b3;background:#fff4f2;color:var(--bad)}.btn:disabled{opacity:.55;cursor:not-allowed}
 .actions{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:10px}
@@ -35,7 +35,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.11</span></p>
+  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.12</span></p>
 </section>
 
 <section class="card security">
@@ -50,10 +50,21 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       <div id="usageLockStatus" class="usage-status">جاري فحص قفل الجهاز…</div>
       <div class="security-actions">
         <button id="enableDeviceLockBtn" class="btn" type="button">تفعيل حماية الجهاز</button>
+        <button id="setupAdminPinBtn" class="btn" type="button">إنشاء PIN إداري احتياطي</button>
+        <button id="forgotAdminPinBtn" class="btn hidden" type="button">نسيت PIN / استرداد</button>
+      </div>
+      <div id="recoveryCodeBox" class="usage-recovery hidden">
+        <b>رمز الاسترداد — يظهر الآن فقط</b>
+        <div>احفظه خارج التطبيق. يفيدك إذا نسيت PIN وتعطل قفل الجهاز.</div>
+        <code id="recoveryCodeValue"></code>
+        <div class="security-actions">
+          <button id="copyRecoveryCodeBtn" class="btn" type="button">نسخ الرمز</button>
+          <button id="hideRecoveryCodeBtn" class="btn" type="button">حفظته — إخفاء</button>
+        </div>
       </div>
       <div class="usage-danger">
         <b>إعادة البدء من الأول</b>
-        <p>يمسح بيانات قارئ الوثائق المحلية فقط: الوصولات، الصور، الديون المحلية، المنصات المضافة، الفهارس والإعدادات. لا يمسح بقية MyTool. التنفيذ يتطلب تحقق قفل الجهاز أولًا.</p>
+        <p>يمسح بيانات قارئ الوثائق المحلية فقط: الوصولات، الصور، الديون المحلية، المنصات المضافة، الفهارس والإعدادات. لا يمسح بقية MyTool. التنفيذ يتطلب تحقق قفل الجهاز، وإذا تعذر يمكن استخدام PIN الإدارة الاحتياطي.</p>
         <button id="resetDocumentReaderBtn" class="btn danger" type="button" disabled>مسح قارئ الوثائق والبدء من الصفر</button>
       </div>
     </div>
@@ -137,6 +148,19 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   </details>
 </section>
 </main>
+<div id="securitySecretModal" class="security-modal hidden" role="dialog" aria-modal="true" aria-labelledby="securitySecretTitle">
+  <div class="security-dialog">
+    <h3 id="securitySecretTitle">تحقق أمني</h3>
+    <p id="securitySecretText"></p>
+    <input id="securitySecretInput" type="password" autocomplete="off">
+    <input id="securitySecretConfirmInput" class="security-confirm-input hidden" type="password" autocomplete="off">
+    <div id="securitySecretError" class="security-dialog-error"></div>
+    <div class="security-dialog-actions">
+      <button id="securitySecretCancelBtn" class="btn" type="button">إلغاء</button>
+      <button id="securitySecretOkBtn" class="btn primary" type="button">تأكيد</button>
+    </div>
+  </div>
+</div>
 <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
@@ -183,7 +207,21 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const usageSettingsPanel = $('usageSettingsPanel');
   const usageLockStatus = $('usageLockStatus');
   const enableDeviceLockBtn = $('enableDeviceLockBtn');
+  const setupAdminPinBtn = $('setupAdminPinBtn');
+  const forgotAdminPinBtn = $('forgotAdminPinBtn');
+  const recoveryCodeBox = $('recoveryCodeBox');
+  const recoveryCodeValue = $('recoveryCodeValue');
+  const copyRecoveryCodeBtn = $('copyRecoveryCodeBtn');
+  const hideRecoveryCodeBtn = $('hideRecoveryCodeBtn');
   const resetDocumentReaderBtn = $('resetDocumentReaderBtn');
+  const securitySecretModal = $('securitySecretModal');
+  const securitySecretTitle = $('securitySecretTitle');
+  const securitySecretText = $('securitySecretText');
+  const securitySecretInput = $('securitySecretInput');
+  const securitySecretConfirmInput = $('securitySecretConfirmInput');
+  const securitySecretError = $('securitySecretError');
+  const securitySecretCancelBtn = $('securitySecretCancelBtn');
+  const securitySecretOkBtn = $('securitySecretOkBtn');
 
   let objectUrl = '';
   let sourceImage = null;
@@ -199,6 +237,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const ARCHIVE_RULE_MIGRATION_KEY='mytool.document-reader.archive-rule-migration.v1';
   const SUPPLIER_DEBTS_KEY='mytool.document-reader.supplier-debts.v1';
   const DEVICE_LOCK_KEY='mytool.document-reader.device-lock.v1';
+  const ADMIN_PIN_KEY='mytool.document-reader.admin-pin.v1';
   const RECEIPT_DB_NAME='mytool-document-reader-local-v1';
   const RECEIPT_IMAGE_STORE='receipt-images';
   const UNSENT_RECIPIENT='لم يُرسل لمورد بعد';
@@ -209,6 +248,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   let activePlatformHistoryMode='current';
   let receiptDbPromise=null;
   let currentImageIndex=0;
+  let pendingRecoveryCode='';
+  let securitySecretResolver=null;
 
   function showToast(type,title,message,timeout=4200){
     const icons={success:'✓',warn:'!',error:'×',info:'i'};
@@ -305,6 +346,242 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return bytes;
   }
 
+  function getAdminPinConfig(){
+    try{
+      const data=JSON.parse(localStorage.getItem(ADMIN_PIN_KEY)||'null');
+      return data&&data.pinHash&&data.pinSalt?data:null;
+    }catch(_e){
+      return null;
+    }
+  }
+
+  function normalizeRecoveryCode(value){
+    return String(value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  }
+
+  function generateRecoveryCode(){
+    const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes=randomBytes(20);
+    let raw='';
+    for(let i=0;i<20;i++)raw+=alphabet[bytes[i]%alphabet.length];
+    return raw.match(/.{1,4}/g).join('-');
+  }
+
+  async function deriveSecretHash(secret,saltBytes,iterations=250000){
+    if(!window.crypto?.subtle)throw new Error('التشفير المحلي غير متاح في هذا المتصفح.');
+    const keyMaterial=await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(String(secret)),
+      'PBKDF2',
+      false,
+      ['deriveBits']
+    );
+    const bits=await crypto.subtle.deriveBits(
+      {name:'PBKDF2',salt:saltBytes,iterations,hash:'SHA-256'},
+      keyMaterial,
+      256
+    );
+    return new Uint8Array(bits);
+  }
+
+  function secureBytesEqual(a,b){
+    const aa=a instanceof Uint8Array?a:new Uint8Array(a||[]);
+    const bb=b instanceof Uint8Array?b:new Uint8Array(b||[]);
+    if(aa.length!==bb.length)return false;
+    let diff=0;
+    for(let i=0;i<aa.length;i++)diff|=aa[i]^bb[i];
+    return diff===0;
+  }
+
+  function askSecuritySecret({title,text,mode='pin',confirm=false,confirmText='أعد الإدخال'}={}){
+    if(securitySecretResolver){
+      securitySecretResolver(null);
+      securitySecretResolver=null;
+    }
+    securitySecretTitle.textContent=title||'تحقق أمني';
+    securitySecretText.textContent=text||'';
+    securitySecretError.textContent='';
+    securitySecretInput.value='';
+    securitySecretConfirmInput.value='';
+    securitySecretInput.type='password';
+    securitySecretConfirmInput.type='password';
+    securitySecretInput.inputMode=mode==='pin'?'numeric':'text';
+    securitySecretInput.maxLength=mode==='pin'?6:40;
+    securitySecretInput.placeholder=mode==='pin'?'6 أرقام':'رمز الاسترداد';
+    securitySecretConfirmInput.inputMode=mode==='pin'?'numeric':'text';
+    securitySecretConfirmInput.maxLength=mode==='pin'?6:40;
+    securitySecretConfirmInput.placeholder=confirmText;
+    securitySecretConfirmInput.classList.toggle('hidden',!confirm);
+    securitySecretModal.classList.remove('hidden');
+    setTimeout(()=>securitySecretInput.focus(),30);
+
+    return new Promise(resolve=>{
+      securitySecretResolver=resolve;
+    });
+  }
+
+  function closeSecuritySecretModal(value=null){
+    securitySecretModal.classList.add('hidden');
+    const resolver=securitySecretResolver;
+    securitySecretResolver=null;
+    if(resolver)resolver(value);
+  }
+
+  async function verifyPinValue(pin){
+    const config=getAdminPinConfig();
+    if(!config||!/^[0-9]{6}$/.test(String(pin||'')))return false;
+    try{
+      const actual=await deriveSecretHash(
+        String(pin),
+        base64UrlToBytes(config.pinSalt),
+        Number(config.iterations||250000)
+      );
+      return secureBytesEqual(actual,base64UrlToBytes(config.pinHash));
+    }catch(_e){
+      return false;
+    }
+  }
+
+  async function verifyRecoveryValue(code){
+    const config=getAdminPinConfig();
+    if(!config?.recoveryHash||!config?.recoverySalt)return false;
+    const normalized=normalizeRecoveryCode(code);
+    if(normalized.length<16)return false;
+    try{
+      const actual=await deriveSecretHash(
+        normalized,
+        base64UrlToBytes(config.recoverySalt),
+        Number(config.iterations||250000)
+      );
+      return secureBytesEqual(actual,base64UrlToBytes(config.recoveryHash));
+    }catch(_e){
+      return false;
+    }
+  }
+
+  async function verifyAdminPinPrompt(message='أدخل PIN الإدارة للمتابعة.'){
+    const value=await askSecuritySecret({
+      title:'PIN الإدارة',
+      text:message,
+      mode:'pin'
+    });
+    if(value===null)return false;
+    const ok=await verifyPinValue(value);
+    if(!ok){
+      showToast('error','PIN غير صحيح','لم يتم تنفيذ العملية.',4200);
+      return false;
+    }
+    return true;
+  }
+
+  function showRecoveryCode(code){
+    pendingRecoveryCode=code||'';
+    recoveryCodeValue.textContent=code||'';
+    recoveryCodeBox.classList.toggle('hidden',!code);
+  }
+
+  async function saveNewAdminPin(pin){
+    if(!/^[0-9]{6}$/.test(String(pin||'')))throw new Error('PIN يجب أن يكون 6 أرقام.');
+    const recovery=generateRecoveryCode();
+    const normalizedRecovery=normalizeRecoveryCode(recovery);
+    const pinSalt=randomBytes(16);
+    const recoverySalt=randomBytes(16);
+    const iterations=250000;
+    const [pinHash,recoveryHash]=await Promise.all([
+      deriveSecretHash(pin,pinSalt,iterations),
+      deriveSecretHash(normalizedRecovery,recoverySalt,iterations)
+    ]);
+    localStorage.setItem(ADMIN_PIN_KEY,JSON.stringify({
+      pinSalt:bytesToBase64Url(pinSalt),
+      pinHash:bytesToBase64Url(pinHash),
+      recoverySalt:bytesToBase64Url(recoverySalt),
+      recoveryHash:bytesToBase64Url(recoveryHash),
+      iterations,
+      updatedAt:new Date().toISOString()
+    }));
+    showRecoveryCode(recovery);
+    await refreshUsageSecurityUi();
+    showToast('success','تم ضبط PIN الإدارة','احفظ رمز الاسترداد الظاهر الآن خارج التطبيق.',6000);
+    return true;
+  }
+
+  async function createOrChangeAdminPin({authorized=false}={}){
+    const current=getAdminPinConfig();
+    if(current&&!authorized){
+      let ok=false;
+      if(getDeviceLockConfig())ok=await verifyDeviceLock();
+      if(!ok)ok=await verifyAdminPinPrompt('أدخل PIN الحالي لتغييره. إذا نسيته استخدم زر «نسيت PIN / استرداد».');
+      if(!ok)return false;
+    }
+
+    const first=await askSecuritySecret({
+      title:current?'تغيير PIN الإدارة':'إنشاء PIN الإدارة',
+      text:'اختر PIN من 6 أرقام. هذا PIN احتياطي للعمليات الحساسة فقط ولا يوقف استعمال قارئ الوثائق اليومي.',
+      mode:'pin',
+      confirm:true,
+      confirmText:'أعد PIN من 6 أرقام'
+    });
+    if(first===null)return false;
+    if(!/^[0-9]{6}$/.test(first.value||'')){
+      showToast('warn','PIN غير صالح','استعمل 6 أرقام بالضبط.',4300);
+      return false;
+    }
+    if(first.value!==first.confirmValue){
+      showToast('warn','PIN غير متطابق','إعادة الإدخال لا تطابق PIN الأول.',4300);
+      return false;
+    }
+    return saveNewAdminPin(first.value);
+  }
+
+  async function recoverAdminPin(){
+    const config=getAdminPinConfig();
+    if(!config){
+      showToast('info','لا يوجد PIN بعد','أنشئ PIN إداري أولًا.',4000);
+      return false;
+    }
+
+    let authorized=false;
+    if(getDeviceLockConfig()){
+      authorized=await verifyDeviceLock();
+    }
+    if(!authorized){
+      const recovery=await askSecuritySecret({
+        title:'استرداد PIN',
+        text:'أدخل رمز الاسترداد الذي ظهر عند إنشاء PIN.',
+        mode:'recovery'
+      });
+      if(recovery===null)return false;
+      authorized=await verifyRecoveryValue(recovery);
+      if(!authorized){
+        showToast('error','رمز الاسترداد غير صحيح','لم يتم تغيير PIN.',4500);
+        return false;
+      }
+    }
+    return createOrChangeAdminPin({authorized:true});
+  }
+
+  async function verifyResetProtection(){
+    const deviceConfigured=Boolean(getDeviceLockConfig());
+    const pinConfigured=Boolean(getAdminPinConfig());
+
+    if(deviceConfigured){
+      const deviceOk=await verifyDeviceLock();
+      if(deviceOk)return true;
+      if(pinConfigured){
+        showToast('info','استخدام الحماية البديلة','يمكنك المتابعة باستعمال PIN الإدارة.',3600);
+        return verifyAdminPinPrompt('تعذر أو أُلغي قفل الجهاز. أدخل PIN الإدارة الاحتياطي للمتابعة.');
+      }
+      return false;
+    }
+
+    if(pinConfigured){
+      return verifyAdminPinPrompt('قفل الجهاز غير مربوط. أدخل PIN الإدارة للمتابعة.');
+    }
+
+    showToast('warn','لا توجد حماية مفعلة','فعّل قفل الجهاز أو أنشئ PIN إدارة قبل العملية الحساسة.',5200);
+    return false;
+  }
+
   function getDeviceLockConfig(){
     try{
       const data=JSON.parse(localStorage.getItem(DEVICE_LOCK_KEY)||'null');
@@ -325,23 +602,27 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   async function refreshUsageSecurityUi(){
-    const configured=getDeviceLockConfig();
+    const deviceConfigured=Boolean(getDeviceLockConfig());
+    const pinConfigured=Boolean(getAdminPinConfig());
     const available=await platformDeviceLockAvailable();
-    if(configured){
-      usageLockStatus.innerHTML='<b>حماية الجهاز مفعلة.</b><br>عند إعادة البدء سيطلب الهاتف بصمة/وجه/PIN أو قفل الشاشة حسب ما يدعمه النظام.';
-      enableDeviceLockBtn.textContent='إعادة ربط حماية الجهاز';
-      resetDocumentReaderBtn.disabled=false;
-      return;
-    }
-    if(available){
-      usageLockStatus.innerHTML='<b>قفل الجهاز متاح لكنه غير مفعّل لقارئ الوثائق.</b><br>فعّله قبل السماح بمسح البيانات.';
-      enableDeviceLockBtn.disabled=false;
-      resetDocumentReaderBtn.disabled=true;
-      return;
-    }
-    usageLockStatus.innerHTML='<b>حماية الجهاز غير متاحة في هذا المتصفح/الجهاز.</b><br>لن يسمح زر إعادة البدء بالمسح من الواجهة بدون حماية.';
-    enableDeviceLockBtn.disabled=true;
-    resetDocumentReaderBtn.disabled=true;
+    const cryptoAvailable=Boolean(window.crypto?.subtle);
+
+    const parts=[];
+    if(deviceConfigured)parts.push('<b>قفل الجهاز مربوط.</b> يمكن استعمال بصمة/وجه/PIN النظام حسب الهاتف.');
+    else if(available)parts.push('<b>قفل الجهاز متاح لكنه غير مربوط.</b>');
+    else parts.push('<b>قفل الجهاز غير متاح حاليًا.</b>');
+
+    if(pinConfigured)parts.push('PIN الإدارة الاحتياطي مفعّل، لذلك تعطل البصمة لن يمنعك من العملية الحساسة.');
+    else if(cryptoAvailable)parts.push('يمكنك إنشاء PIN إدارة احتياطي حتى لا تتعطل إذا فشل قفل الجهاز.');
+    else parts.push('التشفير المحلي اللازم لـ PIN غير متاح في هذا المتصفح.');
+
+    usageLockStatus.innerHTML=parts.join('<br>');
+    enableDeviceLockBtn.textContent=deviceConfigured?'إعادة ربط حماية الجهاز':'تفعيل حماية الجهاز';
+    enableDeviceLockBtn.disabled=!available;
+    setupAdminPinBtn.textContent=pinConfigured?'تغيير PIN الإدارة':'إنشاء PIN إداري احتياطي';
+    setupAdminPinBtn.disabled=!cryptoAvailable;
+    forgotAdminPinBtn.classList.toggle('hidden',!pinConfigured);
+    resetDocumentReaderBtn.disabled=!(deviceConfigured||pinConfigured);
   }
 
   async function enrollDeviceLock(){
@@ -354,7 +635,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     const existing=getDeviceLockConfig();
     if(existing){
-      const verified=await verifyDeviceLock();
+      const verified=await verifyResetProtection();
       if(!verified)return false;
     }
 
@@ -404,7 +685,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   async function verifyDeviceLock(){
     const config=getDeviceLockConfig();
     if(!config){
-      showToast('warn','الحماية غير مفعلة','فعّل حماية الجهاز أولًا من «ضبط الاستخدام».',4800);
+      showToast('warn','الحماية غير مفعلة','فعّل قفل الجهاز أو PIN الإدارة أولًا من «ضبط الاستخدام».',4800);
       return false;
     }
     try{
@@ -453,7 +734,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   async function resetDocumentReaderFromScratch(){
-    const verified=await verifyDeviceLock();
+    const verified=await verifyResetProtection();
     if(!verified)return;
 
     if(!confirm('سيتم مسح كل بيانات قارئ الوثائق المحلية على هذا الجهاز: الوصولات والصور والتسويات والديون والفهارس والإعدادات. بقية MyTool لن تتأثر. هل تواصل؟'))return;
@@ -3093,6 +3374,47 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!usageSettingsPanel.classList.contains('hidden'))await refreshUsageSecurityUi();
   });
   enableDeviceLockBtn.addEventListener('click',enrollDeviceLock);
+  setupAdminPinBtn.addEventListener('click',()=>createOrChangeAdminPin());
+  forgotAdminPinBtn.addEventListener('click',recoverAdminPin);
+  copyRecoveryCodeBtn.addEventListener('click',async()=>{
+    if(!pendingRecoveryCode)return;
+    try{
+      await navigator.clipboard.writeText(pendingRecoveryCode);
+      showToast('success','تم نسخ رمز الاسترداد','احفظه خارج هذا الجهاز أو في مكان آمن.',4200);
+    }catch(_e){
+      showToast('warn','تعذر النسخ','انسخ الرمز يدويًا من المربع الظاهر.',4200);
+    }
+  });
+  hideRecoveryCodeBtn.addEventListener('click',()=>{
+    pendingRecoveryCode='';
+    recoveryCodeValue.textContent='';
+    recoveryCodeBox.classList.add('hidden');
+  });
+
+  securitySecretCancelBtn.addEventListener('click',()=>closeSecuritySecretModal(null));
+  securitySecretOkBtn.addEventListener('click',()=>{
+    const value=String(securitySecretInput.value||'').trim();
+    const needsConfirm=!securitySecretConfirmInput.classList.contains('hidden');
+    const confirmValue=String(securitySecretConfirmInput.value||'').trim();
+    if(!value){
+      securitySecretError.textContent='أدخل القيمة المطلوبة.';
+      return;
+    }
+    if(needsConfirm&&!confirmValue){
+      securitySecretError.textContent='أعد إدخال القيمة للتأكيد.';
+      return;
+    }
+    closeSecuritySecretModal(needsConfirm?{value,confirmValue}:value);
+  });
+  securitySecretInput.addEventListener('keydown',event=>{
+    if(event.key==='Escape')closeSecuritySecretModal(null);
+    if(event.key==='Enter'&&securitySecretConfirmInput.classList.contains('hidden'))securitySecretOkBtn.click();
+  });
+  securitySecretConfirmInput.addEventListener('keydown',event=>{
+    if(event.key==='Escape')closeSecuritySecretModal(null);
+    if(event.key==='Enter')securitySecretOkBtn.click();
+  });
+
   resetDocumentReaderBtn.addEventListener('click',resetDocumentReaderFromScratch);
 
   initializeRecipientContext();
