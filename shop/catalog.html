@@ -13,8 +13,8 @@
   <section class="card"><h2 style="margin-top:0">التصنيفات</h2><div class="muted">«غير مصنف» يعني منتجًا بلا تصنيف، وليس تصنيفًا ثابتًا.</div>
     <form id="newCategoryForm" class="grid" style="margin-top:10px"><div class="field"><label>اسم التصنيف</label><input id="newCategoryName" required placeholder="مثال: شواحن"></div><div class="field"><label>الترتيب</label><input id="newCategoryOrder" type="number" step="1" value="80"></div><div class="field" style="align-self:end"><button class="btn" type="submit">إضافة تصنيف</button></div></form><div id="categoryList" class="categories"></div>
   </section>
-  <section class="card"><h2 style="margin-top:0">تصنيف المنتجات والخدمات</h2><div class="muted">السلعة تخضع للمخزون؛ الخدمة لا تدخل الجرد والمشتريات السلعية.</div>
-    <div class="grid" style="margin-top:10px"><div class="field"><label>بحث</label><input id="productSearch" type="search" placeholder="الاسم أو Product ID"></div><div class="field"><label>التصنيف</label><select id="productCategoryFilter"></select></div><div class="field"><label>النوع</label><select id="productTypeFilter"><option value="all">كل الأنواع</option><option value="product">سلع</option><option value="service">خدمات</option></select></div></div>
+  <section class="card"><h2 style="margin-top:0">تصنيف المنتجات</h2><div class="muted">هذا القسم للسلع المخزنية فقط. الخدمات أصبحت في مسار مستقل عن المنتجات والمخزون.</div>
+    <div class="grid" style="margin-top:10px"><div class="field"><label>بحث</label><input id="productSearch" type="search" placeholder="الاسم أو Product ID"></div><div class="field"><label>التصنيف</label><select id="productCategoryFilter"></select></div></div>
     <div id="catalogSummary" class="muted" style="margin-top:8px"></div><div id="productList" class="products"></div><div class="pager"><button id="prevPage" class="btn secondary" type="button">السابق</button><span id="pageInfo" class="muted"></span><button id="nextPage" class="btn secondary" type="button">التالي</button></div>
   </section>
-</div><script type="module" src="catalog-admin.js?v=20260913-1805"></script></body></html>
+</div><script type="module" src="catalog-admin.js?v=20260922-products-only-1"></script></body></html>
