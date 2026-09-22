@@ -54,18 +54,24 @@
       if(!window.MyToolBottomNav||!window.ShopRoutes||!latestBottomNavOptions)return false;
       const context={role:latestBottomNavOptions.role||'admin',permissions:latestBottomNavOptions.permissions||{}};
       const current=latestBottomNavOptions.active||document.body?.dataset?.screen||'index';
-      const isWorker=context.role==='worker';
-      const actions=[
-        {slot:1,href:isWorker?'flexy-access.html':'../flexy/?v=20260921-offers-fix-3',icon:'📱',label:'فليكسي',title:'فليكسي',home:current==='flexy-access'},
-        {slot:2,href:'sale.html',icon:'＋',label:'بيع',title:'تسجيل بيع',home:current==='sale'},
-        {slot:4,href:'stock.html',icon:'▦',label:'المخزون',title:'المخزون',home:current==='stock'},
-        isWorker
-          ? {slot:5,href:'../flexy/my-account.html',icon:'◉',label:'حسابي',title:'حسابي في تميز'}
-          : {slot:5,href:'../',icon:'🧰',label:'الأدوات',title:'الرجوع إلى أدوات MyTool'}
-      ];
-      window.MyToolBottomNav.setActions(actions);
-      const homeItem=document.querySelector('.mytool-bottom-nav [data-slot="3"] .mytool-bottom-nav-item');
-      if(homeItem)homeItem.classList.toggle('is-home',current==='index');
+      const quick=(id,slot,icon,label,title)=>{
+        const route=window.ShopRoutes.get(id);
+        if(!route||!window.ShopRoutes.allowed(route,context))return null;
+        return {slot,href:route.path,icon,label,title:title||route.label,home:current===id};
+      };
+      window.MyToolBottomNav.setHome({
+        href:'index.html',
+        icon:'⌂',
+        label:'الرئيسية',
+        title:'رئيسية حساب المحل',
+        home:current==='index'
+      });
+      window.MyToolBottomNav.setActions([
+        quick('sale',1,'＋','بيع','تسجيل بيع'),
+        quick('purchase',2,'⇩','شراء','المشتريات'),
+        quick('stock',4,'▦','المخزون','المخزون'),
+        quick('daily',5,'▤','التشغيل','التشغيل اليومي')
+      ].filter(Boolean));
       return true;
     };
     if(apply())return;
