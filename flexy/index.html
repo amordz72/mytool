@@ -865,13 +865,22 @@ function statusBadge(status){
 function statusText(status){
  return ({success:'ناجحة',failed:'فاشلة',unavailable:'غير متاح'})[status]||status||'—';
 }
-function isPendingOperation(status){
- return ['queued','claimed','review'].includes(String(status||'').toLowerCase());
+function isPendingOperation(status,createdAt){
+ const normalized=String(status||'').toLowerCase();
+ if(['queued','claimed'].includes(normalized))return true;
+ if(normalized!=='review')return false;
+ const createdMs=createdAt?Date.parse(createdAt):NaN;
+ if(!Number.isFinite(createdMs))return false;
+ return Date.now()-createdMs<120000;
 }
-function operationStatusHtml(status){
- if(isPendingOperation(status)){
+function operationStatusHtml(row){
+ const status=row?.status;
+ if(isPendingOperation(status,row?.created_at)){
   const label=String(status||'').toLowerCase()==='review'?'جارٍ التحقق':'جاري التنفيذ';
   return '<span class="operation-pending" aria-label="'+escapeAttr(label)+'"><span class="operation-spinner" aria-hidden="true"></span><span>'+escapeAttr(label)+'</span></span>';
+ }
+ if(String(status||'').toLowerCase()==='review'){
+  return '<span class="badge text-bg-warning">مراجعة</span>';
  }
  return '<span class="badge '+statusBadge(status)+'">'+escapeAttr(statusText(status))+'</span>';
 }
@@ -880,7 +889,7 @@ function scheduleRecentOperationsPoll(rows){
   clearTimeout(recentOperationsPollTimer);
   recentOperationsPollTimer=null;
  }
- if((rows||[]).some(row=>isPendingOperation(row.status))){
+ if((rows||[]).some(row=>isPendingOperation(row.status,row.created_at))){
   recentOperationsPollTimer=setTimeout(()=>loadRecentOperations().catch(()=>{}),1600);
  }
 }
@@ -904,7 +913,7 @@ async function loadRecentOperations(){
    const offer=row.family||(row.result_code||'—');
    const amount=row.amount?Number(row.amount).toLocaleString('fr-DZ')+' دج':'—';
    const when=row.created_at?new Date(row.created_at).toLocaleString('ar-DZ'):'—';
-   return '<article class="operation-item p-3"><div class="row g-3 align-items-center"><div class="col-6 col-md-2"><div class="operation-label">النوع</div><div class="operation-value">'+escapeAttr(type)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">'+escapeAttr(format(String(row.phone||'')))+'</div></div><div class="col-6 col-md-2"><div class="operation-label">العرض</div><div class="operation-value">'+escapeAttr(offer)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">المبلغ</div><div class="operation-value">'+escapeAttr(amount)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">الحالة</div>'+operationStatusHtml(row.status)+'</div><div class="col-6 col-md-2"><div class="operation-label">الوقت</div><div class="operation-value small">'+escapeAttr(when)+'</div></div></div></article>';
+   return '<article class="operation-item p-3"><div class="row g-3 align-items-center"><div class="col-6 col-md-2"><div class="operation-label">النوع</div><div class="operation-value">'+escapeAttr(type)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">'+escapeAttr(format(String(row.phone||'')))+'</div></div><div class="col-6 col-md-2"><div class="operation-label">العرض</div><div class="operation-value">'+escapeAttr(offer)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">المبلغ</div><div class="operation-value">'+escapeAttr(amount)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">الحالة</div>'+operationStatusHtml(row)+'</div><div class="col-6 col-md-2"><div class="operation-label">الوقت</div><div class="operation-value small">'+escapeAttr(when)+'</div></div></div></article>';
   }).join('');
   scheduleRecentOperationsPoll(rows);
  }catch(error){
