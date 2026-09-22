@@ -13,7 +13,10 @@
 
   function access(){
     const ctx=window.MyToolAccessContext||{};
-    return {admin:Boolean(ctx.adminLike||ctx.ownerActive),worker:Boolean(ctx.workerLike),tools:Boolean(ctx.toolsActive&&!ctx.adminLike&&!ctx.workerLike)};
+    const admin=Boolean(ctx.adminLike||ctx.ownerActive);
+    const worker=Boolean(ctx.workerLike);
+    const tools=Boolean(ctx.toolsActive);
+    return {admin,worker,tools,global:admin||tools};
   }
   function titleFromDocument(){
     const raw=(document.title||'').split(/\s+[—-]\s+/)[0].trim();
@@ -37,8 +40,9 @@
 
   function motherItems(){
     const a=access();
-    if(a.tools)return [
+    if(a.tools&&!a.admin)return [
       ['home','⌂','رئيسية My Tools',''],
+      ['shop','🧾','حساب المحل','shop/'],
       ['cards','🎫','معالج البطاقات','cards/'],
       ['programs','🧰','البرامج','programs/'],
       ['qr','▣','QR','qr/']
@@ -138,6 +142,10 @@
   }
   function mount(){
     if(mounted)return;
+    const a=access();
+    // A normal worker stays inside the current program only. The global
+    // My Tools bar appears for administration or an explicit tools session.
+    if(!a.global)return;
     if(!currentApp){
       const dash=document.getElementById('dashboard');
       if(!dash||dash.hidden)return;
