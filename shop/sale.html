@@ -25,6 +25,19 @@
 .operation-selected-icon{font-size:23px;line-height:1}
 .operation-selected-title{font-weight:900}
 .operation-selected-note{font-size:12px;margin-top:3px;color:var(--muted)}
+.order-handoff{margin:10px 0 0;border:1px solid #bfdbfe;border-radius:14px;background:#eff6ff;padding:12px}
+.order-handoff-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}
+.order-handoff-head strong{font-size:14px;color:#1e3a8a}
+.order-handoff-time{font-size:11px;color:#475569}
+.order-handoff-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.order-handoff-kv{background:#fff;border:1px solid #dbeafe;border-radius:10px;padding:8px}
+.order-handoff-kv b{display:block;font-size:10px;color:#64748b;margin-bottom:3px}
+.order-handoff-kv span{display:block;font-size:13px;font-weight:800;word-break:break-word}
+.order-handoff details{margin-top:9px}
+.order-handoff summary{cursor:pointer;font-size:12px;font-weight:800;color:#1e3a8a}
+.order-handoff pre{white-space:pre-wrap;word-break:break-word;margin:8px 0 0;padding:9px;border-radius:10px;background:#fff;border:1px solid #dbeafe;font:12px/1.6 Tahoma,Arial,sans-serif;color:#334155}
+.order-handoff-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:9px}
+.order-handoff-back{width:auto!important;text-decoration:none;padding:8px 10px;border:1px solid #93c5fd;border-radius:10px;background:#fff;color:#1d4ed8;font-size:12px;font-weight:800}
 .action-sheet-overlay{position:fixed;inset:0;z-index:160;background:#0f172a7a;display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .action-sheet{width:min(100%,560px);background:#fff;border-radius:22px 22px 16px 16px;padding:14px;box-shadow:0 -18px 45px #0f172a33}
 .action-sheet-handle{width:46px;height:5px;border-radius:999px;background:#cbd5e1;margin:0 auto 10px}
@@ -70,6 +83,26 @@
           <div class="muted">لم تختر نوع العملية بعد.</div>
         </div>
         <div id="operationDraftNotice" class="hint hidden"></div>
+      </div>
+      <div id="orderHandoff" class="order-handoff hidden">
+        <div class="order-handoff-head">
+          <strong>طلب وارد للتسجيل</strong>
+          <span id="handoffMessageTime" class="order-handoff-time"></span>
+        </div>
+        <div class="order-handoff-grid">
+          <div class="order-handoff-kv"><b>العميل</b><span id="handoffCustomer">—</span></div>
+          <div class="order-handoff-kv"><b>الخدمة</b><span id="handoffService">—</span></div>
+          <div class="order-handoff-kv"><b>القيمة / الباقة</b><span id="handoffPackage">—</span></div>
+          <div class="order-handoff-kv"><b>الرقم / Player ID</b><span id="handoffDestination" dir="ltr">—</span></div>
+        </div>
+        <details>
+          <summary>عرض النص الأصلي</summary>
+          <pre id="handoffRaw"></pre>
+        </details>
+        <div class="order-handoff-footer">
+          <span id="handoffRecordedAt" class="muted"></span>
+          <a class="order-handoff-back" href="../orders/">الرجوع للطلب</a>
+        </div>
       </div>
       <form id="saleForm" class="hidden">
         <div class="field"><label>المنتج</label><select id="saleProduct" required></select></div>
@@ -128,6 +161,7 @@
     game:{icon:'🎮',title:'لعبة / شحن',note:'طلب لعبة أو شحن مباشر مع اختيار مصدر التنفيذ لاحقًا.'},
     card:{icon:'🎟️',title:'بطاقة / Voucher',note:'بطاقة من المخزون المركزي عند ربط Card Registry.'}
   }
+  const SALE_HANDOFF_KEY='mytool_sale_handoff_v1'
   let selectedOperationType=null
   function openOperationPicker(){$('operationSheetOverlay')?.classList.remove('hidden')}
   function closeOperationPicker(){$('operationSheetOverlay')?.classList.add('hidden')}
@@ -150,6 +184,40 @@
     }
     closeOperationPicker()
   }
+  function fmtHandoffDate(value){
+    if(!value)return''
+    const d=new Date(value)
+    return Number.isNaN(d.getTime())?String(value):d.toLocaleString('ar-DZ')
+  }
+  function consumeSaleHandoff(){
+    let handoff=null
+    try{handoff=JSON.parse(sessionStorage.getItem(SALE_HANDOFF_KEY)||'null')}catch(_){handoff=null}
+    if(!handoff)return false
+    const params=new URLSearchParams(location.search)
+    const expected=params.get('from_order')
+    if(expected&&handoff.order_uuid&&String(handoff.order_uuid)!==String(expected))return false
+    const type=params.get('operation')||handoff.operation_type||'service'
+    if(OPERATION_TYPES[type])selectOperationType(type)
+    const box=$('orderHandoff')
+    if(!box)return false
+    box.classList.remove('hidden')
+    $('handoffCustomer').textContent=handoff.customer_name||'غير محدد'
+    $('handoffService').textContent=handoff.service_name||handoff.service_code||'غير محددة'
+    $('handoffPackage').textContent=handoff.package_text||'—'
+    $('handoffDestination').textContent=handoff.destination||'—'
+    $('handoffRaw').textContent=handoff.raw_input||''
+    const sourceTime=handoff.source_message_at_text||handoff.parsed_payload?.intake_meta?.source_message_at_text||''
+    $('handoffMessageTime').textContent=sourceTime?'وقت الرسالة: '+sourceTime:'وقت الرسالة غير موجود داخل النص'
+    $('handoffRecordedAt').textContent=handoff.order_created_at?'سُجل في MyTool: '+fmtHandoffDate(handoff.order_created_at):''
+    const notice=$('operationDraftNotice')
+    if(notice){
+      notice.classList.remove('hidden','warn')
+      notice.className='hint'
+      notice.textContent='تم تحميل الطلب المحفوظ. النص الأصلي والوقت بقيا مرتبطين به؛ عدّل نوع العملية فقط إذا كان التحليل غير صحيح.'
+    }
+    return true
+  }
+
   $('openOperationPicker')?.addEventListener('click',openOperationPicker)
   $('closeOperationPicker')?.addEventListener('click',closeOperationPicker)
   $('operationSheetOverlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeOperationPicker()})
@@ -439,6 +507,8 @@
     if(branchPicker)setupBranchButtons(branchPicker)
     document.title=({sale:'البيع',purchase:'المشتريات',inventory:'الجرد',stock:'المخزون',transfers:'التحويلات'})[screen]+' — MyTool'
   }
+
+  consumeSaleHandoff()
 
   async function init(){
     try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();applyScreenMode();await loadInventory(state.defaultBranchId);if(document.body.dataset.screen==='transfers'&&state.permissions.can_transfer)await loadTransfers();notify('العمليات جاهزة حسب الفرع.','ok')}catch(err){if(expireInvalidWorkerSession(err))return;notify('تعذر تشغيل الصفحة: '+err.message,'error')}
