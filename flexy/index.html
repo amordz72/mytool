@@ -37,6 +37,7 @@
     .offer-info{position:absolute;top:3px;left:3px;display:flex;width:13px;height:13px;padding:0;border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.14);color:#fff;border-radius:50%;font-size:.46rem;font-weight:800;line-height:1;box-shadow:none}
     .offer-info:hover,.offer-info:focus{background:#fff;color:var(--brand);transform:none}
     .operation-item{border:1px solid #e0e5ee;border-radius:.65rem;background:#fff}.operation-label{font-size:.72rem;color:#8a98aa}.operation-value{font-weight:700;color:#52657a}
+    .operation-pending{display:inline-flex;align-items:center;gap:.4rem;color:#64748b;font-size:.78rem;font-weight:700}.operation-spinner{width:1rem;height:1rem;border:.14rem solid #cbd5e1;border-top-color:var(--brand);border-radius:50%;display:inline-block;animation:operation-spin .75s linear infinite}@keyframes operation-spin{to{transform:rotate(360deg)}}
     .offer-modal .modal-content{border:0;border-radius:1rem;box-shadow:0 1rem 3rem rgba(15,23,42,.2)}
     .offer-modal .modal-header{border-bottom:1px solid #edf0f5}.offer-modal .modal-footer{border-top:0}
     .status-box{background:#f0f2ff;color:#4f5f86}.discovery-alert{background:#fff8e6;border:1px solid #f3d38a;color:#6b571d}.discovery-raw{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.5 monospace;max-height:180px;overflow:auto}.progress{height:3px}.progress-bar{background:var(--brand);width:0}.execute-bar{border:1px solid #e2e6ef;background:#fff;border-radius:.7rem;display:flex}.execute-bar .btn{min-width:110px;font-weight:800}
@@ -352,6 +353,7 @@ let visibleOfferKeys=null;
 let executionByKey=new Map();
 let visibleCatalogRows=[];
 let apiPromise=null;
+let recentOperationsPollTimer=null;
 
 const getApi=()=>apiPromise||(apiPromise=import('./api.js'));
 const digits=()=>phone.value.replace(/\D/g,'').slice(0,10);
@@ -567,7 +569,7 @@ async function pollRpc(rpcName,jobUuid,token,timeoutMs=50000){
  const {supabase}=await getApi();
  const started=Date.now();
  while(Date.now()-started<timeoutMs){
-  if(token!==discoveryToken)throw new Error('CANCELLED');
+  if(token!==null&&token!==undefined&&token!==discoveryToken)throw new Error('CANCELLED');
   const {data,error}=await supabase.rpc(rpcName,{p_job_uuid:jobUuid});
   if(error)throw error;
   const row=data?.[0]||null;
@@ -597,22 +599,17 @@ async function loadAdminFlexyWallet(){
  }
 }
 
-async function pollFlexyResolution(jobUuid,token,timeoutMs=110000){
+async function pollFlexyResolution(jobUuid,timeoutMs=110000){
  const {supabase}=await getApi();
  const started=Date.now();
  let lastRow=null;
  while(Date.now()-started<timeoutMs){
-  if(token!==discoveryToken)throw new Error('CANCELLED');
   const {data,error}=await supabase.rpc('station_connect_admin_arsselli_flexy_696_job',{p_job_uuid:jobUuid});
   if(error)throw error;
   const row=data?.[0]||null;
   if(row)lastRow=row;
 
   if(row&&['success','failed','unavailable'].includes(row.status))return row;
-
-  if(row?.status==='review'){
-   statusBox.textContent='رد الشبكة غير حاسم. تم تشغيل فحص GTS في الخلفية؛ ننتظر حسم النتيجة…';
-  }
   await sleep(1100);
  }
  if(lastRow?.status==='review')return lastRow;
@@ -730,6 +727,17 @@ sendOfferModal.addEventListener('hidden.bs.modal',()=>{
  offerConfirmAccepted=false;
 });
 
+function clearPhoneAfterDispatch(){
+ ++discoveryToken;
+ phone.value='';
+ resetSelection();
+ results.classList.add('d-none');
+ timer.classList.remove('run');
+ hideUnknownOfferNotice();
+ hint.textContent='جاهز لرقم جديد.';
+ phone.focus({preventScroll:true});
+}
+
 confirmSendOfferBtn.addEventListener('click',async()=>{
  if(!isAdmin||!selectedOffer||!selectedOffer.executionAvailable){
   statusBox.textContent='لا يمكن التنفيذ: لا توجد طريقة إرسال معتمدة لهذا العرض.';
@@ -738,7 +746,7 @@ confirmSendOfferBtn.addEventListener('click',async()=>{
  const value=digits();
  confirmSendOfferBtn.disabled=true;
  confirmSendOfferBtn.textContent='جاري التنفيذ…';
- statusBox.textContent='تم تأكيد العملية. جاري تنفيذ العرض…';
+ statusBox.textContent='جاري إنشاء العملية…';
  try{
   const {supabase}=await getApi();
   const {data,error}=await supabase.rpc('station_connect_admin_create_offer_execute',{
@@ -753,12 +761,11 @@ confirmSendOfferBtn.addEventListener('click',async()=>{
   if(!job?.job_uuid)throw new Error('EXECUTE_JOB_NOT_CREATED');
   offerConfirmAccepted=true;
   bootstrap.Modal.getOrCreateInstance(sendOfferModal).hide();
-  resetSelection();
-  const localToken=discoveryToken;
-  const row=await pollRpc('station_connect_admin_offer_execute_job',job.job_uuid,localToken,60000);
-  if(row.status==='success'){statusBox.textContent='تم تنفيذ العرض بنجاح.';playToggleTone(true);}
-  else if(row.status==='review')statusBox.textContent='العملية تحتاج مراجعة: '+(row.result_text||row.result_code||'راجع الرد الخام.');
-  else statusBox.textContent='فشل الإرسال: '+(row.result_text||row.result_code||row.status);
+  clearPhoneAfterDispatch();
+  statusBox.textContent='تم إرسال العملية. يمكنك إدخال رقم جديد.';
+  await loadRecentOperations();
+  const row=await pollRpc('station_connect_admin_offer_execute_job',job.job_uuid,null,60000);
+  if(row.status==='success')playToggleTone(true);
   await loadRecentOperations();
  }catch(error){
   statusBox.textContent='تعذر إرسال العرض: '+(error?.message||error);
@@ -796,10 +803,9 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
  }
  ordinaryConfirmBtn.disabled=true;
  ordinaryConfirmBtn.textContent='جاري الإرسال…';
- statusBox.textContent='تم تأكيد العملية. حُجز المبلغ من محفظة الإدارة وجاري تنفيذ 696…';
+ statusBox.textContent='جاري إنشاء العملية…';
  try{
   const {supabase}=await getApi();
-  const localToken=discoveryToken;
   const {data,error}=await supabase.rpc('station_connect_admin_create_arsselli_flexy_696',{
    p_phone:value,
    p_amount:amount,
@@ -811,28 +817,12 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
   if(!job?.job_uuid)throw new Error('FLEXY_JOB_NOT_CREATED');
 
   bootstrap.Modal.getOrCreateInstance(ordinarySendModal).hide();
-  await loadAdminFlexyWallet();
+  clearPhoneAfterDispatch();
+  statusBox.textContent='تم إرسال العملية. يمكنك إدخال رقم جديد.';
+  await Promise.all([loadRecentOperations(),loadAdminFlexyWallet()]);
 
-  const row=await pollFlexyResolution(job.job_uuid,localToken,110000);
-
-  if(row.status==='success'){
-   if(String(row.result_code||'').includes('INFERRED_BALANCE')){
-    statusBox.textContent='نجحت العملية حسب تحليل انخفاض رصيد GTS بعد الرد غير المعروف.';
-   }else{
-    statusBox.textContent='تم إرسال الفليكسي بنجاح حسب رد الشبكة.';
-   }
-   playToggleTone(true);
-  }else if(row.status==='failed'){
-   if(String(row.result_code||'').includes('INFERRED')){
-    statusBox.textContent='فشلت العملية حسب تحليل رصيد GTS. تم فك الحجز وإرجاع المبلغ لمحفظة الإدارة.';
-   }else{
-    statusBox.textContent='فشل الإرسال حسب رد الشبكة: '+(row.result_text||row.result_code||'فشل مؤكد.')+' — تم فك الحجز وإرجاع المبلغ.';
-   }
-  }else if(row.status==='review'){
-   statusBox.textContent='النتيجة غير محسومة: فحص GTS الأول لم يثبت نجاحًا ولا فشلًا. المبلغ يبقى محجوزًا ولا تعاود الإرسال حتى تظهر نتيجة مؤكدة.';
-  }else{
-   statusBox.textContent='انتهت العملية بالحالة: '+(row.status||'غير معروفة');
-  }
+  const row=await pollFlexyResolution(job.job_uuid,110000);
+  if(row.status==='success')playToggleTone(true);
 
   await Promise.all([loadRecentOperations(),loadAdminFlexyWallet()]);
  }catch(error){
@@ -856,11 +846,30 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
 });
 
 function statusBadge(status){
- const map={success:'text-bg-success',failed:'text-bg-danger',review:'text-bg-warning',queued:'text-bg-secondary',claimed:'text-bg-info',unavailable:'text-bg-secondary'};
+ const map={success:'text-bg-success',failed:'text-bg-danger',unavailable:'text-bg-secondary'};
  return map[status]||'text-bg-light border';
 }
 function statusText(status){
- return ({success:'ناجحة',failed:'فاشلة',review:'مراجعة',queued:'في الطابور',claimed:'قيد التنفيذ',unavailable:'غير متاح'})[status]||status||'—';
+ return ({success:'ناجحة',failed:'فاشلة',unavailable:'غير متاح'})[status]||status||'—';
+}
+function isPendingOperation(status){
+ return ['queued','claimed','review'].includes(String(status||'').toLowerCase());
+}
+function operationStatusHtml(status){
+ if(isPendingOperation(status)){
+  const label=String(status||'').toLowerCase()==='review'?'جارٍ التحقق':'جاري التنفيذ';
+  return '<span class="operation-pending" aria-label="'+escapeAttr(label)+'"><span class="operation-spinner" aria-hidden="true"></span><span>'+escapeAttr(label)+'</span></span>';
+ }
+ return '<span class="badge '+statusBadge(status)+'">'+escapeAttr(statusText(status))+'</span>';
+}
+function scheduleRecentOperationsPoll(rows){
+ if(recentOperationsPollTimer){
+  clearTimeout(recentOperationsPollTimer);
+  recentOperationsPollTimer=null;
+ }
+ if((rows||[]).some(row=>isPendingOperation(row.status))){
+  recentOperationsPollTimer=setTimeout(()=>loadRecentOperations().catch(()=>{}),1600);
+ }
 }
 async function loadRecentOperations(){
  if(!isAdmin){
@@ -874,6 +883,7 @@ async function loadRecentOperations(){
   const rows=Array.isArray(data)?data:[];
   if(!rows.length){
    operationsList.innerHTML='<div class="small text-muted text-center py-3">لا توجد عمليات بعد.</div>';
+   scheduleRecentOperationsPoll(rows);
    return;
   }
   operationsList.innerHTML=rows.map(row=>{
@@ -881,8 +891,9 @@ async function loadRecentOperations(){
    const offer=row.family||(row.result_code||'—');
    const amount=row.amount?Number(row.amount).toLocaleString('fr-DZ')+' دج':'—';
    const when=row.created_at?new Date(row.created_at).toLocaleString('ar-DZ'):'—';
-   return '<article class="operation-item p-3"><div class="row g-3 align-items-center"><div class="col-6 col-md-2"><div class="operation-label">النوع</div><div class="operation-value">'+escapeAttr(type)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">'+escapeAttr(format(String(row.phone||'')))+'</div></div><div class="col-6 col-md-2"><div class="operation-label">العرض</div><div class="operation-value">'+escapeAttr(offer)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">المبلغ</div><div class="operation-value">'+escapeAttr(amount)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">الحالة</div><span class="badge '+statusBadge(row.status)+'">'+escapeAttr(statusText(row.status))+'</span></div><div class="col-6 col-md-2"><div class="operation-label">الوقت</div><div class="operation-value small">'+escapeAttr(when)+'</div></div></div></article>';
+   return '<article class="operation-item p-3"><div class="row g-3 align-items-center"><div class="col-6 col-md-2"><div class="operation-label">النوع</div><div class="operation-value">'+escapeAttr(type)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">'+escapeAttr(format(String(row.phone||'')))+'</div></div><div class="col-6 col-md-2"><div class="operation-label">العرض</div><div class="operation-value">'+escapeAttr(offer)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">المبلغ</div><div class="operation-value">'+escapeAttr(amount)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">الحالة</div>'+operationStatusHtml(row.status)+'</div><div class="col-6 col-md-2"><div class="operation-label">الوقت</div><div class="operation-value small">'+escapeAttr(when)+'</div></div></div></article>';
   }).join('');
+  scheduleRecentOperationsPoll(rows);
  }catch(error){
   operationsList.innerHTML='<div class="small text-danger text-center py-3">تعذر تحميل العمليات الحقيقية: '+escapeAttr(error?.message||error)+'</div>';
  }
