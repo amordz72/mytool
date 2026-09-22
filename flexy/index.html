@@ -47,6 +47,10 @@
     .progress.run .progress-bar{animation:hold 7s linear forwards}@keyframes hold{to{width:100%}}
     .mobile-toolbar{min-height:58px;background:#fff}.menu-trigger{width:42px;height:42px;border:0;background:transparent;color:#52657a;font-size:1.55rem;border-radius:.5rem}
     .menu-trigger:hover,.menu-trigger:focus{background:#f0f2ff;color:var(--brand)}
+    .flexy-alerts-trigger{position:relative}.flexy-alerts-badge{position:absolute;top:1px;left:0;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:.62rem;font-weight:800;line-height:17px;text-align:center;border:2px solid #fff}.flexy-alerts-badge.zero{background:#e2e8f0;color:#64748b}
+    .flexy-alerts-drawer{height:auto!important;max-height:min(72vh,620px);border-radius:1.25rem 1.25rem 0 0}.flexy-alerts-drawer .offcanvas-body{overflow:auto;padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
+    .balance-source-card{border:1px solid #e5e9f1;border-radius:.85rem;padding:.85rem;background:#fff}.balance-source-title{font-weight:800;color:#475569}.balance-source-value{font-size:1.25rem;font-weight:900;color:#334155}.balance-meta{font-size:.72rem;color:#8795a7}.balance-state{display:inline-flex;align-items:center;border-radius:999px;padding:.2rem .55rem;font-size:.68rem;font-weight:800}.balance-state.ready{background:#e9f9ee;color:#237a3b}.balance-state.warn{background:#fff5d8;color:#8a6500}.balance-state.bad{background:#feecec;color:#a92e2e}
+    .stock-strip{border:1px solid #e5e9f1;border-radius:.8rem;background:#f8fafc;padding:.8rem}.flexy-alert-item{border-radius:.7rem;background:#fff7e6;color:#765b13;padding:.7rem .8rem;font-size:.78rem}.route-preview-box{border:1px solid #e5e9f1;border-radius:.7rem;background:#f8fafc;padding:.75rem;margin-top:.8rem}.route-source-name{font-weight:900;color:#4f46e5}
     .mobile-sidebar{--bs-offcanvas-width:280px;z-index:1070}.offcanvas-backdrop{z-index:1065}
     .mobile-sidebar .nav-link{color:#1f2937;border-radius:.45rem;padding:.75rem 1rem;font-weight:700}
     .mobile-sidebar .nav-link.active{background:#ededff;color:var(--brand);border-right:4px solid var(--brand)}
@@ -80,7 +84,7 @@
     }
     @media(max-width:420px){.phone-input{font-size:1.12rem;letter-spacing:.045em}.operator-logo{width:54px}}
   </style>
-<script src="../auth-guard.js?v=20260922-shell-4" data-access="worker"></script>
+<script src="../auth-guard.js?v=20260922-balance-bell-1" data-access="worker"></script>
 </head>
 <body>
 <aside class="sidebar d-none d-xxl-flex position-fixed top-0 vh-100 flex-column p-3" style="right:0!important;left:auto!important">
@@ -135,9 +139,14 @@
     <header class="mobile-toolbar surface d-xxl-none d-flex align-items-center justify-content-between px-2 mb-3">
       <button class="menu-trigger d-flex align-items-center justify-content-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="فتح القائمة الجانبية">☰</button>
       <strong class="fs-5">فليكسي</strong>
-      <span class="d-block" style="width:42px" aria-hidden="true"></span>
+      <div style="width:42px;height:42px">
+        <button class="menu-trigger flexy-alerts-trigger admin-only d-flex align-items-center justify-content-center" hidden type="button" data-bs-toggle="offcanvas" data-bs-target="#flexyAlertsDrawer" aria-controls="flexyAlertsDrawer" aria-label="أرصدة وتنبيهات فليكسي">🔔<span class="flexy-alerts-badge zero" data-flexy-alert-count>0</span></button>
+      </div>
     </header>
-    <h1 class="page-title h3 mb-3 d-none d-xxl-block">فليكسي</h1>
+    <div class="d-none d-xxl-flex align-items-center justify-content-between mb-3">
+      <h1 class="page-title h3 mb-0">فليكسي</h1>
+      <button class="btn btn-light border flexy-alerts-trigger admin-only position-relative" hidden type="button" data-bs-toggle="offcanvas" data-bs-target="#flexyAlertsDrawer" aria-controls="flexyAlertsDrawer">🔔 الأرصدة والتنبيهات <span class="flexy-alerts-badge zero" data-flexy-alert-count>0</span></button>
+    </div>
 
     <div class="accordion mb-4" id="ratioBox">
       <div class="accordion-item surface overflow-hidden">
@@ -209,6 +218,27 @@
   </div>
 </div>
 
+<div class="offcanvas offcanvas-bottom flexy-alerts-drawer" tabindex="-1" id="flexyAlertsDrawer" aria-labelledby="flexyAlertsTitle">
+  <div class="offcanvas-header border-bottom">
+    <div>
+      <h2 class="offcanvas-title h5 fw-bold mb-1" id="flexyAlertsTitle">أرصدة التنفيذ والتنبيهات</h2>
+      <div class="small text-muted">الرصيد التشغيلي الحالي بدون الرجوع لصفحة المحطات.</div>
+    </div>
+    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="offcanvas" aria-label="إغلاق"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div id="flexyBalanceSources" class="d-grid gap-2">
+      <div class="small text-muted text-center py-3">جاري تحميل الأرصدة…</div>
+    </div>
+    <div id="flexyCardStock" class="stock-strip mt-3">جاري تحميل مخزون البطاقات…</div>
+    <div class="mt-3">
+      <div class="fw-bold mb-2">التنبيهات</div>
+      <div id="flexyOperationalAlerts" class="d-grid gap-2"><div class="small text-muted">جاري التحقق…</div></div>
+    </div>
+    <button id="refreshFlexyBalancesBtn" class="btn btn-outline-primary w-100 mt-3" type="button">↻ تحديث الآن</button>
+  </div>
+</div>
+
 <div class="modal fade offer-modal" id="offerDetailsModal" tabindex="-1" aria-labelledby="offerDetailsTitle" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -243,6 +273,11 @@
         <div class="mb-2">الرقم: <strong id="sendPhone" dir="ltr"></strong></div>
         <div class="mb-2">العرض: <strong id="sendOfferName"></strong></div>
         <div>المبلغ: <strong id="sendOfferAmount"></strong></div>
+        <div class="route-preview-box">
+          <div class="d-flex justify-content-between gap-3"><span>مصدر التنفيذ</span><span id="sendOfferSource" class="route-source-name">جاري التحديد…</span></div>
+          <div class="d-flex justify-content-between gap-3 mt-2"><span>الخصم من المصدر</span><strong id="sendOfferSourceCost">—</strong></div>
+          <div id="sendOfferSourceHint" class="small text-muted mt-2">يتم تحديد المصدر من الـRouting الفعلي قبل التأكيد.</div>
+        </div>
       </div>
       <div class="modal-footer d-flex gap-2">
         <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">إلغاء</button>
@@ -263,6 +298,11 @@
       <div class="modal-body">
         <div class="mb-2">الرقم: <strong id="ordinaryConfirmPhone" dir="ltr"></strong></div>
         <div>المبلغ: <strong id="ordinaryConfirmAmount"></strong></div>
+        <div class="route-preview-box">
+          <div class="d-flex justify-content-between gap-3"><span>مصدر التنفيذ</span><span class="route-source-name">Arsselli GTS</span></div>
+          <div class="d-flex justify-content-between gap-3 mt-2"><span>الخصم من المصدر</span><strong id="ordinarySourceCost">—</strong></div>
+          <div class="small text-muted mt-2">Arsselli تخصم قيمة المبلغ فقط، بدون 10 دج إضافية.</div>
+        </div>
       </div>
       <div class="modal-footer d-flex gap-2">
         <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">إلغاء</button>
@@ -283,6 +323,15 @@ const ordinarySendModal=document.getElementById('ordinarySendModal');
 const ordinaryConfirmPhone=document.getElementById('ordinaryConfirmPhone');
 const ordinaryConfirmAmount=document.getElementById('ordinaryConfirmAmount');
 const ordinaryConfirmBtn=document.getElementById('ordinaryConfirmBtn');
+const ordinarySourceCost=document.getElementById('ordinarySourceCost');
+const flexyAlertsDrawer=document.getElementById('flexyAlertsDrawer');
+const flexyBalanceSources=document.getElementById('flexyBalanceSources');
+const flexyCardStock=document.getElementById('flexyCardStock');
+const flexyOperationalAlerts=document.getElementById('flexyOperationalAlerts');
+const refreshFlexyBalancesBtn=document.getElementById('refreshFlexyBalancesBtn');
+const sendOfferSource=document.getElementById('sendOfferSource');
+const sendOfferSourceCost=document.getElementById('sendOfferSourceCost');
+const sendOfferSourceHint=document.getElementById('sendOfferSourceHint');
 
 const catalog={
  SAMA:{families:[
@@ -349,6 +398,7 @@ const unknownOfferRaw=document.getElementById('unknownOfferRaw');
 let autoDiscovery=true;
 let selectedMode='balance';
 let selectedOffer=null;
+let selectedRoutePreview=null;
 let offerConfirmAccepted=false;
 let discoveryToken=0;
 let visibleOfferKeys=null;
@@ -366,6 +416,75 @@ const MIN_WORKER_OFFER_AMOUNT=500;
 const offerKey=(family,offer)=>String(family||'')+'|'+offerAmount(offer);
 const offerAllowed=(family,offer)=>visibleOfferKeys?visibleOfferKeys.has(offerKey(family,offer)):(isAdmin||offerAmount(offer)>=MIN_WORKER_OFFER_AMOUNT);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const money=value=>Number(value||0).toLocaleString('fr-DZ',{maximumFractionDigits:2})+' دج';
+function flexySourceLabel(simType){
+ const value=String(simType||'').toLowerCase();
+ if(value==='mobilis-sama')return 'SAMA';
+ if(value==='mobilis-arsselli')return 'Arsselli GTS';
+ return simType||'—';
+}
+function updateFlexyAlertBadges(count){
+ document.querySelectorAll('[data-flexy-alert-count]').forEach(el=>{
+  el.textContent=String(count||0);
+  el.classList.toggle('zero',!count);
+ });
+}
+function balanceStateLabel(row){
+ if(row.balance_state==='uninitialized')return ['يحتاج قراءة أولى','bad'];
+ if(row.balance_state==='reconciliation_due')return ['مطابقة مستحقة','warn'];
+ return ['جاهز','ready'];
+}
+function balanceTime(value){
+ if(!value)return 'لا توجد قراءة ناجحة';
+ try{return new Date(value).toLocaleString('ar-DZ');}catch{return '—'}
+}
+async function loadFlexyBalanceCenter(){
+ if(!isAdmin||!flexyBalanceSources)return;
+ flexyBalanceSources.innerHTML='<div class="small text-muted text-center py-3">جاري تحميل الأرصدة…</div>';
+ try{
+  const {supabase}=await getApi();
+  const [balanceRes,stockRes]=await Promise.all([
+   supabase.rpc('station_connect_admin_sim_operational_balances'),
+   supabase.rpc('station_connect_admin_recharge_guard')
+  ]);
+  if(balanceRes.error)throw balanceRes.error;
+  if(stockRes.error)throw stockRes.error;
+  const rows=Array.isArray(balanceRes.data)?balanceRes.data:[];
+  const stock=stockRes.data?.[0]||{};
+  const alerts=[];
+  flexyBalanceSources.innerHTML=rows.length?rows.map(row=>{
+   const [stateText,stateClass]=balanceStateLabel(row);
+   const balance=row.operational_balance==null?'—':money(row.operational_balance);
+   if(row.balance_state==='uninitialized')alerts.push(flexySourceLabel(row.sim_type)+': يحتاج أول استكشاف رصيد ناجح.');
+   if(row.reconciliation_due)alerts.push(flexySourceLabel(row.sim_type)+': حان وقت مطابقة الرصيد مع الشبكة.');
+   if(row.operational_balance!=null&&Number(row.operational_balance)<=0)alerts.push(flexySourceLabel(row.sim_type)+': الرصيد التشغيلي منتهي.');
+   const rule=row.sim_type==='mobilis-sama'?'العملية الناجحة = العرض + 10 دج':'العملية الناجحة = المبلغ فقط';
+   return '<div class="balance-source-card"><div class="d-flex justify-content-between align-items-start gap-3"><div><div class="balance-source-title">'+escapeAttr(flexySourceLabel(row.sim_type))+'</div><div class="balance-meta" dir="ltr">'+escapeAttr(row.msisdn||'')+'</div></div><span class="balance-state '+stateClass+'">'+stateText+'</span></div><div class="balance-source-value mt-2">'+escapeAttr(balance)+'</div><div class="balance-meta mt-1">'+escapeAttr(rule)+'</div><div class="balance-meta mt-1">آخر مرجع شبكة: '+escapeAttr(balanceTime(row.baseline_checked_at))+'</div></div>';
+  }).join(''):'<div class="small text-muted text-center py-3">لا توجد شرائح مسجلة.</div>';
+  const ready1000=Number(stock.ready_1000||0);
+  const ready2000=Number(stock.ready_2000||0);
+  flexyCardStock.innerHTML='<div class="fw-bold mb-1">مخزون بطاقات SAMA الاحتياطي</div><div class="d-flex justify-content-between gap-3 small"><span>1000 دج × <strong>'+ready1000+'</strong></span><span>2000 دج × <strong>'+ready2000+'</strong></span></div>';
+  if(ready1000+ready2000===0)alerts.push('لا توجد بطاقات Mobilis احتياطية جاهزة لشحن SAMA.');
+  flexyOperationalAlerts.innerHTML=alerts.length?alerts.map(item=>'<div class="flexy-alert-item">'+escapeAttr(item)+'</div>').join(''):'<div class="small text-success fw-bold">لا توجد تنبيهات تشغيلية حاليًا.</div>';
+  updateFlexyAlertBadges(alerts.length);
+ }catch(error){
+  flexyBalanceSources.innerHTML='<div class="small text-danger text-center py-3">تعذر تحميل الأرصدة: '+escapeAttr(error?.message||error)+'</div>';
+  flexyCardStock.textContent='تعذر تحميل مخزون البطاقات.';
+  flexyOperationalAlerts.innerHTML='<div class="flexy-alert-item">تعذر تحديث مركز الأرصدة والتنبيهات.</div>';
+  updateFlexyAlertBadges(1);
+ }
+}
+async function previewSelectedOfferRoute(offer){
+ if(!isAdmin||!offer)return null;
+ const {supabase}=await getApi();
+ const {data,error}=await supabase.rpc('station_connect_admin_offer_route_preview',{
+  p_family:offer.family,
+  p_amount:offer.amount,
+  p_station_uuid:null
+ });
+ if(error)throw error;
+ return data?.[0]||null;
+}
 function playToggleTone(on=true){
  try{
   const AudioCtx=window.AudioContext||window.webkitAudioContext;
@@ -401,6 +520,7 @@ function showUnknownOfferNotice(unknown,row){
 }
 function resetSelection(){
  selectedOffer=null;
+ selectedRoutePreview=null;
  offersList.querySelectorAll('.offer-row').forEach(row=>{
   row.classList.remove('selected');
   const toggle=row.querySelector('.offer-toggle');
@@ -422,7 +542,7 @@ function offerRows(offers,family){
  }).join('');
 }
 
-function openSelectedOfferConfirm(){
+async function openSelectedOfferConfirm(){
  if(!selectedOffer)return;
  if(!selectedOffer.executionAvailable){
   statusBox.textContent='هذا العرض ظاهر لكنه غير مربوط بطريقة تنفيذ معتمدة.';
@@ -436,12 +556,43 @@ function openSelectedOfferConfirm(){
   resetSelection();
   return;
  }
+ const offerKeyNow=selectedOffer.family+'|'+selectedOffer.amount;
  sendPhone.textContent=format(value);
  sendOfferName.textContent=selectedOffer.name;
  sendOfferAmount.textContent=selectedOffer.amount.toLocaleString('fr-DZ')+' دج';
+ sendOfferSource.textContent=isAdmin?'جاري التحديد…':selectedOffer.simTypes.map(flexySourceLabel).join(' / ')||'—';
+ sendOfferSourceCost.textContent='—';
+ sendOfferSourceHint.textContent=isAdmin?'يتم تحديد المصدر من الـRouting الفعلي قبل التأكيد.':'المصدر النهائي يثبته السيرفر عند التنفيذ.';
+ selectedRoutePreview=null;
  offerConfirmAccepted=false;
- statusBox.textContent='راجع العرض في نافذة التأكيد.';
+ confirmSendOfferBtn.disabled=Boolean(isAdmin);
+ statusBox.textContent='راجع العرض ومصدر التنفيذ في نافذة التأكيد.';
  bootstrap.Modal.getOrCreateInstance(sendOfferModal).show();
+
+ if(!isAdmin)return;
+ try{
+  const preview=await previewSelectedOfferRoute(selectedOffer);
+  if(!selectedOffer||offerKeyNow!==selectedOffer.family+'|'+selectedOffer.amount)return;
+  selectedRoutePreview=preview;
+  if(!preview){
+   sendOfferSource.textContent='لا يوجد مسار جاهز';
+   sendOfferSourceCost.textContent='—';
+   sendOfferSourceHint.textContent='لا توجد شريحة مؤهلة حاليًا برصيد تشغيلي كافٍ.';
+   statusBox.textContent='لا يوجد مصدر تنفيذ جاهز لهذا العرض حاليًا.';
+   return;
+  }
+  sendOfferSource.textContent=preview.source_label||flexySourceLabel(preview.sim_type);
+  sendOfferSourceCost.textContent=money(preview.required_balance);
+  sendOfferSourceHint.textContent=preview.sim_type==='mobilis-sama'
+   ?'SAMA: قيمة العرض + 10 دج لكل تنفيذ ناجح.'
+   :'Arsselli: تخصم قيمة المبلغ فقط.';
+  confirmSendOfferBtn.disabled=false;
+ }catch(error){
+  sendOfferSource.textContent='تعذر تحديد المصدر';
+  sendOfferSourceCost.textContent='—';
+  sendOfferSourceHint.textContent=String(error?.message||error);
+  statusBox.textContent='تعذر التحقق من مصدر التنفيذ قبل الإرسال.';
+ }
 }
 
 function selectOffer(row){
@@ -761,7 +912,10 @@ async function watchOfferExecution(jobUuid){
   const row=await pollRpc('station_connect_admin_offer_execute_job',jobUuid,null,60000);
   if(row?.status==='success')playToggleTone(true);
  }catch{}
- await loadRecentOperations().catch(()=>{});
+ await Promise.all([
+  loadRecentOperations().catch(()=>{}),
+  loadFlexyBalanceCenter().catch(()=>{})
+ ]);
 }
 
 async function watchOrdinaryFlexy(jobUuid){
@@ -771,7 +925,8 @@ async function watchOrdinaryFlexy(jobUuid){
  }catch{}
  await Promise.all([
   loadRecentOperations().catch(()=>{}),
-  loadAdminFlexyWallet().catch(()=>{})
+  loadAdminFlexyWallet().catch(()=>{}),
+  loadFlexyBalanceCenter().catch(()=>{})
  ]);
 }
 
@@ -781,9 +936,14 @@ confirmSendOfferBtn.addEventListener('click',async()=>{
   return;
  }
  const value=digits();
+ if(isAdmin&&!selectedRoutePreview){
+  statusBox.textContent='لا يوجد مصدر تنفيذ جاهز ومحدد لهذا العرض.';
+  return;
+ }
+ const predictedSource=selectedRoutePreview?.source_label||flexySourceLabel(selectedRoutePreview?.sim_type);
  confirmSendOfferBtn.disabled=true;
  confirmSendOfferBtn.textContent='جاري التنفيذ…';
- statusBox.textContent='جاري إنشاء العملية…';
+ statusBox.textContent='جاري إنشاء العملية عبر '+(predictedSource||'المصدر المحدد')+'…';
  try{
   const {supabase}=await getApi();
   const {data,error}=await supabase.rpc('station_connect_admin_create_offer_execute',{
@@ -796,11 +956,17 @@ confirmSendOfferBtn.addEventListener('click',async()=>{
   if(error)throw error;
   const job=data?.[0];
   if(!job?.job_uuid)throw new Error('EXECUTE_JOB_NOT_CREATED');
+  let actualSource=predictedSource;
+  try{
+   const snapshot=await supabase.rpc('station_connect_admin_offer_execute_job',{p_job_uuid:job.job_uuid});
+   const selected=snapshot.data?.[0]?.selected_offer||{};
+   actualSource=flexySourceLabel(selected.route_sim_type||actualSource);
+  }catch{}
   offerConfirmAccepted=true;
   bootstrap.Modal.getOrCreateInstance(sendOfferModal).hide();
   clearPhoneAfterDispatch();
-  statusBox.textContent='تم إرسال العملية. يمكنك إدخال رقم جديد.';
-  await loadRecentOperations();
+  statusBox.textContent='تم إرسال العملية'+(actualSource?' عبر '+actualSource:'')+'. يمكنك إدخال رقم جديد.';
+  await Promise.all([loadRecentOperations(),loadFlexyBalanceCenter()]);
   void watchOfferExecution(job.job_uuid);
  }catch(error){
   statusBox.textContent='تعذر إرسال العرض: '+(error?.message||error);
@@ -825,6 +991,7 @@ ordinarySendBtn?.addEventListener('click',()=>{
  }
  ordinaryConfirmPhone.textContent=format(value);
  ordinaryConfirmAmount.textContent=amount.toLocaleString('fr-DZ')+' دج';
+ if(ordinarySourceCost)ordinarySourceCost.textContent=money(amount);
  bootstrap.Modal.getOrCreateInstance(ordinarySendModal).show();
 });
 
@@ -853,8 +1020,8 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
 
   bootstrap.Modal.getOrCreateInstance(ordinarySendModal).hide();
   clearPhoneAfterDispatch();
-  statusBox.textContent='تم إرسال العملية. يمكنك إدخال رقم جديد.';
-  await Promise.all([loadRecentOperations(),loadAdminFlexyWallet()]);
+  statusBox.textContent='تم إرسال العملية عبر Arsselli GTS. يمكنك إدخال رقم جديد.';
+  await Promise.all([loadRecentOperations(),loadAdminFlexyWallet(),loadFlexyBalanceCenter()]);
   void watchOrdinaryFlexy(job.job_uuid);
  }catch(error){
   const reason=String(error?.message||error||'');
@@ -893,6 +1060,9 @@ function isPendingOperation(status,createdAt){
 }
 function operationStatusHtml(row){
  const status=row?.status;
+ if(String(status||'').toLowerCase()==='success'&&String(row?.result_code||'').toUpperCase().includes('ASSUMED')){
+  return '<span class="badge text-bg-warning">غير مؤكد</span>';
+ }
  if(isPendingOperation(status,row?.created_at)){
   const label=String(status||'').toLowerCase()==='review'?'جارٍ التحقق':'جاري التنفيذ';
   return '<span class="operation-pending" aria-label="'+escapeAttr(label)+'"><span class="operation-spinner" aria-hidden="true"></span><span>'+escapeAttr(label)+'</span></span>';
@@ -918,7 +1088,7 @@ async function loadRecentOperations(){
  }
  try{
   const {supabase}=await getApi();
-  const {data,error}=await supabase.rpc('station_connect_admin_recent_jobs',{p_limit:5});
+  const {data,error}=await supabase.rpc('station_connect_admin_recent_jobs_v2',{p_limit:5});
   if(error)throw error;
   const rows=Array.isArray(data)?data:[];
   if(!rows.length){
@@ -930,8 +1100,9 @@ async function loadRecentOperations(){
    const type=row.amount?'عرض / شحن':'استكشاف';
    const offer=row.family||(row.result_code||'—');
    const amount=row.amount?Number(row.amount).toLocaleString('fr-DZ')+' دج':'—';
+   const source=flexySourceLabel(row.route_sim_type);
    const when=row.created_at?new Date(row.created_at).toLocaleString('ar-DZ'):'—';
-   return '<article class="operation-item p-3"><div class="row g-3 align-items-center"><div class="col-6 col-md-2"><div class="operation-label">النوع</div><div class="operation-value">'+escapeAttr(type)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">'+escapeAttr(format(String(row.phone||'')))+'</div></div><div class="col-6 col-md-2"><div class="operation-label">العرض</div><div class="operation-value">'+escapeAttr(offer)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">المبلغ</div><div class="operation-value">'+escapeAttr(amount)+'</div></div><div class="col-6 col-md-2"><div class="operation-label">الحالة</div>'+operationStatusHtml(row)+'</div><div class="col-6 col-md-2"><div class="operation-label">الوقت</div><div class="operation-value small">'+escapeAttr(when)+'</div></div></div></article>';
+   return '<article class="operation-item p-3"><div class="row g-3 align-items-center"><div class="col-6 col-md"><div class="operation-label">النوع</div><div class="operation-value">'+escapeAttr(type)+'</div></div><div class="col-6 col-md"><div class="operation-label">رقم الهاتف</div><div class="operation-value" dir="ltr">'+escapeAttr(format(String(row.phone||'')))+'</div></div><div class="col-6 col-md"><div class="operation-label">العرض</div><div class="operation-value">'+escapeAttr(offer)+'</div></div><div class="col-6 col-md"><div class="operation-label">المبلغ</div><div class="operation-value">'+escapeAttr(amount)+'</div></div><div class="col-6 col-md"><div class="operation-label">المصدر</div><div class="operation-value">'+escapeAttr(source)+'</div></div><div class="col-6 col-md"><div class="operation-label">الحالة</div>'+operationStatusHtml(row)+'</div><div class="col-12 col-md"><div class="operation-label">الوقت</div><div class="operation-value small">'+escapeAttr(when)+'</div></div></div></article>';
   }).join('');
   scheduleRecentOperationsPoll(rows);
  }catch(error){
@@ -963,6 +1134,12 @@ async function loadOfferPolicy(){
  }
 }
 
+document.querySelectorAll('.flexy-alerts-trigger').forEach(btn=>{
+ btn.addEventListener('click',()=>loadFlexyBalanceCenter().catch(()=>{}));
+});
+refreshFlexyBalancesBtn?.addEventListener('click',()=>loadFlexyBalanceCenter());
+flexyAlertsDrawer?.addEventListener('show.bs.offcanvas',()=>loadFlexyBalanceCenter().catch(()=>{}));
+
 const launchParams=new URLSearchParams(location.search);
 const incomingPhone=(launchParams.get('phone')||'').replace(/\D/g,'').slice(0,10);
 const incomingAmount=(launchParams.get('amount')||'').trim();
@@ -979,8 +1156,9 @@ operator.classList.toggle('paused',!autoDiscovery);
 loadOfferPolicy();
 loadAdminFlexyWallet(); // admin-wallet-init
 loadRecentOperations();
+loadFlexyBalanceCenter();
 </script>
-<script src="flexy-nav.js?v=20260922-shell-4"></script>
+<script src="flexy-nav.js?v=20260922-balance-bell-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
