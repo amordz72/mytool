@@ -9,10 +9,10 @@
   const myToolRoot=new URL('../',shellScript?.src||location.href);
   function loadMyToolBottomNav(){
     if(!document.querySelector('link[data-mytool-bottom-nav]')){
-      const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('mytool-bottom-nav.css?v=20260922-shell-2',myToolRoot).href;link.dataset.mytoolBottomNav='1';document.head.appendChild(link);
+      const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('mytool-bottom-nav.css?v=20260922-shell-3',myToolRoot).href;link.dataset.mytoolBottomNav='1';document.head.appendChild(link);
     }
     if(!document.querySelector('script[data-mytool-bottom-nav]')){
-      const nav=document.createElement('script');nav.src=new URL('mytool-bottom-nav.js?v=20260922-shell-2',myToolRoot).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=myToolRoot.href;nav.dataset.app='shop';document.head.appendChild(nav);
+      const nav=document.createElement('script');nav.src=new URL('mytool-bottom-nav.js?v=20260922-shell-3',myToolRoot).href;nav.defer=true;nav.dataset.mytoolBottomNav='1';nav.dataset.root=myToolRoot.href;nav.dataset.app='shop';document.head.appendChild(nav);
     }
   }
 
