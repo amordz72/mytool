@@ -138,7 +138,21 @@ function serialLooksValid(t,serial){
   if(t.serial_mode==='none')return false;
   if(t.serial_min_length&&v.length<Number(t.serial_min_length))return false;
   if(t.serial_max_length&&v.length>Number(t.serial_max_length))return false;
-  if(t.serial_regex==='^[0-9]+
+  if(t.serial_regex==='^[0-9]+$')return /^[0-9]+$/.test(v);
+  if(t.serial_regex==='^[0-9]{15}$')return /^[0-9]{15}$/.test(v);
+  return true;
+}
+function localCheck(show=true){
+  const t=selectedType(),rows=parseRows(),errors=[];
+  if(!t)errors.push('اختر فئة البطاقة.');
+  if(!rows.length)errors.push('لا توجد بطاقات.');
+  if(t){
+    rows.forEach((r,i)=>{
+      if(!codeLooksValid(t,r.code))errors.push('السطر '+(i+1)+': الكود لا يطابق صيغة '+t.name);
+      if(!serialLooksValid(t,r.serial))errors.push('السطر '+(i+1)+': Serial / SN غير مطابق لقاعدة هذه الفئة.');
+    });
+    if(['mobilis','idoom'].includes(t.type_key)&&!$('denomination').value.trim())errors.push('الفئة/القيمة مطلوبة لهذا النوع.');
+  }
   if(!$('sourceLabel').value.trim())errors.push('اكتب وصف المصدر.');
   if(['customer_return','unknown_exception'].includes($('sourceKind').value)&&!($('note').value.trim()||$('sourceLabel').value.trim()))errors.push('اكتب وصفًا واضحًا للحالة الاستثنائية.');
   $('preview').textContent=rows.length+' بطاقة'+(errors.length?' • '+errors.length+' ملاحظة':' • جاهزة للفحص');
