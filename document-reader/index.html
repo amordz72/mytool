@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-bna4">
+<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-docflow1">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -21,7 +21,7 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
 .detected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.id-guide{margin-top:9px;border:1px solid #c9dce8;background:#f4faff;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65;color:#365f75}.id-guide b{color:#123e57}.id-guide code{direction:ltr;unicode-bidi:isolate;background:#fff;border:1px solid #dce9f0;border-radius:6px;padding:2px 5px}.pill{background:#f8fbfd;border:1px solid var(--l);border-radius:12px;padding:10px}.pill small{display:block;color:var(--m);margin-bottom:3px}.pill b{font-size:13px}.pill select{width:100%;border:1px solid #c9dce8;border-radius:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700;padding:8px}
-.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}.field-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.edit-btn{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.edit-input{width:100%;margin-top:8px;border:1px solid #a9d5e9;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;color:var(--t);background:#fff}.edit-row{display:flex;gap:6px;margin-top:6px}.recipient-context{padding:0;overflow:hidden}.context-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;padding:12px 14px;border-bottom:1px solid var(--l)}.recipient-box{display:flex;flex-direction:column;gap:4px}.recipient-box span,.date-box span{font-size:10px;color:var(--m);font-weight:800}.recipient-select-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.recipient-box select,.date-box input{width:100%;border:1px solid #b9d5e3;border-radius:9px;padding:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700}.recipient-add{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:9px;padding:7px 12px;font-size:18px;font-weight:900;cursor:pointer}.date-box{display:flex;flex-direction:column;gap:4px;min-width:150px}.history-title{padding:9px 14px 7px;font-size:10px;font-weight:800;color:var(--m);background:#fafcfd}.recipient-tabs{display:flex;overflow-x:auto;scrollbar-width:thin;border-top:1px solid var(--l);border-bottom:1px solid var(--l);background:#f2f4f6}.recipient-tab{flex:0 0 auto;border:0;border-left:1px solid #d8dee3;background:#eef0f2;color:#30485a;padding:11px 14px;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap}.recipient-tab.active{background:#fff;color:#0d5e86;box-shadow:inset 0 3px 0 var(--b)}.operation-history{background:#fff}.history-date{padding:9px 14px;background:#f8fbfd;border-top:1px solid var(--l);border-bottom:1px solid var(--l);font-size:11px;font-weight:900;color:#24566f}.history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 10px;padding:11px 12px;border:1px solid #e1eaf0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #1630470a}.history-row.active{background:#f2fbff;border-color:#9bd3ec}.history-main{min-width:0;cursor:pointer}.history-main b{display:block;font-size:12px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-main small{display:block;margin-top:3px;color:var(--m);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-actions{display:flex;gap:5px}.history-open,.history-delete{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800;cursor:pointer}.history-delete{color:#a33;border-color:#efc4bf;background:#fff7f6}.history-empty{padding:12px 14px;color:var(--m);font-size:11px}.date-hint{font-size:10px;color:#0d5e86;font-weight:800;min-height:14px;margin-top:2px}.context-body{padding:9px 14px;background:#fff;font-size:10px;color:var(--m);line-height:1.6}.context-body b{color:var(--t)}.selected-context{margin-top:10px;background:#eef9ff;border:1px solid #b9d8e7;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.6;color:#24566f}@media(max-width:520px){.context-top{grid-template-columns:1fr}.date-box{min-width:0}}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}.field-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.edit-btn{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.edit-input{width:100%;margin-top:8px;border:1px solid #a9d5e9;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;color:var(--t);background:#fff}.edit-row{display:flex;gap:6px;margin-top:6px}.recipient-context{padding:0;overflow:hidden}.context-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;padding:12px 14px;border-bottom:1px solid var(--l)}.recipient-box{display:flex;flex-direction:column;gap:4px}.recipient-box span,.date-box span{font-size:10px;color:var(--m);font-weight:800}.recipient-select-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.recipient-box select,.date-box input{width:100%;border:1px solid #b9d5e3;border-radius:9px;padding:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700}.recipient-add{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:9px;padding:7px 12px;font-size:18px;font-weight:900;cursor:pointer}.date-box{display:flex;flex-direction:column;gap:4px;min-width:150px}.history-title{padding:9px 14px 7px;font-size:10px;font-weight:800;color:var(--m);background:#fafcfd}.settlement-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:10px 12px;background:#f8fbfd;border-top:1px solid var(--l)}.settlement-card{border:1px solid #dbe7f0;border-radius:12px;background:#fff;padding:9px}.settlement-card b{display:block;font-size:11px}.settlement-card small{display:block;margin-top:4px;color:var(--m);font-size:9px;line-height:1.55}.settlement-debt-btn{margin-top:6px;border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:7px;padding:5px 7px;font-size:9px;font-weight:800;cursor:pointer}@media(max-width:520px){.settlement-summary{grid-template-columns:1fr}}.recipient-tabs{display:flex;overflow-x:auto;scrollbar-width:thin;border-top:1px solid var(--l);border-bottom:1px solid var(--l);background:#f2f4f6}.recipient-tab{flex:0 0 auto;border:0;border-left:1px solid #d8dee3;background:#eef0f2;color:#30485a;padding:11px 14px;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap}.recipient-tab.active{background:#fff;color:#0d5e86;box-shadow:inset 0 3px 0 var(--b)}.operation-history{background:#fff}.history-date{padding:9px 14px;background:#f8fbfd;border-top:1px solid var(--l);border-bottom:1px solid var(--l);font-size:11px;font-weight:900;color:#24566f}.history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 10px;padding:11px 12px;border:1px solid #e1eaf0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #1630470a}.history-row.active{background:#f2fbff;border-color:#9bd3ec}.history-main{min-width:0;cursor:pointer}.history-main b{display:block;font-size:12px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-main small{display:block;margin-top:3px;color:var(--m);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-actions{display:flex;gap:5px}.history-open,.history-delete{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800;cursor:pointer}.history-delete{color:#a33;border-color:#efc4bf;background:#fff7f6}.history-empty{padding:12px 14px;color:var(--m);font-size:11px}.date-hint{font-size:10px;color:#0d5e86;font-weight:800;min-height:14px;margin-top:2px}.context-body{padding:9px 14px;background:#fff;font-size:10px;color:var(--m);line-height:1.6}.context-body b{color:var(--t)}.selected-context{margin-top:10px;background:#eef9ff;border:1px solid #b9d8e7;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.6;color:#24566f}@media(max-width:520px){.context-top{grid-template-columns:1fr}.date-box{min-width:0}}
 .notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}.quality{margin-top:10px;border-radius:13px;padding:11px 12px;font-size:12px;line-height:1.65}.quality.ok{background:#effaf5;border:1px solid #b7e3cd;color:#17643f}.quality.warn{background:#fff9e8;border:1px solid #f1d28a;color:#755b13}.quality.bad{background:#fff4f2;border:1px solid #f0b6b1;color:#9f2219}.quality b{display:block;margin-bottom:3px}
 .error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
 .image-refs{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding:6px 2px}.image-ref{flex:0 0 auto;border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:800;cursor:pointer}.image-ref.active{background:#e8f7ff;border-color:#66b9df}.toast-stack{position:fixed;top:16px;right:16px;z-index:9999;display:grid;gap:10px;width:min(360px,calc(100vw - 24px));pointer-events:none}.toast{pointer-events:auto;background:#fff;border:1px solid #dfe7ed;border-radius:15px;padding:13px 14px;box-shadow:0 12px 34px #10283a28;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;animation:toastIn .18s ease}.toast-icon{font-size:20px;line-height:1}.toast-title{font-weight:900;font-size:13px;color:var(--t)}.toast-message{margin-top:3px;font-size:11px;line-height:1.55;color:var(--m)}.toast-close{border:0;background:transparent;color:#81919d;font-size:20px;line-height:1;cursor:pointer}.toast.success{border-right:4px solid #35bf75}.toast.warn{border-right:4px solid #e4a21b}.toast.error{border-right:4px solid #ef6470}.toast.info{border-right:4px solid #45a8d8}@keyframes toastIn{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}@media(max-width:620px){.toast-stack{top:10px;right:12px;left:12px;width:auto}}
@@ -35,7 +35,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>استخرج التاريخ، المستفيد، المبلغ، رقم الوثيقة، البنك والمرسل من صورة الوثيقة بدون تخمين. <span style="opacity:.82">— نسخة BNA 2026-09-22.4</span></p>
+  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.5</span></p>
 </section>
 
 <section class="card security">
@@ -46,7 +46,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <section class="card recipient-context">
   <div class="context-top">
     <label class="recipient-box">
-      <span>لمن أرسلتها؟</span>
+      <span>تسوية لمنصة <small style="font-weight:400">— اختياري بعد التحليل</small></span>
       <div class="recipient-select-row">
         <select id="recipientSelect" aria-label="اختيار المستلم"></select>
         <button id="recipientAddBtn" class="recipient-add" type="button" title="إضافة مستلم">+</button>
@@ -54,7 +54,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     </label>
     <label class="date-box"><span>تاريخ الوصل</span><input id="receiptDate" type="date"><div id="receiptDateHint" class="date-hint"></div></label>
   </div>
-  <div class="history-title">السجل السابق — Tabs حسب المورد، و«الكل» مجمّع حسب التاريخ</div>
+  <div class="history-title">ملخص التسويات والديون — مؤقت محليًا حتى نقل الحفظ إلى Supabase</div>
+  <div id="settlementSummary" class="settlement-summary"></div>
+  <div class="history-title">المتابعة — تحليل أولًا، ثم تسوية لمنصة عند القرار</div>
   <div id="recipientTabs" class="recipient-tabs" role="tablist" aria-label="المورد في السجل"></div>
   <div id="operationHistory" class="operation-history"></div>
   <div id="recipientContextText" class="context-body"></div>
@@ -148,6 +150,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const recipientSelect = $('recipientSelect');
   const recipientAddBtn = $('recipientAddBtn');
   const recipientTabs = $('recipientTabs');
+  const settlementSummary = $('settlementSummary');
   const operationHistory = $('operationHistory');
   const recipientContextText = $('recipientContextText');
   const selectedContext = $('selectedContext');
@@ -164,7 +167,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const RECIPIENT_CONTEXT_KEY='mytool.document-reader.recipient-context.v1';
   const RECENT_OPERATIONS_KEY='mytool.document-reader.recent-operations.v1';
   const DOCUMENT_INDEX_KEY='mytool.document-reader.document-index.v1';
-  const DOCUMENT_INDEX_CLEANUP_KEY='mytool.document-reader.document-index-cleanup.v3';
+  const DOCUMENT_INDEX_CLEANUP_KEY='mytool.document-reader.document-index-cleanup.v4';
+  const SUPPLIER_DEBTS_KEY='mytool.document-reader.supplier-debts.v1';
   const RECEIPT_DB_NAME='mytool-document-reader-local-v1';
   const RECEIPT_IMAGE_STORE='receipt-images';
   const UNSENT_RECIPIENT='لم يُرسل لمورد بعد';
@@ -474,10 +478,13 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function preferredCanonicalStatus(op){
-    if(op?.status==='saved')return 4;
-    if(op?.status==='analyzed')return 3;
-    if(op?.status==='manual_entry')return 2;
-    if(op?.status==='duplicate')return 1;
+    const s=effectiveStatus(op);
+    if(s==='archived')return op?.statusBeforeArchive==='duplicate'?1:6;
+    if(s==='settled')return 5;
+    if(s==='saved_unsettled')return 4;
+    if(s==='analyzed')return 3;
+    if(s==='manual_entry')return 2;
+    if(s==='duplicate')return 1;
     return 0;
   }
 
@@ -489,7 +496,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       items.forEach(op=>{
         const fingerprint=documentFingerprint(op);
         if(!fingerprint)return;
-        if(!['saved','analyzed','manual_entry','duplicate'].includes(op.status))return;
+        const groupStatus=effectiveStatus(op);
+        if(groupStatus==='archived'&&op.statusBeforeArchive==='duplicate')return;
+        if(!['saved_unsettled','settled','archived','analyzed','manual_entry','duplicate'].includes(groupStatus))return;
         if(!groups.has(fingerprint))groups.set(fingerprint,[]);
         groups.get(fingerprint).push(op);
       });
@@ -553,7 +562,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         .forEach(op=>{
           const fingerprint=documentFingerprint(op);
           if(!fingerprint||registered.has(fingerprint))return;
-          if(!['saved','analyzed','manual_entry'].includes(op.status))return;
+          const registerStatus=effectiveStatus(op);
+          if(registerStatus==='archived'&&op.statusBeforeArchive==='duplicate')return;
+          if(!['saved_unsettled','settled','archived','analyzed','manual_entry'].includes(registerStatus))return;
           registerDocument(op);
           registered.add(fingerprint);
         });
@@ -592,6 +603,70 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   }
 
+  function effectiveStatus(op){
+    if(!op)return 'pending_analysis';
+    if(op.status==='saved'){
+      return op.selectedRecipient&&op.selectedRecipient!==UNSENT_RECIPIENT?'settled':'saved_unsettled';
+    }
+    return op.status||'pending_analysis';
+  }
+
+  function statusCarriesDocumentIdentity(op){
+    return ['analyzed','manual_entry','saved_unsettled','settled','archived'].includes(effectiveStatus(op));
+  }
+
+  function isFinanciallySettled(op){
+    const s=effectiveStatus(op);
+    if(s==='settled')return true;
+    return s==='archived'&&op.statusBeforeArchive==='settled';
+  }
+
+  function amountNumber(op){
+    const raw=Number(op?.fields?.amount?.raw);
+    if(Number.isFinite(raw))return raw;
+    const text=String(op?.fields?.amount?.value||'').replace(/[^0-9,.-]/g,'').replace(/\./g,'').replace(',','.');
+    const n=Number(text);
+    return Number.isFinite(n)?n:0;
+  }
+
+  function moneyDzd(value){
+    return new Intl.NumberFormat('fr-DZ',{maximumFractionDigits:2}).format(Number(value||0))+' DZD';
+  }
+
+  function getSupplierDebts(){
+    try{
+      const data=JSON.parse(localStorage.getItem(SUPPLIER_DEBTS_KEY)||'{}');
+      return data&&typeof data==='object'?data:{};
+    }catch(_e){return {};}
+  }
+
+  function setSupplierDebt(name,value){
+    const debts=getSupplierDebts();
+    debts[name]=Number(value||0);
+    localStorage.setItem(SUPPLIER_DEBTS_KEY,JSON.stringify(debts));
+  }
+
+  function renderSettlementSummary(){
+    if(!settlementSummary)return;
+    const items=getRecentOperations();
+    const debts=getSupplierDebts();
+    const suppliers=getRecipientPresets().filter(name=>name!==UNSENT_RECIPIENT);
+    settlementSummary.innerHTML='';
+    suppliers.forEach(name=>{
+      const settled=items.filter(op=>op.selectedRecipient===name&&isFinanciallySettled(op));
+      const total=settled.reduce((sum,op)=>sum+amountNumber(op),0);
+      const debt=Number(debts[name]||0);
+      const remaining=debt-total;
+      const card=document.createElement('div');
+      card.className='settlement-card';
+      card.innerHTML='<b>'+escapeHtml(name)+'</b>'
+        +'<small>الوصولات المسوّاة: '+settled.length+' · المجموع: '+escapeHtml(moneyDzd(total))+'<br>'
+        +'الدين المسجل: '+escapeHtml(moneyDzd(debt))+' · '+(remaining>=0?'الباقي على ذمتي: ':'رصيد زائد: ')+escapeHtml(moneyDzd(Math.abs(remaining)))+'</small>'
+        +'<button type="button" class="settlement-debt-btn" data-edit-debt="'+escapeHtml(name)+'">تعديل الدين</button>';
+      settlementSummary.appendChild(card);
+    });
+  }
+
   function renderRecipientSelect(){
     const names=getRecipientPresets();
     const assigned=currentResult?.selectedRecipient||'';
@@ -611,18 +686,36 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function renderHistorySupplierTabs(){
-    const suppliers=['all',...getRecipientPresets()];
+    const filters=[
+      ['all','الكل'],
+      ['__pending__','بانتظار التحليل'],
+      ['__unsettled__','غير مسوّى'],
+      ['__archived__','الأرشيف']
+    ];
+    getRecipientPresets().filter(name=>name!==UNSENT_RECIPIENT).forEach(name=>filters.push([name,name]));
     recipientTabs.innerHTML='';
-    suppliers.forEach(name=>{
+    filters.forEach(([value,label])=>{
       const btn=document.createElement('button');
       btn.type='button';
-      btn.className='recipient-tab'+(name===activeHistorySupplier?' active':'');
-      btn.textContent=name==='all'?'الكل':(name===UNSENT_RECIPIENT?'الانتظار':name);
-      btn.dataset.historySupplier=name;
+      btn.className='recipient-tab'+(value===activeHistorySupplier?' active':'');
+      btn.textContent=label;
+      btn.dataset.historySupplier=value;
       btn.setAttribute('role','tab');
-      btn.setAttribute('aria-selected',name===activeHistorySupplier?'true':'false');
+      btn.setAttribute('aria-selected',value===activeHistorySupplier?'true':'false');
       recipientTabs.appendChild(btn);
     });
+  }
+
+  function matchesHistoryFilter(op){
+    const s=effectiveStatus(op);
+    if(activeHistorySupplier==='all')return s!=='archived';
+    if(activeHistorySupplier==='__pending__')return s==='pending_analysis'||s==='analysis_failed';
+    if(activeHistorySupplier==='__unsettled__'){
+      return ['analyzed','manual_entry','saved_unsettled'].includes(s)
+        &&(!op.selectedRecipient||op.selectedRecipient===UNSENT_RECIPIENT);
+    }
+    if(activeHistorySupplier==='__archived__')return s==='archived';
+    return op.selectedRecipient===activeHistorySupplier&&s!=='archived';
   }
 
   function documentIdRule(templateId){
@@ -681,25 +774,28 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function operationStatusText(op){
-    if(op?.status==='pending_analysis')return 'بانتظار التحليل';
-    if(op?.status==='analyzed')return 'تم التحليل — بانتظار الحفظ';
-    if(op?.status==='manual_entry')return 'إدخال يدوي — بانتظار الحفظ';
-    if(op?.status==='saved')return 'محفوظ ✓';
-    if(op?.status==='duplicate')return 'وصل مكرر — ممنوع الحفظ';
-    if(op?.status==='analysis_failed')return 'فشل التحليل — أعد المحاولة';
+    const s=effectiveStatus(op);
+    if(s==='pending_analysis')return 'بانتظار التحليل';
+    if(s==='analyzed')return 'محلّل — بانتظار الحفظ/التسوية';
+    if(s==='manual_entry')return 'إدخال يدوي — بانتظار الحفظ/التسوية';
+    if(s==='saved_unsettled')return 'محفوظ — غير مسوّى';
+    if(s==='settled')return 'مسوّى ✓';
+    if(s==='archived')return 'مؤرشف';
+    if(s==='duplicate')return 'وصل مكرر — ممنوع الحفظ';
+    if(s==='analysis_failed')return 'فشل التحليل — أعد المحاولة';
     return 'بانتظار التحليل';
   }
 
   function renderOperationHistory(){
     const items=getRecentOperations()
-      .filter(op=>activeHistorySupplier==='all'||op.selectedRecipient===activeHistorySupplier)
+      .filter(matchesHistoryFilter)
       .sort((a,b)=>String(b.receiptDate||b.createdAt||'').localeCompare(String(a.receiptDate||a.createdAt||''))||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
 
     operationHistory.innerHTML='';
     if(!items.length){
       const empty=document.createElement('div');
       empty.className='history-empty';
-      empty.textContent=activeHistorySupplier==='all'?'لا توجد عمليات سابقة بعد.':'لا توجد عمليات سابقة لهذا المورد.';
+      empty.textContent=activeHistorySupplier==='__pending__'?'لا توجد صور بانتظار التحليل.':activeHistorySupplier==='__unsettled__'?'لا توجد وصولات محللة غير مسوّاة.':activeHistorySupplier==='__archived__'?'الأرشيف فارغ.':activeHistorySupplier==='all'?'لا توجد عمليات بعد.':'لا توجد عمليات لهذه المنصة.';
       operationHistory.appendChild(empty);
       return;
     }
@@ -725,8 +821,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const doc=op.fields?.documentNumber?.value||'بدون رقم وثيقة';
       const supplier=op.selectedRecipient||UNSENT_RECIPIENT;
       const state=operationStatusText(op);
-      const headline=(activeHistorySupplier==='all'?supplier+' — ':'')
-        +(op.status==='pending_analysis'||op.status==='analysis_failed'||op.status==='duplicate'?state:(amount||state));
+      const headline=(activeHistorySupplier==='all'?(supplier===UNSENT_RECIPIENT?'غير مسوّى':supplier)+' — ':'')
+        +(['pending_analysis','analysis_failed','duplicate','archived'].includes(effectiveStatus(op))?state:(amount||state));
       const meta=[operationTime(op),state];
       if(op.imageCount>1)meta.push(op.imageCount+' صور');
       if(op.fileName)meta.push(op.fileName);
@@ -739,7 +835,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const open=document.createElement('button');
       open.type='button';open.className='history-open';open.textContent='فتح';open.dataset.operationId=op.id;
       const del=document.createElement('button');
-      del.type='button';del.className='history-delete';del.textContent='حذف';del.dataset.deleteOperationId=op.id;
+      del.type='button';del.className='history-delete';del.textContent=effectiveStatus(op)==='archived'?'مؤرشف':'أرشفة';del.disabled=effectiveStatus(op)==='archived';del.dataset.archiveOperationId=op.id;
       actions.appendChild(open);actions.appendChild(del);
       row.appendChild(main);row.appendChild(actions);
       operationHistory.appendChild(row);
@@ -747,6 +843,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function renderRecentOperationTabs(){
+    renderSettlementSummary();
     renderHistorySupplierTabs();
     renderOperationHistory();
   }
@@ -756,11 +853,18 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!value)return;
 
     const assigned=currentResult?.selectedRecipient||'';
-    if(currentResult&&assigned&&assigned!==UNSENT_RECIPIENT&&value!==assigned){
-      activeRecipient=assigned;
+    if(currentResult&&effectiveStatus(currentResult)==='archived'){
+      activeRecipient=assigned||UNSENT_RECIPIENT;
       renderRecipientSelect();
-      showToast('warn','هذا الوصل مسند بالفعل','الوصل مسند إلى '+assigned+' ولا يمكن استعماله لمورد آخر.',5200);
+      showToast('warn','الوصل مؤرشف','لا يمكن تغيير التسوية داخل الأرشيف.',5200);
       return;
+    }
+    if(currentResult&&assigned&&assigned!==UNSENT_RECIPIENT&&value!==assigned){
+      if(!confirm('الوصل مسوّى حاليًا إلى '+assigned+'. هل تريد نقل التسوية إلى '+value+'؟')){
+        activeRecipient=assigned;
+        renderRecipientSelect();
+        return;
+      }
     }
 
     activeRecipient=value;
@@ -775,13 +879,20 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const wasUnsent=!currentResult.selectedRecipient||currentResult.selectedRecipient===UNSENT_RECIPIENT;
       currentResult.selectedRecipient=value;
       currentResult.receiptDate=receiptDate.value;
-      if(value!==UNSENT_RECIPIENT&&wasUnsent){
-        currentResult.assignedAt=new Date().toISOString();
-        activeHistorySupplier=value;
-        showToast('success','تم إسناد الوصل','انتقل الوصل إلى '+value+' ولا يمكن إسناده لمورد آخر.',5000);
+      if(value!==UNSENT_RECIPIENT){
+        currentResult.assignedAt=currentResult.assignedAt||new Date().toISOString();
+        if(['saved_unsettled','settled'].includes(effectiveStatus(currentResult))){
+          currentResult.status='settled';
+          currentResult.settledAt=new Date().toISOString();
+          activeHistorySupplier=value;
+          showToast('success','تمت التسوية','احتُسب الوصل ضمن '+value+'.',5000);
+        }
+      }else if(effectiveStatus(currentResult)==='settled'){
+        currentResult.status='saved_unsettled';
+        currentResult.settledAt='';
       }
-      persistCurrentOperation({registerDoc:currentResult.status==='analyzed'||currentResult.status==='saved'});
-      if(currentResult.status!=='pending_analysis'&&currentResult.status!=='analysis_failed')renderResult(currentResult);
+      persistCurrentOperation({registerDoc:statusCarriesDocumentIdentity(currentResult)});
+      if(!['pending_analysis','analysis_failed'].includes(effectiveStatus(currentResult)))renderResult(currentResult);
     }
 
     renderRecipientSelect();
@@ -808,6 +919,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       fileName:payload.fileName||'',
       savedAt:payload.savedAt||'',
       assignedAt:payload.assignedAt||'',
+      settledAt:payload.settledAt||'',
+      archivedAt:payload.archivedAt||'',
+      statusBeforeArchive:payload.statusBeforeArchive||'',
+      editLog:Array.isArray(payload.editLog)?payload.editLog.slice(-50):[],
+      lastEditedAt:payload.lastEditedAt||'',
       imageCount:Number(payload.imageCount||1),
       duplicateInfo:payload.duplicateInfo?{
         documentNumber:payload.duplicateInfo.documentNumber||'',
@@ -861,8 +977,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         rotation=Number(op.orientation||0);
         updatePreview();
         clearBtn.disabled=false;
-        rotateRightBtn.disabled=op.status==='saved';
-        analyzeBtn.disabled=op.status==='saved';
+        rotateRightBtn.disabled=['archived','duplicate'].includes(effectiveStatus(op));
+        analyzeBtn.disabled=['archived','duplicate','settled','saved_unsettled'].includes(effectiveStatus(op));
       }catch(_e){
         sourceImage=null;
       }
@@ -884,7 +1000,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       ...op,
       rawText:'النص الخام لا يُحفظ في السجل المحلي. يمكن إعادة التحليل من الصورة المحلية إذا كانت العملية غير محفوظة نهائيًا.',
       rawTextAvailable:false,
-      historyView:op.status==='saved'
+      historyView:['archived','duplicate'].includes(effectiveStatus(op))
     };
     templateSelect.value=op.manualOverride?op.templateId:'auto';
 
@@ -906,25 +1022,25 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     renderResult(currentResult);
   }
 
-  async function deleteRecentOperation(id){
+  async function archiveRecentOperation(id){
     const items=getRecentOperations();
     const op=items.find(item=>item.id===id);
-    if(!op)return;
-    if(!confirm('حذف هذه القراءة السابقة والصورة المحلية المرتبطة بها؟'))return;
-    const next=items.filter(item=>item.id!==id);
+    if(!op||effectiveStatus(op)==='archived')return;
+    if(!confirm('أرشفة هذا الوصل؟ سيبقى محفوظًا مع رقمه وصورته ولن يسمح بتكرار رقم الوثيقة.'))return;
+    const archived={
+      ...op,
+      statusBeforeArchive:effectiveStatus(op),
+      status:'archived',
+      archivedAt:new Date().toISOString()
+    };
+    const next=items.map(item=>item.id===id?archived:item);
     saveRecentOperations(next);
-    unregisterDocumentForOperation(op);
-    await deleteReceiptImage(id);
-    showToast('success','تم حذف الوصل','حُذفت القراءة والصور وبصمة رقم الوثيقة؛ يمكن إدخال نفس الوصل من جديد إذا أردت.',5000);
+    rebuildDocumentIndexFromRecent();
+    showToast('success','تمت الأرشفة','بقي الوصل والصورة ورقم الوثيقة محفوظين، ومنع التكرار ما زال فعالًا.',5200);
     if(activeOperationId===id){
-      activeOperationId='';
-      if(currentResult?.operationId===id){
-        resetResults();
-        sourceImage=null;
-        previewImg.removeAttribute('src');
-        previewImg.classList.add('hidden');
-        previewEmpty.classList.remove('hidden');
-      }
+      currentResult={...archived,rawText:'الوصل مؤرشف. البيانات والصورة محفوظتان محليًا.',historyView:true};
+      renderResult(currentResult);
+      updateSaveButton();
     }
     renderRecentOperationTabs();
   }
@@ -980,24 +1096,27 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function updateSaveButton(){
-    const finalized=Boolean(currentResult&&(currentResult.status==='saved'||currentResult.status==='duplicate'));
+    const s=effectiveStatus(currentResult);
+    const finalized=Boolean(currentResult&&['saved_unsettled','settled','archived','duplicate'].includes(s));
     const canSave=Boolean(currentResult
       && !currentResult.historyView
-      && (currentResult.status==='analyzed'||currentResult.status==='manual_entry')
+      && ['analyzed','manual_entry'].includes(s)
       && !currentResult.duplicateInfo);
     saveBtn.disabled=busy||!canSave;
-    if(currentResult?.status==='saved')saveBtn.textContent='محفوظ ✓';
-    else if(currentResult?.status==='duplicate')saveBtn.textContent='مكرر';
+    if(s==='saved_unsettled')saveBtn.textContent='محفوظ — غير مسوّى';
+    else if(s==='settled')saveBtn.textContent='مسوّى ✓';
+    else if(s==='archived')saveBtn.textContent='مؤرشف';
+    else if(s==='duplicate')saveBtn.textContent='مكرر';
     else saveBtn.textContent='حفظ';
 
     const canAddReference=Boolean(currentResult
       && !currentResult.historyView
-      && !finalized);
+      && !['archived','duplicate'].includes(s));
     addImageBtn.disabled=busy||!canAddReference;
     manualEntryBtn.disabled=busy||!currentResult||currentResult.historyView||finalized;
     analyzeBtn.disabled=busy||!sourceImage||finalized;
-    rotateRightBtn.disabled=busy||!sourceImage||finalized;
-    receiptDate.disabled=Boolean(busy||currentResult?.historyView||currentResult?.status==='saved'||currentResult?.status==='duplicate');
+    rotateRightBtn.disabled=busy||!sourceImage||['archived','duplicate'].includes(s);
+    receiptDate.disabled=Boolean(busy||currentResult?.historyView||['archived','duplicate'].includes(s));
   }
 
   function setBusy(on){
@@ -1702,7 +1821,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const shownSource=data?.status==='absent'
         ? (data.source||'هذا القالب لا يحتوي هذا الحقل')
         : (data?.source?String(data.source):(clear?String(data.source||''):'لم يتم التخمين أو ملء الحقل تلقائيًا'));
-      const canEdit=!payload.historyView&&payload.status!=='saved'&&payload.status!=='duplicate';
+      const canEdit=!payload.historyView&&!['archived','duplicate'].includes(effectiveStatus(payload));
       el.innerHTML='<div class="field-head"><span class="field-label">'+label+'</span><span class="status '+badge[0]+'">'+badge[1]+'</span></div>'
         +'<div class="value">'+escapeHtml(shownValue)+'</div>'
         +'<div class="source">'+escapeHtml(shownSource)+'</div>'
@@ -1736,7 +1855,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function startFieldEdit(key){
-    if(!currentResult||currentResult.historyView||currentResult.status==='saved'||currentResult.status==='duplicate')return;
+    if(!currentResult||currentResult.historyView||['archived','duplicate'].includes(effectiveStatus(currentResult)))return;
     const fieldEl=resultsEl.querySelector('[data-edit-field="'+key+'"]')?.closest('.field');
     if(!fieldEl)return;
     const data=currentResult.fields[key]||{};
@@ -1762,17 +1881,24 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     save.addEventListener('click',()=>{
       const value=cleanLine(input.value);
-      if(!value){
-        currentResult.fields[key]=null;
-      }else{
-        currentResult.fields[key]={
-          value,
-          source:'تصحيح يدوي',
-          status:'manual'
-        };
+      const nextFields={...(currentResult.fields||{})};
+      nextFields[key]=value?{value,source:'تصحيح يدوي',status:'manual'}:null;
+      const candidate={...currentResult,fields:nextFields};
+      if(key==='documentNumber'){
+        const dup=findDuplicateDocument(candidate);
+        if(dup){
+          showToast('error','رقم وثيقة مكرر','هذا الرقم موجود في وصل آخر؛ لم يتم حفظ التعديل.',6000);
+          renderResult(currentResult);
+          return;
+        }
       }
-      persistCurrentOperation();
+      currentResult.editLog=Array.isArray(currentResult.editLog)?currentResult.editLog:[];
+      currentResult.editLog.push({at:new Date().toISOString(),field:key,from:oldValue,to:value});
+      currentResult.lastEditedAt=new Date().toISOString();
+      currentResult.fields=nextFields;
+      persistCurrentOperation({registerDoc:statusCarriesDocumentIdentity(currentResult)});
       renderResult(currentResult);
+      showToast('success','تم تعديل الوصل','حُفظ التعديل مع أثر محلي للمراجعة.',4200);
     });
     cancel.addEventListener('click',()=>renderResult(currentResult));
     input.addEventListener('keydown',e=>{
@@ -2091,7 +2217,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function handleTemplateChange(){
     if(!currentResult)return;
-    if(currentResult.historyView||currentResult.status==='saved'||currentResult.status==='duplicate'){
+    if(currentResult.historyView||['saved_unsettled','settled','archived','duplicate'].includes(effectiveStatus(currentResult))){
       templateSelect.value=currentResult.manualOverride?currentResult.templateId:'auto';
       renderDocumentIdGuide(currentResult.templateId);
       return;
@@ -2160,8 +2286,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       return;
     }
 
-    currentResult.status='saved';
+    currentResult.status=(currentResult.selectedRecipient&&currentResult.selectedRecipient!==UNSENT_RECIPIENT)?'settled':'saved_unsettled';
     currentResult.savedAt=new Date().toISOString();
+    currentResult.settledAt=currentResult.status==='settled'?new Date().toISOString():'';
     const ok=persistCurrentOperation({registerDoc:true});
     if(!ok){
       currentResult.status='duplicate';
@@ -2173,7 +2300,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     renderRecipientSelect();
     updateSaveButton();
     progressBox.classList.add('hidden');
-    showToast('success','تم الحفظ بنجاح','تم تأكيد الوصل، والصور المرجعية مرتبطة بنفس العملية.',5000);
+    showToast('success','تم حفظ الوصل',currentResult.status==='settled'?'تم الحفظ والتسوية إلى '+currentResult.selectedRecipient+'.':'تم الحفظ في «غير مسوّى» ويمكنك إسناده لمنصة لاحقًا.',5500);
   }
 
   function copyResults(){
@@ -2207,7 +2334,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     clearError();
     resetResults();
     activeOperationId='';
-    activeHistorySupplier=UNSENT_RECIPIENT;
+    activeHistorySupplier='__pending__';
     activeRecipient=UNSENT_RECIPIENT;
     receiptDate.value=todayLocal();
     updateDateHint();
@@ -2360,13 +2487,30 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   });
 
   operationHistory.addEventListener('click',event=>{
-    const del=event.target.closest('[data-delete-operation-id]');
-    if(del){
-      deleteRecentOperation(del.getAttribute('data-delete-operation-id'));
+    const archive=event.target.closest('[data-archive-operation-id]');
+    if(archive){
+      archiveRecentOperation(archive.getAttribute('data-archive-operation-id'));
       return;
     }
     const open=event.target.closest('[data-operation-id]');
     if(open)openRecentOperation(open.getAttribute('data-operation-id'));
+  });
+
+  settlementSummary.addEventListener('click',event=>{
+    const btn=event.target.closest('[data-edit-debt]');
+    if(!btn)return;
+    const name=btn.getAttribute('data-edit-debt')||'';
+    const current=Number(getSupplierDebts()[name]||0);
+    const value=prompt('الدين الحالي لمنصة '+name+' بالدينار الجزائري',String(current||''));
+    if(value===null)return;
+    const normalized=String(value).replace(/\s/g,'').replace(',','.');
+    const amount=Number(normalized);
+    if(!Number.isFinite(amount)||amount<0){
+      showToast('error','قيمة غير صحيحة','أدخل مبلغًا موجبًا أو صفرًا.',4500);
+      return;
+    }
+    setSupplierDebt(name,amount);
+    renderSettlementSummary();
   });
 
   receiptDate.addEventListener('change',()=>{
