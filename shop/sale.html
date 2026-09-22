@@ -195,7 +195,9 @@
     if(!handoff)return false
     const params=new URLSearchParams(location.search)
     const expected=params.get('from_order')
-    if(expected&&handoff.order_uuid&&String(handoff.order_uuid)!==String(expected))return false
+    if(!expected)return false
+    const actualRef=handoff.order_uuid||handoff.order_id
+    if(!actualRef||String(actualRef)!==String(expected))return false
     const type=params.get('operation')||handoff.operation_type||'service'
     if(OPERATION_TYPES[type])selectOperationType(type)
     const box=$('orderHandoff')
