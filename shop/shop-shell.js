@@ -91,7 +91,7 @@
       +'<div class="topbar-copy"><h1><span class="shell-app-name">MyTool</span><span class="shell-app-suffix"> — حساب المحل</span></h1>'
       +'<div class="muted shell-identity"'+(identityId?' id="'+identityId+'"':'')+'>'+identity+'</div></div>'
       +'<span class="pill shell-role-badge">'+badge+'</span></div>'
-      +'<div class="topbar-actions desktop-only"><a class="btn secondary" href="../" style="text-decoration:none">MyTool</a>'
+      +'<div class="topbar-actions desktop-only">'
       +'<button class="btn secondary" type="button" data-shell-action="refresh">تحديث</button>'
       +'<button class="btn secondary" type="button" data-shell-action="logout">خروج</button></div></header>';
   }
