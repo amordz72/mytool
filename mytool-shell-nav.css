@@ -45,3 +45,18 @@ body.mytool-shell-nav-active[data-mytool-app="flexy"] #menu{display:none!importa
 /* Admin/tools sessions already have the shared My Tools header and the left local-app menu. */
 body.mytool-shell-nav-active[data-mytool-app="shop"] .shell-canonical-header,
 body.mytool-shell-nav-active[data-mytool-app="shop"] .shared-screen-nav{display:none!important}
+
+/* Smart scroll-to-top: hidden near the top, shown only after meaningful scrolling. */
+.mytool-shell-scrolltop{
+  position:fixed;left:14px;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:1086;
+  width:44px;height:44px;border:1px solid #dbe7f0;border-radius:14px;
+  display:grid;place-items:center;background:rgba(255,255,255,.94);color:#334155;
+  box-shadow:0 8px 24px rgba(15,23,42,.16);font:900 23px/1 Arial,sans-serif;
+  cursor:pointer;opacity:0;transform:translateY(10px) scale(.92);pointer-events:none;
+  transition:opacity .16s ease,transform .16s ease,background .16s ease;
+  backdrop-filter:blur(10px)
+}
+.mytool-shell-scrolltop.show{opacity:1;transform:none;pointer-events:auto}
+.mytool-shell-scrolltop:active{transform:scale(.94)}
+@media(min-width:900px){.mytool-shell-scrolltop{left:22px;bottom:24px}}
+@media(prefers-reduced-motion:reduce){.mytool-shell-scrolltop{transition:none}}
