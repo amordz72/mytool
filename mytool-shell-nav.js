@@ -49,7 +49,7 @@
       const map={index:'حساب المحل',sale:'البيع',purchase:'المشتريات',stock:'المخزون',inventory:'الجرد','inventory-count':'الجرد','physical-inventory':'الجرد الفعلي','opening-stock':'الجرد الافتتاحي',transfers:'التحويلات',money:'الأموال','cash-receipts':'استلام الأموال','shift-close':'إغلاق الوردية',daily:'التشغيل اليومي',users:'المستخدمون',settings:'الإعدادات',products:'المنتجات',catalog:'التصنيفات',barcodes:'الباركود'};
       return map[screen]||titleFromDocument();
     }
-    const map={cards:'معالج البطاقات','accounts-review':'الحسابات',notes:'الملاحظات',orders:'الطلبات',programs:'البرامج',qr:'QR','document-reader':'قارئ المستندات','chat-payments-reader':'قارئ مدفوعات الدردشة','access-admin':'الإدارة'};
+    const map={cards:'معالج البطاقات','accounts-review':'الحسابات',notes:'الملاحظات',orders:'الطلبات',programs:'البرامج',qr:'QR','document-reader':'قارئ المستندات','chat-payments-reader':'قارئ مدفوعات الدردشة',links:'روابط العمل','access-admin':'الإدارة'};
     return map[currentApp]||titleFromDocument();
   }
 
@@ -60,6 +60,7 @@
       ['shop','🧾','حساب المحل','shop/'],
       ['cards','🎫','معالج البطاقات','cards/'],
       ['programs','🧰','البرامج','programs/'],
+      ['links','↗','روابط العمل','links/'],
       ['qr','▣','QR','qr/']
     ];
     const base=[
