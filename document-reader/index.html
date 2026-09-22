@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="theme-color" content="#2ea8e6">
+<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-bna2">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -35,7 +35,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>استخرج التاريخ، المستفيد، المبلغ، رقم الوثيقة، البنك والمرسل من صورة الوثيقة بدون تخمين.</p>
+  <p>استخرج التاريخ، المستفيد، المبلغ، رقم الوثيقة، البنك والمرسل من صورة الوثيقة بدون تخمين. <span style="opacity:.82">— نسخة BNA 2026-09-22.2</span></p>
 </section>
 
 <section class="card security">
@@ -1768,6 +1768,51 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return out;
   }
 
+  function parseBnaDocumentNumberRegion(text){
+    const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
+    const joined=lines.join(' ');
+    const labeled=joined.match(
+      /BORDEREAU\s+DE\s+VERSEMENT\s+ESPECES?\s*(?:N\s*[°ºo.]?|NO)\s*[:.]?\s*([0-9]{4,8})(?![0-9])/i
+    );
+    if(labeled)return labeled[1];
+
+    if(/BORDEREAU|VERSEMENT\s+ESPECES?/i.test(joined)){
+      const tokens=joined.match(/\b[0-9]{4,8}\b/g)||[];
+      const unique=[...new Set(tokens)];
+      if(unique.length===1)return unique[0];
+    }
+    return '';
+  }
+
+  async function tryRecoverBnaDocumentNumber(worker,degrees){
+    try{
+      progressTitle.textContent='تحسين قراءة رقم البوردرو…';
+      progressText.textContent='قراءة سطر Bordereau وحده حتى لا تختلط به أرقام أخرى.';
+      const page=drawRotatedCanvas(sourceImage,degrees,2600);
+      const regions=[
+        cropCanvasFraction(page,0.18,0.055,0.68,0.10),
+        cropCanvasFraction(page,0.08,0.035,0.84,0.15)
+      ];
+      for(const region of regions){
+        const result=await worker.recognize(region);
+        const raw=cleanText(result.data?.text||'');
+        const value=parseBnaDocumentNumberRegion(raw);
+        if(!value)continue;
+        const confidence=Number(result.data?.confidence||0);
+        return {
+          value,
+          source:'قراءة مركزة لسطر Bordereau de versement espèces N°',
+          status:confidence>=60?'read':'review',
+          confidence,
+          raw
+        };
+      }
+      return null;
+    }catch(_e){
+      return null;
+    }
+  }
+
   function parseBdlDateRegion(text,valueDateText){
     const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
     const joined=lines.join(' ');
@@ -1912,6 +1957,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const manualOverride=templateSelect.value!=='auto';
       const templateId=manualOverride?templateSelect.value:detectedTemplateId;
       const extracted=parseByTemplate(templateId,best.text);
+      if(templateId==='bna'&&(!extracted.documentNumber||extracted.documentNumber.status==='review')){
+        const recoveredDocumentNumber=await tryRecoverBnaDocumentNumber(worker,best.rotation);
+        if(recoveredDocumentNumber)extracted.documentNumber=recoveredDocumentNumber;
+      }
       if(templateId==='bdl'&&(!extracted.date||extracted.date.status==='review')){
         const recoveredDate=await tryRecoverBdlDate(worker,best.rotation,best.text);
         if(recoveredDate)extracted.date=recoveredDate;
