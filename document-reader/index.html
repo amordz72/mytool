@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-docflow4">
+<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-docflow5">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -24,7 +24,7 @@ body{margin:0;padding:12px;font-family:Arial,Tahoma,sans-serif;background:linear
 .results{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{border:1px solid var(--l);border-radius:13px;padding:11px;background:#fff}.field-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.field-label{font-size:12px;font-weight:800}.status{font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}.status.ok{background:#e8f7ef;color:var(--ok)}.status.warn{background:#fff6db;color:#8a5b00}.status.info{background:#edf7ff;color:#17658a}.status.bad{background:#fff1f0;color:var(--bad)}.value{font-size:16px;font-weight:800;margin-top:7px;word-break:break-word}.source{font-size:10px;color:var(--m);margin-top:5px;line-height:1.5}.field-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.edit-btn{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.edit-input{width:100%;margin-top:8px;border:1px solid #a9d5e9;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;color:var(--t);background:#fff}.edit-row{display:flex;gap:6px;margin-top:6px}.recipient-context{padding:0;overflow:hidden}.context-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;padding:12px 14px;border-bottom:1px solid var(--l)}.recipient-box{display:flex;flex-direction:column;gap:4px}.recipient-box span,.date-box span{font-size:10px;color:var(--m);font-weight:800}.recipient-select-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.recipient-box select,.date-box input{width:100%;border:1px solid #b9d5e3;border-radius:9px;padding:9px;background:#fff;color:var(--t);font:inherit;font-size:12px;font-weight:700}.recipient-add{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:9px;padding:7px 12px;font-size:18px;font-weight:900;cursor:pointer}.date-box{display:flex;flex-direction:column;gap:4px;min-width:150px}.history-title{padding:9px 14px 7px;font-size:10px;font-weight:800;color:var(--m);background:#fafcfd}.settlement-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:10px 12px;background:#f8fbfd;border-top:1px solid var(--l)}.settlement-card{border:1px solid #dbe7f0;border-radius:12px;background:#fff;padding:9px}.settlement-card b{display:block;font-size:11px}.settlement-card small{display:block;margin-top:4px;color:var(--m);font-size:9px;line-height:1.55}.settlement-debt-btn{margin-top:6px;border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:7px;padding:5px 7px;font-size:9px;font-weight:800;cursor:pointer}@media(max-width:520px){.settlement-summary{grid-template-columns:1fr}}.recipient-tabs{display:flex;overflow-x:auto;scrollbar-width:thin;border-top:1px solid var(--l);border-bottom:1px solid var(--l);background:#f2f4f6}.recipient-tab{flex:0 0 auto;border:0;border-left:1px solid #d8dee3;background:#eef0f2;color:#30485a;padding:11px 14px;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap}@media(max-width:520px){.recipient-tabs{flex-wrap:wrap;overflow-x:visible;scrollbar-width:none}.recipient-tab{flex:0 0 auto;padding:10px 12px}.recipient-tab:last-child{border-left:0}}.recipient-tab.active{background:#fff;color:#0d5e86;box-shadow:inset 0 3px 0 var(--b)}.platform-history-tabs{display:flex;gap:6px;padding:8px 10px;background:#f8fbfd;border-bottom:1px solid var(--l)}.platform-history-tab{border:1px solid #c9dce8;background:#fff;color:#38596a;border-radius:8px;padding:7px 12px;font-size:10px;font-weight:800;cursor:pointer}.platform-history-tab.active{background:#eaf7fd;color:#0d5e86;border-color:#8fcce7}.platform-history-tabs.hidden{display:none}.operation-history{background:#fff}.history-date{padding:9px 14px;background:#f8fbfd;border-top:1px solid var(--l);border-bottom:1px solid var(--l);font-size:11px;font-weight:900;color:#24566f}.history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 10px;padding:11px 12px;border:1px solid #e1eaf0;border-radius:12px;background:#fff;box-shadow:0 2px 8px #1630470a}.history-row.active{background:#f2fbff;border-color:#9bd3ec}.history-main{min-width:0;cursor:pointer}.history-main b{display:block;font-size:12px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-main small{display:block;margin-top:3px;color:var(--m);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-actions{display:flex;gap:5px}.history-open,.history-delete{border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800;cursor:pointer}.history-delete{color:#a33;border-color:#efc4bf;background:#fff7f6}.history-empty{padding:12px 14px;color:var(--m);font-size:11px}.date-hint{font-size:10px;color:#0d5e86;font-weight:800;min-height:14px;margin-top:2px}.context-body{padding:9px 14px;background:#fff;font-size:10px;color:var(--m);line-height:1.6}.context-body b{color:var(--t)}.selected-context{margin-top:10px;background:#eef9ff;border:1px solid #b9d8e7;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.6;color:#24566f}@media(max-width:520px){.context-top{grid-template-columns:1fr}.date-box{min-width:0}}
 .notice{margin-top:10px;border:1px solid #f1d28a;background:#fff9e8;color:#755b13;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.65}.quality{margin-top:10px;border-radius:13px;padding:11px 12px;font-size:12px;line-height:1.65}.quality.ok{background:#effaf5;border:1px solid #b7e3cd;color:#17643f}.quality.warn{background:#fff9e8;border:1px solid #f1d28a;color:#755b13}.quality.bad{background:#fff4f2;border:1px solid #f0b6b1;color:#9f2219}.quality b{display:block;margin-bottom:3px}
 .error{margin-top:10px;border:1px solid #f0b6b1;background:#fff4f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;white-space:pre-wrap}
-.image-refs{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding:6px 2px}.image-ref{flex:0 0 auto;border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:800;cursor:pointer}.image-ref.active{background:#e8f7ff;border-color:#66b9df}.toast-stack{position:fixed;top:16px;right:16px;z-index:9999;display:grid;gap:10px;width:min(360px,calc(100vw - 24px));pointer-events:none}.toast{pointer-events:auto;background:#fff;border:1px solid #dfe7ed;border-radius:15px;padding:13px 14px;box-shadow:0 12px 34px #10283a28;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;animation:toastIn .18s ease}.toast-icon{font-size:20px;line-height:1}.toast-title{font-weight:900;font-size:13px;color:var(--t)}.toast-message{margin-top:3px;font-size:11px;line-height:1.55;color:var(--m)}.toast-close{border:0;background:transparent;color:#81919d;font-size:20px;line-height:1;cursor:pointer}.toast.success{border-right:4px solid #35bf75}.toast.warn{border-right:4px solid #e4a21b}.toast.error{border-right:4px solid #ef6470}.toast.info{border-right:4px solid #45a8d8}@keyframes toastIn{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}@media(max-width:620px){.toast-stack{top:10px;right:12px;left:12px;width:auto}}
+.image-refs{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding:6px 2px;align-items:center}.image-ref{flex:0 0 auto;border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:800;cursor:pointer}.image-ref.active{background:#e8f7ff;border-color:#66b9df}.image-primary-action{flex:0 0 auto;border:1px solid #8fcce7;background:#eaf7fd;color:#0d5e86;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:900;cursor:pointer}.image-primary-action:disabled{opacity:.6;cursor:default}.toast-stack{position:fixed;top:16px;right:16px;z-index:9999;display:grid;gap:10px;width:min(360px,calc(100vw - 24px));pointer-events:none}.toast{pointer-events:auto;background:#fff;border:1px solid #dfe7ed;border-radius:15px;padding:13px 14px;box-shadow:0 12px 34px #10283a28;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;animation:toastIn .18s ease}.toast-icon{font-size:20px;line-height:1}.toast-title{font-weight:900;font-size:13px;color:var(--t)}.toast-message{margin-top:3px;font-size:11px;line-height:1.55;color:var(--m)}.toast-close{border:0;background:transparent;color:#81919d;font-size:20px;line-height:1;cursor:pointer}.toast.success{border-right:4px solid #35bf75}.toast.warn{border-right:4px solid #e4a21b}.toast.error{border-right:4px solid #ef6470}.toast.info{border-right:4px solid #45a8d8}@keyframes toastIn{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}@media(max-width:620px){.toast-stack{top:10px;right:12px;left:12px;width:auto}}
 details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{cursor:pointer;font-weight:700;font-size:12px;color:#0d5e86}pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:10px}
 .hidden{display:none!important}
 @media(max-width:620px){.actions{grid-template-columns:1fr 1fr}.results,.detected{grid-template-columns:1fr}.hero{padding:15px}.file-row{grid-template-columns:1fr}}
@@ -35,7 +35,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.8</span></p>
+  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.10</span></p>
 </section>
 
 <section class="card security">
@@ -66,7 +66,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <section class="card">
   <div class="file-row">
     <div id="fileName" class="file-name">لم يتم اختيار صورة</div>
-    <label class="btn primary" for="fileInput">اختيار صورة</label>
+    <label class="btn primary" for="fileInput">اختيار صور الوصل</label>
     <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/*" multiple hidden>
     <input id="additionalFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/*" multiple hidden>
   </div>
@@ -87,6 +87,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     <img id="previewImg" alt="معاينة الوثيقة" class="hidden">
   </div>
   <div id="imageRefs" class="image-refs hidden"></div>
+  <div id="imageBundleHint" class="notice hidden"></div>
 
   <div id="progressBox" class="progress hidden"><strong id="progressTitle">جاري التحليل…</strong><div id="progressText"></div></div>
   <div id="errorBox" class="error hidden"></div>
@@ -159,6 +160,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const recipientContextText = $('recipientContextText');
   const selectedContext = $('selectedContext');
   const imageRefs = $('imageRefs');
+  const imageBundleHint = $('imageBundleHint');
   const toastStack = $('toastStack');
 
   let objectUrl = '';
@@ -171,7 +173,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const RECIPIENT_CONTEXT_KEY='mytool.document-reader.recipient-context.v1';
   const RECENT_OPERATIONS_KEY='mytool.document-reader.recent-operations.v1';
   const DOCUMENT_INDEX_KEY='mytool.document-reader.document-index.v1';
-  const DOCUMENT_INDEX_CLEANUP_KEY='mytool.document-reader.document-index-cleanup.v4';
+  const DOCUMENT_INDEX_CLEANUP_KEY='mytool.document-reader.document-index-cleanup.v5';
   const ARCHIVE_RULE_MIGRATION_KEY='mytool.document-reader.archive-rule-migration.v1';
   const SUPPLIER_DEBTS_KEY='mytool.document-reader.supplier-debts.v1';
   const RECEIPT_DB_NAME='mytool-document-reader-local-v1';
@@ -278,11 +280,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function normalizeReceiptImageRecord(record,id=''){
     if(!record)return {id,images:[],primaryIndex:0,savedAt:''};
     if(Array.isArray(record.images)){
+      const images=record.images.filter(item=>item&&item.blob);
+      const requested=Number(record.primaryIndex||0);
+      const primaryIndex=images.length?Math.max(0,Math.min(requested,images.length-1)):0;
       return {
         ...record,
         id:record.id||id,
-        images:record.images.filter(item=>item&&item.blob),
-        primaryIndex:0
+        images,
+        primaryIndex
       };
     }
     if(record.blob){
@@ -325,8 +330,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       type:blob.type||'image/jpeg',
       savedAt:new Date().toISOString()
     };
+    const previousPrimary=Number(record.primaryIndex||0);
     record.images=append?[...(record.images||[]),image]:[image];
-    record.primaryIndex=0;
+    record.primaryIndex=append?Math.max(0,Math.min(previousPrimary,record.images.length-1)):0;
     record.savedAt=new Date().toISOString();
     return new Promise((resolve,reject)=>{
       const tx=db.transaction(RECEIPT_IMAGE_STORE,'readwrite');
@@ -335,6 +341,46 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       tx.onerror=()=>reject(tx.error||new Error('تعذر حفظ صورة الوصل محليًا.'));
       tx.onabort=()=>reject(tx.error||new Error('تعذر حفظ صورة الوصل محليًا.'));
     });
+  }
+
+  async function setReceiptPrimaryImage(id,index){
+    if(!id)return null;
+    const db=await openReceiptDb();
+    const record=normalizeReceiptImageRecord(await getReceiptImage(id),id);
+    if(!record.images.length)return record;
+    record.primaryIndex=Math.max(0,Math.min(Number(index||0),record.images.length-1));
+    record.savedAt=new Date().toISOString();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(RECEIPT_IMAGE_STORE,'readwrite');
+      tx.objectStore(RECEIPT_IMAGE_STORE).put(record);
+      tx.oncomplete=()=>resolve(record);
+      tx.onerror=()=>reject(tx.error||new Error('تعذر اعتماد الصورة الرئيسية.'));
+      tx.onabort=()=>reject(tx.error||new Error('تعذر اعتماد الصورة الرئيسية.'));
+    });
+  }
+
+  async function mergeReceiptImages(fromId,toId){
+    if(!fromId||!toId||fromId===toId)return getReceiptImage(toId);
+    const db=await openReceiptDb();
+    const from=normalizeReceiptImageRecord(await getReceiptImage(fromId),fromId);
+    const to=normalizeReceiptImageRecord(await getReceiptImage(toId),toId);
+    if(!from.images.length)return to;
+    const merged={
+      ...to,
+      id:toId,
+      images:[...(to.images||[]),...(from.images||[])],
+      primaryIndex:Number(to.primaryIndex||0),
+      savedAt:new Date().toISOString()
+    };
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(RECEIPT_IMAGE_STORE,'readwrite');
+      tx.objectStore(RECEIPT_IMAGE_STORE).put(merged);
+      tx.objectStore(RECEIPT_IMAGE_STORE).delete(fromId);
+      tx.oncomplete=resolve;
+      tx.onerror=()=>reject(tx.error||new Error('تعذر دمج صور الوصل.'));
+      tx.onabort=()=>reject(tx.error||new Error('تعذر دمج صور الوصل.'));
+    });
+    return normalizeReceiptImageRecord(merged,toId);
   }
 
   async function deleteReceiptImage(id){
@@ -369,20 +415,40 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function renderImageRefs(record){
     const images=record?.images||[];
+    const primaryIndex=images.length?Math.max(0,Math.min(Number(record?.primaryIndex||0),images.length-1)):0;
     imageRefs.innerHTML='';
-    if(images.length<=1){
+    imageBundleHint.classList.add('hidden');
+    imageBundleHint.textContent='';
+    if(!images.length){
       imageRefs.classList.add('hidden');
       return;
     }
+
     images.forEach((img,index)=>{
       const btn=document.createElement('button');
       btn.type='button';
       btn.className='image-ref'+(index===currentImageIndex?' active':'');
-      btn.textContent=index===0?'الصورة الرئيسية':'مرجع '+(index+1);
-      btn.title=img.fileName||btn.textContent;
+      btn.textContent=(index===primaryIndex?'★ ':'')+'صورة '+(index+1);
+      btn.title=(index===primaryIndex?'المعتمدة للتحليل — ':'')+(img.fileName||('صورة '+(index+1)));
       btn.dataset.imageIndex=String(index);
       imageRefs.appendChild(btn);
     });
+
+    const status=effectiveStatus(currentResult);
+    if(images.length>1&&['pending_analysis','analysis_failed'].includes(status)){
+      const choose=document.createElement('button');
+      choose.type='button';
+      choose.className='image-primary-action';
+      choose.dataset.setPrimaryIndex=String(currentImageIndex);
+      choose.disabled=currentImageIndex===primaryIndex;
+      choose.textContent=currentImageIndex===primaryIndex?'✓ المعروضة هي المعتمدة':'اعتماد المعروضة للتحليل';
+      imageRefs.appendChild(choose);
+      imageBundleHint.textContent='هذه صور لنفس الوصل. اختر أوضح صورة واعتمدها قبل التحليل. التحليل يتم مرة واحدة فقط على ملف الوصل.';
+      imageBundleHint.classList.remove('hidden');
+    }else if(images.length>1){
+      imageBundleHint.textContent='هذا ملف وصل واحد وله '+images.length+' صور محفوظة. لا تُنشأ عملية مالية جديدة لكل صورة.';
+      imageBundleHint.classList.remove('hidden');
+    }
     imageRefs.classList.remove('hidden');
   }
 
@@ -394,7 +460,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const item=images[safeIndex];
     sourceImage=await loadImage(item.blob);
     currentImageIndex=safeIndex;
-    $('fileName').textContent=item.fileName||(safeIndex===0?'صورة الوصل':'صورة مرجع');
+    $('fileName').textContent=item.fileName||('صورة '+(safeIndex+1));
     previewImg.src=objectUrl;
     previewImg.classList.remove('hidden');
     previewEmpty.classList.add('hidden');
@@ -405,7 +471,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   async function ensurePrimaryImageLoaded(){
     if(!currentResult?.operationId)return;
-    if(currentImageIndex!==0)await displayStoredImage(currentResult.operationId,0);
+    const record=await getReceiptImage(currentResult.operationId);
+    const primaryIndex=Math.max(0,Math.min(Number(record?.primaryIndex||0),(record?.images?.length||1)-1));
+    if(currentImageIndex!==primaryIndex)await displayStoredImage(currentResult.operationId,primaryIndex);
   }
 
   function getRecentOperations(){
@@ -437,9 +505,31 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     try{localStorage.setItem(DOCUMENT_INDEX_KEY,JSON.stringify(index||{}));}catch(_e){}
   }
 
+  function normalizedDocumentNumber(payload){
+    return cleanLine(payload?.fields?.documentNumber?.value||'').replace(/\s+/g,'').toUpperCase();
+  }
+
+  function receiptIdentityType(payload){
+    const type=cleanLine(payload?.templateId||'unknown').toLowerCase();
+    return type&&type!=='unknown'?type:'';
+  }
+
   function documentFingerprint(payload){
-    const number=cleanLine(payload?.fields?.documentNumber?.value||'').replace(/\s+/g,'').toUpperCase();
-    return number||'';
+    const type=receiptIdentityType(payload);
+    const number=normalizedDocumentNumber(payload);
+    if(!type||!number)return '';
+    return type+'|'+number;
+  }
+
+  function receiptIdentityText(payload){
+    const type=receiptIdentityType(payload);
+    const number=cleanLine(payload?.fields?.documentNumber?.value||'');
+    if(!type||!number)return '';
+    return templateLabel(type)+' · '+number;
+  }
+
+  function hasConfirmedReceiptIdentity(payload){
+    return Boolean(documentFingerprint(payload));
   }
 
   function findDuplicateDocument(payload){
@@ -457,6 +547,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const index=getDocumentIndex();
     index[fingerprint]={
       operationId:payload.operationId||'',
+      identityKey:fingerprint,
       documentNumber:payload.fields?.documentNumber?.value||'',
       templateId:payload.templateId||'unknown',
       selectedRecipient:payload.selectedRecipient||'',
@@ -470,12 +561,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function unregisterDocumentForOperation(op){
     if(!op)return;
     const index=getDocumentIndex();
-    const number=cleanLine(op?.fields?.documentNumber?.value||op?.documentNumber||'').replace(/\s+/g,'').toUpperCase();
+    const fingerprint=documentFingerprint(op);
     let changed=false;
     Object.keys(index).forEach(key=>{
       const item=index[key]||{};
-      const indexedNumber=cleanLine(item.documentNumber||key||'').replace(/\s+/g,'').toUpperCase();
-      if((op.id&&item.operationId===op.id)||(number&&indexedNumber===number)){
+      if((op.id&&item.operationId===op.id)||(fingerprint&&key===fingerprint)){
         delete index[key];
         changed=true;
       }
@@ -780,8 +870,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function renderDocumentIdGuide(templateId){
     const rule=documentIdRule(templateId);
     if(rule){
-      idRuleHint.innerHTML='<b>رقم الوثيقة المعتمد لمنع التكرار — '+escapeHtml(rule.label)+':</b> '
-        +'<code>'+escapeHtml(rule.field)+'</code><br>'+escapeHtml(rule.help);
+      idRuleHint.innerHTML='<b>هوية الوصل المعتمدة لمنع التكرار — '+escapeHtml(rule.label)+':</b> '
+        +'<code>'+escapeHtml(rule.field)+'</code><br>'+escapeHtml(rule.help)
+        +'<br><b>قاعدة المنع:</b> نوع البنك/الوسيلة + رقم الوثيقة معًا.';
     }else{
       idRuleHint.innerHTML='<b>إذا فشل التعرف:</b> اختر نوع الوثيقة يدويًا، ثم أدخل الحقول. '
         +'سيشرح البرنامج هنا أي رقم يعتبره ID لمنع تكرار نفس الوصل.';
@@ -940,6 +1031,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       detectedTemplateId:payload.detectedTemplateId||payload.templateId||'unknown',
       manualOverride:Boolean(payload.manualOverride),
       template:payload.template||templateLabel(payload.templateId),
+      identityKey:documentFingerprint(payload),
       fields:JSON.parse(JSON.stringify(payload.fields||emptyExtraction())),
       ocrConfidence:Number(payload.ocrConfidence||0),
       orientation:Number(payload.orientation||0),
@@ -1002,8 +1094,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     try{storedImage=await getReceiptImage(op.id);}catch(_e){}
     if(storedImage?.images?.length){
       try{
-        currentImageIndex=0;
-        await displayStoredImage(op.id,0);
+        const openRecord=await getReceiptImage(op.id);
+        currentImageIndex=Number(openRecord?.primaryIndex||0);
+        await displayStoredImage(op.id,currentImageIndex);
         rotation=Number(op.orientation||0);
         updatePreview();
         clearBtn.disabled=false;
@@ -1219,8 +1312,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       && !currentResult.historyView
       && !['archived','duplicate'].includes(s));
     addImageBtn.disabled=busy||!canAddReference;
+    addImageBtn.textContent=['pending_analysis','analysis_failed'].includes(s)?'+ صورة لنفس الوصل':'+ صورة مرجع';
     manualEntryBtn.disabled=busy||!currentResult||currentResult.historyView||finalized;
-    analyzeBtn.disabled=busy||!sourceImage||finalized;
+    analyzeBtn.disabled=busy||!sourceImage||!['pending_analysis','analysis_failed'].includes(s);
     rotateRightBtn.disabled=busy||!sourceImage||['archived','duplicate'].includes(s);
     receiptDate.disabled=Boolean(busy||currentResult?.historyView||['archived','duplicate'].includes(s));
     renderRecipientSelect();
@@ -1262,6 +1356,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     renderDocumentIdGuide('unknown');
     imageRefs.innerHTML='';
     imageRefs.classList.add('hidden');
+    imageBundleHint.textContent='';
+    imageBundleHint.classList.add('hidden');
     currentImageIndex=0;
     renderRecipientSelect();
   }
@@ -1408,7 +1504,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     if(payload.duplicateInfo){
       const d=payload.duplicateInfo;
-      messages.push('وصل مكرر ممنوع: رقم الوثيقة '+(d.documentNumber||'')+' سبق تسجيله'
+      messages.push('وصل مكرر ممنوع: نفس هوية الوصل '+(d.templateId?templateLabel(d.templateId)+' · ':'')+(d.documentNumber||'')+' سبق تسجيلها'
         +(d.selectedRecipient?' إلى '+d.selectedRecipient:'')
         +(d.receiptDate?' بتاريخ '+d.receiptDate:'')+'.');
       level='bad';
@@ -1896,7 +1992,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const contextDate=payload.receiptDate||receiptDate.value||'';
     const contextDay=weekdayArabic(contextDate);
     const actualSettlement=payload.selectedRecipient&&payload.selectedRecipient!==UNSENT_RECIPIENT?payload.selectedRecipient:'غير مسوّى';
+    const identity=receiptIdentityText(payload);
     selectedContext.innerHTML='<b>التسوية:</b> '+escapeHtml(actualSettlement)
+      +(identity?' &nbsp; | &nbsp; <b>هوية الوصل:</b> '+escapeHtml(identity):'')
       +' &nbsp; | &nbsp; <b>تاريخ الوصل:</b> '+escapeHtml(contextDate||'غير محدد')
       +(contextDay?' — '+escapeHtml(contextDay):'')
       +' &nbsp; | &nbsp; <b>الحالة:</b> '+escapeHtml(operationStatusText(payload));
@@ -1942,7 +2040,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const notice=$('resultNotice');
     if(payload.duplicateInfo){
       const d=payload.duplicateInfo;
-      notice.textContent='⛔ وصل مكرر: رقم الوثيقة '+(d.documentNumber||'')+' موجود في عملية أخرى'
+      notice.textContent='⛔ وصل مكرر: هوية '+(d.templateId?templateLabel(d.templateId)+' · ':'')+(d.documentNumber||'')+' موجودة في عملية أخرى'
         +(d.selectedRecipient?' عند '+d.selectedRecipient:'')
         +(d.receiptDate?' بتاريخ '+d.receiptDate:'')
         +(d.createdAt?' — '+new Date(d.createdAt).toLocaleTimeString('ar-DZ',{hour:'2-digit',minute:'2-digit'}):'')
@@ -1996,7 +2094,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       if(key==='documentNumber'){
         const dup=findDuplicateDocument(candidate);
         if(dup){
-          showToast('error','رقم وثيقة مكرر','هذا الرقم موجود في وصل آخر؛ لم يتم حفظ التعديل.',6000);
+          showToast('error','هوية وصل مكررة','نفس نوع البنك/الوسيلة ونفس رقم الوثيقة موجودان في وصل آخر؛ لم يتم حفظ التعديل.',6000);
           renderResult(currentResult);
           return;
         }
@@ -2179,7 +2277,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   async function analyze(){
     if(!sourceImage||busy)return;
-    if(currentResult?.operationId&&currentImageIndex!==0){
+    const existingStatus=effectiveStatus(currentResult);
+    if(currentResult&&!['pending_analysis','analysis_failed'].includes(existingStatus)){
+      showToast('warn','التحليل تم مسبقًا','ملف الوصل لا يُحلل مرة ثانية. أضف الصور كمرجع وصحح الحقول يدويًا عند الحاجة.',5600);
+      return;
+    }
+    if(currentResult?.operationId){
       try{await ensurePrimaryImageLoaded();}catch(_e){}
     }
     const workingOperation=currentResult&&!currentResult.historyView?currentResult:null;
@@ -2263,34 +2366,60 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         historyView:false
       };
       currentResult=payload;
-      const accepted=persistCurrentOperation({registerDoc:true});
-      if(!accepted)currentResult.status='duplicate';
+      const duplicate=findDuplicateDocument(payload);
+      if(duplicate?.operationId){
+        const existing=getRecentOperations().find(op=>op.id===duplicate.operationId);
+        const existingStatus=effectiveStatus(existing);
+        if(existing&&['analyzed','manual_entry','saved_unsettled'].includes(existingStatus)){
+          try{
+            const merged=await mergeReceiptImages(payload.operationId,existing.id);
+            const remaining=getRecentOperations()
+              .filter(op=>op.id!==payload.operationId)
+              .map(op=>op.id===existing.id?{...op,imageCount:merged?.images?.length||op.imageCount||1}:op);
+            saveRecentOperations(remaining);
+            currentResult=null;
+            progressBox.classList.add('hidden');
+            await openRecentOperation(existing.id);
+            if(merged)renderImageRefs(merged);
+            showToast('success','نفس الوصل — تم تجميع الصور','لم تُنشأ عملية جديدة. أضيفت الصور إلى ملف الوصل الموجود: '+receiptIdentityText(existing)+'.',6500);
+            return;
+          }catch(_e){
+            currentResult=payload;
+          }
+        }
+        currentResult.duplicateInfo=duplicate;
+        currentResult.status='duplicate';
+        persistCurrentOperation({registerDoc:false});
+      }else{
+        persistCurrentOperation({registerDoc:true});
+      }
       renderResult(currentResult);
 
       progressBox.classList.add('hidden');
       try{
         const imageRecord=await getReceiptImage(currentResult.operationId);
         currentResult.imageCount=imageRecord?.images?.length||currentResult.imageCount||1;
-        currentImageIndex=0;
+        const primaryIndex=Number(imageRecord?.primaryIndex||0);
+        currentImageIndex=Math.max(0,Math.min(primaryIndex,(imageRecord?.images?.length||1)-1));
         renderImageRefs(imageRecord);
         persistCurrentOperation({registerDoc:currentResult.status!=='duplicate'});
       }catch(_e){}
       if(currentResult.status==='duplicate'){
-        showToast('error','وصل مكرر — ممنوع الحفظ','رقم الوثيقة مسجل سابقًا. هذه العملية تبقى للمراجعة ولا يمكن حفظها مرة ثانية.',6500);
+        showToast('error','هذا الوصل موجود سابقًا','نفس هوية الوصل ('+receiptIdentityText(currentResult)+') موجودة. افتح الأصل؛ لا يمكن إنشاء عملية مالية ثانية.',6800);
       }else{
-        showToast('warn','تم التحليل — قبل الحفظ','راجع الحقول والصور ثم اضغط «حفظ» لتأكيد العملية.',6500);
+        showToast('warn','تم التحليل مرة واحدة','ثبتت هوية الوصل. راجع الحقول ثم احفظه؛ أي صور إضافية تبقى داخل نفس الملف ولا تعيد التحليل.',6800);
       }
     }catch(err){
       if(workingOperation){
         currentResult=workingOperation;
-        currentResult.status='manual_entry';
-        currentResult.language='يدوي';
+        currentResult.status='analysis_failed';
+        currentResult.language='';
         currentResult.templateId=templateSelect.value==='auto'?'unknown':templateSelect.value;
         currentResult.manualOverride=currentResult.templateId!=='unknown';
-        currentResult.template=currentResult.templateId==='unknown'?'نوع غير محدد — إدخال يدوي':templateLabel(currentResult.templateId);
-        currentResult.fields=manualTemplateBaseFields(currentResult.templateId,currentResult.fields||emptyExtraction());
-        persistCurrentOperation({registerDoc:Boolean(documentFingerprint(currentResult))});
-        renderResult(currentResult);
+        currentResult.template=currentResult.templateId==='unknown'?'فشل التحليل — بانتظار إعادة المحاولة أو الإدخال اليدوي':templateLabel(currentResult.templateId);
+        currentResult.fields=currentResult.fields||emptyExtraction();
+        persistCurrentOperation({registerDoc:false});
+        resultCard.classList.add('hidden');
       }
       clearError();
       progressBox.classList.add('hidden');
@@ -2374,7 +2503,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!['analyzed','manual_entry'].includes(currentResult.status)||currentResult.duplicateInfo)return;
 
     if(currentResult.templateId==='unknown'){
-      showToast('warn','حدد نوع الوثيقة','اختر نوع الوثيقة أولًا حتى يعرف البرنامج أي ID يجب اعتماده.',6000);
+      showToast('warn','حدد البنك أو الوسيلة','يجب معرفة نوع البنك/وسيلة الدفع قبل حفظ الوصل المالي.',6000);
       return;
     }
     const docNumber=cleanLine(currentResult.fields?.documentNumber?.value||'');
@@ -2385,13 +2514,17 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         6500);
       return;
     }
+    if(!hasConfirmedReceiptIdentity(currentResult)){
+      showToast('warn','هوية الوصل غير مكتملة','لا يمكن الحفظ أو التسوية قبل معرفة نوع البنك/الوسيلة ورقم الوثيقة معًا.',6000);
+      return;
+    }
 
     currentResult.duplicateInfo=findDuplicateDocument(currentResult);
     if(currentResult.duplicateInfo){
       currentResult.status='duplicate';
       persistCurrentOperation({registerDoc:false});
       renderResult(currentResult);
-      showToast('error','تعذر الحفظ','رقم الوثيقة '+docNumber+' مسجل سابقًا.',6500);
+      showToast('error','تعذر الحفظ','نفس البنك/الوسيلة مع رقم الوثيقة '+docNumber+' مسجل سابقًا.',6500);
       return;
     }
 
@@ -2403,7 +2536,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!ok){
       currentResult.status='duplicate';
       renderResult(currentResult);
-      showToast('error','تعذر الحفظ','رقم الوثيقة مسجل سابقًا.',6000);
+      showToast('error','تعذر الحفظ','هوية الوصل مسجلة سابقًا.',6000);
       return;
     }
     renderResult(currentResult);
@@ -2418,6 +2551,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const s=effectiveStatus(currentResult);
     if(!['saved_unsettled','settled'].includes(s)){
       showToast('warn','احفظ الوصل أولًا','التسوية تكون بعد حفظ الوصل والتأكد من بياناته.',4800);
+      return;
+    }
+
+    if(!hasConfirmedReceiptIdentity(currentResult)){
+      showToast('warn','هوية الوصل غير مكتملة','التسوية ممنوعة حتى تكون وسيلة الدفع ورقم الوثيقة معروفين.',5200);
       return;
     }
 
@@ -2544,6 +2682,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
           record=await saveReceiptImage(currentResult.operationId,files[i],files[i].name||('مرجع '+(i+1)),true);
         }
         currentResult.imageCount=record?.images?.length||files.length;
+        currentImageIndex=Number(record?.primaryIndex||0);
         renderImageRefs(record);
       }catch(_e){
         record=null;
@@ -2563,8 +2702,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       if(record){
         showToast('success','تم حفظ الوصل في الانتظار',
           currentResult.imageCount>1
-            ? 'تم حفظ '+currentResult.imageCount+' صور في بطاقة واحدة. الصورة الأولى رئيسية والباقي مراجع.'
-            : 'تم حفظ الصورة محليًا بدون مورد، والعملية بانتظار التحليل.',
+            ? 'تم تجميع '+currentResult.imageCount+' صور في ملف وصل واحد. اختر أوضح صورة واعتمدها قبل التحليل.'
+            : 'تم حفظ الصورة داخل ملف وصل غير مسوّى، والعملية بانتظار التحليل.',
           6000);
       }else{
         showToast('error','تعذر الحفظ المحلي','الصورة مفتوحة الآن، لكن إغلاق الصفحة قد يفقدها.',6500);
@@ -2594,10 +2733,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         record=await saveReceiptImage(currentResult.operationId,file,file.name||'صورة مرجع',true);
       }
       currentResult.imageCount=record?.images?.length||currentResult.imageCount||1;
-      persistCurrentOperation({registerDoc:currentResult.status==='analyzed'||currentResult.status==='saved'});
+      persistCurrentOperation({registerDoc:statusCarriesDocumentIdentity(currentResult)});
       renderImageRefs(record);
-      showToast('success','تمت إضافة صورة مرجع',
-        files.length>1?'أضيفت '+files.length+' صور إلى نفس الوصل.':'الصورة أضيفت لنفس الوصل ولن تُنشئ عملية جديدة.',
+      showToast('success','تمت إضافة صور لنفس الوصل',
+        files.length>1?'أضيفت '+files.length+' صور إلى ملف الوصل نفسه.':'الصورة أضيفت إلى ملف الوصل نفسه ولن تُنشئ عملية جديدة.',
         5000);
     }catch(_e){
       showToast('error','تعذر إضافة الصورة','لم أستطع حفظ صورة المرجع محليًا.',5500);
@@ -2605,12 +2744,32 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   });
 
   imageRefs.addEventListener('click',async event=>{
+    const primary=event.target.closest('[data-set-primary-index]');
+    if(primary&&currentResult?.operationId){
+      if(!['pending_analysis','analysis_failed'].includes(effectiveStatus(currentResult))){
+        showToast('warn','التحليل مثبت','بعد نجاح التحليل تبقى الصور مراجع ولا نغيّر صورة التحليل.',4200);
+        return;
+      }
+      const index=Number(primary.getAttribute('data-set-primary-index')||0);
+      try{
+        const record=await setReceiptPrimaryImage(currentResult.operationId,index);
+        currentImageIndex=index;
+        await displayStoredImage(currentResult.operationId,index);
+        renderImageRefs(record);
+        showToast('success','تم اعتماد الصورة','هذه هي الصورة التي سيُجرى عليها التحليل الوحيد للوصل.',4200);
+      }catch(_e){
+        showToast('error','تعذر اعتماد الصورة','لم أستطع تحديث الصورة الرئيسية.',4500);
+      }
+      return;
+    }
+
     const btn=event.target.closest('[data-image-index]');
     if(!btn||!currentResult?.operationId)return;
     const index=Number(btn.getAttribute('data-image-index')||0);
     try{
       await displayStoredImage(currentResult.operationId,index);
-      if(index>0)showToast('info','صورة مرجع','هذه صورة مرجعية فقط؛ التحليل يعتمد الصورة الرئيسية.',3500);
+      const record=await getReceiptImage(currentResult.operationId);
+      renderImageRefs(record);
     }catch(_e){
       showToast('error','تعذر فتح الصورة','الصورة المرجعية غير متاحة على هذا الجهاز.',4500);
     }
