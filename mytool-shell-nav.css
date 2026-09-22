@@ -41,3 +41,7 @@ body.mytool-shell-nav-active[data-mytool-app="flexy"] #menu{display:none!importa
 @media(min-width:1400px){
   body.mytool-shell-nav-active[data-mytool-app="flexy"] .main-area{margin-right:0!important}
 }
+
+/* Admin/tools sessions already have the shared My Tools header and the left local-app menu. */
+body.mytool-shell-nav-active[data-mytool-app="shop"] .shell-canonical-header,
+body.mytool-shell-nav-active[data-mytool-app="shop"] .shared-screen-nav{display:none!important}
