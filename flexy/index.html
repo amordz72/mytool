@@ -38,6 +38,8 @@
     .offer-info:hover,.offer-info:focus{background:#fff;color:var(--brand);transform:none}
     .operation-item{border:1px solid #e0e5ee;border-radius:.65rem;background:#fff}.operation-label{font-size:.72rem;color:#8a98aa}.operation-value{font-weight:700;color:#52657a}
     .operation-pending{display:inline-flex;align-items:center;gap:.4rem;color:#64748b;font-size:.78rem;font-weight:700}.operation-spinner{width:1rem;height:1rem;border:.14rem solid #cbd5e1;border-top-color:var(--brand);border-radius:50%;display:inline-block;animation:operation-spin .75s linear infinite}@keyframes operation-spin{to{transform:rotate(360deg)}}
+    .offer-modal{z-index:1095}
+    .modal-backdrop{z-index:1090}
     .offer-modal .modal-content{border:0;border-radius:1rem;box-shadow:0 1rem 3rem rgba(15,23,42,.2)}
     .offer-modal .modal-header{border-bottom:1px solid #edf0f5}.offer-modal .modal-footer{border-top:0}
     .status-box{background:#f0f2ff;color:#4f5f86}.discovery-alert{background:#fff8e6;border:1px solid #f3d38a;color:#6b571d}.discovery-raw{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.5 monospace;max-height:180px;overflow:auto}.progress{height:3px}.progress-bar{background:var(--brand);width:0}.execute-bar{border:1px solid #e2e6ef;background:#fff;border-radius:.7rem;display:flex}.execute-bar .btn{min-width:110px;font-weight:800}
@@ -73,8 +75,8 @@
       .offer-price{font-size:.78rem;padding:.32rem .5rem .27rem 1.05rem}.offer-info{top:2px;left:2px;width:11px;height:11px;font-size:.38rem}
       .operation-item{padding:.75rem!important}.operation-value{font-size:.86rem}
       .bottom-nav{height:62px}.bottom-nav a{font-size:.66rem}
-      .offer-modal .modal-dialog{position:absolute;right:0;bottom:0;left:0;width:100%;max-width:none;margin:0}
-      .offer-modal .modal-content{border-radius:1.1rem 1.1rem 0 0}
+      .offer-modal .modal-dialog{width:auto;max-width:calc(100% - 1.5rem);margin:.75rem auto}
+      .offer-modal .modal-content{border-radius:1rem}
     }
     @media(max-width:420px){.phone-input{font-size:1.12rem;letter-spacing:.045em}.operator-logo{width:54px}}
   </style>
@@ -722,9 +724,25 @@ operator.addEventListener('click',()=>{
 balanceMode.addEventListener('click',()=>setMode('balance'));
 offersMode.addEventListener('click',()=>setMode('offers'));
 
+function cleanupBootstrapOverlay(){
+ setTimeout(()=>{
+  if(document.querySelector('.modal.show,.offcanvas.show'))return;
+  document.querySelectorAll('.modal-backdrop,.offcanvas-backdrop').forEach(el=>el.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('overflow');
+  document.body.style.removeProperty('padding-right');
+ },0);
+}
+
 sendOfferModal.addEventListener('hidden.bs.modal',()=>{
  if(!offerConfirmAccepted)resetSelection();
  offerConfirmAccepted=false;
+ cleanupBootstrapOverlay();
+});
+detailsModal.addEventListener('hidden.bs.modal',cleanupBootstrapOverlay);
+ordinarySendModal.addEventListener('hidden.bs.modal',cleanupBootstrapOverlay);
+document.querySelectorAll('.offer-modal [data-bs-dismiss="modal"]').forEach(btn=>{
+ btn.addEventListener('click',()=>setTimeout(cleanupBootstrapOverlay,450));
 });
 
 function clearPhoneAfterDispatch(){
