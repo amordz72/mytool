@@ -1,0 +1,33 @@
+:root{--mts-topbar-h:56px;--mts-nav-bg:#fff;--mts-nav-line:#e5e7eb;--mts-nav-text:#172033;--mts-nav-muted:#64748b;--mts-nav-accent:#6366f1}
+html.mytool-shell-nav-open,html.mytool-shell-nav-open body{overflow:hidden!important}
+body.mytool-shell-nav-active{padding-top:var(--mts-topbar-h)!important}
+.mytool-shell-topbar{position:fixed;top:0;right:0;left:0;height:var(--mts-topbar-h);z-index:1088;display:grid;grid-template-columns:56px minmax(0,1fr) 56px;align-items:center;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--mts-nav-line);box-shadow:0 3px 14px rgba(15,23,42,.06);direction:rtl}
+.mytool-shell-title{min-width:0;text-align:center;font:800 16px/1.2 Tahoma,Arial,sans-serif;color:var(--mts-nav-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
+.mytool-shell-menu-btn{width:42px;height:42px;margin:auto;border:0;border-radius:12px;background:transparent;color:#334155;font-size:21px;display:grid;place-items:center;cursor:pointer}
+.mytool-shell-menu-btn:hover,.mytool-shell-menu-btn:focus{background:#f1f5f9;outline:none}
+.mytool-shell-menu-btn[hidden]{visibility:hidden!important;display:block!important}
+.mytool-shell-backdrop{position:fixed;inset:var(--mts-topbar-h) 0 0;z-index:1092;background:rgba(15,23,42,.38);opacity:0;pointer-events:none;transition:opacity .18s ease}
+.mytool-shell-backdrop.open{opacity:1;pointer-events:auto}
+.mytool-shell-drawer{position:fixed;top:var(--mts-topbar-h);bottom:0;width:min(330px,88vw);z-index:1094;background:var(--mts-nav-bg);box-shadow:0 18px 50px rgba(15,23,42,.22);display:flex;flex-direction:column;transition:transform .2s ease;font-family:Tahoma,Arial,sans-serif}
+.mytool-shell-drawer.mother{right:0;transform:translateX(105%);border-left:1px solid var(--mts-nav-line)}
+.mytool-shell-drawer.local{left:0;transform:translateX(-105%);border-right:1px solid var(--mts-nav-line)}
+.mytool-shell-drawer.open{transform:none}
+.mytool-shell-drawer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 15px;border-bottom:1px solid var(--mts-nav-line)}
+.mytool-shell-drawer-head strong{font-size:18px;color:var(--mts-nav-text)}
+.mytool-shell-drawer-head small{display:block;color:var(--mts-nav-muted);font-size:11px;margin-top:3px}
+.mytool-shell-close{border:0;background:#f1f5f9;width:38px;height:38px;border-radius:11px;font-size:22px;cursor:pointer;color:#334155}
+.mytool-shell-list{overflow:auto;padding:10px;display:grid;gap:4px}
+.mytool-shell-section{padding:11px 10px 4px;color:#94a3b8;font-size:11px;font-weight:800}
+.mytool-shell-link{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--mts-nav-text);font-weight:800;padding:11px 12px;border-radius:12px;min-height:46px}
+.mytool-shell-link:hover,.mytool-shell-link:focus{background:#f8fafc;color:var(--mts-nav-text)}
+.mytool-shell-link.active{background:#eef2ff;color:#4f46e5}
+.mytool-shell-link.disabled{opacity:.45;pointer-events:none}
+.mytool-shell-icon{width:26px;text-align:center;font-size:18px;flex:0 0 26px}
+.mytool-shell-meta{margin-right:auto;color:#94a3b8;font-size:11px}
+.mytool-shell-footer{margin-top:auto;border-top:1px solid var(--mts-nav-line);padding:10px 12px;color:var(--mts-nav-muted);font-size:11px}
+@media(max-width:1399.98px){
+  body[data-mytool-app="flexy"] .mobile-toolbar{display:none!important}
+}
+@media(min-width:900px){
+  .mytool-shell-drawer{width:320px}
+}
