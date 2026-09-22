@@ -13,7 +13,7 @@
   const ACCESS_API='https://mytool-access.dzamor72.workers.dev';
   const guardScript=document.currentScript;
   const rootUrl=new URL('./',guardScript?.src||location.href);
-  const NAV_VERSION='20260922-shell-1';
+  const NAV_VERSION='20260922-shell-2';
 
   function readTools(storage,now){
     try{
