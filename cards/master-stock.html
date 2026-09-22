@@ -61,12 +61,20 @@ dialog{border:0;border-radius:18px;padding:0;width:min(94vw,560px);box-shadow:0 
       <div class="field"><label>مرجع الدفعة أو اسم الملف</label><input id="sourceReference" placeholder="اختياري"></div>
       <div class="field full"><label>ملاحظة</label><input id="note" placeholder="اختياري؛ إلزامي عمليًا إذا كانت الحالة استثنائية"></div>
       <div class="field full">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t);cursor:pointer">
+          <input id="legacyUncertain" type="checkbox" style="width:auto">
+          <span>هذا مخزون سابق ومشكوك: لا أعرف هل استُعملت هذه البطاقات سابقًا أم لا</span>
+        </label>
+        <div class="muted" style="margin-top:5px">إذا فعلته، تُحفظ الدفعة كلها في «مراجعة» ولا تدخل البيع أو الشحن الآلي. استعمال أي بطاقة منها يحتاج تأكيدًا خاصًا منك.</div>
+      </div>
+      <div class="field full">
         <label>البطاقات — سطر لكل بطاقة. يمكن كتابة <span dir="ltr">CODE,SERIAL</span> أو CODE فقط</label>
         <textarea id="rows" placeholder="CODE123&#10;CODE456,SERIAL456"></textarea>
         <div id="preview" class="muted" style="margin-top:5px">0 بطاقة</div>
       </div>
     </div>
     <div id="exceptionNote" class="warning" hidden>هذه دفعة استثنائية. لا يلزم تسجيل اسم الشخص؛ يكفي وصف واضح مثل «مرتجع عميل غير مستعمل» أو سبب المصدر المجهول حتى تبقى قابلة للتتبع. بطاقات Mobilis الاستثنائية تبقى في المخزون الرئيسي ولا تدخل تلقائيًا إلى مخزون الشحن الآلي.</div>
+    <div id="legacyNote" class="warning" hidden>⚠️ مخزون سابق مشكوك: هذه البطاقات ستدخل بحالة «مراجعة» فقط. لن تصبح متاحة تلقائيًا، ولن تدخل Station Connect. فتح أي كود منها يتطلب منك تأكيد «أستعملها على مسؤوليتي».</div>
     <div class="actions">
       <button id="check" class="btn secondary">فحص الدفعة</button>
       <button id="save" class="btn success">حفظ في المخزون الرئيسي</button>
@@ -113,7 +121,7 @@ dialog{border:0;border-radius:18px;padding:0;width:min(94vw,560px);box-shadow:0 
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
 const $=id=>document.getElementById(id),DRAFT_KEY='mytool.cards.masterStockDraft.v1';
-let types=[],currentTaken=null,importMethod='manual';
+let types=[],currentTaken=null,currentTakenRisk=false,importMethod='manual';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const statusName=s=>({available:'متاحة',reserved:'محجوزة',review:'مراجعة',used:'مستعملة',invalid:'غير صالحة'}[s]||s);
 const sourceName=s=>({supplier:'مورد',platform:'منصة',customer_return:'مرتجع عميل',internal:'داخلي',unknown_exception:'مصدر مجهول'}[s]||s);
@@ -162,6 +170,9 @@ function localCheck(show=true){
 function updateException(){
   $('exceptionNote').hidden=!['customer_return','unknown_exception'].includes($('sourceKind').value);
 }
+function updateLegacy(){
+  $('legacyNote').hidden=!$('legacyUncertain').checked;
+}
 function applyDraft(){
   let d=null;try{d=JSON.parse(sessionStorage.getItem(DRAFT_KEY)||'null')}catch(e){}
   if(!d)return;
@@ -173,10 +184,11 @@ function applyDraft(){
   $('sourceLabel').value=d.sourceLabel||'';
   $('sourceReference').value=d.sourceReference||'';
   $('note').value=d.note||'';
+  $('legacyUncertain').checked=Boolean(d.legacyUncertain);
   importMethod=['manual','parser','file','legacy'].includes(d.importMethod)?d.importMethod:'parser';
   const rows=Array.isArray(d.rows)?d.rows:[];
   $('rows').value=rows.map(r=>r.serial?String(r.code)+','+String(r.serial):String(r.code||'')).filter(Boolean).join('\n');
-  updateException();localCheck(false);
+  updateException();updateLegacy();localCheck(false);
   if(rows.length)setStatus('وصلت '+rows.length+' بطاقة من معالج البطاقات. راجع المصدر ثم احفظ.');
 }
 async function loadTypes(){
@@ -192,24 +204,27 @@ async function loadSummary(){
 function tagClass(s){return s==='available'?'good':s==='review'?'warn':s==='used'?'bad':''}
 async function loadItems(){
   const st=$('statusFilter').value||null;
-  const {data,error}=await supabase.rpc('card_stock_admin_items',{p_limit:100,p_status:st});if(error)throw error;
+  const {data,error}=await supabase.rpc('card_stock_admin_items_v2',{p_limit:100,p_status:st});if(error)throw error;
   const list=data||[];
   $('items').innerHTML=list.length?list.map(x=>`<article class="item">
-    <div class="itemHead"><h3>${esc(x.type_name)} ${x.denomination?'— '+esc(x.denomination):''}</h3>${x.status==='available'?'<button data-take="'+esc(x.card_uuid)+'">استخدام يدوي</button>':''}</div>
+    <div class="itemHead"><h3>${esc(x.type_name)} ${x.denomination?'— '+esc(x.denomination):''}</h3>${x.status==='available'?'<button data-take="'+esc(x.card_uuid)+'">استخدام يدوي</button>':(x.status==='review'&&x.legacy_uncertain?'<button data-risk="'+esc(x.card_uuid)+'" style="background:#fff4de;color:#995c00">⚠️ استخدام على مسؤوليتي</button>':'')}</div>
     <div class="tags">
       <span class="tag ${tagClass(x.status)}">${esc(statusName(x.status))}</span>
       <span class="tag" dir="ltr">${esc(x.masked_code)}</span>
       ${x.masked_serial?'<span class="tag" dir="ltr">SN '+esc(x.masked_serial)+'</span>':''}
       <span class="tag">${esc(sourceName(x.source_kind))}: ${esc(x.source_label)}</span>
       ${x.origin_exception?'<span class="tag warn">استثناء مصدر</span>':''}
+      ${x.legacy_uncertain?'<span class="tag warn">مخزون سابق — غير متحقق</span>':''}
+      ${x.risk_accepted_at?'<span class="tag bad">تم فتحه بتحمل المسؤولية</span>':''}
       ${x.station_linked?'<span class="tag good">مرتبط بالشحن الآلي</span>':''}
     </div>
     ${x.product_label?'<div class="muted" style="margin-top:6px">'+esc(x.product_label)+'</div>':''}
   </article>`).join(''):'<div class="empty">لا توجد بطاقات بهذه الحالة.</div>';
   document.querySelectorAll('[data-take]').forEach(b=>b.onclick=()=>takeCard(b.dataset.take));
+  document.querySelectorAll('[data-risk]').forEach(b=>b.onclick=()=>takeLegacyReviewCard(b.dataset.risk));
 }
 async function loadBatches(){
-  const {data,error}=await supabase.rpc('card_stock_admin_recent_batches',{p_limit:25});if(error)throw error;
+  const {data,error}=await supabase.rpc('card_stock_admin_recent_batches_v2',{p_limit:25});if(error)throw error;
   const list=data||[];
   $('batches').innerHTML=list.length?list.map(x=>`<article class="batch">
     <div class="row"><h3>${esc(x.type_name)} ${x.denomination?'— '+esc(x.denomination):''}</h3><span class="muted">${new Date(x.created_at).toLocaleString('ar-DZ')}</span></div>
@@ -218,6 +233,7 @@ async function loadBatches(){
       <span class="tag">${x.duplicate_count} مكررة</span>
       <span class="tag">${esc(sourceName(x.source_kind))}: ${esc(x.source_label)}</span>
       ${x.is_exception?'<span class="tag warn">استثنائية</span>':''}
+      ${x.legacy_uncertain?'<span class="tag warn">مخزون سابق — دفعة مراجعة</span>':''}
       ${x.source_reference?'<span class="tag">'+esc(x.source_reference)+'</span>':''}
     </div>
   </article>`).join(''):'<div class="empty">لا توجد دفعات بعد.</div>';
@@ -225,9 +241,11 @@ async function loadBatches(){
 async function refreshAll(){await Promise.all([loadSummary(),loadItems(),loadBatches()])}
 async function saveBatch(){
   const c=localCheck(true);if(!c.ok)return;
+  const legacy=$('legacyUncertain').checked;
+  if(legacy&&!confirm('هذه دفعة مخزون سابق مشكوك في صلاحيتها. سيتم حفظ كل البطاقات في «مراجعة» ولن تستخدم تلقائيًا. هل تؤكد؟'))return;
   $('save').disabled=true;
   setStatus('جاري الحفظ والتحقق من التكرار...');
-  const {data,error}=await supabase.rpc('card_stock_admin_import_batch',{
+  const {data,error}=await supabase.rpc('card_stock_admin_import_batch_v2',{
     p_type_key:$('type').value,
     p_denomination:$('denomination').value.trim()||null,
     p_source_kind:$('sourceKind').value,
@@ -236,20 +254,34 @@ async function saveBatch(){
     p_note:$('note').value.trim()||null,
     p_rows:c.rows,
     p_product_label:$('productLabel').value.trim()||null,
-    p_import_method:importMethod
+    p_import_method:importMethod,
+    p_legacy_uncertain:legacy
   });
   $('save').disabled=false;
   if(error){setStatus(error.message||'تعذر حفظ الدفعة.',true);return}
   const r=(data||[])[0]||{};
-  setStatus('تم الحفظ: '+Number(r.inserted_count||0)+' جديدة، '+Number(r.duplicate_count||0)+' مكررة، '+Number(r.operational_count||0)+' مرتبطة بالشحن الآلي.');
-  $('rows').value='';$('sourceReference').value='';$('note').value='';localCheck(false);await refreshAll();
+  setStatus('تم الحفظ: '+Number(r.inserted_count||0)+' جديدة، '+Number(r.duplicate_count||0)+' مكررة، '+Number(r.review_count||0)+' للمراجعة، '+Number(r.operational_count||0)+' مرتبطة بالشحن الآلي.');
+  $('rows').value='';$('sourceReference').value='';$('note').value='';$('legacyUncertain').checked=false;updateLegacy();localCheck(false);await refreshAll();
 }
 async function takeCard(id){
   if(!confirm('حجز هذه البطاقة للاستخدام اليدوي؟ بعد الحجز لن يأخذها التنفيذ الآلي.'))return;
   const {data,error}=await supabase.rpc('card_stock_admin_take_card',{p_card_uuid:id});
   if(error){setStatus(error.message||'تعذر حجز البطاقة.',true);return}
   const r=(data||[])[0];if(!r)return;
-  currentTaken=r.card_uuid;$('secretCode').textContent=r.code||'';$('secretSerial').textContent=r.serial||'';$('serialWrap').hidden=!r.serial;
+  currentTaken=r.card_uuid;currentTakenRisk=false;$('secretCode').textContent=r.code||'';$('secretSerial').textContent=r.serial||'';$('serialWrap').hidden=!r.serial;
+  $('finishReturn').textContent='إرجاع للمتاح';
+  $('takeDialog').querySelector('h2').textContent='بطاقة محجوزة للاستخدام اليدوي';
+  $('takeDialog').showModal();await refreshAll();
+}
+async function takeLegacyReviewCard(id){
+  const ok=confirm('⚠️ هذه البطاقة من مخزون سابق ومشكوك هل استُعملت أم لا. فتح الكود واستعماله سيكون على مسؤوليتك الخاصة، ولن تعتبر البطاقة نظيفة أو متاحة تلقائيًا. هل تؤكد؟');
+  if(!ok)return;
+  const {data,error}=await supabase.rpc('card_stock_admin_take_legacy_review_card',{p_card_uuid:id,p_accept_risk:true});
+  if(error){setStatus(error.message||'تعذر فتح بطاقة المراجعة.',true);return}
+  const r=(data||[])[0];if(!r)return;
+  currentTaken=r.card_uuid;currentTakenRisk=true;$('secretCode').textContent=r.code||'';$('secretSerial').textContent=r.serial||'';$('serialWrap').hidden=!r.serial;
+  $('finishReturn').textContent='إرجاع للمراجعة';
+  $('takeDialog').querySelector('h2').textContent='⚠️ بطاقة مشكوك فيها — استعمال على مسؤوليتك';
   $('takeDialog').showModal();await refreshAll();
 }
 async function finish(outcome){
@@ -257,15 +289,15 @@ async function finish(outcome){
   const note=outcome==='used'?'استخدام يدوي من Master Card Stock':outcome==='review'?'مراجعة يدوية من Master Card Stock':null;
   const {error}=await supabase.rpc('card_stock_admin_finish_card',{p_card_uuid:currentTaken,p_outcome:outcome,p_note:note});
   if(error){alert(error.message||'تعذر تحديث الحالة.');return}
-  currentTaken=null;$('takeDialog').close();$('secretCode').textContent='';$('secretSerial').textContent='';await refreshAll();
+  currentTaken=null;currentTakenRisk=false;$('takeDialog').close();$('secretCode').textContent='';$('secretSerial').textContent='';await refreshAll();
 }
-$('sourceKind').onchange=updateException;$('rows').oninput=()=>localCheck(false);$('type').onchange=()=>localCheck(false);
+$('sourceKind').onchange=updateException;$('legacyUncertain').onchange=updateLegacy;$('rows').oninput=()=>localCheck(false);$('type').onchange=()=>localCheck(false);
 $('check').onclick=()=>localCheck(true);$('save').onclick=saveBatch;$('refresh').onclick=refreshAll;$('statusFilter').onchange=loadItems;
 $('copySecret').onclick=async()=>{await navigator.clipboard.writeText($('secretCode').textContent||'');$('copySecret').textContent='تم النسخ';setTimeout(()=>$('copySecret').textContent='نسخ الكود',900)};
-$('finishUsed').onclick=()=>finish('used');$('finishReturn').onclick=()=>finish('available');$('finishReview').onclick=()=>finish('review');
+$('finishUsed').onclick=()=>finish('used');$('finishReturn').onclick=()=>finish(currentTakenRisk?'review':'available');$('finishReview').onclick=()=>finish('review');
 try{
   const {data:sess}=await supabase.auth.getSession();if(!sess?.session)throw new Error('سجّل دخول الإدارة أولًا.');
-  await loadTypes();applyDraft();updateException();await refreshAll();
+  await loadTypes();applyDraft();updateException();updateLegacy();await refreshAll();
 }catch(e){setStatus(e.message||'تعذر فتح المخزون الرئيسي.',true);$('items').innerHTML='<div class="empty">تعذر تحميل البيانات.</div>'}
 </script>
 </body>
