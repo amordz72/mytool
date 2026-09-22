@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0f766e">
+<title>بيع خدمة — MyTool</title>
+<link rel="stylesheet" href="shop-common.css?v=20260921-fixed-bottom-1">
+<script src="shop-routes.js?v=20260922-services-1"></script>
+<script src="shop-shell.js?v=20260922-services-1"></script>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--soft:#ecfdf5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Tahoma,sans-serif}
+.page{max-width:820px;margin:auto;padding:12px 12px 105px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+.hero{background:linear-gradient(135deg,#0f172a,#0f766e);color:#fff}.hero h1{margin:0 0 7px;font-size:25px}.hero p{margin:0;color:#d1fae5;line-height:1.7}
+.note{background:var(--soft);color:#047857;border:1px solid #a7f3d0}.note strong{display:block;margin-bottom:6px;font-size:17px}.muted{color:var(--muted);line-height:1.7}
+.rule{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}.rule:last-child{border-bottom:0}.ico{width:36px;height:36px;border-radius:11px;background:#f1f5f9;display:grid;place-items:center;font-weight:900}
+.state{padding:13px;border-radius:13px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-weight:800}
+</style>
+<script src="../auth-guard.js?v=20260922-shell-4" data-access="worker"></script>
+</head>
+<body data-screen="services">
+<div class="page">
+  <section class="hero card">
+    <h1>بيع خدمة</h1>
+    <p>مسار مستقل عن بيع السلع. الخدمة لا تدخل المخزون ولا الجرد ولا المشتريات السلعية.</p>
+  </section>
+
+  <section class="card note">
+    <strong>تم فصل الخدمات عن المنتجات</strong>
+    أي خدمة سنضيفها هنا لاحقًا سيكون لها تسجيلها الخاص، بدون إنشاء كمية مخزون أو إنقاص سلعة.
+  </section>
+
+  <section class="card">
+    <div class="rule"><div class="ico">1</div><div><b>بيع السلع</b><div class="muted">يبقى في شاشة «بيع» ويرتبط بالكمية والجرد.</div></div></div>
+    <div class="rule"><div class="ico">2</div><div><b>الخدمات</b><div class="muted">تبقى هنا في مسار مستقل، ولا تُعامل كمنتج مخزني.</div></div></div>
+    <div class="rule"><div class="ico">3</div><div><b>المخزون</b><div class="muted">أصبح الوصول إليه من القائمة الجانبية بدل الشريط السفلي.</div></div></div>
+  </section>
+
+  <div class="state">تسجيل الخدمة نفسها لم يُفعّل بعد حتى نحدد حقولها ومنطق الحسابات بدون خلطها بمبيعات السلع.</div>
+</div>
+<script>
+(function(){
+  function mount(){
+    const ctx=window.MyToolAccessContext||{};
+    const role=ctx.adminLike?'admin':'worker';
+    if(window.ShopShell&&window.ShopRoutes){
+      window.ShopShell.mountRoleNavigation({role,permissions:{can_sell:true}},'services');
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+})();
+</script>
+</body>
+</html>
