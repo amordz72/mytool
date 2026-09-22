@@ -67,9 +67,9 @@
         home:current==='index'
       });
       window.MyToolBottomNav.setActions([
-        quick('sale',1,'＋','بيع','تسجيل بيع'),
+        quick('sale',1,'＋','بيع','بيع سلعة'),
         quick('purchase',2,'⇩','شراء','المشتريات'),
-        quick('stock',4,'▦','المخزون','المخزون'),
+        quick('services',4,'✦','خدمة','بيع خدمة'),
         quick('daily',5,'▤','التشغيل','التشغيل اليومي')
       ].filter(Boolean));
       return true;
