@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-docflow7">
+<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-docflow8">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -35,14 +35,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.12</span></p>
+  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.13</span></p>
 </section>
 
 <section class="card security">
   <div style="font-size:24px">🔒</div>
   <div class="security-main">
     <b>المعالجة محلية على جهازك</b>
-    <p>الصورة لا تُرفع إلى أي خادم. عند اختيارها تُحفظ نسخة محلية على هذا الجهاز حتى لا تضيع قبل التحليل، وتبقى مرتبطة بالعملية المحلية. آخر 20 عملية تُحفظ محليًا مع فهرس حتى 500 هوية وصل لمنع التكرار.</p>
+    <p>الصورة لا تُرفع إلى أي خادم. عند اختيارها تُحفظ نسخة محلية على هذا الجهاز حتى لا تضيع قبل التحليل، وتبقى مرتبطة بالعملية المحلية. الوصولات وصورها السابقة لا تُحذف تلقائيًا عند تغيّر اليوم، وتبقى هويتها محفوظة لمنع التكرار والرجوع إليها لاحقًا.</p>
     <div class="security-actions">
       <button id="usageSettingsBtn" class="btn" type="button">⚙ ضبط الاستخدام</button>
     </div>
@@ -63,9 +63,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         </div>
       </div>
       <div class="usage-danger">
-        <b>إعادة البدء من الأول</b>
-        <p>يمسح بيانات قارئ الوثائق المحلية فقط: الوصولات، الصور، الديون المحلية، المنصات المضافة، الفهارس والإعدادات. لا يمسح بقية MyTool. التنفيذ يتطلب تحقق قفل الجهاز، وإذا تعذر يمكن استخدام PIN الإدارة الاحتياطي.</p>
-        <button id="resetDocumentReaderBtn" class="btn danger" type="button" disabled>مسح قارئ الوثائق والبدء من الصفر</button>
+        <b>إغلاق يوم العمل الحالي</b>
+        <p>لا يحذف أي وصل أو صورة أو تاريخ سابق. يؤرشف فقط وصولات <b>اليوم</b> التي تمت تسويتها لمنصة. أي عملية غير مسوّاة أو ما زالت تحتاج متابعة تبقى ظاهرة وتنتقل معك للأيام التالية حتى تنهيها.</p>
+        <button id="closeTodayBtn" class="btn danger" type="button" disabled>إغلاق اليوم — بدون حذف</button>
       </div>
     </div>
   </div>
@@ -84,7 +84,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   </div>
   <div class="history-title">ملخص التسويات والديون — مؤقت محليًا حتى نقل الحفظ إلى Supabase</div>
   <div id="settlementSummary" class="settlement-summary"></div>
-  <div class="history-title">المتابعة — تحليل أولًا، ثم تسوية لمنصة عند القرار</div>
+  <div class="history-title">المتابعة — العمليات المفتوحة من الأيام السابقة تبقى ظاهرة حتى تنهيها، ولا تُحذف بتغيّر اليوم</div>
   <div id="recipientTabs" class="recipient-tabs" role="tablist" aria-label="المورد في السجل"></div>
   <div id="platformHistoryTabs" class="platform-history-tabs hidden" role="tablist" aria-label="حالة سجل المنصة"></div>
   <div id="operationHistory" class="operation-history"></div>
@@ -213,7 +213,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const recoveryCodeValue = $('recoveryCodeValue');
   const copyRecoveryCodeBtn = $('copyRecoveryCodeBtn');
   const hideRecoveryCodeBtn = $('hideRecoveryCodeBtn');
-  const resetDocumentReaderBtn = $('resetDocumentReaderBtn');
+  const closeTodayBtn = $('closeTodayBtn');
   const securitySecretModal = $('securitySecretModal');
   const securitySecretTitle = $('securitySecretTitle');
   const securitySecretText = $('securitySecretText');
@@ -622,7 +622,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     setupAdminPinBtn.textContent=pinConfigured?'تغيير PIN الإدارة':'إنشاء PIN إداري احتياطي';
     setupAdminPinBtn.disabled=!cryptoAvailable;
     forgotAdminPinBtn.classList.toggle('hidden',!pinConfigured);
-    resetDocumentReaderBtn.disabled=!(deviceConfigured||pinConfigured);
+    closeTodayBtn.disabled=!(deviceConfigured||pinConfigured);
   }
 
   async function enrollDeviceLock(){
@@ -670,7 +670,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         registeredAt:new Date().toISOString()
       }));
       await refreshUsageSecurityUi();
-      showToast('success','تم تفعيل حماية الجهاز','عمليات المسح الكامل ستطلب تحقق قفل الجهاز أولًا.',5200);
+      showToast('success','تم تفعيل حماية الجهاز','إغلاق اليوم المحمي سيطلب تحقق قفل الجهاز أولًا.',5200);
       return true;
     }catch(err){
       if(err?.name==='NotAllowedError'){
@@ -713,50 +713,71 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }
   }
 
-  async function deleteReceiptDatabase(){
-    try{
-      if(receiptDbPromise){
-        try{
-          const db=await receiptDbPromise;
-          db?.close?.();
-        }catch(_e){}
-      }
-      receiptDbPromise=null;
-      await new Promise((resolve,reject)=>{
-        const req=indexedDB.deleteDatabase(RECEIPT_DB_NAME);
-        req.onsuccess=resolve;
-        req.onerror=()=>reject(req.error||new Error('تعذر حذف مخزن الصور.'));
-        req.onblocked=()=>reject(new Error('مخزن الصور ما زال مفتوحًا في تبويب آخر.'));
-      });
-    }catch(err){
-      throw err;
-    }
+  function operationCaptureDate(op){
+    const d=new Date(op?.createdAt||Date.now());
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   }
 
-  async function resetDocumentReaderFromScratch(){
+  function isProtectedHistoricalOperation(op){
+    return operationCaptureDate(op)<todayLocal();
+  }
+
+  async function closeTodayWork(){
     const verified=await verifyResetProtection();
     if(!verified)return;
 
-    if(!confirm('سيتم مسح كل بيانات قارئ الوثائق المحلية على هذا الجهاز: الوصولات والصور والتسويات والديون والفهارس والإعدادات. بقية MyTool لن تتأثر. هل تواصل؟'))return;
-    const finalWord=prompt('للتأكيد النهائي اكتب: مسح');
-    if(cleanLine(finalWord||'')!=='مسح'){
-      showToast('warn','تم إلغاء المسح','لم تُكتب كلمة التأكيد المطلوبة.',4200);
+    const today=todayLocal();
+    const items=getRecentOperations();
+    const todayItems=items.filter(op=>operationCaptureDate(op)===today);
+    const ready=todayItems.filter(op=>{
+      const s=effectiveStatus(op);
+      return s==='settled'&&op.selectedRecipient&&op.selectedRecipient!==UNSENT_RECIPIENT;
+    });
+    const open=todayItems.filter(op=>!['archived','duplicate'].includes(effectiveStatus(op))&&!ready.some(done=>done.id===op.id));
+
+    if(!ready.length){
+      showToast('info','لا يوجد ما يُغلق اليوم',
+        open.length
+          ? 'لا توجد وصولات مسوّاة جاهزة للأرشفة. بقيت '+open.length+' عملية في المتابعة ولن تُحذف.'
+          : 'لا توجد وصولات اليوم تحتاج إغلاقًا.',
+        5200);
       return;
     }
 
-    try{
-      await deleteReceiptDatabase();
-      const keys=[];
-      for(let i=0;i<localStorage.length;i++){
-        const key=localStorage.key(i);
-        if(key&&key.startsWith('mytool.document-reader.'))keys.push(key);
-      }
-      keys.forEach(key=>localStorage.removeItem(key));
-      showToast('success','تمت إعادة البدء','تم مسح بيانات قارئ الوثائق المحلية فقط. سيتم إعادة تحميل الصفحة.',4200);
-      setTimeout(()=>location.reload(),700);
-    }catch(err){
-      showToast('error','تعذر إكمال المسح',err?.message||'تعذر حذف كل البيانات المحلية.',6500);
+    const byPlatform={};
+    ready.forEach(op=>{
+      const name=op.selectedRecipient||'';
+      byPlatform[name]=(byPlatform[name]||0)+1;
+    });
+    const platformSummary=Object.entries(byPlatform).map(([name,count])=>name+': '+count).join('، ');
+    if(!confirm(
+      'إغلاق يوم '+today+'؟\n\n'
+      +'سيتم نقل '+ready.length+' وصل مسوّى إلى أرشيف منصاته ('+platformSummary+').\n'
+      +(open.length?'ستبقى '+open.length+' عملية مفتوحة في المتابعة للأيام القادمة.\n':'')
+      +'لن يتم حذف أي وصل أو صورة أو سجل سابق.'
+    ))return;
+
+    const now=new Date().toISOString();
+    const readyIds=new Set(ready.map(op=>op.id));
+    const next=items.map(op=>readyIds.has(op.id)?{
+      ...op,
+      statusBeforeArchive:'settled',
+      status:'archived',
+      archivedAt:now,
+      dayClosedAt:now,
+      dayClosedFor:today
+    }:op);
+    saveRecentOperations(next);
+    rebuildDocumentIndexFromRecent();
+
+    if(activeOperationId&&readyIds.has(activeOperationId)){
+      activeOperationId='';
+      clearAll();
     }
+    renderRecentOperationTabs();
+    showToast('success','تم إغلاق يوم '+today,
+      'أُرشف '+ready.length+' وصل مسوّى بدون حذف الملفات. '+(open.length?'وبقيت '+open.length+' عملية مفتوحة للمتابعة.':'لا توجد عمليات مفتوحة لليوم.'),
+      6500);
   }
 
   function openReceiptDb(){
@@ -894,21 +915,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }catch(_e){}
   }
 
-  async function purgeReceiptImages(validIds){
-    try{
-      const keep=new Set(validIds||[]);
-      const db=await openReceiptDb();
-      const keys=await new Promise((resolve,reject)=>{
-        const tx=db.transaction(RECEIPT_IMAGE_STORE,'readonly');
-        const req=tx.objectStore(RECEIPT_IMAGE_STORE).getAllKeys();
-        req.onsuccess=()=>resolve(req.result||[]);
-        req.onerror=()=>reject(req.error);
-      });
-      for(const key of keys){
-        if(!keep.has(String(key)))await deleteReceiptImage(key);
-      }
-    }catch(_e){}
-  }
 
   function renderImageRefs(record){
     const images=record?.images||[];
@@ -983,10 +989,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function saveRecentOperations(items){
-    const history=(items||[]).slice(0,500);
-    try{localStorage.setItem(RECENT_OPERATIONS_KEY,JSON.stringify(history));}catch(_e){}
-    const imageKeep=history.slice(0,20).map(op=>String(op.id||''));
-    purgeReceiptImages(imageKeep).catch(()=>{});
+    const history=Array.isArray(items)?items:[];
+    try{
+      localStorage.setItem(RECENT_OPERATIONS_KEY,JSON.stringify(history));
+    }catch(_e){
+      showToast('error','تعذر حفظ سجل الوصولات','التخزين المحلي امتلأ أو تعذر الوصول إليه. لم أحذف أي سجل قديم تلقائيًا.',7000);
+    }
   }
 
   function getDocumentIndex(){
@@ -1051,7 +1059,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       receiptDate:payload.receiptDate||'',
       createdAt:payload.createdAt||new Date().toISOString()
     };
-    const entries=Object.entries(index).sort((a,b)=>String(b[1]?.createdAt||'').localeCompare(String(a[1]?.createdAt||''))).slice(0,500);
+    const entries=Object.entries(index).sort((a,b)=>String(b[1]?.createdAt||'').localeCompare(String(a[1]?.createdAt||'')));
     saveDocumentIndex(Object.fromEntries(entries));
   }
 
@@ -1451,6 +1459,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const headline=(activeHistorySupplier==='all'?(supplier===UNSENT_RECIPIENT?'غير مسوّى':supplier)+' — ':'')
         +(['pending_analysis','analysis_failed','duplicate'].includes(effectiveStatus(op))?state:(amount||state));
       const meta=[operationTime(op),state];
+      if(isProtectedHistoricalOperation(op)&&effectiveStatus(op)!=='archived')meta.push('مرحّل من '+operationCaptureDate(op)+' — محفوظ');
       if(op.imageCount>1)meta.push(op.imageCount+' صور');
       if(op.fileName)meta.push(op.fileName);
       if(op.status!=='pending_analysis')meta.push('رقم '+doc);
@@ -1474,9 +1483,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
           original.type='button';original.className='history-open';original.textContent='فتح الأصل';original.dataset.openOriginalId=op.duplicateInfo.operationId;
           actions.appendChild(original);
         }
-        const remove=document.createElement('button');
-        remove.type='button';remove.className='history-delete';remove.textContent='إزالة المحاولة';remove.dataset.removeDuplicateId=op.id;
-        actions.appendChild(remove);
+        if(!isProtectedHistoricalOperation(op)){
+          const remove=document.createElement('button');
+          remove.type='button';remove.className='history-delete';remove.textContent='إزالة المحاولة';remove.dataset.removeDuplicateId=op.id;
+          actions.appendChild(remove);
+        }
       }
       row.appendChild(main);row.appendChild(actions);
       operationHistory.appendChild(row);
@@ -1540,6 +1551,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       settledAt:payload.settledAt||'',
       archivedAt:payload.archivedAt||'',
       statusBeforeArchive:payload.statusBeforeArchive||'',
+      dayClosedAt:payload.dayClosedAt||'',
+      dayClosedFor:payload.dayClosedFor||'',
       editLog:Array.isArray(payload.editLog)?payload.editLog.slice(-50):[],
       settlementLog:Array.isArray(payload.settlementLog)?payload.settlementLog.slice(-50):[],
       lastEditedAt:payload.lastEditedAt||'',
@@ -1675,7 +1688,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const items=getRecentOperations();
     const op=items.find(item=>item.id===id);
     if(!op||effectiveStatus(op)!=='duplicate')return;
-    if(!confirm('إزالة محاولة الإدخال المكررة؟ الوصل الأصلي ورقم الوثيقة سيبقيان محفوظين.'))return;
+    if(isProtectedHistoricalOperation(op)){
+      showToast('warn','ملف يوم سابق محمي','محاولة الإدخال من يوم سابق بقيت ضمن السجل التاريخي ولا تُحذف من تنظيف يوم جديد.',5600);
+      return;
+    }
+    if(!confirm('إزالة محاولة الإدخال المكررة لليوم؟ الوصل الأصلي ورقم الوثيقة سيبقيان محفوظين.'))return;
     saveRecentOperations(items.filter(item=>item.id!==id));
     try{await deleteReceiptImage(id);}catch(_e){}
     rebuildDocumentIndexFromRecent();
@@ -3415,7 +3432,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(event.key==='Enter')securitySecretOkBtn.click();
   });
 
-  resetDocumentReaderBtn.addEventListener('click',resetDocumentReaderFromScratch);
+  closeTodayBtn.addEventListener('click',closeTodayWork);
 
   initializeRecipientContext();
 
