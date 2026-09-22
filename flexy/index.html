@@ -738,6 +738,25 @@ function clearPhoneAfterDispatch(){
  phone.focus({preventScroll:true});
 }
 
+async function watchOfferExecution(jobUuid){
+ try{
+  const row=await pollRpc('station_connect_admin_offer_execute_job',jobUuid,null,60000);
+  if(row?.status==='success')playToggleTone(true);
+ }catch{}
+ await loadRecentOperations().catch(()=>{});
+}
+
+async function watchOrdinaryFlexy(jobUuid){
+ try{
+  const row=await pollFlexyResolution(jobUuid,110000);
+  if(row?.status==='success')playToggleTone(true);
+ }catch{}
+ await Promise.all([
+  loadRecentOperations().catch(()=>{}),
+  loadAdminFlexyWallet().catch(()=>{})
+ ]);
+}
+
 confirmSendOfferBtn.addEventListener('click',async()=>{
  if(!isAdmin||!selectedOffer||!selectedOffer.executionAvailable){
   statusBox.textContent='لا يمكن التنفيذ: لا توجد طريقة إرسال معتمدة لهذا العرض.';
@@ -764,9 +783,7 @@ confirmSendOfferBtn.addEventListener('click',async()=>{
   clearPhoneAfterDispatch();
   statusBox.textContent='تم إرسال العملية. يمكنك إدخال رقم جديد.';
   await loadRecentOperations();
-  const row=await pollRpc('station_connect_admin_offer_execute_job',job.job_uuid,null,60000);
-  if(row.status==='success')playToggleTone(true);
-  await loadRecentOperations();
+  void watchOfferExecution(job.job_uuid);
  }catch(error){
   statusBox.textContent='تعذر إرسال العرض: '+(error?.message||error);
  }finally{
@@ -820,11 +837,7 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
   clearPhoneAfterDispatch();
   statusBox.textContent='تم إرسال العملية. يمكنك إدخال رقم جديد.';
   await Promise.all([loadRecentOperations(),loadAdminFlexyWallet()]);
-
-  const row=await pollFlexyResolution(job.job_uuid,110000);
-  if(row.status==='success')playToggleTone(true);
-
-  await Promise.all([loadRecentOperations(),loadAdminFlexyWallet()]);
+  void watchOrdinaryFlexy(job.job_uuid);
  }catch(error){
   const reason=String(error?.message||error||'');
   if(reason.includes('INSUFFICIENT_FLEXY_CREDIT')){
