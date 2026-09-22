@@ -5,7 +5,7 @@
   const rootPath=rootUrl.pathname.endsWith('/')?rootUrl.pathname:rootUrl.pathname+'/';
   const rel=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length).replace(/^\/+|\/+$/g,''):'';
   const currentApp=(document.body?.dataset?.mytoolApp||script?.dataset?.app||rel.split('/')[0]||'').trim();
-  let mounted=false,backdrop,motherDrawer,localDrawer,localButton;
+  let mounted=false,backdrop,motherDrawer,localDrawer,localButton,scrollTopButton;
 
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const url=(p)=>new URL(p,rootUrl).href;
@@ -74,6 +74,7 @@
       ['document-reader','📄','قارئ المستندات','document-reader/'],
       ['chat-payments-reader','💬','قارئ مدفوعات الدردشة','chat-payments-reader/'],
       ['programs','🧰','البرامج','programs/'],
+      ['links','↗','روابط العمل','links/'],
       ['qr','▣','QR','qr/']
     ];
     if(a.admin)base.push(['access-admin','⚙','الإدارة','access-admin/']);
@@ -156,6 +157,25 @@
     localDrawer.querySelector('.mytool-shell-list').innerHTML=linksHtml(items);
     localDrawer.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeAll,{once:true}));
   }
+  function syncScrollTop(){
+    if(!scrollTopButton)return;
+    const threshold=Math.max(420,Math.round(window.innerHeight*.65));
+    scrollTopButton.classList.toggle('show',window.scrollY>threshold);
+  }
+  function mountScrollTop(){
+    if(scrollTopButton)return;
+    scrollTopButton=document.createElement('button');
+    scrollTopButton.type='button';
+    scrollTopButton.className='mytool-shell-scrolltop';
+    scrollTopButton.textContent='↑';
+    scrollTopButton.title='الرجوع إلى أعلى الصفحة';
+    scrollTopButton.setAttribute('aria-label','الرجوع إلى أعلى الصفحة');
+    scrollTopButton.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+    document.body.appendChild(scrollTopButton);
+    window.addEventListener('scroll',syncScrollTop,{passive:true});
+    window.addEventListener('resize',syncScrollTop,{passive:true});
+    syncScrollTop();
+  }
   function mount(){
     if(mounted)return;
     const a=access();
@@ -186,6 +206,7 @@
     localDrawer.innerHTML='<div class="mytool-shell-drawer-head"><div><strong>'+esc(screenTitle())+'</strong><small>قائمة الأداة الحالية</small></div><button class="mytool-shell-close" type="button" aria-label="إغلاق">×</button></div><nav class="mytool-shell-list"></nav><div class="mytool-shell-footer">هذه القائمة تتغير حسب الأداة الحالية.</div>';
     document.body.appendChild(localDrawer);
     refreshLocal();
+    mountScrollTop();
 
     top.querySelector('[data-open="mother"]').addEventListener('click',()=>openDrawer('mother'));
     localButton.addEventListener('click',()=>openDrawer('local'));
