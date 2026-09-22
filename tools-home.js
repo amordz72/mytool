@@ -9,6 +9,13 @@
   let shell=null,nav=null,rendering=false,renderQueued=false;
 
   function injectAssets(){
+    const shellVersion='20260922-dual-sidebar-1';
+    if(!document.querySelector('link[data-mytool-shell-nav]')){
+      const shellCss=document.createElement('link');shellCss.rel='stylesheet';shellCss.href=new URL('mytool-shell-nav.css?v='+shellVersion,rootUrl).href;shellCss.dataset.mytoolShellNav='1';document.head.appendChild(shellCss);
+    }
+    if(!document.querySelector('script[data-mytool-shell-nav]')){
+      const shellJs=document.createElement('script');shellJs.src=new URL('mytool-shell-nav.js?v='+shellVersion,rootUrl).href;shellJs.defer=true;shellJs.dataset.mytoolShellNav='1';shellJs.dataset.root=rootUrl.href;document.head.appendChild(shellJs);
+    }
     if(!document.querySelector('link[data-mytool-tools-home-nav]')){
       const link=document.createElement('link');
       link.rel='stylesheet';
