@@ -31,3 +31,13 @@ body.mytool-shell-nav-active{padding-top:var(--mts-topbar-h)!important}
 @media(min-width:900px){
   .mytool-shell-drawer{width:320px}
 }
+
+/* The shared shell owns Flexy navigation for admin/tools sessions. */
+body.mytool-shell-nav-active[data-mytool-app="flexy"] > .sidebar,
+body.mytool-shell-nav-active[data-mytool-app="flexy"] #mobileSidebar,
+body.mytool-shell-nav-active[data-mytool-app="flexy"] .mobile-toolbar,
+body.mytool-shell-nav-active[data-mytool-app="flexy"] .wrap > header.top,
+body.mytool-shell-nav-active[data-mytool-app="flexy"] #menu{display:none!important}
+@media(min-width:1400px){
+  body.mytool-shell-nav-active[data-mytool-app="flexy"] .main-area{margin-right:0!important}
+}
