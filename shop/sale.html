@@ -14,7 +14,31 @@
     @media(max-width:760px){.top-actions{display:none!important}.shell{padding:9px}.grid,.row,.stock-grid{grid-template-columns:1fr}.topbar{align-items:flex-start}.top-actions{flex-direction:column}.card{border-radius:15px;padding:13px}.actions button{flex:1;min-width:120px}.transfer-head{align-items:flex-start;flex-direction:column}}
   .screen-nav{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;margin-bottom:10px}.screen-nav a{flex:0 0 auto;text-decoration:none;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--main);font-weight:800;font-size:12px}.screen-nav a.active{background:var(--main);color:#fff}.product-search-results{display:grid;gap:6px;margin-top:7px;max-height:260px;overflow:auto}.product-result{display:flex;justify-content:space-between;gap:8px;text-align:right;background:#f8fafc;border:1px solid var(--line);color:var(--text);font-weight:800}.product-result small{color:var(--muted)}.product-selected{margin-top:7px;padding:9px;border-radius:10px;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px}.native-product-select{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important}
 .branch-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.branch-button{width:auto;background:#fff;color:var(--main);border:1px solid var(--main);font-weight:800}.branch-button.active{background:var(--main);color:#fff}
-.mode-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;margin-bottom:12px}.mode-bar strong{margin-left:auto}.mode-choice{width:auto;padding:9px 14px;background:#fff;color:var(--main);border:1px solid var(--main);border-radius:12px;font-weight:800}.mode-choice.active{background:var(--main);color:#fff}.mode-test-note{color:#b45309;font-weight:800}.drawer-btn{width:50px;height:50px;border:1px solid var(--main);border-radius:15px;background:#fff;color:var(--main);font-size:27px;font-weight:900}.drawer-overlay{position:fixed;inset:0;background:#0f172a73;z-index:80}.drawer{position:fixed;top:0;right:0;width:min(82vw,310px);height:100vh;background:#0f172a;color:#fff;z-index:81;padding:18px;box-shadow:-15px 0 35px #0f172a40}.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.drawer-close{width:42px;height:42px;border:1px solid #475569;border-radius:12px;background:transparent;color:#fff;font-size:24px}.drawer-links{display:grid;gap:8px}.drawer-links a{display:block;padding:13px;border-radius:12px;background:#ffffff12;color:#fff;text-decoration:none;font-weight:800}.drawer-links a.active{background:var(--main)}.drawer-hidden{display:none!important}</style>
+.mode-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;margin-bottom:12px}.mode-bar strong{margin-left:auto}.mode-choice{width:auto;padding:9px 14px;background:#fff;color:var(--main);border:1px solid var(--main);border-radius:12px;font-weight:800}.mode-choice.active{background:var(--main);color:#fff}.mode-test-note{color:#b45309;font-weight:800}.drawer-btn{width:50px;height:50px;border:1px solid var(--main);border-radius:15px;background:#fff;color:var(--main);font-size:27px;font-weight:900}.drawer-overlay{position:fixed;inset:0;background:#0f172a73;z-index:80}.drawer{position:fixed;top:0;right:0;width:min(82vw,310px);height:100vh;background:#0f172a;color:#fff;z-index:81;padding:18px;box-shadow:-15px 0 35px #0f172a40}.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.drawer-close{width:42px;height:42px;border:1px solid #475569;border-radius:12px;background:transparent;color:#fff;font-size:24px}.drawer-links{display:grid;gap:8px}.drawer-links a{display:block;padding:13px;border-radius:12px;background:#ffffff12;color:#fff;text-decoration:none;font-weight:800}.drawer-links a.active{background:var(--main)}.drawer-hidden{display:none!important}
+.operation-builder{border:1px solid var(--line);border-radius:15px;padding:12px;margin:12px 0;background:#f8fafc}
+.operation-builder-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.operation-builder-head strong{font-size:14px}
+.operation-add-btn{width:auto;padding:9px 14px;border:1px solid var(--main);background:#fff;color:var(--main);font-weight:900}
+.operation-selected{margin-top:10px;border:1px dashed var(--line);border-radius:13px;padding:12px;background:#fff}
+.operation-selected.active{border-style:solid;border-color:#99f6e4;background:#ecfdf5;color:#047857}
+.operation-selected-head{display:flex;align-items:center;gap:10px}
+.operation-selected-icon{font-size:23px;line-height:1}
+.operation-selected-title{font-weight:900}
+.operation-selected-note{font-size:12px;margin-top:3px;color:var(--muted)}
+.action-sheet-overlay{position:fixed;inset:0;z-index:160;background:#0f172a7a;display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.action-sheet{width:min(100%,560px);background:#fff;border-radius:22px 22px 16px 16px;padding:14px;box-shadow:0 -18px 45px #0f172a33}
+.action-sheet-handle{width:46px;height:5px;border-radius:999px;background:#cbd5e1;margin:0 auto 10px}
+.action-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.action-sheet-head h3{margin:0;font-size:17px}
+.action-sheet-close{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:20px}
+.operation-types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.operation-type{display:flex;align-items:center;gap:10px;text-align:right;min-height:62px;background:#f8fafc;border:1px solid var(--line);font-weight:900}
+.operation-type span{font-size:22px}
+.operation-type small{display:block;font-size:11px;color:var(--muted);font-weight:700;margin-top:3px}
+.operation-type.wide{grid-column:1/-1}
+@media(min-width:761px){.action-sheet-overlay{align-items:center}.action-sheet{border-radius:20px}.action-sheet-handle{display:none}}
+@media(max-width:520px){.operation-types{grid-template-columns:1fr}.operation-type.wide{grid-column:auto}}
+</style>
 <link rel="stylesheet" href="shop-common.css?v=20260921-fixed-bottom-1">
 <script src="shop-routes.js?v=20260922-services-1"></script>
 <script src="shop-shell.js?v=20260922-shell-5"></script>
@@ -34,7 +58,20 @@
       <h2>بيع</h2>
       <div class="muted">إذا كان المنتج غير مجرود يظهر عدّ أولي مرة واحدة فقط. بعد ذلك لا تتغير الكمية من البيع إلا بالخصم الطبيعي.</div>
       <div id="message" class="message info" style="margin-top:10px">جاري تحميل بيانات التشغيل…</div>
-      <form id="saleForm">
+      <div class="operation-builder">
+        <div class="operation-builder-head">
+          <div>
+            <strong>العملية الحالية</strong>
+            <div class="muted">اختَر نوع الشيء الذي تريد بيعه أو تنفيذه.</div>
+          </div>
+          <button class="operation-add-btn" id="openOperationPicker" type="button">＋ إضافة</button>
+        </div>
+        <div id="selectedOperation" class="operation-selected">
+          <div class="muted">لم تختر نوع العملية بعد.</div>
+        </div>
+        <div id="operationDraftNotice" class="hint hidden"></div>
+      </div>
+      <form id="saleForm" class="hidden">
         <div class="field"><label>المنتج</label><select id="saleProduct" required></select></div>
         <div class="field" id="saleBranchWrap"><label>الفرع</label><select id="saleBranch" required></select></div>
         <div id="saleStockInfo" class="hint">اختر المنتج لمعرفة حالة المخزون.</div>
@@ -52,7 +89,24 @@
         <button class="btn" type="submit">تسجيل البيع</button>
       </form>
     </section>
-</div>
+  </div>
+
+  <div id="operationSheetOverlay" class="action-sheet-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="operationSheetTitle">
+    <div class="action-sheet" id="operationSheet">
+      <div class="action-sheet-handle"></div>
+      <div class="action-sheet-head">
+        <h3 id="operationSheetTitle">ماذا تريد أن تضيف؟</h3>
+        <button id="closeOperationPicker" class="action-sheet-close" type="button" aria-label="إغلاق">×</button>
+      </div>
+      <div class="operation-types">
+        <button class="operation-type" type="button" data-operation-type="product"><span>🛒</span><div>منتج من المخزون<small>البيع الحالي المرتبط بالمخزون</small></div></button>
+        <button class="operation-type" type="button" data-operation-type="service"><span>🧰</span><div>خدمة<small>تصليح أو خدمة أخرى</small></div></button>
+        <button class="operation-type" type="button" data-operation-type="external_flexy"><span>📱</span><div>فليكسي خارجي<small>تنفيذ يدوي من منصة خارجية</small></div></button>
+        <button class="operation-type" type="button" data-operation-type="game"><span>🎮</span><div>لعبة / شحن<small>مثل Free Fire أو تنفيذ خارجي</small></div></button>
+        <button class="operation-type wide" type="button" data-operation-type="card"><span>🎟️</span><div>بطاقة / Voucher<small>لاحقًا ترتبط بمخزون البطاقات المركزي</small></div></button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -67,6 +121,40 @@
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
   const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
+  const OPERATION_TYPES={
+    product:{icon:'🛒',title:'منتج من المخزون',note:'بيع مرتبط بالمخزون الحالي.'},
+    service:{icon:'🧰',title:'خدمة',note:'تصليح أو خدمة بدون خلطها ببيع السلعة.'},
+    external_flexy:{icon:'📱',title:'فليكسي خارجي',note:'تنفيذ يدوي من منصة خارجية ثم ربط النتيجة لاحقًا.'},
+    game:{icon:'🎮',title:'لعبة / شحن',note:'طلب لعبة أو شحن مباشر مع اختيار مصدر التنفيذ لاحقًا.'},
+    card:{icon:'🎟️',title:'بطاقة / Voucher',note:'بطاقة من المخزون المركزي عند ربط Card Registry.'}
+  }
+  let selectedOperationType=null
+  function openOperationPicker(){$('operationSheetOverlay')?.classList.remove('hidden')}
+  function closeOperationPicker(){$('operationSheetOverlay')?.classList.add('hidden')}
+  function selectOperationType(type){
+    const item=OPERATION_TYPES[type];if(!item)return
+    selectedOperationType=type
+    const selected=$('selectedOperation')
+    selected.className='operation-selected active'
+    selected.innerHTML='<div class="operation-selected-head"><span class="operation-selected-icon">'+item.icon+'</span><div><div class="operation-selected-title">'+item.title+'</div><div class="operation-selected-note">'+item.note+'</div></div></div>'
+    const isProduct=type==='product'
+    $('saleForm')?.classList.toggle('hidden',!isProduct)
+    const notice=$('operationDraftNotice')
+    if(isProduct){
+      notice.classList.add('hidden')
+      setTimeout(()=>document.querySelector('#saleForm input[type="search"]')?.focus(),60)
+    }else{
+      notice.classList.remove('hidden')
+      notice.className='hint warn'
+      notice.textContent='تم اختيار «'+item.title+'» داخل العملية. هذه النسخة لتجربة شكل شاشة البيع فقط؛ لم نربط الحفظ المالي لهذا النوع بعد.'
+    }
+    closeOperationPicker()
+  }
+  $('openOperationPicker')?.addEventListener('click',openOperationPicker)
+  $('closeOperationPicker')?.addEventListener('click',closeOperationPicker)
+  $('operationSheetOverlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeOperationPicker()})
+  $('operationSheet')?.addEventListener('click',e=>{const b=e.target.closest('[data-operation-type]');if(b)selectOperationType(b.dataset.operationType)})
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOperationPicker()})
   $('drawerOpen')?.addEventListener('click',()=>{$('drawer').classList.remove('drawer-hidden');$('drawerOverlay').classList.remove('drawer-hidden')})
   const closeDrawer=()=>{$('drawer').classList.add('drawer-hidden');$('drawerOverlay').classList.add('drawer-hidden')}
   $('drawerClose')?.addEventListener('click',closeDrawer);$('drawerOverlay')?.addEventListener('click',closeDrawer)
