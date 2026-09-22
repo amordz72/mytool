@@ -66,7 +66,7 @@ dialog{border:0;border-radius:18px;padding:0;width:min(94vw,560px);box-shadow:0 
         <div id="preview" class="muted" style="margin-top:5px">0 بطاقة</div>
       </div>
     </div>
-    <div id="exceptionNote" class="warning" hidden>هذه دفعة استثنائية. لا يلزم تسجيل اسم الشخص؛ يكفي وصف واضح مثل «مرتجع عميل غير مستعمل» أو سبب المصدر المجهول حتى تبقى قابلة للتتبع.</div>
+    <div id="exceptionNote" class="warning" hidden>هذه دفعة استثنائية. لا يلزم تسجيل اسم الشخص؛ يكفي وصف واضح مثل «مرتجع عميل غير مستعمل» أو سبب المصدر المجهول حتى تبقى قابلة للتتبع. بطاقات Mobilis الاستثنائية تبقى في المخزون الرئيسي ولا تدخل تلقائيًا إلى مخزون الشحن الآلي.</div>
     <div class="actions">
       <button id="check" class="btn secondary">فحص الدفعة</button>
       <button id="save" class="btn success">حفظ في المخزون الرئيسي</button>
@@ -113,7 +113,7 @@ dialog{border:0;border-radius:18px;padding:0;width:min(94vw,560px);box-shadow:0 
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
 const $=id=>document.getElementById(id),DRAFT_KEY='mytool.cards.masterStockDraft.v1';
-let types=[],currentTaken=null;
+let types=[],currentTaken=null,importMethod='manual';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const statusName=s=>({available:'متاحة',reserved:'محجوزة',review:'مراجعة',used:'مستعملة',invalid:'غير صالحة'}[s]||s);
 const sourceName=s=>({supplier:'مورد',platform:'منصة',customer_return:'مرتجع عميل',internal:'داخلي',unknown_exception:'مصدر مجهول'}[s]||s);
@@ -125,17 +125,264 @@ function parseRows(){
   });
 }
 function selectedType(){return types.find(x=>x.type_key===$('type').value)}
+function codeLooksValid(t,code){
+  const v=String(code||'');
+  if(!v||v.length<Number(t.code_min_length||1)||v.length>Number(t.code_max_length||128))return false;
+  if(t.type_key==='mobilis')return /^[0-9]{15}$/.test(v);
+  if(t.type_key==='idoom')return /^[0-9]{16}$/.test(v);
+  return !/\s/.test(v);
+}
+function serialLooksValid(t,serial){
+  const v=String(serial||'');
+  if(!v)return t.serial_mode!=='required';
+  if(t.serial_mode==='none')return false;
+  if(t.serial_min_length&&v.length<Number(t.serial_min_length))return false;
+  if(t.serial_max_length&&v.length>Number(t.serial_max_length))return false;
+  if(t.serial_regex==='^[0-9]+
+  if(!$('sourceLabel').value.trim())errors.push('اكتب وصف المصدر.');
+  if(['customer_return','unknown_exception'].includes($('sourceKind').value)&&!($('note').value.trim()||$('sourceLabel').value.trim()))errors.push('اكتب وصفًا واضحًا للحالة الاستثنائية.');
+  $('preview').textContent=rows.length+' بطاقة'+(errors.length?' • '+errors.length+' ملاحظة':' • جاهزة للفحص');
+  if(show)setStatus(errors.length?errors.slice(0,4).join(' — '):'الفحص المحلي سليم. الخادم سيعيد التحقق قبل الحفظ.',errors.length>0);
+  return{ok:!errors.length,rows,errors};
+}
+function updateException(){
+  $('exceptionNote').hidden=!['customer_return','unknown_exception'].includes($('sourceKind').value);
+}
+function applyDraft(){
+  let d=null;try{d=JSON.parse(sessionStorage.getItem(DRAFT_KEY)||'null')}catch(e){}
+  if(!d)return;
+  sessionStorage.removeItem(DRAFT_KEY);
+  if(d.typeKey&&types.some(x=>x.type_key===d.typeKey))$('type').value=d.typeKey;
+  $('denomination').value=d.denomination||'';
+  $('productLabel').value=d.productLabel||'';
+  $('sourceKind').value=d.sourceKind||'supplier';
+  $('sourceLabel').value=d.sourceLabel||'';
+  $('sourceReference').value=d.sourceReference||'';
+  $('note').value=d.note||'';
+  importMethod=['manual','parser','file','legacy'].includes(d.importMethod)?d.importMethod:'parser';
+  const rows=Array.isArray(d.rows)?d.rows:[];
+  $('rows').value=rows.map(r=>r.serial?String(r.code)+','+String(r.serial):String(r.code||'')).filter(Boolean).join('\n');
+  updateException();localCheck(false);
+  if(rows.length)setStatus('وصلت '+rows.length+' بطاقة من معالج البطاقات. راجع المصدر ثم احفظ.');
+}
+async function loadTypes(){
+  const {data,error}=await supabase.from('card_stock_types').select('*').eq('active',true).order('family').order('name');
+  if(error)throw error;types=data||[];
+  $('type').innerHTML=types.map(t=>'<option value="'+esc(t.type_key)+'">'+esc(t.name)+'</option>').join('');
+}
+async function loadSummary(){
+  const {data,error}=await supabase.rpc('card_stock_admin_summary');if(error)throw error;
+  const a=data||[];const sum=k=>a.reduce((n,x)=>n+Number(x[k]||0),0);
+  $('availableK').textContent=sum('available_count');$('reservedK').textContent=sum('reserved_count');$('reviewK').textContent=sum('review_count');$('usedK').textContent=sum('used_count');
+}
+function tagClass(s){return s==='available'?'good':s==='review'?'warn':s==='used'?'bad':''}
+async function loadItems(){
+  const st=$('statusFilter').value||null;
+  const {data,error}=await supabase.rpc('card_stock_admin_items',{p_limit:100,p_status:st});if(error)throw error;
+  const list=data||[];
+  $('items').innerHTML=list.length?list.map(x=>`<article class="item">
+    <div class="itemHead"><h3>${esc(x.type_name)} ${x.denomination?'— '+esc(x.denomination):''}</h3>${x.status==='available'?'<button data-take="'+esc(x.card_uuid)+'">استخدام يدوي</button>':''}</div>
+    <div class="tags">
+      <span class="tag ${tagClass(x.status)}">${esc(statusName(x.status))}</span>
+      <span class="tag" dir="ltr">${esc(x.masked_code)}</span>
+      ${x.masked_serial?'<span class="tag" dir="ltr">SN '+esc(x.masked_serial)+'</span>':''}
+      <span class="tag">${esc(sourceName(x.source_kind))}: ${esc(x.source_label)}</span>
+      ${x.origin_exception?'<span class="tag warn">استثناء مصدر</span>':''}
+      ${x.station_linked?'<span class="tag good">مرتبط بالشحن الآلي</span>':''}
+    </div>
+    ${x.product_label?'<div class="muted" style="margin-top:6px">'+esc(x.product_label)+'</div>':''}
+  </article>`).join(''):'<div class="empty">لا توجد بطاقات بهذه الحالة.</div>';
+  document.querySelectorAll('[data-take]').forEach(b=>b.onclick=()=>takeCard(b.dataset.take));
+}
+async function loadBatches(){
+  const {data,error}=await supabase.rpc('card_stock_admin_recent_batches',{p_limit:25});if(error)throw error;
+  const list=data||[];
+  $('batches').innerHTML=list.length?list.map(x=>`<article class="batch">
+    <div class="row"><h3>${esc(x.type_name)} ${x.denomination?'— '+esc(x.denomination):''}</h3><span class="muted">${new Date(x.created_at).toLocaleString('ar-DZ')}</span></div>
+    <div class="tags">
+      <span class="tag">${x.inserted_count} أضيفت</span>
+      <span class="tag">${x.duplicate_count} مكررة</span>
+      <span class="tag">${esc(sourceName(x.source_kind))}: ${esc(x.source_label)}</span>
+      ${x.is_exception?'<span class="tag warn">استثنائية</span>':''}
+      ${x.source_reference?'<span class="tag">'+esc(x.source_reference)+'</span>':''}
+    </div>
+  </article>`).join(''):'<div class="empty">لا توجد دفعات بعد.</div>';
+}
+async function refreshAll(){await Promise.all([loadSummary(),loadItems(),loadBatches()])}
+async function saveBatch(){
+  const c=localCheck(true);if(!c.ok)return;
+  $('save').disabled=true;
+  setStatus('جاري الحفظ والتحقق من التكرار...');
+  const {data,error}=await supabase.rpc('card_stock_admin_import_batch',{
+    p_type_key:$('type').value,
+    p_denomination:$('denomination').value.trim()||null,
+    p_source_kind:$('sourceKind').value,
+    p_source_label:$('sourceLabel').value.trim(),
+    p_source_reference:$('sourceReference').value.trim()||null,
+    p_note:$('note').value.trim()||null,
+    p_rows:c.rows,
+    p_product_label:$('productLabel').value.trim()||null,
+    p_import_method:importMethod
+  });
+  $('save').disabled=false;
+  if(error){setStatus(error.message||'تعذر حفظ الدفعة.',true);return}
+  const r=(data||[])[0]||{};
+  setStatus('تم الحفظ: '+Number(r.inserted_count||0)+' جديدة، '+Number(r.duplicate_count||0)+' مكررة، '+Number(r.operational_count||0)+' مرتبطة بالشحن الآلي.');
+  $('rows').value='';$('sourceReference').value='';$('note').value='';localCheck(false);await refreshAll();
+}
+async function takeCard(id){
+  if(!confirm('حجز هذه البطاقة للاستخدام اليدوي؟ بعد الحجز لن يأخذها التنفيذ الآلي.'))return;
+  const {data,error}=await supabase.rpc('card_stock_admin_take_card',{p_card_uuid:id});
+  if(error){setStatus(error.message||'تعذر حجز البطاقة.',true);return}
+  const r=(data||[])[0];if(!r)return;
+  currentTaken=r.card_uuid;$('secretCode').textContent=r.code||'';$('secretSerial').textContent=r.serial||'';$('serialWrap').hidden=!r.serial;
+  $('takeDialog').showModal();await refreshAll();
+}
+async function finish(outcome){
+  if(!currentTaken)return;
+  const note=outcome==='used'?'استخدام يدوي من Master Card Stock':outcome==='review'?'مراجعة يدوية من Master Card Stock':null;
+  const {error}=await supabase.rpc('card_stock_admin_finish_card',{p_card_uuid:currentTaken,p_outcome:outcome,p_note:note});
+  if(error){alert(error.message||'تعذر تحديث الحالة.');return}
+  currentTaken=null;$('takeDialog').close();$('secretCode').textContent='';$('secretSerial').textContent='';await refreshAll();
+}
+$('sourceKind').onchange=updateException;$('rows').oninput=()=>localCheck(false);$('type').onchange=()=>localCheck(false);
+$('check').onclick=()=>localCheck(true);$('save').onclick=saveBatch;$('refresh').onclick=refreshAll;$('statusFilter').onchange=loadItems;
+$('copySecret').onclick=async()=>{await navigator.clipboard.writeText($('secretCode').textContent||'');$('copySecret').textContent='تم النسخ';setTimeout(()=>$('copySecret').textContent='نسخ الكود',900)};
+$('finishUsed').onclick=()=>finish('used');$('finishReturn').onclick=()=>finish('available');$('finishReview').onclick=()=>finish('review');
+try{
+  const {data:sess}=await supabase.auth.getSession();if(!sess?.session)throw new Error('سجّل دخول الإدارة أولًا.');
+  await loadTypes();applyDraft();updateException();await refreshAll();
+}catch(e){setStatus(e.message||'تعذر فتح المخزون الرئيسي.',true);$('items').innerHTML='<div class="empty">تعذر تحميل البيانات.</div>'}
+</script>
+</body>
+</html>)return /^[0-9]+$/.test(v);
+  if(t.serial_regex==='^[0-9]{15}
+  if(!$('sourceLabel').value.trim())errors.push('اكتب وصف المصدر.');
+  if(['customer_return','unknown_exception'].includes($('sourceKind').value)&&!($('note').value.trim()||$('sourceLabel').value.trim()))errors.push('اكتب وصفًا واضحًا للحالة الاستثنائية.');
+  $('preview').textContent=rows.length+' بطاقة'+(errors.length?' • '+errors.length+' ملاحظة':' • جاهزة للفحص');
+  if(show)setStatus(errors.length?errors.slice(0,4).join(' — '):'الفحص المحلي سليم. الخادم سيعيد التحقق قبل الحفظ.',errors.length>0);
+  return{ok:!errors.length,rows,errors};
+}
+function updateException(){
+  $('exceptionNote').hidden=!['customer_return','unknown_exception'].includes($('sourceKind').value);
+}
+function applyDraft(){
+  let d=null;try{d=JSON.parse(sessionStorage.getItem(DRAFT_KEY)||'null')}catch(e){}
+  if(!d)return;
+  sessionStorage.removeItem(DRAFT_KEY);
+  if(d.typeKey&&types.some(x=>x.type_key===d.typeKey))$('type').value=d.typeKey;
+  $('denomination').value=d.denomination||'';
+  $('productLabel').value=d.productLabel||'';
+  $('sourceKind').value=d.sourceKind||'supplier';
+  $('sourceLabel').value=d.sourceLabel||'';
+  $('sourceReference').value=d.sourceReference||'';
+  $('note').value=d.note||'';
+  const rows=Array.isArray(d.rows)?d.rows:[];
+  $('rows').value=rows.map(r=>r.serial?String(r.code)+','+String(r.serial):String(r.code||'')).filter(Boolean).join('\n');
+  updateException();localCheck(false);
+  if(rows.length)setStatus('وصلت '+rows.length+' بطاقة من معالج البطاقات. راجع المصدر ثم احفظ.');
+}
+async function loadTypes(){
+  const {data,error}=await supabase.from('card_stock_types').select('*').eq('active',true).order('family').order('name');
+  if(error)throw error;types=data||[];
+  $('type').innerHTML=types.map(t=>'<option value="'+esc(t.type_key)+'">'+esc(t.name)+'</option>').join('');
+}
+async function loadSummary(){
+  const {data,error}=await supabase.rpc('card_stock_admin_summary');if(error)throw error;
+  const a=data||[];const sum=k=>a.reduce((n,x)=>n+Number(x[k]||0),0);
+  $('availableK').textContent=sum('available_count');$('reservedK').textContent=sum('reserved_count');$('reviewK').textContent=sum('review_count');$('usedK').textContent=sum('used_count');
+}
+function tagClass(s){return s==='available'?'good':s==='review'?'warn':s==='used'?'bad':''}
+async function loadItems(){
+  const st=$('statusFilter').value||null;
+  const {data,error}=await supabase.rpc('card_stock_admin_items',{p_limit:100,p_status:st});if(error)throw error;
+  const list=data||[];
+  $('items').innerHTML=list.length?list.map(x=>`<article class="item">
+    <div class="itemHead"><h3>${esc(x.type_name)} ${x.denomination?'— '+esc(x.denomination):''}</h3>${x.status==='available'?'<button data-take="'+esc(x.card_uuid)+'">استخدام يدوي</button>':''}</div>
+    <div class="tags">
+      <span class="tag ${tagClass(x.status)}">${esc(statusName(x.status))}</span>
+      <span class="tag" dir="ltr">${esc(x.masked_code)}</span>
+      ${x.masked_serial?'<span class="tag" dir="ltr">SN '+esc(x.masked_serial)+'</span>':''}
+      <span class="tag">${esc(sourceName(x.source_kind))}: ${esc(x.source_label)}</span>
+      ${x.origin_exception?'<span class="tag warn">استثناء مصدر</span>':''}
+      ${x.station_linked?'<span class="tag good">مرتبط بالشحن الآلي</span>':''}
+    </div>
+    ${x.product_label?'<div class="muted" style="margin-top:6px">'+esc(x.product_label)+'</div>':''}
+  </article>`).join(''):'<div class="empty">لا توجد بطاقات بهذه الحالة.</div>';
+  document.querySelectorAll('[data-take]').forEach(b=>b.onclick=()=>takeCard(b.dataset.take));
+}
+async function loadBatches(){
+  const {data,error}=await supabase.rpc('card_stock_admin_recent_batches',{p_limit:25});if(error)throw error;
+  const list=data||[];
+  $('batches').innerHTML=list.length?list.map(x=>`<article class="batch">
+    <div class="row"><h3>${esc(x.type_name)} ${x.denomination?'— '+esc(x.denomination):''}</h3><span class="muted">${new Date(x.created_at).toLocaleString('ar-DZ')}</span></div>
+    <div class="tags">
+      <span class="tag">${x.inserted_count} أضيفت</span>
+      <span class="tag">${x.duplicate_count} مكررة</span>
+      <span class="tag">${esc(sourceName(x.source_kind))}: ${esc(x.source_label)}</span>
+      ${x.is_exception?'<span class="tag warn">استثنائية</span>':''}
+      ${x.source_reference?'<span class="tag">'+esc(x.source_reference)+'</span>':''}
+    </div>
+  </article>`).join(''):'<div class="empty">لا توجد دفعات بعد.</div>';
+}
+async function refreshAll(){await Promise.all([loadSummary(),loadItems(),loadBatches()])}
+async function saveBatch(){
+  const c=localCheck(true);if(!c.ok)return;
+  $('save').disabled=true;
+  setStatus('جاري الحفظ والتحقق من التكرار...');
+  const {data,error}=await supabase.rpc('card_stock_admin_import_batch',{
+    p_type_key:$('type').value,
+    p_denomination:$('denomination').value.trim()||null,
+    p_source_kind:$('sourceKind').value,
+    p_source_label:$('sourceLabel').value.trim(),
+    p_source_reference:$('sourceReference').value.trim()||null,
+    p_note:$('note').value.trim()||null,
+    p_rows:c.rows,
+    p_product_label:$('productLabel').value.trim()||null,
+    p_import_method:'manual'
+  });
+  $('save').disabled=false;
+  if(error){setStatus(error.message||'تعذر حفظ الدفعة.',true);return}
+  const r=(data||[])[0]||{};
+  setStatus('تم الحفظ: '+Number(r.inserted_count||0)+' جديدة، '+Number(r.duplicate_count||0)+' مكررة، '+Number(r.operational_count||0)+' مرتبطة بالشحن الآلي.');
+  $('rows').value='';$('sourceReference').value='';$('note').value='';localCheck(false);await refreshAll();
+}
+async function takeCard(id){
+  if(!confirm('حجز هذه البطاقة للاستخدام اليدوي؟ بعد الحجز لن يأخذها التنفيذ الآلي.'))return;
+  const {data,error}=await supabase.rpc('card_stock_admin_take_card',{p_card_uuid:id});
+  if(error){setStatus(error.message||'تعذر حجز البطاقة.',true);return}
+  const r=(data||[])[0];if(!r)return;
+  currentTaken=r.card_uuid;$('secretCode').textContent=r.code||'';$('secretSerial').textContent=r.serial||'';$('serialWrap').hidden=!r.serial;
+  $('takeDialog').showModal();await refreshAll();
+}
+async function finish(outcome){
+  if(!currentTaken)return;
+  const note=outcome==='used'?'استخدام يدوي من Master Card Stock':outcome==='review'?'مراجعة يدوية من Master Card Stock':null;
+  const {error}=await supabase.rpc('card_stock_admin_finish_card',{p_card_uuid:currentTaken,p_outcome:outcome,p_note:note});
+  if(error){alert(error.message||'تعذر تحديث الحالة.');return}
+  currentTaken=null;$('takeDialog').close();$('secretCode').textContent='';$('secretSerial').textContent='';await refreshAll();
+}
+$('sourceKind').onchange=updateException;$('rows').oninput=()=>localCheck(false);$('type').onchange=()=>localCheck(false);
+$('check').onclick=()=>localCheck(true);$('save').onclick=saveBatch;$('refresh').onclick=refreshAll;$('statusFilter').onchange=loadItems;
+$('copySecret').onclick=async()=>{await navigator.clipboard.writeText($('secretCode').textContent||'');$('copySecret').textContent='تم النسخ';setTimeout(()=>$('copySecret').textContent='نسخ الكود',900)};
+$('finishUsed').onclick=()=>finish('used');$('finishReturn').onclick=()=>finish('available');$('finishReview').onclick=()=>finish('review');
+try{
+  const {data:sess}=await supabase.auth.getSession();if(!sess?.session)throw new Error('سجّل دخول الإدارة أولًا.');
+  await loadTypes();applyDraft();updateException();await refreshAll();
+}catch(e){setStatus(e.message||'تعذر فتح المخزون الرئيسي.',true);$('items').innerHTML='<div class="empty">تعذر تحميل البيانات.</div>'}
+</script>
+</body>
+</html>)return /^[0-9]{15}$/.test(v);
+  return true;
+}
 function localCheck(show=true){
   const t=selectedType(),rows=parseRows(),errors=[];
   if(!t)errors.push('اختر فئة البطاقة.');
   if(!rows.length)errors.push('لا توجد بطاقات.');
   if(t){
-    const re=new RegExp(t.code_regex);
     rows.forEach((r,i)=>{
-      if(!r.code||r.code.length<t.code_min_length||r.code.length>t.code_max_length||!re.test(r.code))errors.push('السطر '+(i+1)+': الكود لا يطابق صيغة '+t.name);
-      if(t.serial_mode==='required'&&!r.serial)errors.push('السطر '+(i+1)+': Serial مطلوب لهذه الفئة.');
-      if(t.serial_mode==='none'&&r.serial)errors.push('السطر '+(i+1)+': هذه الفئة لا تسجل Serial.');
-      if(r.serial&&t.serial_regex&&!(new RegExp(t.serial_regex)).test(r.serial))errors.push('السطر '+(i+1)+': Serial غير مطابق.');
+      if(!codeLooksValid(t,r.code))errors.push('السطر '+(i+1)+': الكود لا يطابق صيغة '+t.name);
+      if(!serialLooksValid(t,r.serial))errors.push('السطر '+(i+1)+': Serial / SN غير مطابق لقاعدة هذه الفئة.');
     });
     if(['mobilis','idoom'].includes(t.type_key)&&!$('denomination').value.trim())errors.push('الفئة/القيمة مطلوبة لهذا النوع.');
   }
