@@ -611,7 +611,7 @@ async function pollFlexyResolution(jobUuid,token,timeoutMs=110000){
   if(row&&['success','failed','unavailable'].includes(row.status))return row;
 
   if(row?.status==='review'){
-   statusBox.textContent='رد الشبكة غير حاسم. جاري فحص رصيد GTS في الخلفية وتحليل النتيجة…';
+   statusBox.textContent='رد الشبكة غير حاسم. تم تشغيل فحص GTS في الخلفية؛ ننتظر حسم النتيجة…';
   }
   await sleep(1100);
  }
@@ -829,7 +829,7 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
     statusBox.textContent='فشل الإرسال حسب رد الشبكة: '+(row.result_text||row.result_code||'فشل مؤكد.')+' — تم فك الحجز وإرجاع المبلغ.';
    }
   }else if(row.status==='review'){
-   statusBox.textContent='النتيجة ما زالت غير معروفة بعد فحص الخلفية. المبلغ يبقى محجوزًا ولا تعاود الإرسال حتى تُراجع العملية.';
+   statusBox.textContent='النتيجة غير محسومة: فحص GTS الأول لم يثبت نجاحًا ولا فشلًا. المبلغ يبقى محجوزًا ولا تعاود الإرسال حتى تظهر نتيجة مؤكدة.';
   }else{
    statusBox.textContent='انتهت العملية بالحالة: '+(row.status||'غير معروفة');
   }
