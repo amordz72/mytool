@@ -10,6 +10,17 @@
   const relative=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length):'';
   const currentApp=(document.body?.dataset?.mytoolApp||script?.dataset?.app||relative.split('/').filter(Boolean)[0]||'').trim();
   const appHome=currentApp?new URL(currentApp+'/',rootUrl):rootUrl;
+  const SHELL_VERSION='20260922-dual-sidebar-1';
+
+  function loadSharedShell(){
+    if(!document.querySelector('link[data-mytool-shell-nav]')){
+      const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('mytool-shell-nav.css?v='+SHELL_VERSION,rootUrl).href;link.dataset.mytoolShellNav='1';document.head.appendChild(link);
+    }
+    if(!document.querySelector('script[data-mytool-shell-nav]')){
+      const shell=document.createElement('script');shell.src=new URL('mytool-shell-nav.js?v='+SHELL_VERSION,rootUrl).href;shell.defer=true;shell.dataset.mytoolShellNav='1';shell.dataset.root=rootUrl.href;if(currentApp)shell.dataset.app=currentApp;document.head.appendChild(shell);
+    }
+  }
+  loadSharedShell();
   let nav=null,notesPagerObserver=null,notesFinderObserver=null,optionsPanel=null;
 
   function routePath(){return location.pathname+location.search+location.hash}
@@ -212,8 +223,9 @@
   }
   function render(){
     if(!nav)return;
-    syncToolsPlacement();
-    syncRecentPlacement();
+    // Bottom bar belongs only to the current app. Global switching lives in the My Tools side menu.
+    showFloatingTools(false);
+    showFloatingRecent(false);
     for(let slot=1;slot<=5;slot++){
       const holder=nav.querySelector('[data-slot="'+slot+'"]');if(!holder)continue;const item=state.slots[slot];holder.innerHTML=itemHtml(slot,item);
       if(item&&!item.href&&typeof item.onClick==='function'){const button=holder.querySelector('button');if(button){button.addEventListener('click',item.onClick);if(item.optionsTrigger){button.setAttribute('aria-haspopup','menu');button.setAttribute('aria-expanded',optionsPanel?'true':'false')}}}
