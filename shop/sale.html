@@ -38,6 +38,15 @@
 .order-handoff pre{white-space:pre-wrap;word-break:break-word;margin:8px 0 0;padding:9px;border-radius:10px;background:#fff;border:1px solid #dbeafe;font:12px/1.6 Tahoma,Arial,sans-serif;color:#334155}
 .order-handoff-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:9px}
 .order-handoff-back{width:auto!important;text-decoration:none;padding:8px 10px;border:1px solid #93c5fd;border-radius:10px;background:#fff;color:#1d4ed8;font-size:12px;font-weight:800}
+.digital-sale-form{margin-top:12px;border:1px solid #99f6e4;border-radius:16px;background:#f0fdfa;padding:13px}
+.digital-sale-form h3{margin:0 0 4px;font-size:16px;color:#0f766e}
+.digital-sale-form .form-note{margin:0 0 9px;color:#64748b;font-size:11px;line-height:1.55}
+.digital-sale-form .row{margin-top:0}
+.digital-sale-form input[readonly]{background:#f8fafc;color:#475569}
+.digital-sale-form .save-row{display:flex;gap:8px;align-items:center;margin-top:11px}
+.digital-sale-form .save-row .btn{flex:1}
+.digital-sale-form .financial-note{font-size:10px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:7px 8px;line-height:1.5;margin-top:9px}
+@media(max-width:620px){.digital-sale-form .row{grid-template-columns:1fr}.digital-sale-form{padding:11px}}
 .action-sheet-overlay{position:fixed;inset:0;z-index:160;background:#0f172a7a;display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .action-sheet{width:min(100%,560px);background:#fff;border-radius:22px 22px 16px 16px;padding:14px;box-shadow:0 -18px 45px #0f172a33}
 .action-sheet-handle{width:46px;height:5px;border-radius:999px;background:#cbd5e1;margin:0 auto 10px}
@@ -121,6 +130,30 @@
         <div class="field"><label>ملاحظة</label><textarea id="saleNotes" placeholder="اختياري"></textarea></div>
         <button class="btn" type="submit">تسجيل البيع</button>
       </form>
+
+      <form id="digitalSaleForm" class="digital-sale-form hidden">
+        <h3>بيانات البيع</h3>
+        <p class="form-note">الحقول المعروفة من الطلب تتعبى تلقائيًا، وتقدر تعدلها قبل الحفظ.</p>
+        <div class="row">
+          <div class="field"><label>العميل</label><input id="digitalCustomer" placeholder="اسم العميل"></div>
+          <div class="field"><label>الخدمة</label><input id="digitalServiceName" placeholder="مثال: Free Fire"><input id="digitalServiceCode" type="hidden"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>الرقم / Player ID</label><input id="digitalDestination" dir="ltr" placeholder="Player ID أو رقم الهاتف"></div>
+          <div class="field"><label>القيمة / الباقة</label><input id="digitalPackage" placeholder="مثال: 200 جوهرة"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>سعر البيع (دج)</label><input id="digitalPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="أدخل سعر البيع" required></div>
+          <div class="field"><label>طريقة التسوية</label><select id="digitalSettlement"><option value="cash">نقد</option><option value="credit">على الحساب / دين</option><option value="pending">لم تُحسم بعد</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>مصدر التنفيذ</label><select id="digitalFulfillment"><option value="external_manual">منصة خارجية / يدوي</option><option value="card_registry">بطاقة من المخزون</option><option value="internal">تنفيذ داخلي</option><option value="other">مصدر آخر</option></select></div>
+          <div class="field"><label>حالة التنفيذ</label><select id="digitalExecution"><option value="done">تم التنفيذ</option><option value="pending">لم ينفذ بعد</option><option value="review">يحتاج مراجعة</option></select></div>
+        </div>
+        <div class="field"><label>ملاحظة</label><textarea id="digitalNotes" placeholder="اختياري"></textarea></div>
+        <div class="financial-note">هذه الخطوة تحفظ بيانات البيع داخل نفس الطلب. لا تُنشئ دينًا أو حركة صندوق تلقائيًا قبل ربط المسار المالي المركزي.</div>
+        <div class="save-row"><button id="saveDigitalSaleBtn" class="btn" type="submit">حفظ بيانات البيع</button></div>
+      </form>
     </section>
   </div>
 
@@ -162,7 +195,7 @@
     card:{icon:'🎟️',title:'بطاقة / Voucher',note:'بطاقة من المخزون المركزي عند ربط Card Registry.'}
   }
   const SALE_HANDOFF_KEY='mytool_sale_handoff_v1'
-  let selectedOperationType=null
+  let selectedOperationType=null,saleHandoff=null
   function openOperationPicker(){$('operationSheetOverlay')?.classList.remove('hidden')}
   function closeOperationPicker(){$('operationSheetOverlay')?.classList.add('hidden')}
   function selectOperationType(type){
@@ -173,17 +206,94 @@
     selected.innerHTML='<div class="operation-selected-head"><span class="operation-selected-icon">'+item.icon+'</span><div><div class="operation-selected-title">'+item.title+'</div><div class="operation-selected-note">'+item.note+'</div></div></div>'
     const isProduct=type==='product'
     $('saleForm')?.classList.toggle('hidden',!isProduct)
+    $('digitalSaleForm')?.classList.toggle('hidden',isProduct)
     const notice=$('operationDraftNotice')
     if(isProduct){
       notice.classList.add('hidden')
       setTimeout(()=>document.querySelector('#saleForm input[type="search"]')?.focus(),60)
     }else{
       notice.classList.remove('hidden')
-      notice.className='hint warn'
-      notice.textContent='تم اختيار «'+item.title+'» داخل العملية. هذه النسخة لتجربة شكل شاشة البيع فقط؛ لم نربط الحفظ المالي لهذا النوع بعد.'
+      notice.className='hint'
+      notice.textContent=saleHandoff
+        ?'تم تحميل بيانات الطلب. راجع السعر وطريقة التسوية ثم احفظ.'
+        :'أدخل بيانات البيع. إذا كان الطلب قادمًا من صندوق الطلبات ستتعبأ الحقول تلقائيًا.'
+      setTimeout(()=>$('digitalPrice')?.focus(),60)
     }
     closeOperationPicker()
   }
+  function setDigitalValue(id,value){
+    const el=$(id);if(el)el.value=value==null?'':String(value)
+  }
+  function fillDigitalSaleFields(handoff){
+    const previous=handoff?.parsed_payload?.sale_capture||{}
+    setDigitalValue('digitalCustomer',handoff?.customer_name||previous.customer_name||'')
+    setDigitalValue('digitalServiceName',handoff?.service_name||handoff?.service_code||previous.service_name||'')
+    setDigitalValue('digitalServiceCode',handoff?.service_code||previous.service_code||'')
+    setDigitalValue('digitalDestination',handoff?.destination||previous.destination||'')
+    setDigitalValue('digitalPackage',handoff?.package_text||previous.package_text||'')
+    setDigitalValue('digitalPrice',previous.sale_price??'')
+    setDigitalValue('digitalSettlement',previous.settlement_mode||'cash')
+    setDigitalValue('digitalFulfillment',previous.fulfillment_source||(handoff?.operation_type==='card'?'card_registry':'external_manual'))
+    setDigitalValue('digitalExecution',previous.execution_state||'done')
+    setDigitalValue('digitalNotes',previous.notes||'')
+  }
+  async function saveDigitalSaleDraft(event){
+    event?.preventDefault()
+    const serviceName=$('digitalServiceName')?.value.trim()||''
+    const serviceCode=$('digitalServiceCode')?.value.trim()||''
+    const destination=$('digitalDestination')?.value.trim()||''
+    const packageText=$('digitalPackage')?.value.trim()||''
+    const customerName=$('digitalCustomer')?.value.trim()||''
+    const price=Number($('digitalPrice')?.value)
+    const settlement=$('digitalSettlement')?.value||'cash'
+    const fulfillment=$('digitalFulfillment')?.value||'external_manual'
+    const execution=$('digitalExecution')?.value||'done'
+    const notes=$('digitalNotes')?.value.trim()||''
+    if(!serviceName&&!serviceCode)return notify('حدد الخدمة.','error')
+    if(['game','external_flexy','card'].includes(selectedOperationType)&&!destination)return notify('أدخل الرقم أو Player ID.','error')
+    if(!Number.isFinite(price)||price<0)return notify('أدخل سعر بيع صحيح.','error')
+    if(settlement==='credit'&&!saleHandoff?.customer_party_id)return notify('البيع على الحساب يحتاج عميلًا مربوطًا، وليس اسمًا فقط.','error')
+    if(!saleHandoff?.order_id)return notify('الحقول جاهزة، لكن الحفظ يحتاج طلبًا محفوظًا. افتح العملية من «الطلبات» ثم اضغط تسجيل بيع.','error')
+    const capture={
+      operation_type:selectedOperationType||saleHandoff.operation_type||'service',
+      customer_party_id:saleHandoff.customer_party_id||null,
+      customer_name:customerName,
+      service_code:serviceCode||saleHandoff.service_code||null,
+      service_name:serviceName,
+      destination,
+      package_text:packageText,
+      sale_price:price,
+      settlement_mode:settlement,
+      fulfillment_source:fulfillment,
+      execution_state:execution,
+      branch_id:Number($('saleBranch')?.value||state.defaultBranchId)||null,
+      notes,
+      captured_at:new Date().toISOString()
+    }
+    const parsed={...(saleHandoff.parsed_payload||{}),sale_capture:capture}
+    const patch={
+      service_code:capture.service_code,
+      package_text:packageText||null,
+      destination:destination||null,
+      parsed_payload:parsed,
+      status:execution==='done'?'success':execution==='review'?'review':'in_progress',
+      updated_at:new Date().toISOString()
+    }
+    const button=$('saveDigitalSaleBtn')
+    if(button){button.disabled=true;button.textContent='جاري الحفظ…'}
+    try{
+      const {error}=await supabase.from('mytool_service_orders').update(patch).eq('id',saleHandoff.order_id)
+      if(error)throw error
+      saleHandoff={...saleHandoff,...patch,parsed_payload:parsed,package_text:packageText,destination}
+      sessionStorage.setItem(SALE_HANDOFF_KEY,JSON.stringify(saleHandoff))
+      notify('تم حفظ بيانات البيع داخل الطلب. السعر والتسوية والتنفيذ محفوظة للمراجعة المالية.','ok')
+    }catch(error){
+      notify('تعذر حفظ بيانات البيع: '+(error?.message||error),'error')
+    }finally{
+      if(button){button.disabled=false;button.textContent='حفظ بيانات البيع'}
+    }
+  }
+
   function fmtHandoffDate(value){
     if(!value)return''
     const d=new Date(value)
@@ -198,8 +308,10 @@
     if(!expected)return false
     const actualRef=handoff.order_uuid||handoff.order_id
     if(!actualRef||String(actualRef)!==String(expected))return false
+    saleHandoff=handoff
     const type=params.get('operation')||handoff.operation_type||'service'
     if(OPERATION_TYPES[type])selectOperationType(type)
+    fillDigitalSaleFields(handoff)
     const box=$('orderHandoff')
     if(!box)return false
     box.classList.remove('hidden')
@@ -220,6 +332,7 @@
     return true
   }
 
+  $('digitalSaleForm')?.addEventListener('submit',saveDigitalSaleDraft)
   $('openOperationPicker')?.addEventListener('click',openOperationPicker)
   $('closeOperationPicker')?.addEventListener('click',closeOperationPicker)
   $('operationSheetOverlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeOperationPicker()})
