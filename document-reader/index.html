@@ -35,7 +35,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.14</span></p>
+  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.15</span></p>
 </section>
 
 <section class="card security">
@@ -243,6 +243,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const DOCUMENT_INDEX_KEY='mytool.document-reader.document-index.v1';
   const DOCUMENT_INDEX_CLEANUP_KEY='mytool.document-reader.document-index-cleanup.v5';
   const ARCHIVE_RULE_MIGRATION_KEY='mytool.document-reader.archive-rule-migration.v1';
+  const MONEY_LIFECYCLE_MIGRATION_KEY='mytool.document-reader.money-lifecycle-migration.v1';
   const SUPPLIER_DEBTS_KEY='mytool.document-reader.supplier-debts.v1';
   const DEVICE_LOCK_KEY='mytool.document-reader.device-lock.v1';
   const ADMIN_PIN_KEY='mytool.document-reader.admin-pin.v1';
@@ -1682,7 +1683,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function isFinanciallySettled(op){
     const s=effectiveStatus(op);
     if(s==='confirmed_received')return true;
-    return s==='archived'&&['confirmed_received','settled'].includes(op.statusBeforeArchive);
+    return s==='archived'&&op.statusBeforeArchive==='confirmed_received';
   }
 
   function amountNumber(op){
@@ -2251,7 +2252,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const next=items.map(op=>{
         if(effectiveStatus(op)!=='archived')return op;
         const supplier=op.selectedRecipient||UNSENT_RECIPIENT;
-        const valid=supplier!==UNSENT_RECIPIENT&&['settled','confirmed_received'].includes(op.statusBeforeArchive);
+        const valid=supplier!==UNSENT_RECIPIENT&&op.statusBeforeArchive==='confirmed_received';
         if(valid)return op;
 
         changed=true;
@@ -2275,9 +2276,42 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
 
+  function migrateLegacyMoneyLifecycle(){
+    try{
+      if(localStorage.getItem(MONEY_LIFECYCLE_MIGRATION_KEY)==='done')return 0;
+      const items=getRecentOperations();
+      let changed=0;
+      const next=items.map(op=>{
+        const legacySettled=op.status==='settled';
+        const legacyArchived=op.status==='archived'
+          && op.statusBeforeArchive==='settled'
+          && !op.confirmedReceivedAt;
+        if(!legacySettled&&!legacyArchived)return op;
+
+        changed++;
+        return {
+          ...op,
+          status:'sent_to_platform',
+          statusBeforeArchive:'',
+          sentToPlatformAt:op.sentToPlatformAt||op.settledAt||op.assignedAt||op.archivedAt||op.createdAt||new Date().toISOString(),
+          confirmedReceivedAt:'',
+          archivedAt:'',
+          dayClosedAt:'',
+          dayClosedFor:''
+        };
+      });
+      if(changed)saveRecentOperations(next);
+      localStorage.setItem(MONEY_LIFECYCLE_MIGRATION_KEY,'done');
+      return changed;
+    }catch(_e){
+      return 0;
+    }
+  }
+
   function initializeRecipientContext(){
     activeRecipient=UNSENT_RECIPIENT;
     renderRecipientSelect();
+    const legacyMoneyReopened=migrateLegacyMoneyLifecycle();
     const archiveRuleRepaired=migrateLegacyInvalidArchives();
     const before=getRecentOperations().filter(op=>op.status==='duplicate').length;
     cleanupLegacyDocumentIndexOnce();
@@ -2288,7 +2322,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     updateDateHint();
     renderRecentOperationTabs();
     if(archiveRuleRepaired){
-      showToast('warn','تم تصحيح أرشيف قديم','أي وصل مؤرشف سابقًا بدون تسوية مؤكدة عاد إلى المتابعة حتى لا يختفي مبلغ بلا منصة.',6500);
+      showToast('warn','تم تصحيح أرشيف قديم','أي وصل مؤرشف سابقًا بدون حالة مالية صحيحة عاد إلى المتابعة.',6500);
+    }
+    if(legacyMoneyReopened){
+      showToast('warn','مراجعة عمليات قديمة مطلوبة',
+        'أعدنا '+legacyMoneyReopened+' عملية قديمة إلى «بانتظار المنصة» لأن النظام القديم لم يكن يملك تأكيدًا مستقلًا بأن المال وصل فعليًا. هذا يحميك من اعتبار مبلغ قديم مستلمًا بلا دليل.',
+        8500);
     }
     if(after<before){
       showToast('success','تم إصلاح حالة التكرار','أزيلت علامة «مكرر» من وصل لم يعد له أصل آخر في السجل.',6000);
