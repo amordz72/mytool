@@ -9,7 +9,7 @@
   let shell=null,nav=null,rendering=false,renderQueued=false;
 
   function injectAssets(){
-    const shellVersion='20260922-dual-sidebar-1';
+    const shellVersion='20260922-dual-sidebar-2';
     if(!document.querySelector('link[data-mytool-shell-nav]')){
       const shellCss=document.createElement('link');shellCss.rel='stylesheet';shellCss.href=new URL('mytool-shell-nav.css?v='+shellVersion,rootUrl).href;shellCss.dataset.mytoolShellNav='1';document.head.appendChild(shellCss);
     }
