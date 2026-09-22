@@ -11,14 +11,14 @@
 *{box-sizing:border-box}body{margin:0;padding:10px;font-family:Arial,Tahoma,sans-serif;color:var(--t);background:linear-gradient(135deg,#fff7ef,#eef9ff);min-height:100vh}
 .wrap{max-width:900px;margin:auto}.top{display:flex;gap:8px;margin-bottom:10px}.back{display:block;text-decoration:none;color:var(--t);font-weight:bold;background:#fff;border:1px solid var(--l);border-radius:12px;padding:10px 14px}
 .hero{background:linear-gradient(135deg,var(--o),#7fd3ff);color:#fff;border-radius:20px;padding:16px;box-shadow:0 8px 24px #16304718}.hero h1{font-size:22px;margin:0}.hero p{margin:5px 0 0;font-size:13px;line-height:1.6}
-.panel{margin-top:10px;background:#fff;border:1px solid var(--l);border-radius:18px;padding:10px;box-shadow:0 6px 18px #16304710}
-table{width:100%;border-collapse:separate;border-spacing:0 8px}th{font-size:11px;color:var(--m);text-align:right;padding:0 10px}td{background:var(--soft);border-top:1px solid var(--l);border-bottom:1px solid var(--l);padding:10px}
+.groups{display:grid;gap:12px;margin-top:10px}.group{background:#fff;border:1px solid var(--l);border-radius:18px;padding:10px;box-shadow:0 6px 18px #16304710}.group-head{display:flex;align-items:center;gap:8px;padding:2px 3px 5px}.group-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fff0df,#e9f8ff);font-size:18px}.group-title{font-size:15px;font-weight:900}.group-count{margin-right:auto;font-size:11px;color:var(--m)}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}td{background:var(--soft);border-top:1px solid var(--l);border-bottom:1px solid var(--l);padding:10px}
 td:first-child{border-right:1px solid var(--l);border-radius:0 12px 12px 0}td:last-child{border-left:1px solid var(--l);border-radius:12px 0 0 12px}
-.initial{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;background:#fff;border:1px solid var(--l);direction:ltr}
-.name{font-weight:800}.note{font-size:11px;color:var(--m);margin-top:3px}.category{font-size:11px;color:#14729f;background:#edf8ff;border-radius:99px;padding:4px 7px;display:inline-block}
+.initial{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;background:#fff;border:1px solid var(--l);direction:ltr;letter-spacing:.2px}
+.name{font-weight:800}.note{font-size:11px;color:var(--m);margin-top:3px}
 .open{display:inline-block;text-decoration:none;background:linear-gradient(135deg,#147fb2,var(--b));color:#fff;font-weight:800;border-radius:10px;padding:9px 12px;white-space:nowrap}
-.empty{text-align:center;color:var(--m);padding:24px}.hint{font-size:11px;color:var(--m);margin:7px 3px 0}
-@media(max-width:640px){body{padding:8px}.panel{padding:7px}th:nth-child(3),td:nth-child(3){display:none}td{padding:8px}.open{padding:8px 10px}.name{font-size:13px}.note{font-size:10px}}
+.empty{text-align:center;color:var(--m);padding:24px;background:#fff;border:1px dashed var(--l);border-radius:16px;margin-top:10px}.hint{font-size:11px;color:var(--m);margin:9px 3px 0}
+@media(max-width:640px){body{padding:8px}.group{padding:7px}td{padding:8px}.open{padding:8px 10px}.name{font-size:13px}.note{font-size:10px}}
 </style>
 <script src="../auth-guard.js?v=20260922-work-links-1" data-access="admin"></script>
 </head>
@@ -29,31 +29,48 @@ td:first-child{border-right:1px solid var(--l);border-radius:0 12px 12px 0}td:la
   <h1>روابط العمل</h1>
   <p>مكان واحد للروابط الثابتة التي نحتاجها كثيرًا. كل رابط يفتح في صفحة جديدة حتى تبقى MyTool مفتوحة.</p>
 </section>
-<section class="panel">
-<table>
-<thead><tr><th></th><th>الموقع</th><th>القسم</th><th></th></tr></thead>
-<tbody id="linksBody"></tbody>
-</table>
+<div id="groups" class="groups"></div>
 <div id="empty" class="empty" hidden>لا توجد روابط مفعلة.</div>
-<div class="hint">الروابط محفوظة في ملف واحد داخل MyTool، ونضيف Token Store ومنصة Flexy وباقي المواقع عندما ترسل روابطها.</div>
-</section>
+<div class="hint">كل مجموعة لها غرض واضح. عندما تضيف رابطًا جديدًا نربطه بالمجموعة المناسبة بدل الاعتماد على الأيقونة أو أول حرف من الاسم.</div>
 </main>
 <script>
 (async()=>{
-  const body=document.getElementById('linksBody'),empty=document.getElementById('empty');
+  const root=document.getElementById('groups'),empty=document.getElementById('empty');
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   try{
-    const r=await fetch('links.json?v=20260922-1',{cache:'no-store'});
+    const r=await fetch('links.json?v=20260922-2',{cache:'no-store'});
     if(!r.ok)throw new Error('LOAD_FAILED');
-    const all=await r.json();
-    const links=(Array.isArray(all)?all:[]).filter(x=>x&&x.active!==false&&x.url).sort((a,b)=>Number(a.order||0)-Number(b.order||0));
+    const data=await r.json();
+    const groups=Array.isArray(data?.groups)?data.groups:[];
+    const links=(Array.isArray(data?.links)?data.links:[]).filter(x=>x&&x.active!==false&&x.url);
     if(!links.length){empty.hidden=false;return}
-    body.innerHTML=links.map(x=>`<tr>
-      <td><div class="initial">${esc(x.short||String(x.name||'?').trim().charAt(0).toUpperCase())}</div></td>
-      <td><div class="name">${esc(x.name)}</div><div class="note">${esc(x.note||'')}</div></td>
-      <td><span class="category">${esc(x.category||'عام')}</span></td>
-      <td><a class="open" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">فتح</a></td>
-    </tr>`).join('');
+    const groupMap=new Map(groups.map(g=>[g.id,g]));
+    const grouped=new Map();
+    for(const link of links){
+      const gid=link.group||'other';
+      if(!grouped.has(gid))grouped.set(gid,[]);
+      grouped.get(gid).push(link);
+    }
+    const ordered=[...grouped.entries()].sort((a,b)=>{
+      const ga=groupMap.get(a[0])||{},gb=groupMap.get(b[0])||{};
+      return Number(ga.order??999)-Number(gb.order??999);
+    });
+    root.innerHTML=ordered.map(([gid,items])=>{
+      const g=groupMap.get(gid)||{name:'روابط أخرى',icon:'🔗'};
+      const sorted=items.sort((a,b)=>Number(a.order||0)-Number(b.order||0));
+      return `<section class="group">
+        <div class="group-head">
+          <div class="group-icon">${esc(g.icon||'🔗')}</div>
+          <div class="group-title">${esc(g.name||'روابط أخرى')}</div>
+          <div class="group-count">${sorted.length}</div>
+        </div>
+        <table><tbody>${sorted.map(x=>`<tr>
+          <td><div class="initial">${esc(x.short||String(x.name||'?').trim().slice(0,2).toUpperCase())}</div></td>
+          <td><div class="name">${esc(x.name)}</div><div class="note">${esc(x.note||'')}</div></td>
+          <td><a class="open" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">فتح</a></td>
+        </tr>`).join('')}</tbody></table>
+      </section>`;
+    }).join('');
   }catch(e){empty.hidden=false;empty.textContent='تعذر تحميل قائمة الروابط.'}
 })();
 </script>
