@@ -5,7 +5,7 @@
   const rootPath=rootUrl.pathname.endsWith('/')?rootUrl.pathname:rootUrl.pathname+'/';
   const rel=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length).replace(/^\/+|\/+$/g,''):'';
   const currentApp=(document.body?.dataset?.mytoolApp||script?.dataset?.app||rel.split('/')[0]||'').trim();
-  let mounted=false,backdrop,motherDrawer,localDrawer,localButton,scrollTopButton;
+  let mounted=false,backdrop,motherDrawer,localDrawer,localButton,scrollTopButton,flexyBellButton,flexyBellBadge,flexyBellObserver;
 
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const url=(p)=>new URL(p,rootUrl).href;
@@ -41,7 +41,7 @@
     const file=(location.pathname.split('/').pop()||'index.html').toLowerCase();
     if(!currentApp)return 'رئيسية My Tools';
     if(currentApp==='flexy'){
-      const map={'home.html':'تميز','index.html':'تميز','admin.html':'إدارة فليكسي','accounts.html':'حسابات فليكسي','orders.html':'الطابور','review.html':'مراجعة فليكسي','my-account.html':'حسابي'};
+      const map={'home.html':'تميز','index.html':'فليكسي','admin.html':'إدارة فليكسي','accounts.html':'حسابات فليكسي','orders.html':'الطابور','review.html':'مراجعة فليكسي','my-account.html':'حسابي'};
       return map[file]||'تميز';
     }
     if(currentApp==='shop'){
@@ -162,6 +162,40 @@
     const threshold=Math.max(420,Math.round(window.innerHeight*.65));
     scrollTopButton.classList.toggle('show',window.scrollY>threshold);
   }
+  function isFlexyIndex(){
+    if(currentApp!=='flexy')return false;
+    const file=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+    return file==='index.html';
+  }
+  function syncFlexyBellBadge(){
+    if(!flexyBellBadge)return;
+    const source=document.querySelector('.flexy-alerts-trigger [data-flexy-alert-count]');
+    const count=Number(String(source?.textContent||'0').replace(/\D/g,''))||0;
+    flexyBellBadge.textContent=String(count);
+    flexyBellBadge.classList.toggle('zero',count===0);
+  }
+  function bindFlexyBell(){
+    flexyBellButton=document.querySelector('.mytool-shell-flexy-bell');
+    flexyBellBadge=flexyBellButton?.querySelector('.mytool-shell-flexy-badge')||null;
+    if(!flexyBellButton)return;
+    const attachSourceObserver=()=>{
+      const source=document.querySelector('.flexy-alerts-trigger [data-flexy-alert-count]');
+      if(!source)return false;
+      flexyBellObserver?.disconnect();
+      flexyBellObserver=new MutationObserver(syncFlexyBellBadge);
+      flexyBellObserver.observe(source,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['class']});
+      syncFlexyBellBadge();
+      return true;
+    };
+    if(!attachSourceObserver())setTimeout(attachSourceObserver,250);
+    flexyBellButton.addEventListener('click',()=>{
+      const trigger=document.querySelector('.flexy-alerts-trigger[data-bs-target="#flexyAlertsDrawer"]');
+      if(trigger){trigger.click();setTimeout(syncFlexyBellBadge,300);return}
+      const drawer=document.getElementById('flexyAlertsDrawer');
+      if(drawer&&window.bootstrap?.Offcanvas)window.bootstrap.Offcanvas.getOrCreateInstance(drawer).show();
+    });
+  }
+
   function mountScrollTop(){
     if(scrollTopButton)return;
     scrollTopButton=document.createElement('button');
@@ -193,9 +227,14 @@
     const top=document.createElement('header');
     top.className='mytool-shell-topbar';
     top.setAttribute('aria-label','تنقل My Tools');
-    top.innerHTML='<button class="mytool-shell-menu-btn" data-open="mother" type="button" aria-label="قائمة My Tools">☰</button><div class="mytool-shell-title">'+esc(screenTitle())+'</div><button class="mytool-shell-menu-btn" data-open="local" type="button" aria-label="قائمة الأداة">☰</button>';
+    const showFlexyBell=isFlexyIndex()&&a.admin&&Boolean(document.getElementById('flexyAlertsDrawer'));
+    const flexyBellHtml=showFlexyBell
+      ? '<button class="mytool-shell-flexy-bell" type="button" aria-label="أرصدة وتنبيهات فليكسي" title="أرصدة وتنبيهات فليكسي">🔔<span class="mytool-shell-flexy-badge zero">0</span></button>'
+      : '';
+    top.innerHTML='<button class="mytool-shell-menu-btn" data-open="mother" type="button" aria-label="قائمة My Tools">☰</button><div class="mytool-shell-title"><span class="mytool-shell-title-text">'+esc(screenTitle())+'</span>'+flexyBellHtml+'</div><button class="mytool-shell-menu-btn" data-open="local" type="button" aria-label="قائمة الأداة">☰</button>';
     document.body.appendChild(top);
     localButton=top.querySelector('[data-open="local"]');
+    bindFlexyBell();
 
     backdrop=document.createElement('div');backdrop.className='mytool-shell-backdrop';document.body.appendChild(backdrop);
     motherDrawer=document.createElement('aside');motherDrawer.className='mytool-shell-drawer mother';motherDrawer.setAttribute('dir','rtl');
