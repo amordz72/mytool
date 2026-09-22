@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-docflow1">
+<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-docflow2">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -35,7 +35,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.5</span></p>
+  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.6</span></p>
 </section>
 
 <section class="card security">
@@ -74,6 +74,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     <button id="analyzeBtn" class="btn primary" type="button" disabled>تحليل الصورة</button>
     <button id="manualEntryBtn" class="btn" type="button" disabled>إدخال يدوي</button>
     <button id="saveBtn" class="btn" type="button" disabled>حفظ</button>
+    <button id="settleBtn" class="btn primary" type="button" disabled>تسوية لمنصة</button>
     <button id="addImageBtn" class="btn" type="button" disabled>+ صورة مرجع</button>
     <button id="rotateRightBtn" class="btn" type="button" disabled>↻ تدوير</button>
     <button id="copyBtn" class="btn" type="button" disabled>نسخ النتائج</button>
@@ -132,6 +133,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const analyzeBtn = $('analyzeBtn');
   const manualEntryBtn = $('manualEntryBtn');
   const saveBtn = $('saveBtn');
+  const settleBtn = $('settleBtn');
   const addImageBtn = $('addImageBtn');
   const rotateRightBtn = $('rotateRightBtn');
   const copyBtn = $('copyBtn');
@@ -670,18 +672,22 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function renderRecipientSelect(){
     const names=getRecipientPresets();
     const assigned=currentResult?.selectedRecipient||'';
-    const previous=assigned||activeRecipient||UNSENT_RECIPIENT;
+    const actualAssigned=assigned&&assigned!==UNSENT_RECIPIENT?assigned:'';
+    const previous=activeRecipient&&names.includes(activeRecipient)
+      ? activeRecipient
+      : (actualAssigned||UNSENT_RECIPIENT);
     recipientSelect.innerHTML='';
     names.forEach(name=>{
       const option=document.createElement('option');
       option.value=name;
-      option.textContent=name;
+      option.textContent=name===UNSENT_RECIPIENT?'— اختر منصة بعد الحفظ —':name;
       recipientSelect.appendChild(option);
     });
     const selected=names.includes(previous)?previous:UNSENT_RECIPIENT;
     activeRecipient=selected;
     recipientSelect.value=selected;
-    recipientSelect.disabled=Boolean(currentResult&&assigned&&assigned!==UNSENT_RECIPIENT);
+    const locked=Boolean(currentResult&&['archived','duplicate'].includes(effectiveStatus(currentResult)));
+    recipientSelect.disabled=Boolean(busy||currentResult?.historyView||locked);
     recipientAddBtn.disabled=recipientSelect.disabled;
   }
 
@@ -852,19 +858,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const value=cleanLine(name);
     if(!value)return;
 
-    const assigned=currentResult?.selectedRecipient||'';
-    if(currentResult&&effectiveStatus(currentResult)==='archived'){
-      activeRecipient=assigned||UNSENT_RECIPIENT;
+    if(currentResult&&['archived','duplicate'].includes(effectiveStatus(currentResult))){
+      activeRecipient=currentResult.selectedRecipient||UNSENT_RECIPIENT;
       renderRecipientSelect();
-      showToast('warn','الوصل مؤرشف','لا يمكن تغيير التسوية داخل الأرشيف.',5200);
+      showToast('warn','الوصل مقفل','لا يمكن تغيير منصة التسوية لهذه الحالة.',4800);
       return;
-    }
-    if(currentResult&&assigned&&assigned!==UNSENT_RECIPIENT&&value!==assigned){
-      if(!confirm('الوصل مسوّى حاليًا إلى '+assigned+'. هل تريد نقل التسوية إلى '+value+'؟')){
-        activeRecipient=assigned;
-        renderRecipientSelect();
-        return;
-      }
     }
 
     activeRecipient=value;
@@ -875,36 +873,19 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     ctx.date=receiptDate.value;
     saveRecipientContext(ctx);
 
-    if(currentResult&&!currentResult.historyView){
-      const wasUnsent=!currentResult.selectedRecipient||currentResult.selectedRecipient===UNSENT_RECIPIENT;
-      currentResult.selectedRecipient=value;
-      currentResult.receiptDate=receiptDate.value;
-      if(value!==UNSENT_RECIPIENT){
-        currentResult.assignedAt=currentResult.assignedAt||new Date().toISOString();
-        if(['saved_unsettled','settled'].includes(effectiveStatus(currentResult))){
-          currentResult.status='settled';
-          currentResult.settledAt=new Date().toISOString();
-          activeHistorySupplier=value;
-          showToast('success','تمت التسوية','احتُسب الوصل ضمن '+value+'.',5000);
-        }
-      }else if(effectiveStatus(currentResult)==='settled'){
-        currentResult.status='saved_unsettled';
-        currentResult.settledAt='';
-      }
-      persistCurrentOperation({registerDoc:statusCarriesDocumentIdentity(currentResult)});
-      if(!['pending_analysis','analysis_failed'].includes(effectiveStatus(currentResult)))renderResult(currentResult);
-    }
-
-    renderRecipientSelect();
-    renderRecentOperationTabs();
-    recipientContextText.innerHTML='<b>'+escapeHtml(value)+'</b> — تاريخ الإدخال: <b>'+escapeHtml(receiptDate.value)+'</b>';
+    // اختيار المنصة هنا لا يغيّر الوصل ماليًا. التسوية لا تتم إلا بزر «تسوية لمنصة».
+    updateSaveButton();
+    const actual=currentResult?.selectedRecipient||UNSENT_RECIPIENT;
+    recipientContextText.innerHTML=actual&&actual!==UNSENT_RECIPIENT
+      ? '<b>مسوّى إلى '+escapeHtml(actual)+'</b> — منصة مختارة للتغيير: <b>'+escapeHtml(value===UNSENT_RECIPIENT?'لا شيء':value)+'</b>'
+      : '<b>غير مسوّى</b> — منصة مختارة: <b>'+escapeHtml(value===UNSENT_RECIPIENT?'لا شيء':value)+'</b>';
   }
 
   function snapshotResult(payload){
     return {
       id:payload.operationId||('op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)),
       createdAt:payload.createdAt||new Date().toISOString(),
-      selectedRecipient:payload.selectedRecipient||activeRecipient||'',
+      selectedRecipient:payload.selectedRecipient||UNSENT_RECIPIENT,
       receiptDate:payload.receiptDate||receiptDate.value||'',
       language:payload.language||'',
       templateId:payload.templateId||'unknown',
@@ -923,6 +904,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       archivedAt:payload.archivedAt||'',
       statusBeforeArchive:payload.statusBeforeArchive||'',
       editLog:Array.isArray(payload.editLog)?payload.editLog.slice(-50):[],
+      settlementLog:Array.isArray(payload.settlementLog)?payload.settlementLog.slice(-50):[],
       lastEditedAt:payload.lastEditedAt||'',
       imageCount:Number(payload.imageCount||1),
       duplicateInfo:payload.duplicateInfo?{
@@ -1104,10 +1086,23 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       && !currentResult.duplicateInfo);
     saveBtn.disabled=busy||!canSave;
     if(s==='saved_unsettled')saveBtn.textContent='محفوظ — غير مسوّى';
-    else if(s==='settled')saveBtn.textContent='مسوّى ✓';
+    else if(s==='settled')saveBtn.textContent='محفوظ ✓';
     else if(s==='archived')saveBtn.textContent='مؤرشف';
     else if(s==='duplicate')saveBtn.textContent='مكرر';
     else saveBtn.textContent='حفظ';
+
+    const actual=currentResult?.selectedRecipient||UNSENT_RECIPIENT;
+    const target=activeRecipient||UNSENT_RECIPIENT;
+    const canSettle=Boolean(currentResult
+      && !currentResult.historyView
+      && ['saved_unsettled','settled'].includes(s)
+      && target!==UNSENT_RECIPIENT
+      && !currentResult.duplicateInfo);
+    settleBtn.disabled=busy||!canSettle||(s==='settled'&&target===actual);
+    if(s==='settled'&&target===actual)settleBtn.textContent='مسوّى إلى '+actual+' ✓';
+    else if(s==='settled'&&target!==UNSENT_RECIPIENT&&target!==actual)settleBtn.textContent='نقل التسوية إلى '+target;
+    else if(s==='saved_unsettled'&&target!==UNSENT_RECIPIENT)settleBtn.textContent='تسوية إلى '+target;
+    else settleBtn.textContent='تسوية لمنصة';
 
     const canAddReference=Boolean(currentResult
       && !currentResult.historyView
@@ -1117,6 +1112,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     analyzeBtn.disabled=busy||!sourceImage||finalized;
     rotateRightBtn.disabled=busy||!sourceImage||['archived','duplicate'].includes(s);
     receiptDate.disabled=Boolean(busy||currentResult?.historyView||['archived','duplicate'].includes(s));
+    renderRecipientSelect();
   }
 
   function setBusy(on){
@@ -1126,9 +1122,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     clearBtn.disabled=on||!sourceImage;
     fileInput.disabled=on;
     additionalFileInput.disabled=on;
-    const assigned=currentResult?.selectedRecipient&&currentResult.selectedRecipient!==UNSENT_RECIPIENT;
-    recipientSelect.disabled=Boolean(on||assigned||currentResult?.historyView);
+    const locked=currentResult&&['archived','duplicate'].includes(effectiveStatus(currentResult));
+    recipientSelect.disabled=Boolean(on||currentResult?.historyView||locked);
     recipientAddBtn.disabled=recipientSelect.disabled;
+    settleBtn.disabled=Boolean(on||settleBtn.disabled);
     receiptDate.disabled=Boolean(on||currentResult?.historyView);
     updateSaveButton();
   }
@@ -1787,7 +1784,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     resultsEl.innerHTML='';
     const contextDate=payload.receiptDate||receiptDate.value||'';
     const contextDay=weekdayArabic(contextDate);
-    selectedContext.innerHTML='<b>لمن أرسلتها:</b> '+escapeHtml(payload.selectedRecipient||activeRecipient||'غير محدد')
+    const actualSettlement=payload.selectedRecipient&&payload.selectedRecipient!==UNSENT_RECIPIENT?payload.selectedRecipient:'غير مسوّى';
+    selectedContext.innerHTML='<b>التسوية:</b> '+escapeHtml(actualSettlement)
       +' &nbsp; | &nbsp; <b>تاريخ الوصل:</b> '+escapeHtml(contextDate||'غير محدد')
       +(contextDay?' — '+escapeHtml(contextDay):'')
       +' &nbsp; | &nbsp; <b>الحالة:</b> '+escapeHtml(operationStatusText(payload));
@@ -2137,7 +2135,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         detectedTemplateId,
         manualOverride,
         template:templateLabel(templateId),
-        selectedRecipient:activeRecipient||UNSENT_RECIPIENT,
+        selectedRecipient:UNSENT_RECIPIENT,
         receiptDate:receiptDate.value,
         rawText:best.text,
         fields:extracted,
@@ -2250,7 +2248,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       manualOverride,
       templateId,
       template:templateLabel(templateId),
-      selectedRecipient:activeRecipient,
+      selectedRecipient:currentResult.selectedRecipient||UNSENT_RECIPIENT,
       receiptDate:receiptDate.value,
       fields:parseByTemplate(templateId,currentResult.rawText),
       edgeCropSuspected:assessEdgeCrop(sourceImage,currentResult.orientation||rotation)
@@ -2286,9 +2284,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       return;
     }
 
-    currentResult.status=(currentResult.selectedRecipient&&currentResult.selectedRecipient!==UNSENT_RECIPIENT)?'settled':'saved_unsettled';
+    currentResult.status='saved_unsettled';
+    currentResult.selectedRecipient=UNSENT_RECIPIENT;
     currentResult.savedAt=new Date().toISOString();
-    currentResult.settledAt=currentResult.status==='settled'?new Date().toISOString():'';
+    currentResult.settledAt='';
     const ok=persistCurrentOperation({registerDoc:true});
     if(!ok){
       currentResult.status='duplicate';
@@ -2300,13 +2299,66 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     renderRecipientSelect();
     updateSaveButton();
     progressBox.classList.add('hidden');
-    showToast('success','تم حفظ الوصل',currentResult.status==='settled'?'تم الحفظ والتسوية إلى '+currentResult.selectedRecipient+'.':'تم الحفظ في «غير مسوّى» ويمكنك إسناده لمنصة لاحقًا.',5500);
+    showToast('success','تم حفظ الوصل','تم الحفظ في «غير مسوّى». اختيار المنصة وحده لا يغيّر الحساب؛ اضغط «تسوية لمنصة» عندما تقرر.',6000);
+  }
+
+  function confirmSettleCurrent(){
+    if(!currentResult||currentResult.historyView)return;
+    const s=effectiveStatus(currentResult);
+    if(!['saved_unsettled','settled'].includes(s)){
+      showToast('warn','احفظ الوصل أولًا','التسوية تكون بعد حفظ الوصل والتأكد من بياناته.',4800);
+      return;
+    }
+
+    const target=cleanLine(activeRecipient||'');
+    if(!target||target===UNSENT_RECIPIENT){
+      showToast('warn','اختر منصة','اختر المنصة من القائمة ثم اضغط «تسوية لمنصة».',4800);
+      return;
+    }
+
+    const previous=currentResult.selectedRecipient||UNSENT_RECIPIENT;
+    if(s==='settled'&&previous===target){
+      showToast('info','التسوية موجودة','هذا الوصل مسوّى بالفعل إلى '+target+'.',4000);
+      return;
+    }
+
+    if(s==='settled'&&previous!==UNSENT_RECIPIENT&&previous!==target){
+      if(!confirm('نقل تسوية هذا الوصل من '+previous+' إلى '+target+'؟ سيُعاد حساب ملخص المنصتين.'))return;
+    }else{
+      if(!confirm('تأكيد تسوية هذا الوصل إلى '+target+'؟'))return;
+    }
+
+    currentResult.settlementLog=Array.isArray(currentResult.settlementLog)?currentResult.settlementLog:[];
+    currentResult.settlementLog.push({
+      at:new Date().toISOString(),
+      action:s==='settled'?'transfer':'settle',
+      from:previous,
+      to:target
+    });
+    currentResult.selectedRecipient=target;
+    currentResult.status='settled';
+    currentResult.assignedAt=currentResult.assignedAt||new Date().toISOString();
+    currentResult.settledAt=new Date().toISOString();
+    activeHistorySupplier=target;
+
+    const ok=persistCurrentOperation({registerDoc:true});
+    if(!ok){
+      currentResult.status='duplicate';
+      renderResult(currentResult);
+      showToast('error','تعذر التسوية','رقم الوثيقة أصبح متعارضًا مع وصل آخر.',6000);
+      return;
+    }
+
+    renderResult(currentResult);
+    renderRecentOperationTabs();
+    updateSaveButton();
+    showToast('success','تمت التسوية','احتُسب '+(currentResult.fields?.amount?.value||'الوصل')+' ضمن '+target+'.',5200);
   }
 
   function copyResults(){
     if(!currentResult)return;
     const lines=[
-      'لمن أرسلتها: '+(currentResult.selectedRecipient||activeRecipient||'غير محدد'),
+      'التسوية: '+((currentResult.selectedRecipient&&currentResult.selectedRecipient!==UNSENT_RECIPIENT)?currentResult.selectedRecipient:'غير مسوّى'),
       'تاريخ الوصل: '+(currentResult.receiptDate||receiptDate.value||'غير محدد'),
       'لغة الوثيقة: '+currentResult.language,
       'نوع الوثيقة: '+currentResult.template,
@@ -2385,6 +2437,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         record=null;
       }
 
+      activeRecipient=UNSENT_RECIPIENT;
       persistCurrentOperation({registerDoc:false});
       renderRecipientSelect();
       renderRecentOperationTabs();
@@ -2515,16 +2568,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   receiptDate.addEventListener('change',()=>{
     updateDateHint();
-    if(!activeRecipient)return;
     const ctx=getRecipientContext();
-    ctx.active=activeRecipient;
+    ctx.active=activeRecipient||UNSENT_RECIPIENT;
     ctx.date=receiptDate.value||todayLocal();
     saveRecipientContext(ctx);
-    recipientContextText.innerHTML='<b>'+escapeHtml(activeRecipient)+'</b> — تاريخ الإدخال: <b>'+escapeHtml(receiptDate.value)+'</b>';
+    const actual=currentResult?.selectedRecipient||UNSENT_RECIPIENT;
+    recipientContextText.innerHTML=(actual!==UNSENT_RECIPIENT?'<b>مسوّى إلى '+escapeHtml(actual)+'</b>':'<b>غير مسوّى</b>')
+      +' — تاريخ الإدخال: <b>'+escapeHtml(receiptDate.value)+'</b>';
     if(currentResult&&!currentResult.historyView){
-      currentResult.selectedRecipient=activeRecipient;
       currentResult.receiptDate=receiptDate.value;
-      persistCurrentOperation();
+      persistCurrentOperation({registerDoc:statusCarriesDocumentIdentity(currentResult)});
       renderResult(currentResult);
     }
   });
@@ -2535,6 +2588,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   analyzeBtn.addEventListener('click',analyze);
   manualEntryBtn.addEventListener('click',startManualEntry);
   saveBtn.addEventListener('click',confirmSaveCurrent);
+  settleBtn.addEventListener('click',confirmSettleCurrent);
   clearBtn.addEventListener('click',clearAll);
   copyBtn.addEventListener('click',copyResults);
 })();
