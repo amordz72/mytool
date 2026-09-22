@@ -35,7 +35,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.15</span></p>
+  <p>استخرج بيانات الوصل أولًا، ثم قرر لاحقًا لأي منصة تتم تسويته. <span style="opacity:.82">— نسخة الوثائق 2026-09-22.16</span></p>
 </section>
 
 <section class="card security">
@@ -2357,6 +2357,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return cleanText(s).replace(/^[.:•·_\-\s]+|[.:•·_\-\s]+$/g,'').trim();
   }
 
+  function normalizeOcrSearchText(s){
+    return cleanText(s)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/[’‘`´]/g,"'")
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+
   function showError(message){
     errorBox.textContent='';
     errorBox.classList.add('hidden');
@@ -2632,7 +2642,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function scoreText(text){
-    const t=cleanText(text).toLowerCase();
+    const t=normalizeOcrSearchText(text);
     const tests=[
       [/banque nationale|\bbna\b/,3],
       [/bordereau/,3],
@@ -2660,7 +2670,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function detectLanguage(text){
-    const t=cleanText(text).toLowerCase();
+    const t=normalizeOcrSearchText(text);
     let fr=0;
     ['bordereau','avis de versement','versement','montant','agence','compte','motif','guichet','caisse','raison sociale','libelle','libellé','date de valeur','date de transaction','destinataire','identifiant de transaction','identifiant de transation','type d operation',"type d'opération",'donneur d ordre',"donneur d'ordre",'beneficiaire','bénéficiaire','reference','référence','operation','opération','dinars','algérie','algerie','baridimob'].forEach(k=>{if(t.includes(k))fr++;});
     return fr>=2?'الفرنسية':'غير واضحة';
@@ -2675,16 +2685,29 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function detectTemplateId(text){
-    const t=cleanText(text).toLowerCase();
-    const isBna=(t.includes('banque nationale')||/\bbna\b/.test(t))
-      &&t.includes('bordereau')&&t.includes('versement');
-    if(isBna)return 'bna';
+    const t=normalizeOcrSearchText(text);
+
+    // BNA OCR is often noisy on dot-matrix receipts:
+    // "BORDEREAU" can arrive as "RORDEREAU" and accented/noisy "VERSEMENT".
+    // We therefore use several BNA-specific layout/text signals instead of one exact phrase.
+    const bnaBank=/banque\s+nationale(?:\s+d[' ]?algerie)?|\bbna\b/.test(t);
+    const bnaHeading=/[br]ordereau[\s\S]{0,34}versement[\s\S]{0,22}espe?ces/.test(t);
+    const bnaSignals=[
+      bnaBank,
+      bnaHeading,
+      /n\s*[°ºo.]?\s*compte/.test(t),
+      /montant\s+versement/.test(t),
+      /guichetier/.test(t),
+      /gestionnaire/.test(t),
+      /agence\s+du\s+client/.test(t)
+    ].filter(Boolean).length;
+    if((bnaBank&&bnaHeading)||(bnaHeading&&bnaSignals>=4)||(bnaBank&&bnaSignals>=5))return 'bna';
 
     let bdlScore=0;
     if(/avis[\s\S]{0,18}versement/.test(t))bdlScore+=4;
     if(/raison\s+sociale/.test(t))bdlScore+=2;
     if(/date\s+(?:de\s+)?valeur/.test(t))bdlScore+=1;
-    if(/num[ée]ro?\s+(?:de\s+)?compte/.test(t)||/\bcompte\b/.test(t))bdlScore+=1;
+    if(/num[eé]ro?\s+(?:de\s+)?compte/.test(t)||/\bcompte\b/.test(t))bdlScore+=1;
     if(/libelle|libellé/.test(t))bdlScore+=1;
     if(/\bagence\b/.test(t))bdlScore+=1;
     if(/\btotal\b/.test(t)&&/dzd/.test(t))bdlScore+=1;
@@ -2696,16 +2719,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       /date\s+de\s+transaction/.test(t),
       /destinataire/.test(t),
       /identifiant\s+de\s+transa(?:c|)tion/.test(t),
-      /type\s+d.?op[ée]ration/.test(t)
+      /type\s+d.?op[eé]ration/.test(t)
     ].filter(Boolean).length;
     if(baridiSignals>=4)return 'baridimob';
 
     const posteSignals=[
       /donneur\s+d.?ordre/.test(t),
-      /b[ée]n[ée]fic/i.test(t),
+      /b[eé]n[eé]fic/i.test(t),
       /\bversement\b/.test(t),
-      /r[ée]f[ée]rence/.test(t),
-      /re[çc]u|reeu|op[ée]ration/.test(t)
+      /r[eé]f[eé]rence/.test(t),
+      /re[çc]u|reeu|op[eé]ration/.test(t)
     ].filter(Boolean).length;
     if(posteSignals>=4)return 'poste';
 
@@ -2792,8 +2815,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
     const out={};
 
-    out.bank=(/banque\s+nationale\s+d[’' ]?alg[ée]rie/i.test(oneLine)||/\bBNA\b/i.test(oneLine))
-      ? {value:"BNA — Banque Nationale d'Algérie",source:"اسم البنك ظاهر في الوثيقة"}
+    const bnaSearch=normalizeOcrSearchText(oneLine);
+    out.bank=(/banque\s+nationale(?:\s+d[' ]?algerie)?/.test(bnaSearch)||/\bbna\b/.test(bnaSearch))
+      ? {value:"BNA — Banque Nationale d'Algérie",source:"اسم/شعار BNA ظاهر في الوثيقة",status:'read'}
       : null;
 
     // BNA: رقم الوثيقة يؤخذ فقط من السطر المرتبط بعنوان البوردرو و N°.
@@ -2805,8 +2829,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(bordereauMatch){
       out.documentNumber={
         value:bordereauMatch[1],
-        source:"Bordereau de versement espèces N° — قراءة من نفس السطر",
-        status:'read',
+        source:"Bordereau de versement espèces N° — قراءة أولية من السطر الكامل؛ ستُراجع بقصاصة الرقم",
+        status:'review',
         raw:bordereauLine
       };
     }else if(bordereauLine){
@@ -3248,30 +3272,55 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   async function tryRecoverBnaDocumentNumber(worker,degrees){
     try{
       progressTitle.textContent='تحسين قراءة رقم البوردرو…';
-      progressText.textContent='قراءة سطر Bordereau وحده حتى لا تختلط به أرقام أخرى.';
-      const page=drawRotatedCanvas(sourceImage,degrees,2600);
+      progressText.textContent='قراءة خانة الرقم نفسها ثم سطر Bordereau كاحتياط.';
+      const page=drawRotatedCanvas(sourceImage,degrees,3000);
       const regions=[
-        // رقم البوردرو في قالب BNA ثابت تقريبًا في الشريط العلوي:
-        // نبدأ بقصاصة ضيقة حول الرقم نفسه، ثم نوسّع للسطر كاملًا عند الحاجة.
-        cropCanvasFraction(page,0.50,0.065,0.27,0.075),
-        cropCanvasFraction(page,0.18,0.055,0.68,0.10),
-        cropCanvasFraction(page,0.08,0.035,0.84,0.15)
+        // قالب BNA المستخدم فعليًا: الرقم يقع مباشرة بعد "N° / No" في الشريط الأخضر العلوي.
+        // القصاصة الأولى ضيقة عمدًا حتى لا يلصق OCR أصفارًا/أرقامًا من السطر أو الخلفية.
+        {canvas:cropCanvasFraction(page,0.60,0.090,0.13,0.045),kind:'exact'},
+        {canvas:cropCanvasFraction(page,0.50,0.075,0.27,0.075),kind:'number-line'},
+        {canvas:cropCanvasFraction(page,0.18,0.055,0.68,0.10),kind:'heading'},
+        {canvas:cropCanvasFraction(page,0.08,0.035,0.84,0.15),kind:'top'}
       ];
+
+      const candidates=[];
       for(const region of regions){
-        const result=await worker.recognize(region);
+        const result=await worker.recognize(region.canvas);
         const raw=cleanText(result.data?.text||'');
         const value=parseBnaDocumentNumberRegion(raw);
         if(!value)continue;
         const confidence=Number(result.data?.confidence||0);
-        return {
-          value,
-          source:'قراءة مركزة لسطر Bordereau de versement espèces N°',
-          status:confidence>=60?'read':'review',
-          confidence,
-          raw
-        };
+        candidates.push({value,confidence,raw,kind:region.kind});
+        // The exact field is preferred because it avoids the known failure where full-page OCR
+        // appended stray digits (for example 310813 -> 31081307).
+        if(region.kind==='exact'){
+          return {
+            value,
+            source:'قراءة مركزة من خانة رقم Bordereau نفسها',
+            status:confidence>=45?'read':'review',
+            confidence,
+            raw
+          };
+        }
       }
-      return null;
+
+      if(!candidates.length)return null;
+      const grouped=new Map();
+      candidates.forEach(item=>{
+        const group=grouped.get(item.value)||{value:item.value,count:0,best:item};
+        group.count++;
+        if(item.confidence>group.best.confidence)group.best=item;
+        grouped.set(item.value,group);
+      });
+      const ranked=[...grouped.values()].sort((a,b)=>b.count-a.count||b.best.confidence-a.best.confidence);
+      const chosen=ranked[0].best;
+      return {
+        value:chosen.value,
+        source:'قراءة مركزة لسطر Bordereau de versement espèces N°',
+        status:ranked[0].count>=2||chosen.confidence>=62?'read':'review',
+        confidence:chosen.confidence,
+        raw:chosen.raw
+      };
     }catch(_e){
       return null;
     }
@@ -3426,7 +3475,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const manualOverride=templateSelect.value!=='auto';
       const templateId=manualOverride?templateSelect.value:detectedTemplateId;
       const extracted=parseByTemplate(templateId,best.text);
-      if(templateId==='bna'&&(!extracted.documentNumber||extracted.documentNumber.status==='review')){
+      if(templateId==='bna'){
         const recoveredDocumentNumber=await tryRecoverBnaDocumentNumber(worker,best.rotation);
         if(recoveredDocumentNumber)extracted.documentNumber=recoveredDocumentNumber;
       }
