@@ -8,7 +8,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="mytool-build" content="20260922-docflow13">
+<meta name="mytool-build" content="20260922-docflow14">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -41,7 +41,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <body><main class="wrap">
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>رفع → تحليل → حفظ <span class="hero-version">نسخة 18</span></p>
+  <p>رفع → تحليل → حفظ <span class="hero-version">نسخة 19</span></p>
 </section>
 
 <section class="card security">
@@ -2709,8 +2709,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function scoreText(text){
     const t=normalizeOcrSearchText(text);
     const tests=[
-      [/banque nationale|\bbna\b/,3],
-      [/bordereau/,3],
+      [/banque nationale|\bbna\b/,5],
+      [/[br]ordereau/,4],
       [/avis\s+de\s+versement/,3],
       [/raison\s+sociale/,2],
       [/libelle|libellé/,2],
@@ -2813,12 +2813,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function parseFrenchDate(text){
     const t=cleanText(text);
-    let m=t.match(/\bLe\s*[:.]?\s*([0-3]?\d)\s+(janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre)\s+(20\d{2})\b/i);
+    // بعض وصولات BNA تطبع التاريخ بدون مسافة: "Le22 Septembre 2026".
+    // لذلك لا نستعمل word-boundary بعد Le لأن الحرف والرقم كلاهما word chars.
+    let m=t.match(/(?:^|[^A-Za-zÀ-ÿ])Le\s*[:.]?\s*([0-3]?\d)\s*(janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre)\s+(20\d{2})\b/i);
     if(m){
       const month=frenchMonths[m[2].toLowerCase()];
       if(month)return m[3]+'-'+month+'-'+String(m[1]).padStart(2,'0');
     }
-    m=t.match(/\bLe\s*[:.]?\s*([0-3]?\d)[\/\-.]([01]?\d)[\/\-.](20\d{2})\b/i);
+    m=t.match(/(?:^|[^A-Za-zÀ-ÿ])Le\s*[:.]?\s*([0-3]?\d)[\/\-.]([01]?\d)[\/\-.](20\d{2})\b/i);
     if(m)return m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');
     return '';
   }
@@ -3316,6 +3318,145 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return out;
   }
 
+  function enhanceOcrCrop(canvas,{scale=3,threshold=205}={}){
+    const factor=Math.max(1,Number(scale||1));
+    const out=document.createElement('canvas');
+    out.width=Math.max(1,Math.round(canvas.width*factor));
+    out.height=Math.max(1,Math.round(canvas.height*factor));
+    const ctx=out.getContext('2d',{willReadFrequently:true});
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,out.width,out.height);
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(canvas,0,0,out.width,out.height);
+
+    const image=ctx.getImageData(0,0,out.width,out.height);
+    const data=image.data;
+    for(let i=0;i<data.length;i+=4){
+      const gray=Math.round(data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114);
+      const value=gray<threshold?0:255;
+      data[i]=value;data[i+1]=value;data[i+2]=value;
+    }
+    ctx.putImageData(image,0,0);
+    return out;
+  }
+
+  async function recognizeFocusedRegion(worker,canvas,{digitsOnly=false,psm='7',threshold=205,scale=3}={}){
+    const prepared=enhanceOcrCrop(canvas,{scale,threshold});
+    try{
+      await worker.setParameters({
+        tessedit_pageseg_mode:String(psm),
+        tessedit_char_whitelist:digitsOnly?'0123456789':'',
+        preserve_interword_spaces:'1'
+      });
+      return await worker.recognize(prepared);
+    }finally{
+      try{
+        await worker.setParameters({
+          tessedit_pageseg_mode:'6',
+          tessedit_char_whitelist:'',
+          preserve_interword_spaces:'1'
+        });
+      }catch(_e){}
+    }
+  }
+
+  function parseBnaHeaderDateRegion(text){
+    const raw=cleanText(text);
+    const normalized=normalizeOcrSearchText(raw);
+    const months={
+      janvier:'01',fevrier:'02',mars:'03',avril:'04',mai:'05',juin:'06',
+      juillet:'07',aout:'08',septembre:'09',octobre:'10',novembre:'11',decembre:'12'
+    };
+    let m=normalized.match(/(?:^|[^a-z])le\s*[:.]?\s*([0-3]?\d)\s*(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\s+(20\d{2})(?:\s*(?:a|à)\s*([0-2]?\d)\s*[:h.]\s*([0-5]\d))?/i);
+    if(!m){
+      m=normalized.match(/\b([0-3]?\d)\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\s+(20\d{2})(?:\s*(?:a|à)\s*([0-2]?\d)\s*[:h.]\s*([0-5]\d))?/i);
+    }
+    if(!m)return null;
+    const day=Number(m[1]);
+    const month=months[m[2]];
+    const year=Number(m[3]);
+    if(!month||day<1||day>31||year<2020||year>2100)return null;
+    const date=String(year)+'-'+month+'-'+String(day).padStart(2,'0');
+    const time=m[4]!==undefined&&m[5]!==undefined
+      ? String(Number(m[4])).padStart(2,'0')+':'+String(m[5]).padStart(2,'0')
+      : '';
+    return {date,time,raw};
+  }
+
+  async function tryDetectBnaHeader(worker,degrees){
+    try{
+      progressTitle.textContent='التأكد من رأس وثيقة BNA…';
+      progressText.textContent='قراءة اسم البنك وعنوان Bordereau من أعلى الوصل.';
+      const page=drawRotatedCanvas(sourceImage,degrees,3000);
+      const crops=[
+        cropCanvasFraction(page,0.04,0.00,0.92,0.23),
+        cropCanvasFraction(page,0.08,0.045,0.84,0.13)
+      ];
+      let best=null;
+      for(const crop of crops){
+        const result=await recognizeFocusedRegion(worker,crop,{digitsOnly:false,psm:'6',threshold:215,scale:2});
+        const raw=cleanText(result.data?.text||'');
+        const t=normalizeOcrSearchText(raw);
+        const signals=[
+          /banque\s+nationale(?:\s+d[' ]?algerie)?/.test(t),
+          /\bbna\b/.test(t),
+          /[br]ordereau/.test(t),
+          /versement/.test(t),
+          /espe?ces/.test(t),
+          /n\s*[°ºo.]?\s*compte|compte/.test(t)
+        ].filter(Boolean).length;
+        const strong=(/banque\s+nationale/.test(t)||/\bbna\b/.test(t))
+          &&(/[br]ordereau/.test(t)||(/versement/.test(t)&&/espe?ces/.test(t)));
+        const layoutStrong=/[br]ordereau/.test(t)&&/versement/.test(t)&&signals>=4;
+        const candidate={
+          detected:Boolean(strong||layoutStrong),
+          confidence:Number(result.data?.confidence||0),
+          raw,
+          signals
+        };
+        if(!best||candidate.signals>best.signals||candidate.confidence>best.confidence)best=candidate;
+        if(candidate.detected)return candidate;
+      }
+      return best||{detected:false,confidence:0,raw:'',signals:0};
+    }catch(_e){
+      return {detected:false,confidence:0,raw:'',signals:0};
+    }
+  }
+
+  async function tryRecoverBnaDate(worker,degrees){
+    try{
+      progressTitle.textContent='تحسين قراءة تاريخ BNA…';
+      progressText.textContent='قراءة سطر Le + التاريخ والوقت من رأس الوصل.';
+      const page=drawRotatedCanvas(sourceImage,degrees,3000);
+      const regions=[
+        cropCanvasFraction(page,0.54,0.145,0.38,0.065),
+        cropCanvasFraction(page,0.48,0.125,0.46,0.095),
+        cropCanvasFraction(page,0.42,0.105,0.54,0.13)
+      ];
+      let best=null;
+      for(const region of regions){
+        const result=await recognizeFocusedRegion(worker,region,{digitsOnly:false,psm:'7',threshold:210,scale:3});
+        const raw=cleanText(result.data?.text||'');
+        const parsed=parseBnaHeaderDateRegion(raw);
+        if(!parsed)continue;
+        const confidence=Number(result.data?.confidence||0);
+        const candidate={
+          value:parsed.date,
+          time:parsed.time,
+          source:'قراءة مركزة لسطر التاريخ في رأس BNA'+(parsed.time?' — الوقت '+parsed.time:''),
+          status:confidence>=45?'read':'review',
+          confidence,
+          raw:parsed.raw
+        };
+        if(!best||candidate.confidence>best.confidence)best=candidate;
+        if(confidence>=45)return candidate;
+      }
+      return best;
+    }catch(_e){
+      return null;
+    }
+  }
+
   function parseBnaDocumentNumberRegion(text){
     const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
     const joined=lines.join(' ');
@@ -3331,38 +3472,44 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const unique=[...new Set(tokens)];
     if(unique.length===1)return unique[0];
 
+    // في وضع الأرقام فقط قد يفصل Tesseract الرقم بمسافات مثل "310 765".
+    // نقبل دمج جميع الأرقام فقط عندما تكون القصاصة نفسها لا تحتوي أرقامًا أخرى.
+    const compact=(joined.match(/[0-9]/g)||[]).join('');
+    if(compact.length>=5&&compact.length<=8)return compact;
+
     return '';
   }
 
   async function tryRecoverBnaDocumentNumber(worker,degrees){
     try{
       progressTitle.textContent='تحسين قراءة رقم البوردرو…';
-      progressText.textContent='قراءة خانة الرقم نفسها ثم سطر Bordereau كاحتياط.';
+      progressText.textContent='تكبير خانة الرقم وقراءتها كأرقام فقط.';
       const page=drawRotatedCanvas(sourceImage,degrees,3000);
       const regions=[
-        // قالب BNA المستخدم فعليًا: الرقم يقع مباشرة بعد "N° / No" في الشريط الأخضر العلوي.
-        // القصاصة الأولى ضيقة عمدًا حتى لا يلصق OCR أصفارًا/أرقامًا من السطر أو الخلفية.
-        {canvas:cropCanvasFraction(page,0.60,0.090,0.13,0.045),kind:'exact'},
-        {canvas:cropCanvasFraction(page,0.50,0.075,0.27,0.075),kind:'number-line'},
-        {canvas:cropCanvasFraction(page,0.18,0.055,0.68,0.10),kind:'heading'},
-        {canvas:cropCanvasFraction(page,0.08,0.035,0.84,0.15),kind:'top'}
+        // الصورة الحقيقية 310765/310813: "No/N° + الرقم" في الشريط الأخضر العلوي.
+        {canvas:cropCanvasFraction(page,0.595,0.085,0.15,0.055),kind:'exact'},
+        {canvas:cropCanvasFraction(page,0.565,0.075,0.21,0.075),kind:'number-field'},
+        {canvas:cropCanvasFraction(page,0.50,0.060,0.31,0.095),kind:'number-line'}
       ];
 
       const candidates=[];
       for(const region of regions){
-        const result=await worker.recognize(region.canvas);
+        const result=await recognizeFocusedRegion(worker,region.canvas,{
+          digitsOnly:true,
+          psm:'7',
+          threshold:205,
+          scale:4
+        });
         const raw=cleanText(result.data?.text||'');
         const value=parseBnaDocumentNumberRegion(raw);
         if(!value)continue;
         const confidence=Number(result.data?.confidence||0);
         candidates.push({value,confidence,raw,kind:region.kind});
-        // The exact field is preferred because it avoids the known failure where full-page OCR
-        // appended stray digits (for example 310813 -> 31081307).
-        if(region.kind==='exact'){
+        if(region.kind==='exact'&&confidence>=30){
           return {
             value,
-            source:'قراءة مركزة من خانة رقم Bordereau نفسها',
-            status:confidence>=45?'read':'review',
+            source:'قراءة مركزة ومكبرة من خانة رقم Bordereau — أرقام فقط',
+            status:confidence>=42?'read':'review',
             confidence,
             raw
           };
@@ -3381,8 +3528,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const chosen=ranked[0].best;
       return {
         value:chosen.value,
-        source:'قراءة مركزة لسطر Bordereau de versement espèces N°',
-        status:ranked[0].count>=2||chosen.confidence>=62?'read':'review',
+        source:'قراءة مركزة ومكبرة لخانة Bordereau — أرقام فقط',
+        status:ranked[0].count>=2||chosen.confidence>=50?'read':'review',
         confidence:chosen.confidence,
         raw:chosen.raw
       };
@@ -3536,13 +3683,29 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       updatePreview();
 
       const language=detectLanguage(best.text);
-      const detectedTemplateId=detectTemplateId(best.text);
+      let detectedTemplateId=detectTemplateId(best.text);
+      let bnaHeaderEvidence=null;
+      if(detectedTemplateId==='unknown'||templateSelect.value==='bna'){
+        bnaHeaderEvidence=await tryDetectBnaHeader(worker,best.rotation);
+        if(detectedTemplateId==='unknown'&&bnaHeaderEvidence?.detected){
+          detectedTemplateId='bna';
+        }
+      }
       const manualOverride=templateSelect.value!=='auto';
       const templateId=manualOverride?templateSelect.value:detectedTemplateId;
       const extracted=parseByTemplate(templateId,best.text);
       if(templateId==='bna'){
+        if(bnaHeaderEvidence?.detected&&!extracted.bank){
+          extracted.bank={
+            value:"BNA — Banque Nationale d'Algérie",
+            source:'تعرف مركز على رأس الوثيقة وشعار/اسم BNA',
+            status:'read'
+          };
+        }
         const recoveredDocumentNumber=await tryRecoverBnaDocumentNumber(worker,best.rotation);
         if(recoveredDocumentNumber)extracted.documentNumber=recoveredDocumentNumber;
+        const recoveredDate=await tryRecoverBnaDate(worker,best.rotation);
+        if(recoveredDate)extracted.date=recoveredDate;
       }
       if(templateId==='bdl'&&(!extracted.date||extracted.date.status==='review')){
         const recoveredDate=await tryRecoverBdlDate(worker,best.rotation,best.text);
