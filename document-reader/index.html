@@ -1365,8 +1365,29 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       ? {value:"BNA — Banque Nationale d'Algérie",source:"اسم البنك ظاهر في الوثيقة"}
       : null;
 
-    const doc=oneLine.match(/BORDEREAU\s+DE\s+VERSEMENT\s+ESPECES?[^0-9]{0,45}(\d{4,12})/i);
-    out.documentNumber=doc?{value:doc[1],source:"Bordereau de versement espèces N°"}:null;
+    // BNA: رقم الوثيقة يؤخذ فقط من السطر المرتبط بعنوان البوردرو و N°.
+    // لا نبحث عن "أكبر رقم" لاحقًا في النص حتى لا ندمج رقم البوردرو مع أرقام أخرى.
+    const bordereauLine=lines.find(line=>/BORDEREAU\s+DE\s+VERSEMENT\s+ESPECES?/i.test(line))||'';
+    const bordereauMatch=bordereauLine.match(
+      /BORDEREAU\s+DE\s+VERSEMENT\s+ESPECES?\s*(?:N\s*[°ºo.]?|NO)\s*[:.]?\s*(\d{4,8})(?!\d)/i
+    );
+    if(bordereauMatch){
+      out.documentNumber={
+        value:bordereauMatch[1],
+        source:"Bordereau de versement espèces N° — قراءة من نفس السطر",
+        status:'read',
+        raw:bordereauLine
+      };
+    }else if(bordereauLine){
+      out.documentNumber={
+        value:null,
+        source:"عُثر على عنوان البوردرو لكن الرقم بعد N° غير موثوق؛ لم يتم قص أو تخمين رقم من سلسلة أطول.",
+        status:'review',
+        raw:bordereauLine
+      };
+    }else{
+      out.documentNumber=null;
+    }
 
     const date=parseFrenchDate(oneLine);
     out.date=date?{value:date,source:"تاريخ الوثيقة بعد Le:"}:null;
@@ -1390,13 +1411,20 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const uniqueCompanies=[...new Set(companyCandidates)];
     out.recipient=uniqueCompanies.length===1?{value:uniqueCompanies[0],source:"اسم الشركة ابتداءً من الصيغة القانونية SARL/EURL/SPA/SNC"}:null;
 
-    let sender=findLineValue(lines,/^.*?Motif\s*[:.]?/i);
-    sender=sender.replace(/^[.:·_\-\s]+/,'').trim();
-    if(sender&&sender.length<=80&&!/\b(DZD|Montant|Timbre|Valeur|Compte|Agence)\b/i.test(sender)){
-      out.sender={value:sender,source:"Motif — قاعدة قالب BNA التي أكدها عمر"};
-    }else{
-      out.sender=null;
-    }
+    // Motif وصف/مرجع للعملية في قالب BNA، وليس دليلاً كافيًا على هوية المرسل.
+    let motif=findLineValue(lines,/^.*?Motif\s*[:.]?/i);
+    motif=motif.replace(/^[.:·_\-\s]+/,'').trim();
+    const validMotif=motif&&motif.length<=80&&!/\b(DZD|Montant|Timbre|Valeur|Compte|Agence)\b/i.test(motif);
+    out.motif=validMotif
+      ? {value:motif,source:"Motif — محفوظ كبيان مستقل ولا يُستخدم كهوية مرسل",status:'read'}
+      : null;
+    out.sender={
+      value:null,
+      source:validMotif
+        ? "لا يوجد حقل صريح للمرسل في هذا الوصل. Motif: "+motif+" محفوظ كبيان فقط."
+        : "لا يوجد حقل صريح للمرسل في هذا الوصل؛ لم يتم التخمين.",
+      status:'absent'
+    };
 
     return out;
   }
