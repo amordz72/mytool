@@ -5,7 +5,7 @@
   const routes=[
     {id:'index',group:'general',label:'لوحة التحكم',shortLabel:'الرئيسية',path:'index.html',type:'shared',roles:['admin','worker'],placement:['drawer','top'],icon:'⌂'},
     {id:'daily',group:'general',label:'التشغيل اليومي',shortLabel:'التشغيل',path:'daily.html',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'▤'},
-    {id:'flexy-access',group:'operations',label:'فليكسي',shortLabel:'فليكسي',path:'flexy-access.html',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'📱'},
+    {id:'flexy-access',group:'operations',label:'فليكسي',shortLabel:'فليكسي',path:'flexy-access.html',type:'shared',roles:['admin','worker'],placement:[],icon:'📱'},
     {id:'today-route',group:'operations',label:'جولة اليوم',shortLabel:'الجولة',path:'today-route.html?v=20260918-canonical-route-2',type:'worker',roles:['admin','worker'],permission:'record_money',placement:['drawer'],icon:'⌖',daily:true,dailyOrder:60,dailyDesc:'المتوقع والمستلم والباقي لكل محل'},
     {id:'sale',group:'operations',label:'تسجيل بيع',shortLabel:'بيع',path:'sale.html',type:'worker',roles:['admin','worker'],permission:'sell',placement:['drawer','top'],icon:'＋',daily:true,dailyOrder:10,dailyDesc:'تسجيل بيع سريع'},
     {id:'purchase',group:'operations',label:'المشتريات',shortLabel:'مشتريات',path:'purchase.html',type:'worker',roles:['admin','worker'],permission:'purchase',placement:['drawer','top'],icon:'⇩',daily:true,dailyOrder:20,dailyDesc:'إدخال سلعة للمخزون'},
@@ -29,8 +29,8 @@
     {id:'customer-links',group:'admin',label:'إدارة ربط العملاء',shortLabel:'ربط العملاء',path:'customer-links.html?v=20260918-source-shape-core-1',type:'admin',roles:['admin'],placement:['drawer'],icon:'⇆'},
     {id:'users',group:'admin',label:'المستخدمون',shortLabel:'المستخدمون',path:'users.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'♙'},
     {id:'settings',group:'admin',label:'الإعدادات',shortLabel:'الإعدادات',path:'settings.html',type:'admin',roles:['admin'],placement:['drawer','top'],icon:'⚙'},
-    {id:'notes',group:'general',label:'صندوق الملاحظات',shortLabel:'الملاحظات',path:'../notes/',type:'shared',roles:['admin','worker'],placement:['drawer'],icon:'📝'},
-    {id:'mytool',group:'general',label:'رئيسية MyTool',shortLabel:'MyTool',path:'../',type:'external',roles:['admin'],placement:['drawer'],icon:'↩'}
+    {id:'notes',group:'general',label:'صندوق الملاحظات',shortLabel:'الملاحظات',path:'../notes/',type:'shared',roles:['admin','worker'],placement:[],icon:'📝'},
+    {id:'mytool',group:'general',label:'رئيسية MyTool',shortLabel:'MyTool',path:'../',type:'external',roles:['admin'],placement:[],icon:'↩'}
   ];
   function allowed(route,context){const role=context?.role||'admin';if(!route.roles.includes(role))return false;if(role==='admin'||!route.permission)return true;const permissions=context?.permissions||{};return permissions[route.permission]===true||permissions['can_'+route.permission]===true;}
   function list(context,placement){return routes.filter(route=>(!placement||route.placement.includes(placement))&&allowed(route,context));}
