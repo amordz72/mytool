@@ -709,7 +709,8 @@ function handoffToSale(row){
   };
   sessionStorage.setItem('mytool_sale_handoff_v1',JSON.stringify(envelope));
   const q=new URLSearchParams();
-  if(envelope.order_uuid)q.set('from_order',envelope.order_uuid);
+  const orderRef=envelope.order_uuid||envelope.order_id;
+  if(orderRef)q.set('from_order',String(orderRef));
   q.set('operation',envelope.operation_type);
   location.href='../shop/sale.html?'+q.toString();
 }
