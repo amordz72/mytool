@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-bna3">
+<meta name="theme-color" content="#2ea8e6">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">\n<meta name="mytool-build" content="20260922-bna4">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -951,12 +951,13 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   };
 
   const fields = [
-    ['date','التاريخ'],
-    ['recipient','المستفيد في الوصل'],
-    ['amount','المبلغ'],
     ['documentNumber','رقم الوثيقة'],
+    ['date','التاريخ'],
+    ['recipientAccount','حساب المستلم'],
     ['bank','البنك / المصدر'],
-    ['sender','المرسل']
+    ['sender','المرسل'],
+    ['amount','المبلغ'],
+    ['recipient','اسم المستفيد في الوصل']
   ];
 
   function cleanText(s){
@@ -1133,7 +1134,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function qualityMessages(payload){
-    const critical=['date','recipient','amount','documentNumber','sender'];
+    const critical=['documentNumber','date','recipientAccount','bank','sender','amount','recipient'];
     const missing=critical.filter(key=>!(payload.fields?.[key]?.value)&&payload.fields?.[key]?.status!=='absent');
     const reviewFields=critical.filter(key=>payload.fields?.[key]?.status==='review');
     const manualFields=critical.filter(key=>payload.fields?.[key]?.status==='manual');
@@ -1355,6 +1356,17 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       .trim();
   }
 
+  function extractRecipientAccount(lines){
+    for(const rawLine of (lines||[])){
+      const line=cleanLine(rawLine);
+      const match=line.match(
+        /(?:N\s*[°ºo.]?|Num(?:é|e)ro)\s*(?:de\s+)?Compte\s*[:.]?\s*([0-9][0-9-]{5,30})/i
+      );
+      if(match)return cleanLine(match[1]).replace(/[^0-9-]/g,'');
+    }
+    return '';
+  }
+
   function extractBna(text){
     const normalized=cleanText(text);
     const oneLine=normalized.replace(/\n+/g,' ');
@@ -1391,6 +1403,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     const date=parseFrenchDate(oneLine);
     out.date=date?{value:date,source:"تاريخ الوثيقة بعد Le:"}:null;
+
+    const recipientAccount=extractRecipientAccount(lines);
+    out.recipientAccount=recipientAccount
+      ? {value:recipientAccount,source:"N° Compte — حساب المستلم",status:'read'}
+      : null;
 
     let amountMatch=oneLine.match(/Montant\s+versement\s*[:.]?\s*([0-9][0-9\s.,]{1,22})\s*(?:DZD|DA)\b/i);
     if(!amountMatch){
@@ -1454,6 +1471,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       }
     }
     out.date=dateResult;
+
+    const recipientAccount=extractRecipientAccount(lines);
+    out.recipientAccount=recipientAccount
+      ? {value:recipientAccount,source:'Numéro/N° de compte',status:'read'}
+      : {value:null,source:'لم يظهر حساب مستلم معنّون بوضوح في الوثيقة',status:'absent'};
 
     let recipient=findLineValue(lines,/^.*?Nom\s+ou\s+Raison\s+Sociale\s*[:.]?/i);
     recipient=cleanEntityName(recipient);
@@ -1551,6 +1573,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(explicitDate)date=explicitDate[3]+'-'+String(explicitDate[2]).padStart(2,'0')+'-'+String(explicitDate[1]).padStart(2,'0');
     out.date=date?{value:date,source:'تاريخ صريح في الوثيقة'}:null;
 
+    const recipientAccount=extractRecipientAccount(lines);
+    out.recipientAccount=recipientAccount
+      ? {value:recipientAccount,source:'N°/Numéro de compte',status:'read'}
+      : {value:null,source:'لم يظهر حساب مستلم معنّون بوضوح في الوثيقة',status:'absent'};
+
     const beneficiaryLine=lines.find(line=>/B[ée]n[ée]fic/i.test(line))||'';
     let recipient='';
     const legalPos=beneficiaryLine.search(/\b(?:SARL|EURL|SPA|SNC)\b/i);
@@ -1605,6 +1632,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     out.recipient=recipientMatch
       ? {value:recipientMatch[1],source:'Destinataire',status:'read'}
       : null;
+    out.recipientAccount=recipientMatch
+      ? {value:recipientMatch[1],source:'Destinataire — حساب المستلم',status:'read'}
+      : {value:null,source:'لم يظهر Destinataire بقراءة مؤكدة',status:'review'};
 
     const idLine=lines.find(line=>/Identifiant\s+de\s+transa(?:c|)tion/i.test(line))||'';
     const idMatch=idLine.match(/Identifiant\s+de\s+transa(?:c|)tion\s*[:.]?\s*([0-9]{6,30})/i);
@@ -1626,7 +1656,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function emptyExtraction(){
-    return {date:null,recipient:null,amount:null,documentNumber:null,bank:null,sender:null};
+    return {documentNumber:null,date:null,recipientAccount:null,bank:null,sender:null,amount:null,recipient:null};
   }
 
   function renderResult(payload){
