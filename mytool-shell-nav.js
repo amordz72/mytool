@@ -13,9 +13,24 @@
 
   function access(){
     const ctx=window.MyToolAccessContext||{};
-    const admin=Boolean(ctx.adminLike||ctx.ownerActive);
-    const worker=Boolean(ctx.workerLike);
-    const tools=Boolean(ctx.toolsActive);
+    const now=Date.now();
+    const workerToken=localStorage.getItem('mytool_shop_worker_token')||'';
+    const workerExpiry=Number(localStorage.getItem('mytool_shop_worker_expires_at')||0);
+    const workerSession=Boolean(workerToken)&&workerExpiry>now;
+    const workspaceRole=localStorage.getItem('mytool_workspace_role')||'';
+    const storedAdmin=Number(localStorage.getItem('mytool_admin_expires_at')||0)>now
+      || Number(localStorage.getItem('mytool_emergency_admin_expires_at')||0)>now
+      || (workerSession&&workspaceRole==='workspace_admin');
+    const storedWorker=workerSession&&!storedAdmin;
+    const toolsExpiry=Math.max(
+      Number(sessionStorage.getItem('mytool_tools_access_expires_at')||0),
+      Number(localStorage.getItem('mytool_tools_access_expires_at')||0)
+    );
+    const toolsToken=sessionStorage.getItem('mytool_tools_access_token')
+      || localStorage.getItem('mytool_tools_access_token')||'';
+    const admin=Boolean(ctx.adminLike||ctx.ownerActive||storedAdmin);
+    const worker=Boolean(ctx.workerLike||storedWorker);
+    const tools=Boolean(ctx.toolsActive||(toolsToken&&toolsExpiry>now));
     return {admin,worker,tools,global:admin||tools};
   }
   function titleFromDocument(){
