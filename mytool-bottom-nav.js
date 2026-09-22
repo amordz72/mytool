@@ -10,7 +10,7 @@
   const relative=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length):'';
   const currentApp=(document.body?.dataset?.mytoolApp||script?.dataset?.app||relative.split('/').filter(Boolean)[0]||'').trim();
   const appHome=currentApp?new URL(currentApp+'/',rootUrl):rootUrl;
-  const SHELL_VERSION='20260922-dual-sidebar-3';
+  const SHELL_VERSION='20260922-dual-sidebar-4';
 
   function loadSharedShell(){
     if(!document.querySelector('link[data-mytool-shell-nav]')){
