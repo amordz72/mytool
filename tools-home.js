@@ -170,7 +170,7 @@
     card.className='card';
     card.href='chat-payments-reader/';
     card.innerHTML='<div class="icon">💬</div><h2>قارئ مدفوعات الدردشة</h2><p>استخرج مدفوعات عميل من WhatsApp بين تاريخين مع مراجعة المطابقات المختصرة قبل الاعتماد.</p><span class="badge">ZIP / TXT / لصق</span>';
-    const after=quick.querySelector('a[href="document-reader/"]');
+    const after=quick.querySelector('a[href^="document-reader/"]');
     if(after)after.insertAdjacentElement('afterend',card);else quick.prepend(card);
   }
 
