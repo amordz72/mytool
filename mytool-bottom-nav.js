@@ -10,7 +10,7 @@
   const relative=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length):'';
   const currentApp=(document.body?.dataset?.mytoolApp||script?.dataset?.app||relative.split('/').filter(Boolean)[0]||'').trim();
   const appHome=currentApp?new URL(currentApp+'/',rootUrl):rootUrl;
-  const SHELL_VERSION='20260922-flexy-bell-7';
+  const SHELL_VERSION='20260923-flexy-admin-split-8';
 
   function loadSharedShell(){
     if(!document.querySelector('link[data-mytool-shell-nav]')){
@@ -45,8 +45,8 @@
   }
 
   function loadShopAdminNotifications(){
-    if(currentApp!=='shop'||document.querySelector('script[data-mytool-admin-notifications]'))return;
-    const s=document.createElement('script');s.src=new URL('shop/admin-notifications.js?v=20260915-2329',rootUrl).href;s.defer=true;s.dataset.mytoolAdminNotifications='1';document.head.appendChild(s);
+    if(document.querySelector('script[data-mytool-admin-notifications]'))return;
+    const s=document.createElement('script');s.src=new URL('shop/admin-notifications.js?v=20260923-global-bell-1',rootUrl).href;s.defer=true;s.dataset.mytoolAdminNotifications='1';document.head.appendChild(s);
   }
   function loadNotesEditor(){
     if(currentApp!=='notes'||document.querySelector('script[data-mytool-notes-edit]'))return;
