@@ -11,6 +11,7 @@ const norm=v=>String(v??'').trim().toLowerCase();
 
 let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformSignatures=[],identityReviews=[],importQueue=[],page=1;
 let adminMode='none',workspaceToken='';
+let importBusy=false;
 let confirmResolve=null;
 const selectedSources=new Set();
 let currentPageIds=[];
@@ -33,6 +34,7 @@ function renderPlatformControls(){
   const pf=$('platformFilter').value;
   $('platformFilter').innerHTML='<option value="all">كل المنصات</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
   if(pf==='all'||platforms.some(p=>p.platform_key===pf))$('platformFilter').value=pf;
+  if(importQueue.length)renderImportQueue();
 }
 async function sha256File(file){
   const bytes=await file.arrayBuffer();
@@ -102,9 +104,10 @@ function loadCache(){
 function renderConnectivity(){
   const off=!navigator.onLine;
   $('offlineNote').hidden=!off;
-  $('importBtn').disabled=off;
-  $('smartBtn').disabled=off;
-  if($('approveImportsBtn'))$('approveImportsBtn').disabled=off||!importQueue.some(x=>x.status==='ready'||(x.status==='duplicate'&&x.forceRepeat));
+  $('importBtn').disabled=off||importBusy;
+  $('smartBtn').disabled=off||importBusy;
+  if($('approveImportsBtn'))$('approveImportsBtn').disabled=off||importBusy||!importQueue.some(x=>x.status==='ready'||(x.status==='duplicate'&&x.forceRepeat));
+  if($('clearImportsBtn'))$('clearImportsBtn').disabled=importBusy;
   $('manualSave').disabled=off;
   $('newPlatformBtn').disabled=off;
 }
@@ -726,7 +729,7 @@ function renderImportQueue(){
     const diff=item.diff||{};
     const finance=item.parsed?.financialFields||{};
     const finLabels=[finance.debt?'دين':'',finance.balance?'رصيد':'',finance.profit?'ربح':''].filter(Boolean).join(' + ')||'لا توجد أعمدة مالية معروفة';
-    const locked=Boolean(item.detectedPlatform||item.serverPreview?.existing_platform_key||item.status==='duplicate_batch');
+    const locked=Boolean(importBusy||item.detectedPlatform||item.serverPreview?.existing_platform_key||item.status==='duplicate_batch');
     const hint=item.hintPlatform?' · ترشيح فقط: '+item.hintPlatform.label:'';
     const existing=item.serverPreview?.existing_platform_key?' · مسجل سابقًا: '+platformLabel(item.serverPreview.existing_platform_key):'';
     return '<article class="import-file '+importStatusClass(item)+'">'+
@@ -740,7 +743,7 @@ function renderImportQueue(){
         '<div class="mini"><small>حسابات جديدة متوقعة</small><b>'+Number(diff.newCount||0)+'</b></div>'+
       '</div>'+
       (item.error?'<div class="meta" style="color:#b91c1c;margin-top:7px">'+esc(item.error)+'</div>':'')+
-      (item.status==='duplicate'?'<div class="import-file-actions"><button class="btn secondary" data-import-reprocess="'+index+'" type="button">'+(item.forceRepeat?'إلغاء إعادة المعالجة':'إعادة المعالجة رغم التكرار')+'</button></div>':'')+
+      (item.status==='duplicate'?'<div class="import-file-actions"><button class="btn secondary" data-import-reprocess="'+index+'" type="button" '+(importBusy?'disabled':'')+'>'+(item.forceRepeat?'إلغاء إعادة المعالجة':'إعادة المعالجة رغم التكرار')+'</button></div>':'')+
       '</article>';
   }).join('');
   list.querySelectorAll('[data-import-platform-index]').forEach(select=>select.onchange=async()=>{
@@ -784,6 +787,7 @@ async function previewImports(){
   const files=[...($('sourceFile').files||[])];
   if(!files.length)return msg('اختر ملفًا واحدًا أو أكثر أولًا.','error');
   importQueue=[];
+  importBusy=true;
   $('importBtn').disabled=true;
   $('approveImportsBtn').disabled=true;
   $('importPreview').hidden=false;
@@ -818,7 +822,8 @@ async function previewImports(){
     }
     renderImportQueue();
   }
-  $('importBtn').disabled=false;
+  importBusy=false;
+  renderImportQueue();
   msg('المعاينة جاهزة. لم تُكتب أي بيانات بعد. راجع كل ملف ثم اضغط «اعتماد الملفات السليمة».','ok');
 }
 async function processImportItem(item){
@@ -859,6 +864,7 @@ async function processImportItem(item){
 }
 async function approveImports(){
   if(!navigator.onLine)return msg('الاعتماد يحتاج اتصالًا.','warn');
+  if(importBusy)return;
   const eligible=importQueue.filter(x=>x.status==='ready'||(x.status==='duplicate'&&x.forceRepeat));
   if(!eligible.length)return msg('لا يوجد ملف سليم جاهز للاعتماد.','warn');
   const ok=await askConfirm(
@@ -867,33 +873,38 @@ async function approveImports(){
     'اعتماد السليمة'
   );
   if(!ok)return;
-  $('approveImportsBtn').disabled=true;$('importBtn').disabled=true;
+  importBusy=true;renderImportQueue();
   let done=0,failed=0,skipped=0,totalProcessed=0,totalUpdated=0,totalInserted=0;
-  for(const item of importQueue){
-    if(!eligible.includes(item)){
-      if(['duplicate','duplicate_batch'].includes(item.status)){item.status='skipped';skipped++}
-      continue;
+  try{
+    for(const item of importQueue){
+      if(!eligible.includes(item)){
+        if(['duplicate','duplicate_batch'].includes(item.status)){item.status='skipped';skipped++}
+        continue;
+      }
+      try{
+        const r=await processImportItem(item);
+        if(r?.skipped){skipped++;continue}
+        done++;totalProcessed+=Number(r.processed||0);totalUpdated+=Number(r.updated||0);totalInserted+=Number(r.inserted||0);
+      }catch(error){
+        failed++;item.status='error';item.error=safeError(error);renderImportQueue();
+      }
     }
-    try{
-      const r=await processImportItem(item);
-      if(r?.skipped){skipped++;continue}
-      done++;totalProcessed+=Number(r.processed||0);totalUpdated+=Number(r.updated||0);totalInserted+=Number(r.inserted||0);
-    }catch(error){
-      failed++;item.status='error';item.error=safeError(error);renderImportQueue();
+    if(done){
+      const boot=await autoBootstrap(null);
+      await generateSuggestions({silent:true});
+      await load();
+      if(boot?.error)console.warn('bootstrap warning:',boot.error);
     }
+    $('sourceFile').value='';
+    msg('انتهى الاعتماد: ملفات ناجحة '+done+' · متجاهلة '+skipped+' · فشلت '+failed+' · حسابات معالجة '+totalProcessed+' · جديدة '+totalInserted+' · محدثة '+totalUpdated+'.',failed?'warn':'ok');
+  }catch(error){
+    msg('اكتملت بعض الملفات لكن تعذر إنهاء المراجعة: '+safeError(error),'warn');
+  }finally{
+    importBusy=false;renderImportQueue();renderConnectivity();
   }
-  if(done){
-    const boot=await autoBootstrap(null);
-    await generateSuggestions({silent:true});
-    await load();
-    if(boot?.error)console.warn('bootstrap warning:',boot.error);
-  }
-  $('sourceFile').value='';
-  $('importBtn').disabled=false;
-  renderImportQueue();
-  msg('انتهى الاعتماد: ملفات ناجحة '+done+' · متجاهلة '+skipped+' · فشلت '+failed+' · حسابات معالجة '+totalProcessed+' · جديدة '+totalInserted+' · محدثة '+totalUpdated+'.',failed?'warn':'ok');
 }
 function clearImportQueue(){
+  if(importBusy)return;
   importQueue=[];$('sourceFile').value='';$('importPreview').hidden=true;$('importPreviewList').innerHTML='';$('importPreviewSummary').textContent='';renderConnectivity();
 }
 
