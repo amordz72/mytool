@@ -67,7 +67,7 @@
       ['home','⌂','رئيسية My Tools',''],
       ['shop','🧾','حساب المحل','shop/'],
       ['flexy','📱','تميز / فليكسي','flexy/home.html'],
-      ['orders','📥','الطلبات','orders/?v=20260923-game-intent1'],
+      ['orders','📥','الطلبات','orders/?v=20260923-editable-autofill1'],
       ['cards','🎫','معالج البطاقات','cards/'],
       ['accounts-review','📊','الحسابات','accounts-review/'],
       ['notes','📝','الملاحظات','notes/'],
