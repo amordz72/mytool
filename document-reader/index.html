@@ -177,7 +177,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 </details>
 
 </main>
-<div id="mobileWorkDock" class="mobile-work-dock" aria-label="اختصارات قارئ الوثائق">
+<div id="mobileWorkDock" class="mobile-work-dock" aria-label="اختصارات الوصولات">
   <button id="quickFollowBtn" class="btn" type="button">المتابعة</button>
   <button id="quickPrimaryBtn" class="btn primary quick-primary" type="button">📷 رفع وصل</button>
 </div>
@@ -1126,7 +1126,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     const first=await askSecuritySecret({
       title:current?'تغيير PIN الإدارة':'إنشاء PIN الإدارة',
-      text:'اختر PIN من 6 أرقام. هذا PIN احتياطي للعمليات الحساسة فقط ولا يوقف استعمال قارئ الوثائق اليومي.',
+      text:'اختر PIN من 6 أرقام. هذا PIN احتياطي للعمليات الحساسة فقط ولا يوقف استعمال الوصولات اليومي.',
       mode:'pin',
       confirm:true,
       confirmText:'أعد PIN من 6 أرقام'
@@ -1258,7 +1258,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
           user:{
             id:userId,
             name:'mytool-document-reader-local-admin',
-            displayName:'MyTool — قارئ الوثائق'
+            displayName:'MyTool — الوصولات'
           },
           pubKeyCredParams:[
             {type:'public-key',alg:-7},
@@ -2129,10 +2129,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(rule){
       idRuleHint.innerHTML='<b>هوية الوصل المعتمدة لمنع التكرار — '+escapeHtml(rule.label)+':</b> '
         +'<code>'+escapeHtml(rule.field)+'</code><br>'+escapeHtml(rule.help)
-        +'<br><b>قاعدة المنع:</b> نوع البنك/الوسيلة + رقم الوثيقة معًا.';
+        +'<br><b>قاعدة المنع:</b> رقم الوثيقة وحده يمنع التكرار؛ البنك معلومة استرشادية.';
     }else{
-      idRuleHint.innerHTML='<b>إذا فشل التعرف:</b> اختر نوع الوثيقة يدويًا، ثم أدخل الحقول. '
-        +'سيشرح البرنامج هنا أي رقم يعتبره ID لمنع تكرار نفس الوصل.';
+      idRuleHint.innerHTML='<b>إذا فشل التعرف:</b> أدخل رقم الوثيقة والمستلم والمبلغ والتاريخ يدويًا. '
+        +'البنك اختياري واستِرشادي، ورقم الوثيقة وحده هو مفتاح منع التكرار.';
     }
   }
 
