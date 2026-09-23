@@ -27,7 +27,7 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 .pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:10px}.pagination button{width:auto;min-width:80px}
 @media(max-width:760px){.page{padding:8px 8px 108px}.registry-head,.detail-head{display:block}.registry-actions{margin-top:9px}.metrics{grid-template-columns:1fr 1fr}.filters,.edit-grid{grid-template-columns:1fr}.detail-grid,.account-grid{grid-template-columns:1fr}.customer-summary{grid-template-columns:1fr 1fr}.count{padding:0}.card{padding:11px}}
 </style>
-<script src="shop-routes.js?v=20260923-customer-registry1"></script>
+<script src="shop-routes.js?v=20260923-master-feeds1"></script>
 <script src="shop-shell.js?v=20260921-fixed-bottom-1"></script>
 </head>
 <body data-screen="customers">
@@ -43,12 +43,12 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
         <div class="muted">كل شخص أو محل له هوية MyTool واحدة. حسابات المنصات والأسماء والأرقام تبقى مصادر مرتبطة بهذه الهوية ولا تُدمج لمجرد تشابه الاسم.</div>
       </div>
       <div class="registry-actions">
-        <a class="btn" href="customer-links.html?v=20260923-person-identity-only1#sourceImport">⬆ تحيين من ملفات المنصات</a>
-        <a class="btn secondary" href="customer-links.html?v=20260923-person-identity-only1">⇆ إدارة الربط</a>
+        <a class="btn" href="customer-master-feed.html?v=20260923-1">⊕ تغذية ماستر العملاء</a>
+        <a class="btn secondary" href="customer-links.html?v=20260923-master-name-lock2">⇆ صيانة الربط والمصادر</a>
         <button id="refreshBtn" class="btn secondary" type="button">تحديث</button>
       </div>
     </div>
-    <div class="safety"><b>تحكم الهوية مفعّل</b>الاسم الرئيسي شيء، وحسابات المنصات شيء آخر. نقل/دمج حسابات المصادر يتم من صفحة الربط المخصصة ويحفظ التاريخ؛ هذه الصفحة هي المرجع المركزي للمراجعة والتعديل الآمن.</div>
+    <div class="safety"><b>ماستر العملاء هو المرجع</b>لكل عميل معرف CUST ثابت واسم ماستر ثابت في واجهات العمل. أسماء المنصات تبقى مصادر مرتبطة ولا تستبدل اسم الماستر. التغذية والربط تتم من صفحة «تغذية ماستر العملاء».</div>
     <div class="metrics">
       <div class="metric"><small>عملاء موحدون</small><b id="mCustomers">0</b></div>
       <div class="metric"><small>متعدد المنصات</small><b id="mMulti">0</b></div>
