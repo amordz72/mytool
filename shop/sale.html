@@ -148,7 +148,7 @@
             <div id="digitalCustomerHint" class="customer-hint"></div>
             <div id="digitalCustomerSuggestions" class="customer-suggestions hidden"></div>
           </div>
-          <div class="field"><label>الخدمة</label><input id="digitalServiceName" placeholder="مثال: Free Fire"><input id="digitalServiceCode" type="hidden"></div>
+          <div class="field"><label>الخدمة</label><input id="digitalServiceName" list="digitalServiceList" autocomplete="off" placeholder="مثال: Free Fire"><datalist id="digitalServiceList"></datalist><input id="digitalServiceCode" type="hidden"><div id="digitalServiceHint" class="customer-hint"></div></div>
         </div>
         <div class="row">
           <div class="field"><label>الرقم / Player ID</label><input id="digitalDestination" dir="ltr" placeholder="Player ID أو رقم الهاتف"></div>
@@ -197,7 +197,7 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],digitalCustomers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
+  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],digitalCustomers:[],digitalServices:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
   const OPERATION_TYPES={
     product:{icon:'🛒',title:'منتج من المخزون',note:'بيع مرتبط بالمخزون الحالي.'},
@@ -320,6 +320,38 @@
       status:'approved',confidence:100,evidence:{method:'sale_manual_link',order_id:saleHandoff?.order_id||null}
     },{onConflict:'source_kind,identity_normalized'})
   }
+  function serviceByTypedName(value){
+    const key=customerKey(value);if(!key)return null
+    const matches=state.digitalServices.filter(s=>{
+      const vals=[s.code,s.display_name,...(s.aliases||[])].filter(Boolean)
+      return vals.some(v=>customerKey(v)===key)
+    })
+    return matches.length===1?matches[0]:null
+  }
+  function renderDigitalServiceList(){
+    const list=$('digitalServiceList');if(!list)return
+    list.innerHTML=state.digitalServices.filter(s=>s.enabled!==false).map(s=>'<option value="'+esc(s.display_name||s.code)+'"></option>').join('')
+  }
+  function resolveDigitalServiceInput(){
+    const typed=$('digitalServiceName')?.value.trim()||''
+    const match=serviceByTypedName(typed)
+    setDigitalValue('digitalServiceCode',match?.code||'')
+    const hint=$('digitalServiceHint')
+    if(hint){
+      if(match){hint.textContent='مرتبطة بالخدمة '+match.code+' — ويمكن تغييرها.';hint.className='customer-hint linked'}
+      else if(typed){hint.textContent='اسم خدمة يدوي؛ لا يوجد كود خدمة مخفي مرتبط به.';hint.className='customer-hint unlinked'}
+      else{hint.textContent='اكتب اسم الخدمة أو اختر خدمة معروفة.';hint.className='customer-hint unlinked'}
+    }
+    return match
+  }
+  async function loadDigitalServices(){
+    if(state.mode!=='admin')return
+    const {data,error}=await supabase.from('mytool_service_catalog').select('code,display_name,aliases,enabled').order('sort_order').order('code')
+    if(error)return
+    state.digitalServices=data||[]
+    renderDigitalServiceList()
+    if(saleHandoff&&$('digitalServiceName')?.value)resolveDigitalServiceInput()
+  }
   function genericGameSignal(value){
     return /(?:جوهرة|جواهر|كرة|كرات|شدة|شدات|يوسي|\buc\b|diamond(?:s)?|coin(?:s)?|كوينز?|point(?:s)?|بوينت(?:س)?)/i.test(String(value||''))
   }
@@ -362,6 +394,7 @@
   }
   async function saveDigitalSaleDraft(event){
     event?.preventDefault()
+    resolveDigitalServiceInput()
     const serviceName=$('digitalServiceName')?.value.trim()||''
     const serviceCode=$('digitalServiceCode')?.value.trim()||''
     const destination=$('digitalDestination')?.value.trim()||''
@@ -466,6 +499,8 @@
   }
 
   $('digitalSaleForm')?.addEventListener('submit',saveDigitalSaleDraft)
+  $('digitalServiceName')?.addEventListener('input',()=>resolveDigitalServiceInput())
+  $('digitalServiceName')?.addEventListener('change',()=>resolveDigitalServiceInput())
   $('digitalCustomer')?.addEventListener('input',()=>resolveDigitalCustomerInput())
   $('digitalCustomer')?.addEventListener('change',()=>resolveDigitalCustomerInput())
   $('digitalCustomerSuggestions')?.addEventListener('click',event=>{
@@ -771,7 +806,7 @@
       await detectSession()
       if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}
       if(state.mode==='worker')await loadWorker();else await loadAdmin()
-      await loadDigitalCustomers()
+      await Promise.all([loadDigitalCustomers(),loadDigitalServices()])
       renderBase();applyScreenMode();await loadInventory(state.defaultBranchId)
       if(document.body.dataset.screen==='transfers'&&state.permissions.can_transfer)await loadTransfers()
       notify('العمليات جاهزة حسب الفرع.','ok')
