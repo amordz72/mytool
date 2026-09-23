@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>MyTool - أوامر أساسية</title>
+  <style>
+    :root{--text:#163047;--muted:#667b8b;--line:#dbe7f0;--blue:#238ec3;--soft:#f6fbff;--ok:#087c74}
+    *{box-sizing:border-box}body{margin:0;padding:16px;font-family:Arial,Tahoma,sans-serif;background:#f5f9fb;color:var(--text)}
+    main{max-width:850px;margin:auto}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
+    h1{margin:0;font-size:25px}.lead{margin:5px 0 0;color:var(--muted);line-height:1.6;font-size:13px}
+    .back{padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;text-decoration:none;color:var(--text);font-weight:700}
+    .card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:16px;margin:10px 0;box-shadow:0 6px 18px rgba(22,48,71,.05)}
+    .recommended{border-color:#9bd3cb}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#e6f6f3;color:var(--ok);font-size:11px;font-weight:800}
+    h2{margin:8px 0 5px;font-size:18px}.card p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.65}
+    .download{display:inline-block;padding:11px 14px;border-radius:11px;background:var(--blue);color:#fff;text-decoration:none;font-weight:800}
+    .note{padding:12px;border-radius:13px;background:#fff8e9;color:#75531a;font-size:12px;line-height:1.7}
+    code{direction:ltr;display:inline-block}
+  </style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div><h1>أوامر أساسية</h1><p class="lead">ملفات صغيرة جاهزة للتحميل والاستعمال على الكمبيوتر. هذا المكان يبقى مرجعًا ثابتًا للأوامر المتكررة.</p></div>
+    <a class="back" href="../">الرئيسية</a>
+  </div>
+
+  <section class="card recommended">
+    <span class="badge">الموصى به</span>
+    <h2>HiLink — Stable + Build بضغطة واحدة</h2>
+    <p>ضع الملف داخل مجلد مشروع HiLink القديم ثم شغله. يجلب <code>stable-v0.5-main-sync</code>، ينظف الكود القديم، ينفذ <code>npm ci</code>، يبني Setup وPortable، ثم يفتح <code>release</code>.</p>
+    <a class="download" href="HILINK_STABLE_BUILD.bat" download>تحميل HILINK_STABLE_BUILD.bat</a>
+  </section>
+
+  <section class="card">
+    <h2>HiLink — تحديث Stable فقط</h2>
+    <p>لما تريد فقط جعل نفس مجلد المشروع مطابقًا لآخر Stable بدون Build.</p>
+    <a class="download" href="HILINK_GET_STABLE.bat" download>تحميل HILINK_GET_STABLE.bat</a>
+  </section>
+
+  <section class="card">
+    <h2>HiLink — Build فقط</h2>
+    <p>إذا كان السورس عندك جاهز وتريد فقط تثبيت الاعتماديات وبناء نسخة Windows.</p>
+    <a class="download" href="HILINK_BUILD.bat" download>تحميل HILINK_BUILD.bat</a>
+  </section>
+
+  <div class="note"><strong>تنبيه:</strong> ملف Stable يحذف التعديلات المحلية غير المحفوظة داخل مشروع HiLink قبل إرجاعه للحالة المستقرة. استعمله عندما تكون متأكدًا أنك لا تحتاج تغييرات محلية غير مرفوعة.</div>
+</main>
+</body>
+</html>
