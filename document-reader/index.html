@@ -21,9 +21,9 @@ body{margin:0;padding:10px 12px 165px;font-family:Arial,Tahoma,sans-serif;backgr
 .security{display:flex;gap:8px;align-items:center;background:#effaf5;border-color:#b7e3cd;padding:10px 12px}.security-icon{font-size:18px}.security b{color:var(--ok);font-size:12px}.security p{display:none}.security-main{flex:1;min-width:0}.security-actions{margin-top:7px;display:flex;gap:7px;flex-wrap:wrap}.security-compact-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.security-compact-actions{display:flex;gap:6px;flex:0 0 auto}.security-compact-actions .btn{padding:7px 9px;font-size:10px}.security .usage-status{margin-top:4px;padding:6px 8px;font-size:10px;line-height:1.4}
 .work-card{scroll-margin-top:10px}.work-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}.work-card-head b{font-size:14px}.work-card-head span{font-size:10px;color:var(--m)}
 .management-card{padding:0;overflow:hidden;scroll-margin-top:10px}.management-summary{list-style:none;cursor:pointer;padding:12px 14px;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff}.management-summary::-webkit-details-marker{display:none}.management-summary:after{content:'⌄';font-size:16px;color:#53758b}.management-card[open] .management-summary:after{content:'⌃'}.management-summary span{font-size:10px;font-weight:600;color:var(--m)}.management-body{border-top:1px solid var(--l);padding:12px}
-.mobile-work-dock{position:fixed;z-index:9100;left:50%;transform:translateX(-50%);bottom:86px;width:min(520px,calc(100vw - 24px));background:#ffffffee;backdrop-filter:blur(12px);border:1px solid #d8e7ef;border-radius:16px;padding:8px;box-shadow:0 10px 30px #1630472b;display:grid;grid-template-columns:1fr 2fr;gap:8px}.mobile-work-dock .btn{min-height:48px;font-size:12px}.mobile-work-dock .quick-primary{font-size:14px}
-@media(min-width:700px){body{padding-bottom:92px}.mobile-work-dock{bottom:18px;width:min(520px,calc(100vw - 40px))}}.usage-settings{margin-top:10px;border-top:1px solid #cfe6d8;padding-top:10px;display:grid;gap:8px}.usage-status{font-size:11px;line-height:1.6;color:#416956;background:#fff;border:1px solid #d7ebe0;border-radius:10px;padding:9px 10px}.usage-danger{border:1px solid #f0b6b1;background:#fff7f6;border-radius:11px;padding:10px}.usage-danger b{color:var(--bad)}.usage-danger p{margin:4px 0 8px;color:#7c4c48;font-size:10px;line-height:1.55}.usage-recovery{border:1px solid #f0d58c;background:#fff9e8;border-radius:11px;padding:10px;font-size:11px;line-height:1.6;color:#6d571a}.usage-recovery code{display:block;direction:ltr;text-align:center;letter-spacing:1.3px;font-size:15px;font-weight:900;background:#fff;border:1px dashed #d9b95d;border-radius:8px;padding:9px;margin:7px 0;word-break:break-all}.security-modal{position:fixed;inset:0;background:#10283a88;z-index:10020;display:flex;align-items:center;justify-content:center;padding:16px}.security-dialog{width:min(420px,100%);background:#fff;border-radius:16px;border:1px solid #dbe7f0;box-shadow:0 18px 50px #10283a44;padding:16px}.security-dialog h3{margin:0 0 6px;font-size:17px}.security-dialog p{margin:0 0 10px;color:var(--m);font-size:11px;line-height:1.6}.security-dialog input{width:100%;border:1px solid #b9d5e3;border-radius:10px;padding:11px 12px;font:inherit;font-size:16px;direction:ltr;text-align:center;letter-spacing:2px}.security-dialog .security-confirm-input{margin-top:8px}.security-dialog-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}.security-dialog-error{margin-top:8px;color:var(--bad);font-size:10px;min-height:14px}
-.file-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}.file-name{min-width:0;padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mobile-work-dock{position:fixed;z-index:9100;left:50%;transform:translateX(-50%);bottom:86px;width:min(280px,calc(100vw - 24px));background:#ffffffee;backdrop-filter:blur(12px);border:1px solid #d8e7ef;border-radius:16px;padding:8px;box-shadow:0 10px 30px #1630472b;display:grid;grid-template-columns:1fr;gap:8px}.mobile-work-dock .btn{min-height:48px;font-size:12px}.mobile-work-dock .quick-primary{font-size:14px}
+@media(min-width:700px){body{padding-bottom:92px}.mobile-work-dock{bottom:18px;width:min(280px,calc(100vw - 40px))}}.usage-settings{margin-top:10px;border-top:1px solid #cfe6d8;padding-top:10px;display:grid;gap:8px}.usage-status{font-size:11px;line-height:1.6;color:#416956;background:#fff;border:1px solid #d7ebe0;border-radius:10px;padding:9px 10px}.usage-danger{border:1px solid #f0b6b1;background:#fff7f6;border-radius:11px;padding:10px}.usage-danger b{color:var(--bad)}.usage-danger p{margin:4px 0 8px;color:#7c4c48;font-size:10px;line-height:1.55}.usage-recovery{border:1px solid #f0d58c;background:#fff9e8;border-radius:11px;padding:10px;font-size:11px;line-height:1.6;color:#6d571a}.usage-recovery code{display:block;direction:ltr;text-align:center;letter-spacing:1.3px;font-size:15px;font-weight:900;background:#fff;border:1px dashed #d9b95d;border-radius:8px;padding:9px;margin:7px 0;word-break:break-all}.security-modal{position:fixed;inset:0;background:#10283a88;z-index:10020;display:flex;align-items:center;justify-content:center;padding:16px}.security-dialog{width:min(420px,100%);background:#fff;border-radius:16px;border:1px solid #dbe7f0;box-shadow:0 18px 50px #10283a44;padding:16px}.security-dialog h3{margin:0 0 6px;font-size:17px}.security-dialog p{margin:0 0 10px;color:var(--m);font-size:11px;line-height:1.6}.security-dialog input{width:100%;border:1px solid #b9d5e3;border-radius:10px;padding:11px 12px;font:inherit;font-size:16px;direction:ltr;text-align:center;letter-spacing:2px}.security-dialog .security-confirm-input{margin-top:8px}.security-dialog-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}.security-dialog-error{margin-top:8px;color:var(--bad);font-size:10px;min-height:14px}
+.file-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.file-name{min-width:0;padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:10px;padding:10px 12px;font-weight:700;font-size:12px;cursor:pointer}.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--o),var(--b))}.btn.danger{border-color:#f1b8b3;background:#fff4f2;color:var(--bad)}.btn:disabled{opacity:.55;cursor:not-allowed}
 .upload-hint{margin-top:7px;color:var(--m);font-size:10px;line-height:1.55}.upload-hint b{color:var(--t)}
 .actions{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:10px}
@@ -36,7 +36,7 @@ body{margin:0;padding:10px 12px 165px;font-family:Arial,Tahoma,sans-serif;backgr
 .image-refs{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding:6px 2px;align-items:center}.image-ref{flex:0 0 auto;border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:800;cursor:pointer}.image-ref.active{background:#e8f7ff;border-color:#66b9df}.image-primary-action{flex:0 0 auto;border:1px solid #8fcce7;background:#eaf7fd;color:#0d5e86;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:900;cursor:pointer}.image-primary-action:disabled{opacity:.6;cursor:default}.toast-stack{position:fixed;top:16px;right:16px;z-index:9999;display:grid;gap:10px;width:min(360px,calc(100vw - 24px));pointer-events:none}.toast{pointer-events:auto;background:#fff;border:1px solid #dfe7ed;border-radius:15px;padding:13px 14px;box-shadow:0 12px 34px #10283a28;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;animation:toastIn .18s ease}.toast-icon{font-size:20px;line-height:1}.toast-title{font-weight:900;font-size:13px;color:var(--t)}.toast-message{margin-top:3px;font-size:11px;line-height:1.55;color:var(--m)}.toast-close{border:0;background:transparent;color:#81919d;font-size:20px;line-height:1;cursor:pointer}.toast.success{border-right:4px solid #35bf75}.toast.warn{border-right:4px solid #e4a21b}.toast.error{border-right:4px solid #ef6470}.toast.info{border-right:4px solid #45a8d8}@keyframes toastIn{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}@media(max-width:620px){.toast-stack{top:10px;right:12px;left:12px;width:auto}}
 details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{cursor:pointer;font-weight:700;font-size:12px;color:#0d5e86}pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:10px}
 .hidden{display:none!important}
-@media(max-width:620px){.actions{grid-template-columns:1fr 1fr}.results,.detected{grid-template-columns:1fr}.file-row{grid-template-columns:1fr 1fr}.file-row .file-name{grid-column:1/-1}.file-row .btn{padding:10px}.preview{min-height:135px}.recipient-context .context-top{grid-template-columns:1fr}.management-body{padding:10px}}
+@media(max-width:620px){.actions{grid-template-columns:1fr 1fr}.results,.detected{grid-template-columns:1fr}.file-row{grid-template-columns:1fr auto}.file-row .file-name{grid-column:auto}.file-row .btn{padding:10px}.preview{min-height:135px}.recipient-context .context-top{grid-template-columns:1fr}.management-body{padding:10px}}
 </style>
 </head>
 <body><main class="wrap">
@@ -91,14 +91,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <section id="workCard" class="card work-card">
   <div class="work-card-head"><b>رفع وفحص الوصولات</b><span>نفس السجل ونفس منع التكرار</span></div>
   <div class="file-row">
-    <div id="fileName" class="file-name">لم يتم اختيار وصل</div>
-    <label class="btn primary" for="fileInput">وصل واحد</label>
-    <label class="btn" for="batchFileInput">رفع دفعة</label>
-    <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
-    <input id="batchFileInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple hidden>
-    <input id="additionalFileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+    <div id="fileName" class="file-name">لم يتم اختيار ملفات</div>
+    <label class="btn primary" for="fileInput">رفع وصولات</label>
+    <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple hidden>
   </div>
-  <div class="upload-hint"><b>وصل واحد:</b> صورة أو عدة صور لنفس الوصل. <b>رفع دفعة:</b> PDF أو صور متعددة؛ كل صفحة أو صورة تُفحص كوَصل مستقل.</div>
+  <div class="upload-hint">ارفع صورة واحدة، عدة صور أو PDF. البرنامج يقرأ كل صفحة ويجمع تلقائيًا الصور التي تحمل <b>نفس رقم الوثيقة</b>.</div>
 
   <div class="actions">
     <button id="analyzeBtn" class="btn primary" type="button" disabled>تحليل الصورة</button>
@@ -106,7 +103,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     <button id="saveBtn" class="btn" type="button" disabled>حفظ</button>
     <button id="settleBtn" class="btn primary" type="button" disabled>إرسال الوصل</button>
     <button id="confirmMoneyBtn" class="btn primary" type="button" disabled>تأكيد استلام المال</button>
-    <button id="addImageBtn" class="btn" type="button" disabled>+ صورة مرجع</button>
     <button id="rotateRightBtn" class="btn" type="button" disabled>↻ تدوير</button>
     <button id="copyBtn" class="btn" type="button" disabled>نسخ النتائج</button>
     <button id="clearBtn" class="btn" type="button" disabled>تفريغ الشاشة</button>
@@ -180,7 +176,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 </main>
 <div id="mobileWorkDock" class="mobile-work-dock" aria-label="اختصارات الوصولات">
   <button id="quickFollowBtn" class="btn" type="button">المفتوحة</button>
-  <button id="quickPrimaryBtn" class="btn primary quick-primary" type="button">📷 رفع وصل</button>
 </div>
 <div id="securitySecretModal" class="security-modal hidden" role="dialog" aria-modal="true" aria-labelledby="securitySecretTitle">
   <div class="security-dialog">
@@ -205,8 +200,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   const $ = id => document.getElementById(id);
   const fileInput = $('fileInput');
-  const batchFileInput = $('batchFileInput');
-  const additionalFileInput = $('additionalFileInput');
   const previewImg = $('previewImg');
   const previewEmpty = $('previewEmpty');
   const analyzeBtn = $('analyzeBtn');
@@ -214,7 +207,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const saveBtn = $('saveBtn');
   const settleBtn = $('settleBtn');
   const confirmMoneyBtn = $('confirmMoneyBtn');
-  const addImageBtn = $('addImageBtn');
   const cloudStatus = $('cloudStatus');
   const syncNowBtn = $('syncNowBtn');
   const rotateRightBtn = $('rotateRightBtn');
@@ -241,7 +233,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const recipientContextText = $('recipientContextText');
   const managementPanel = $('managementPanel');
   const workCard = $('workCard');
-  const quickPrimaryBtn = $('quickPrimaryBtn');
   const quickFollowBtn = $('quickFollowBtn');
   const selectedContext = $('selectedContext');
   const imageRefs = $('imageRefs');
@@ -272,7 +263,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   let rotation = 0;
   let currentResult = null;
   let busy = false;
-  let batchRunning = false;
+  let uploadRunning = false;
 
   const RECIPIENT_PRESETS_KEY='mytool.document-reader.recipient-presets.v1';
   const RECIPIENT_CONTEXT_KEY='mytool.document-reader.recipient-context.v1';
@@ -1995,13 +1986,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function isPlatformHistoryFilter(value){
-    return value&&!['all','__pending__','__unsettled__','__waiting__'].includes(value);
+    return value&&!['all','__unsettled__','__waiting__'].includes(value);
   }
 
   function renderHistorySupplierTabs(){
     const items=getRecentOperations().filter(op=>!op?.hiddenAttempt);
     const followCount=items.filter(isFinancialFollowUp).length;
-    const identifyCount=items.filter(isTemporaryUnidentified).length;
     const unsentCount=items.filter(op=>hasConfirmedReceiptIdentity(op)
       && ['analyzed','manual_entry','saved_unsettled'].includes(effectiveStatus(op))
       && (!op.selectedRecipient||op.selectedRecipient===UNSENT_RECIPIENT)).length;
@@ -2009,7 +1999,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     const statusFilters=[
       ['all','الكل'+(followCount?' ('+followCount+')':'')],
-      ['__pending__','يحتاج مراجعة'+(identifyCount?' ('+identifyCount+')':'')],
       ['__unsettled__','جاهز للإرسال'+(unsentCount?' ('+unsentCount+')':'')],
       ['__waiting__','تم الإرسال'+(waitingCount?' ('+waitingCount+')':'')]
     ];
@@ -2660,39 +2649,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function updateQuickDock(){
-    if(!quickPrimaryBtn||!quickFollowBtn)return;
-    const s=effectiveStatus(currentResult);
+    if(!quickFollowBtn)return;
     const openCount=getRecentOperations().filter(isFinancialFollowUp).length;
     quickFollowBtn.textContent=openCount?'المفتوحة ('+openCount+')':'المفتوحة';
-
-    quickPrimaryBtn.disabled=Boolean(busy||batchRunning);
-    if(batchRunning){
-      quickPrimaryBtn.dataset.action='busy';
-      quickPrimaryBtn.textContent='جاري فحص الدفعة…';
-      return;
-    }
-    if(busy){
-      quickPrimaryBtn.dataset.action='busy';
-      quickPrimaryBtn.textContent='جاري العمل…';
-      return;
-    }
-    if(!sourceImage||!currentResult){
-      quickPrimaryBtn.dataset.action='upload';
-      quickPrimaryBtn.textContent='📷 رفع وصل';
-      return;
-    }
-    if(['pending_analysis','analysis_failed'].includes(s)){
-      quickPrimaryBtn.dataset.action='analyze';
-      quickPrimaryBtn.textContent='✨ تحليل الصورة';
-      return;
-    }
-    if(['analyzed','manual_entry'].includes(s)&&!currentResult.duplicateInfo){
-      quickPrimaryBtn.dataset.action='save';
-      quickPrimaryBtn.textContent='💾 حفظ الوصل';
-      return;
-    }
-    quickPrimaryBtn.dataset.action='upload';
-    quickPrimaryBtn.textContent='📷 وصل جديد';
+    quickFollowBtn.disabled=Boolean(uploadRunning);
   }
 
   function updateSaveButton(){
@@ -2730,11 +2690,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       ? 'تم استلام المال ✓'
       : (s==='sent_to_platform'&&actual!==UNSENT_RECIPIENT?'تأكيد استلام المال من '+actual:'تأكيد استلام المال');
 
-    const canAddReference=Boolean(currentResult
-      && !currentResult.historyView
-      && !['archived','duplicate'].includes(s));
-    addImageBtn.disabled=busy||!canAddReference;
-    addImageBtn.textContent=['pending_analysis','analysis_failed'].includes(s)?'+ صورة لنفس الوصل':'+ صورة مرجع';
     manualEntryBtn.disabled=busy||!currentResult||currentResult.historyView||finalized;
     analyzeBtn.disabled=busy||!sourceImage||!['pending_analysis','analysis_failed'].includes(s);
     rotateRightBtn.disabled=busy||!sourceImage||['archived','duplicate'].includes(s);
@@ -2748,9 +2703,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     analyzeBtn.disabled=on||!sourceImage;
     rotateRightBtn.disabled=on||!sourceImage;
     clearBtn.disabled=on||!sourceImage;
-    fileInput.disabled=on||batchRunning;
-    batchFileInput.disabled=on||batchRunning;
-    additionalFileInput.disabled=on||batchRunning;
+    fileInput.disabled=on||uploadRunning;
     const locked=currentResult&&['archived','duplicate'].includes(effectiveStatus(currentResult));
     recipientSelect.disabled=Boolean(on||currentResult?.historyView||locked);
     recipientAddBtn.disabled=recipientSelect.disabled;
@@ -2798,8 +2751,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     sourceImage=null;
     rotation=0;
     fileInput.value='';
-    additionalFileInput.value='';
-    $('fileName').textContent='لم يتم اختيار وصل';
+    $('fileName').textContent='لم يتم اختيار ملفات';
     previewImg.removeAttribute('src');
     previewImg.classList.add('hidden');
     previewImg.style.transform='';
@@ -4581,34 +4533,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }
   });
 
-  addImageBtn.addEventListener('click',()=>{
-    if(!currentResult||currentResult.historyView||currentResult.status==='saved'||currentResult.status==='duplicate')return;
-    additionalFileInput.value='';
-    additionalFileInput.click();
-  });
 
-  additionalFileInput.addEventListener('change',async()=>{
-    const files=[...(additionalFileInput.files||[])];
-    if(!files.length||!currentResult?.operationId)return;
-    if(files.some(file=>!/^image\//i.test(file.type))){
-      showToast('error','ملف غير مدعوم','أضف صورًا فقط.',4500);
-      return;
-    }
-    try{
-      let record=await getReceiptImage(currentResult.operationId);
-      for(const file of files){
-        record=await saveReceiptImage(currentResult.operationId,file,file.name||'صورة مرجع',true);
-      }
-      currentResult.imageCount=record?.images?.length||currentResult.imageCount||1;
-      persistCurrentOperation({registerDoc:statusCarriesDocumentIdentity(currentResult)});
-      renderImageRefs(record);
-      showToast('success','تمت إضافة صور لنفس الوصل',
-        files.length>1?'أضيفت '+files.length+' صور إلى ملف الوصل نفسه.':'الصورة أضيفت إلى ملف الوصل نفسه ولن تُنشئ عملية جديدة.',
-        5000);
-    }catch(_e){
-      showToast('error','تعذر إضافة الصورة','لم أستطع حفظ صورة المرجع محليًا.',5500);
-    }
-  });
 
   imageRefs.addEventListener('click',async event=>{
     const platformImage=event.target.closest('[data-set-platform-image-index]');
@@ -4827,21 +4752,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   closeTodayBtn.addEventListener('click',closeTodayWork);
 
-  quickPrimaryBtn.addEventListener('click',()=>{
-    const action=quickPrimaryBtn.dataset.action||'upload';
-    if(action==='analyze'){
-      analyzeBtn.click();
-      return;
-    }
-    if(action==='save'){
-      saveBtn.click();
-      return;
-    }
-    if(action==='upload'){
-      fileInput.value='';
-      fileInput.click();
-    }
-  });
   quickFollowBtn.addEventListener('click',()=>{
     managementPanel.open=true;
     managementPanel.scrollIntoView({behavior:'smooth',block:'start'});
