@@ -8,7 +8,7 @@ const money=v=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(n
 const PAGE_SIZE=20;
 const WORKER_TOKEN='mytool_shop_worker_token',WORKER_EXPIRES='mytool_shop_worker_expires_at',WORKSPACE_ROLE='mytool_workspace_role',ADMIN_EXPIRES='mytool_admin_expires_at';
 
-let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],page=1,selectedPartyId=null;
+let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null;
 
 function msg(text,kind='info'){$('message').textContent=text;$('message').className='message '+kind}
 function normalize(v){return String(v??'').toLowerCase().normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim()}
@@ -20,7 +20,8 @@ function partyBy(id){return parties.find(p=>Number(p.id)===Number(id))||null}
 function sourceFullName(s){return [s.first_name,s.last_name].filter(Boolean).join(' ').trim()}
 function knownNames(party){
   const a=accountsFor(party.id);
-  return uniq([party.display_name,...(party.aliases||[]),...a.flatMap(s=>[s.display_name,sourceFullName(s)])]);
+  const learned=identityRules.filter(r=>Number(r.party_id)===Number(party.id)&&r.status==='approved').map(r=>r.identity_value);
+  return uniq([party.display_name,...(party.aliases||[]),...learned,...a.flatMap(s=>[s.display_name,sourceFullName(s)])]);
 }
 function contacts(party){
   const a=accountsFor(party.id);
@@ -71,6 +72,13 @@ async function load(){
   parties=Array.isArray(linking.data?.parties)?linking.data.parties:[];
   sources=Array.isArray(linking.data?.sources)?linking.data.sources:[];
   platforms=Array.isArray(plist.data)?plist.data:[];
+  identityRules=[];
+  if(mode==='owner'){
+    const rules=await supabase.from('mytool_customer_identity_rules')
+      .select('id,source_kind,identity_value,party_id,status,confidence,source_platform_key')
+      .eq('status','approved').limit(5000);
+    if(!rules.error)identityRules=rules.data||[];
+  }
   renderFilters();renderMetrics();renderList();
   if(selectedPartyId&&partyBy(selectedPartyId))renderDetail(selectedPartyId);
   msg('سجل العملاء محدث. كل عميل معروض كهوية مركزية واحدة.','ok');
@@ -145,7 +153,9 @@ function renderDetail(id){
   const a=accountsFor(id),names=knownNames(p),c=contacts(p),pks=platformKeysFor(id),t=totals(id);
   $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ هوية مؤكدة · Customer #'+p.id;
   $('editName').value=p.display_name||'';$('editPhone').value=p.primary_phone||'';$('editEmail').value=p.primary_email||'';
-  $('detailNames').innerHTML=chips(names);
+  const learned=identityRules.filter(r=>Number(r.party_id)===Number(id)&&r.status==='approved');
+  $('detailNames').innerHTML=chips(names)+
+    (learned.length?'<div class="muted" style="width:100%;margin-top:6px">أسماء متعلمة: '+learned.map(r=>esc((r.source_kind==='whatsapp'?'WhatsApp · ':'')+r.identity_value)).join(' · ')+'</div>':'');
   $('detailContacts').innerHTML=chips([...c.phones.map(x=>'☎ '+x),...c.emails.map(x=>'✉ '+x)],'لا توجد أرقام أو إيميلات');
   $('detailPlatforms').innerHTML=chips(pks.map(k=>platformLabel(k)+' · '+a.filter(x=>x.platform_key===k).length+' حساب'));
   $('detailFinancial').innerHTML=chips(['الرصيد: '+money(t.balance),'الدين: '+money(t.debt),'الربح: '+money(t.profit)]);
