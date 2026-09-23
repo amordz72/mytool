@@ -1,4 +1,4 @@
-const CACHE='m2-transfer-v3';
+const CACHE='m2-transfer-v4';
 const CORE=[
   './',
   './index.html',
