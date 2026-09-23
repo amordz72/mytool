@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
+<title>تغذية الشرائح — Flexy</title>
+<link rel="stylesheet" href="app.css?v=20260923-admin-split-1">
+<script src="../auth-guard.js?v=20260923-admin-split-1" data-access="admin"></script>
+<style>
+.feed-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.feed-stat{border:1px solid var(--fx-line);border-radius:14px;padding:12px;background:#fff}.feed-stat small{display:block;color:var(--fx-muted);font-size:11px}.feed-stat strong{display:block;font-size:20px;margin-top:5px}.codes{min-height:150px;resize:vertical;direction:ltr;text-align:left}.split-note{border-right:4px solid var(--fx-blue);padding:10px 12px;background:var(--fx-blue-soft);border-radius:12px;font-size:12px;line-height:1.7}.card-row,.attempt-row{border:1px solid var(--fx-line);border-radius:14px;padding:12px}.card-head{display:flex;justify-content:space-between;gap:10px}.status-ready{color:var(--fx-green)}.status-review,.status-queued,.status-processing{color:var(--fx-orange)}.status-used{color:var(--fx-muted)}.status-failed{color:var(--fx-red)}
+@media(max-width:560px){.feed-summary{grid-template-columns:1fr 1fr}.feed-summary .feed-stat:first-child{grid-column:1/-1}}
+</style>
+</head>
+<body data-mytool-app="flexy">
+<main class="fx-wrap">
+  <div class="fx-top">
+    <div><h1 class="fx-title">تغذية الشرائح</h1><p class="fx-sub">مخزون تشغيل مستقل لتغذية SAMA. لا يظهر للبيع في تميز.</p></div>
+    <button id="refreshBtn" class="fx-btn secondary" type="button">تحديث</button>
+  </div>
+  <nav class="fx-tabs">
+    <a class="fx-tab" href="./">فليكسي</a>
+    <a class="fx-tab" href="sims.html">الشرائح والأرصدة</a>
+    <a class="fx-tab active" href="sim-feeding.html">تغذية الشرائح</a>
+    <a class="fx-tab" href="orders.html">الطابور</a>
+    <a class="fx-tab" href="admin.html">الإدارة</a>
+  </nav>
+  <div class="split-note">هذا المخزون خاص بالـAgent لشحن شريحة SAMA فقط. بطاقات البيع للعملاء تبقى في «تميز / بطاقات» ولا تنتقل إلى هنا تلقائيًا.</div>
+  <div id="message" class="fx-message" hidden style="margin-top:12px"></div>
+
+  <section class="fx-card" style="margin-top:12px">
+    <div class="fx-section-title"><h2>الحالة الحالية</h2><a class="fx-link" href="sims.html">كل الشرائح ←</a></div>
+    <div class="feed-summary">
+      <div class="feed-stat"><small>رصيد SAMA التشغيلي</small><strong id="samaBalance">—</strong></div>
+      <div class="feed-stat"><small>بطاقات 1000 الجاهزة</small><strong id="ready1000">0</strong></div>
+      <div class="feed-stat"><small>بطاقات 2000 الجاهزة</small><strong id="ready2000">0</strong></div>
+    </div>
+  </section>
+
+  <section class="fx-card">
+    <h2>إضافة بطاقات تغذية SAMA</h2>
+    <form id="importForm" class="fx-form">
+      <div class="fx-field"><label>قيمة البطاقات</label><select id="amount" class="fx-select" required><option value="">اختر</option><option value="1000">1000 دج</option><option value="2000">2000 دج</option></select></div>
+      <div class="fx-field"><label>لصق الأكواد — بطاقة واحدة في كل سطر</label><textarea id="codes" class="fx-input codes" inputmode="numeric" placeholder="123456789012345&#10;123456789012346"></textarea></div>
+      <div class="fx-field"><label>أو رفع TXT</label><input id="file" class="fx-input" type="file" accept=".txt,text/plain"></div>
+      <div class="fx-actions"><button id="saveBtn" class="fx-btn" type="submit">حفظ في مخزون تغذية SAMA</button><button id="clearBtn" class="fx-btn secondary" type="button">مسح</button></div>
+      <div class="fx-meta">كل كود يجب أن يكون 15 رقمًا. لا يتم شحن أي بطاقة لحظة الإضافة؛ تصبح جاهزة للنظام.</div>
+    </form>
+  </section>
+
+  <section class="fx-card">
+    <div class="fx-section-title"><h2>بطاقات التغذية</h2><span id="cardCount" class="fx-pill">0</span></div>
+    <div id="cards" class="fx-list"><div class="fx-empty">جاري التحميل…</div></div>
+  </section>
+
+  <section class="fx-card">
+    <div class="fx-section-title"><h2>سجل محاولات الشحن</h2></div>
+    <div id="attempts" class="fx-list"><div class="fx-empty">جاري التحميل…</div></div>
+  </section>
+</main>
+<script type="module">
+import {rpc,escapeHtml,money,fmtDate} from './api.js';
+const $=id=>document.getElementById(id);let cardRows=[];
+function show(t,bad=false){$('message').hidden=false;$('message').textContent=t;$('message').className='fx-message '+(bad?'bad':'ok')}
+function parse(raw){
+ let text=String(raw||'').replace(/^\uFEFF/,'');const lines=text.split(/\r\n|\n|\r/).map(x=>x.trim()).filter(Boolean);
+ const bad=lines.filter(x=>!/^[0-9]{15}$/.test(x));if(!lines.length)throw new Error('أدخل الأكواد أو اختر ملف TXT.');
+ if(bad.length)throw new Error('يوجد '+bad.length+' سطر غير صالح. كل بطاقة يجب أن تكون 15 رقمًا فقط.');
+ return [...new Set(lines)];
+}
+function status(s){return ({ready:'جاهزة',queued:'في الانتظار',processing:'جاري الشحن',used:'استُعملت',review:'تحتاج مراجعة',failed:'فشلت'})[s]||s||'—'}
+function renderCards(rows){
+ cardRows=rows;$('cardCount').textContent=String(rows.length);
+ if(!rows.length){$('cards').innerHTML='<div class="fx-empty">لا توجد بطاقات تغذية مضافة.</div>';return}
+ $('cards').innerHTML=rows.map(c=>'<article class="card-row"><div class="card-head"><div><strong>'+escapeHtml(c.amount)+' دج — '+escapeHtml(c.masked_code)+'</strong><div class="fx-meta">'+escapeHtml(c.source_label||'Flexy')+' · '+escapeHtml(fmtDate(c.created_at))+'</div></div><strong class="status-'+escapeHtml(c.status)+'">'+escapeHtml(status(c.status))+'</strong></div>'+(c.result_text?'<div class="fx-meta" style="margin-top:7px">آخر رد: '+escapeHtml(c.result_text)+'</div>':'')+'</article>').join('');
+}
+function renderAttempts(rows){
+ if(!rows.length){$('attempts').innerHTML='<div class="fx-empty">لا توجد محاولات شحن بعد.</div>';return}
+ $('attempts').innerHTML=rows.map(a=>'<article class="attempt-row"><div class="card-head"><div><strong>'+escapeHtml(a.amount)+' دج — '+escapeHtml(a.masked_code)+'</strong><div class="fx-meta">'+escapeHtml(fmtDate(a.created_at))+'</div></div><span class="fx-pill '+(a.result_status==='success'?'ok':a.result_status==='failed'?'bad':'warn')+'">'+escapeHtml(a.result_status==='success'?'نجاح':a.result_status==='failed'?'فشل':'مراجعة')+'</span></div><div class="fx-meta" style="margin-top:7px">'+escapeHtml(a.response_text||'لا يوجد رد نصي')+'</div></article>').join('');
+}
+async function load(){
+ try{
+  const [guard,cards,attempts]=await Promise.all([
+    rpc('station_connect_admin_recharge_guard'),
+    rpc('station_connect_admin_recharge_cards',{p_limit:50}),
+    rpc('station_connect_admin_recharge_attempts',{p_limit:30})
+  ]);
+  const g=guard?.[0]||{};$('samaBalance').textContent=g.balance_amount==null?'—':money(g.balance_amount)+' دج';
+  $('ready1000').textContent=String(g.ready_1000||0);$('ready2000').textContent=String(g.ready_2000||0);
+  renderCards(Array.isArray(cards)?cards:[]);renderAttempts(Array.isArray(attempts)?attempts:[]);
+ }catch(e){show(String(e?.message||e),true)}
+}
+$('file').addEventListener('change',async()=>{const f=$('file').files?.[0];if(!f)return;$('codes').value=await f.text();const m=f.name.match(/(?:^|\D)(1000|2000)(?:\D|$)/);if(m)$('amount').value=m[1]});
+$('clearBtn').addEventListener('click',()=>{$('importForm').reset();$('codes').value='';$('message').hidden=true});
+$('importForm').addEventListener('submit',async e=>{
+ e.preventDefault();const btn=$('saveBtn');btn.disabled=true;
+ try{
+  const amount=Number($('amount').value||0);if(![1000,2000].includes(amount))throw new Error('اختر قيمة 1000 أو 2000 دج.');
+  const codes=parse($('codes').value);
+  const result=await rpc('station_connect_admin_bulk_add_recharge_cards',{p_codes:codes,p_amount:amount,p_source_code:'sim_feeding'});
+  const row=result?.[0]||{};show('تم الحفظ: '+Number(row.inserted_count||0)+' جديدة، '+Number(row.duplicate_count||0)+' مكررة.');
+  $('importForm').reset();$('codes').value='';await load();
+ }catch(e){
+  const t=String(e?.message||e);
+  show(t.includes('MOBILIS_COMMERCIAL_STOCK_CONFLICT')?'هذه البطاقة موجودة في مخزون البيع التجاري ولا يمكن استخدامها لتغذية SAMA.':t,true);
+ }finally{btn.disabled=false}
+});
+$('refreshBtn').addEventListener('click',load);load();
+</script>
+<script src="flexy-nav.js?v=20260923-admin-split-1"></script>
+</body></html>
