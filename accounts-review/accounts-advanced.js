@@ -160,7 +160,7 @@
     if(panel.dataset.totalFingerprint!==fingerprint){
       panel.dataset.totalFingerprint=fingerprint;
       panel.innerHTML=
-        '<div class="accounts-simple-head"><div><h2>الحسابات</h2><div class="meta">المهم أولًا: الدين، الرصيد، والحسابات التي تحتاج مراجعة.</div></div><button type="button" class="accounts-update-btn" data-update-accounts>📂 تحديث من منصة</button></div>'+
+        '<div class="accounts-simple-head"><div><h2>الحسابات</h2><div class="meta">المهم أولًا: الدين، الرصيد، والحسابات التي تحتاج مراجعة.</div></div><button type="button" class="accounts-update-btn" data-update-accounts>📋 لصق من منصة</button></div>'+
         '<div class="summary accounts-total-summary simple"><div class="stat debt"><span>إجمالي الديون</span><strong>'+displayNumber(data.debt)+'</strong></div><div class="stat balance"><span>إجمالي الأرصدة</span><strong>'+displayNumber(data.balance)+'</strong></div><div class="stat review"><span>يحتاج مراجعة</span><strong>'+reviewCount+'</strong></div></div>'+
         '<div class="accounts-find"><input type="search" data-account-search value="'+escapeHtml(totalSearch)+'" placeholder="ابحث بالاسم أو المستخدم أو الهاتف…" aria-label="بحث في الحسابات"><div class="account-filters">'+filterButton('all','الكل',groups.length)+filterButton('debt','عليه دين',debtCount)+filterButton('balance','له رصيد',balanceCount)+filterButton('review','يحتاج مراجعة',reviewCount)+'</div></div>'+
         integrityHtml+
