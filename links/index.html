@@ -15,8 +15,8 @@ button,input,select,textarea{font:inherit}.wrap{max-width:900px;margin:auto}.top
 .msg{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:800;background:#eef7fc;border:1px solid var(--l)}.msg.ok{background:#edf9f4;color:var(--ok)}.msg.danger{background:#fff0f2;color:var(--danger)}[hidden]{display:none!important}
 .editor{background:#fff;border:1px solid var(--l);border-radius:18px;padding:12px;margin-top:12px;box-shadow:0 6px 18px #16304710}.editor-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.editor h2{font-size:17px;margin:0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{display:block}.field.full{grid-column:1/-1}.field span{display:block;font-size:11px;font-weight:800;color:var(--m);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--l);border-radius:11px;padding:10px;background:#fff;color:var(--t)}.field textarea{min-height:70px;resize:vertical}.checks{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:12px;font-weight:800}.checks label{display:flex;align-items:center;gap:6px}.editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
 .groups{display:grid;gap:12px;margin-top:12px}.group{background:#fff;border:1px solid var(--l);border-radius:18px;padding:10px;box-shadow:0 6px 18px #16304710}.group-head{display:flex;align-items:center;gap:8px;padding:2px 3px 5px}.group-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fff0df,#e9f8ff);font-size:18px}.group-title{font-size:15px;font-weight:900}.group-count{margin-right:auto;font-size:11px;color:var(--m)}.edit-group{border:0;background:transparent;cursor:pointer;font-size:15px;padding:6px}
-table{width:100%;border-collapse:separate;border-spacing:0 8px}td{background:var(--soft);border-top:1px solid var(--l);border-bottom:1px solid var(--l);padding:10px}td:first-child{border-right:1px solid var(--l);border-radius:0 12px 12px 0}td:last-child{border-left:1px solid var(--l);border-radius:12px 0 0 12px}.initial{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;background:#fff;border:1px solid var(--l);direction:ltr;letter-spacing:.2px}.name{font-weight:800}.note{font-size:11px;color:var(--m);margin-top:3px;line-height:1.5}.row-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end}.open,.edit{display:inline-block;text-decoration:none;border-radius:10px;padding:9px 11px;white-space:nowrap;font-weight:800;border:0;cursor:pointer}.open{background:linear-gradient(135deg,#147fb2,var(--b));color:#fff}.edit{background:#fff;color:var(--t);border:1px solid var(--l)}.badge{display:inline-block;margin-right:5px;padding:2px 6px;border-radius:999px;background:#eef2f5;color:var(--m);font-size:9px}.empty{text-align:center;color:var(--m);padding:24px;background:#fff;border:1px dashed var(--l);border-radius:16px;margin-top:10px}.hint{font-size:11px;color:var(--m);margin:9px 3px 0}
-@media(max-width:640px){body{padding:8px}.group{padding:7px}td{padding:8px}.open,.edit{padding:8px 9px}.name{font-size:13px}.note{font-size:10px}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.row-actions{flex-direction:column}.row-actions>*{width:100%;text-align:center}}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}td{background:var(--soft);border-top:1px solid var(--l);border-bottom:1px solid var(--l);padding:10px}td:first-child{border-right:1px solid var(--l);border-radius:0 12px 12px 0}td:last-child{border-left:1px solid var(--l);border-radius:12px 0 0 12px}.initial{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;background:#fff;border:1px solid var(--l);direction:ltr;letter-spacing:.2px}.name{font-weight:800}.note{font-size:11px;color:var(--m);margin-top:3px;line-height:1.5}.row-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end}.open,.edit,.copy{display:inline-block;text-decoration:none;border-radius:10px;padding:9px 11px;white-space:nowrap;font-weight:800;border:0;cursor:pointer}.open{background:linear-gradient(135deg,#147fb2,var(--b));color:#fff}.copy{background:#137fae;color:#fff}.edit{background:#fff;color:var(--t);border:1px solid var(--l)}.badge{display:inline-block;margin-right:5px;padding:2px 6px;border-radius:999px;background:#eef2f5;color:var(--m);font-size:9px}.empty{text-align:center;color:var(--m);padding:24px;background:#fff;border:1px dashed var(--l);border-radius:16px;margin-top:10px}.hint{font-size:11px;color:var(--m);margin:9px 3px 0}
+@media(max-width:640px){body{padding:8px}.group{padding:7px}td{padding:8px}.open,.edit,.copy{padding:8px 9px}.name{font-size:13px}.note{font-size:10px}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.row-actions{flex-direction:column}.row-actions>*{width:100%;text-align:center}}
 </style>
 <script src="../auth-guard.js?v=20260923-work-links-db1" data-access="admin"></script>
 </head>
@@ -121,7 +121,9 @@ function render(){
           '<td><div class="initial">'+esc(linkInitial(x))+'</div></td>'+
           '<td><div class="name">'+esc(x.name)+(x.active?'':' <span class="badge">مخفي</span>')+'</div><div class="note">'+esc(x.note||'')+'</div></td>'+
           '<td><div class="row-actions">'+
-            (href?'<a class="open" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">فتح</a>':'')+
+            (href?(x.id==='offline-transfer-public'
+              ?'<button class="copy" type="button" data-copy-link="'+esc(x.id)+'">نسخ الرابط</button>'
+              :'<a class="open" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">فتح</a><button class="copy" type="button" data-copy-link="'+esc(x.id)+'">نسخ</button>'):'')+
             '<button class="edit" type="button" data-edit-link="'+esc(x.id)+'">تعديل</button>'+
           '</div></td>'+
         '</tr>';
@@ -201,6 +203,21 @@ async function deleteGroup(){
   try{const r=await supabase.from('mytool_work_link_groups').delete().eq('id',editingGroupId);if(r.error)throw r.error;$('groupEditor').hidden=true;await load();msg('تم حذف المجموعة.','ok')}catch(e){msg(e?.message||'تعذر حذف المجموعة.','danger')}finally{$('deleteGroupBtn').disabled=false}
 }
 
+async function copyLink(id){
+  const row=links.find(x=>x.id===id);if(!row)return;
+  const href=validHref(row.url);if(!href)return msg('الرابط غير صالح.','danger');
+  let absolute=href;
+  try{absolute=new URL(href,location.href).href}catch(_e){}
+  try{
+    await navigator.clipboard.writeText(absolute);
+    msg('تم نسخ الرابط. افتح واتساب والصقه للشخص.','ok');
+  }catch(_e){
+    const ta=document.createElement('textarea');ta.value=absolute;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    const ok=document.execCommand('copy');ta.remove();
+    msg(ok?'تم نسخ الرابط. افتح واتساب والصقه للشخص.':'تعذر نسخ الرابط.',''+(ok?'ok':'danger'));
+  }
+}
+
 $('addLinkBtn').addEventListener('click',openNewLink);
 $('addGroupBtn').addEventListener('click',openNewGroup);
 $('refreshBtn').addEventListener('click',load);
@@ -211,6 +228,7 @@ $('deleteLinkBtn').addEventListener('click',deleteLink);
 $('saveGroupBtn').addEventListener('click',saveGroup);
 $('deleteGroupBtn').addEventListener('click',deleteGroup);
 $('groups').addEventListener('click',e=>{
+  const copyBtn=e.target.closest('[data-copy-link]');if(copyBtn)return copyLink(copyBtn.dataset.copyLink);
   const linkBtn=e.target.closest('[data-edit-link]');if(linkBtn)return openEditLink(linkBtn.dataset.editLink);
   const groupBtn=e.target.closest('[data-edit-group]');if(groupBtn)return openEditGroup(groupBtn.dataset.editGroup);
 });
