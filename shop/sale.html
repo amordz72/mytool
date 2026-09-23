@@ -144,7 +144,7 @@
         </div>
         <div class="row">
           <div class="field"><label>سعر البيع (دج)</label><input id="digitalPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="أدخل سعر البيع" required></div>
-          <div class="field"><label>طريقة التسوية</label><select id="digitalSettlement"><option value="cash">نقد</option><option value="credit">على الحساب / دين</option><option value="pending">لم تُحسم بعد</option></select></div>
+          <div class="field"><label>طريقة التسوية</label><select id="digitalSettlement"><option value="credit">على الحساب / دين</option><option value="cash">نقد</option><option value="pending">لم تُحسم بعد</option></select></div>
         </div>
         <div class="row">
           <div class="field"><label>مصدر التنفيذ</label><select id="digitalFulfillment"><option value="external_manual">منصة خارجية / يدوي</option><option value="card_registry">بطاقة من المخزون</option><option value="internal">تنفيذ داخلي</option><option value="other">مصدر آخر</option></select></div>
@@ -252,7 +252,7 @@
     setDigitalValue('digitalDestination',handoff?.destination||previous.destination||'')
     setDigitalValue('digitalPackage',genericPackageFromHandoff(handoff)||previous.package_text||'')
     setDigitalValue('digitalPrice',previous.sale_price??'')
-    setDigitalValue('digitalSettlement',previous.settlement_mode||'cash')
+    setDigitalValue('digitalSettlement',previous.settlement_mode||'credit')
     setDigitalValue('digitalFulfillment',previous.fulfillment_source||(handoff?.operation_type==='card'?'card_registry':'external_manual'))
     setDigitalValue('digitalExecution',previous.execution_state||'done')
     setDigitalValue('digitalNotes',previous.notes||'')
