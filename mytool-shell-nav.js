@@ -74,6 +74,7 @@
       ['notes','📝','الملاحظات','notes/'],
       ['document-reader','🧾','الوصولات','document-reader/'],
       ['chat-payments-reader','💬','قارئ مدفوعات الدردشة','chat-payments-reader/'],
+      ['offline-transfer','⇄','نقل البيانات بالملفات','offline-transfer/'],
       ['programs','🧰','البرامج','programs/'],
       ['links','↗','روابط العمل','links/'],
       ['qr','▣','QR','qr/']
