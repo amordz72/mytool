@@ -46,6 +46,11 @@
 .digital-sale-form .save-row{display:flex;gap:8px;align-items:center;margin-top:11px}
 .digital-sale-form .save-row .btn{flex:1}
 .digital-sale-form .financial-note{font-size:10px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:7px 8px;line-height:1.5;margin-top:9px}
+.customer-hint{font-size:10px;line-height:1.5;margin-top:5px;color:#64748b}
+.customer-hint.linked{color:#047857}.customer-hint.unlinked{color:#92400e}
+.customer-suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.customer-suggestions button{width:auto!important;padding:6px 9px!important;border-radius:999px!important;border:1px solid #bfdbfe!important;background:#fff!important;color:#1d4ed8!important;font-size:11px!important;font-weight:800!important}
+.customer-suggestions .score{opacity:.65;font-weight:700}
 @media(max-width:620px){.digital-sale-form .row{grid-template-columns:1fr}.digital-sale-form{padding:11px}}
 .action-sheet-overlay{position:fixed;inset:0;z-index:160;background:#0f172a7a;display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .action-sheet{width:min(100%,560px);background:#fff;border-radius:22px 22px 16px 16px;padding:14px;box-shadow:0 -18px 45px #0f172a33}
@@ -135,7 +140,14 @@
         <h3>بيانات البيع</h3>
         <p class="form-note">الحقول المعروفة من الطلب تتعبى تلقائيًا، وتقدر تعدلها قبل الحفظ.</p>
         <div class="row">
-          <div class="field"><label>العميل</label><input id="digitalCustomer" placeholder="اسم العميل"></div>
+          <div class="field">
+            <label>العميل</label>
+            <input id="digitalCustomer" list="digitalCustomerList" autocomplete="off" placeholder="اسم العميل">
+            <datalist id="digitalCustomerList"></datalist>
+            <input id="digitalCustomerPartyId" type="hidden">
+            <div id="digitalCustomerHint" class="customer-hint"></div>
+            <div id="digitalCustomerSuggestions" class="customer-suggestions hidden"></div>
+          </div>
           <div class="field"><label>الخدمة</label><input id="digitalServiceName" placeholder="مثال: Free Fire"><input id="digitalServiceCode" type="hidden"></div>
         </div>
         <div class="row">
@@ -185,7 +197,7 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
+  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],digitalCustomers:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
   const OPERATION_TYPES={
     product:{icon:'🛒',title:'منتج من المخزون',note:'بيع مرتبط بالمخزون الحالي.'},
@@ -224,6 +236,90 @@
   function setDigitalValue(id,value){
     const el=$(id);if(el)el.value=value==null?'':String(value)
   }
+  function customerKey(value){
+    return String(value||'').toLowerCase().normalize('NFKD')
+      .replace(/[\u064B-\u065F\u0670]/g,'')
+      .replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
+      .replace(/[^\p{L}\p{N}]+/gu,' ').replace(/\s+/g,' ').trim()
+  }
+  function customerByTypedName(value){
+    const key=customerKey(value);if(!key)return null
+    const matches=state.digitalCustomers.filter(p=>{
+      const vals=[p.display_name,p.primary_phone,...(p.aliases||[])].filter(Boolean)
+      return vals.some(v=>customerKey(v)===key)
+    })
+    return matches.length===1?matches[0]:null
+  }
+  function currentCustomerPartyId(){
+    const v=Number($('digitalCustomerPartyId')?.value||0)
+    return v>0?v:null
+  }
+  function renderDigitalCustomerList(){
+    const list=$('digitalCustomerList');if(!list)return
+    const seen=new Set()
+    list.innerHTML=state.digitalCustomers.filter(p=>{
+      const k=customerKey(p.display_name);if(!k||seen.has(k))return false;seen.add(k);return true
+    }).slice(0,1000).map(p=>'<option value="'+esc(p.display_name)+'"></option>').join('')
+  }
+  function setCustomerLinkedState(partyId,name,source='manual'){
+    const id=Number(partyId||0)||null
+    setDigitalValue('digitalCustomerPartyId',id||'')
+    const hint=$('digitalCustomerHint')
+    if(id){
+      const party=state.digitalCustomers.find(p=>Number(p.id)===id)
+      if(party&&name!==party.display_name)setDigitalValue('digitalCustomer',party.display_name)
+      if(hint){hint.textContent='مرتبط بحساب العميل #'+id+' — يمكن تعديل الاسم أو اختيار عميل آخر.';hint.className='customer-hint linked'}
+    }else if(hint){
+      const typed=$('digitalCustomer')?.value.trim()||''
+      hint.textContent=typed?'اسم مكتوب يدويًا وغير مربوط بعد. للدين اختر عميلًا موجودًا من الاقتراحات أو الدليل.':'اكتب اسم العميل أو اختره من الدليل.'
+      hint.className='customer-hint unlinked'
+    }
+    if(saleHandoff){
+      saleHandoff.customer_party_id=id
+      saleHandoff.customer_name=$('digitalCustomer')?.value.trim()||name||''
+      saleHandoff.customer_match_source=source
+    }
+  }
+  function resolveDigitalCustomerInput(){
+    const typed=$('digitalCustomer')?.value.trim()||''
+    const match=customerByTypedName(typed)
+    if(match)setCustomerLinkedState(match.id,match.display_name,'manual_exact')
+    else setCustomerLinkedState(null,typed,'manual_text')
+    return match
+  }
+  function renderCustomerSuggestions(handoff){
+    const box=$('digitalCustomerSuggestions');if(!box)return
+    const rows=Array.isArray(handoff?.customer_candidates)?handoff.customer_candidates:[]
+    if(!rows.length){box.classList.add('hidden');box.innerHTML='';return}
+    box.innerHTML=rows.slice(0,5).map(x=>'<button type="button" data-party-id="'+Number(x.party_id)+'" data-party-name="'+esc(x.party_name||'')+'">'+esc(x.party_name||'عميل')+' <span class="score">'+Math.round(Number(x.score||0))+'%</span></button>').join('')
+    box.classList.remove('hidden')
+  }
+  async function loadDigitalCustomers(){
+    if(state.mode!=='admin')return
+    const {data,error}=await supabase.from('money_party_directory')
+      .select('id,display_name,aliases,primary_phone,is_canonical,active,approval_status')
+      .eq('active',true).eq('approval_status','approved').order('display_name').limit(1000)
+    if(error)return
+    state.digitalCustomers=data||[]
+    renderDigitalCustomerList()
+    if(saleHandoff){
+      const currentId=Number(saleHandoff.customer_party_id||0)
+      if(currentId){
+        const party=state.digitalCustomers.find(p=>Number(p.id)===currentId)
+        if(party){setDigitalValue('digitalCustomer',party.display_name);setCustomerLinkedState(party.id,party.display_name,'existing')}
+      }else resolveDigitalCustomerInput()
+    }
+  }
+  async function rememberSaleCustomerIdentity(partyId){
+    const sender=saleHandoff?.customer_sender||saleHandoff?.parsed_payload?.whatsapp?.customer_sender||''
+    if(!sender||!partyId||state.mode!=='admin')return
+    const identity=customerKey(sender)
+    if(!identity)return
+    await supabase.from('mytool_customer_identity_rules').upsert({
+      source_kind:'whatsapp',identity_value:sender,identity_normalized:identity,party_id:Number(partyId),
+      status:'approved',confidence:100,evidence:{method:'sale_manual_link',order_id:saleHandoff?.order_id||null}
+    },{onConflict:'source_kind,identity_normalized'})
+  }
   function genericGameSignal(value){
     return /(?:جوهرة|جواهر|كرة|كرات|شدة|شدات|يوسي|\buc\b|diamond(?:s)?|coin(?:s)?|كوينز?|point(?:s)?|بوينت(?:س)?)/i.test(String(value||''))
   }
@@ -246,8 +342,12 @@
   }
   function fillDigitalSaleFields(handoff){
     const previous=handoff?.parsed_payload?.sale_capture||{}
-    setDigitalValue('digitalCustomer',handoff?.customer_name||previous.customer_name||'')
-    setDigitalValue('digitalServiceName',handoff?.service_name||handoff?.service_code||previous.service_name||'')
+    const sender=handoff?.customer_sender||handoff?.parsed_payload?.whatsapp?.customer_sender||''
+    const customerName=handoff?.customer_name||previous.customer_name||sender||''
+    const genericService=OPERATION_TYPES[handoff?.operation_type||selectedOperationType]?.title||''
+    setDigitalValue('digitalCustomer',customerName)
+    setDigitalValue('digitalCustomerPartyId',handoff?.customer_party_id||previous.customer_party_id||'')
+    setDigitalValue('digitalServiceName',handoff?.service_name||handoff?.service_code||previous.service_name||genericService)
     setDigitalValue('digitalServiceCode',handoff?.service_code||previous.service_code||'')
     setDigitalValue('digitalDestination',handoff?.destination||previous.destination||'')
     setDigitalValue('digitalPackage',genericPackageFromHandoff(handoff)||previous.package_text||'')
@@ -256,6 +356,9 @@
     setDigitalValue('digitalFulfillment',previous.fulfillment_source||(handoff?.operation_type==='card'?'card_registry':'external_manual'))
     setDigitalValue('digitalExecution',previous.execution_state||'done')
     setDigitalValue('digitalNotes',previous.notes||'')
+    if(handoff?.customer_party_id)setCustomerLinkedState(handoff.customer_party_id,customerName,'existing')
+    else setCustomerLinkedState(null,customerName,'sender')
+    renderCustomerSuggestions(handoff)
   }
   async function saveDigitalSaleDraft(event){
     event?.preventDefault()
@@ -264,6 +367,8 @@
     const destination=$('digitalDestination')?.value.trim()||''
     const packageText=$('digitalPackage')?.value.trim()||''
     const customerName=$('digitalCustomer')?.value.trim()||''
+    resolveDigitalCustomerInput()
+    const customerPartyId=currentCustomerPartyId()
     const price=Number($('digitalPrice')?.value)
     const settlement=$('digitalSettlement')?.value||'cash'
     const fulfillment=$('digitalFulfillment')?.value||'external_manual'
@@ -272,11 +377,11 @@
     if(!serviceName&&!serviceCode)return notify('حدد الخدمة.','error')
     if(['game','external_flexy','card'].includes(selectedOperationType)&&!destination)return notify('أدخل الرقم أو Player ID.','error')
     if(!Number.isFinite(price)||price<0)return notify('أدخل سعر بيع صحيح.','error')
-    if(settlement==='credit'&&!saleHandoff?.customer_party_id)return notify('البيع على الحساب يحتاج عميلًا مربوطًا، وليس اسمًا فقط.','error')
+    if(settlement==='credit'&&!customerPartyId)return notify('البيع على الحساب يحتاج اختيار عميل موجود من الدليل أو الاقتراحات. يمكنك تعديل الاسم يدويًا، لكن الدين لا يُسجل على اسم غير مربوط.','error')
     if(!saleHandoff?.order_id)return notify('الحقول جاهزة، لكن الحفظ يحتاج طلبًا محفوظًا. افتح العملية من «الطلبات» ثم اضغط تسجيل بيع.','error')
     const capture={
       operation_type:selectedOperationType||saleHandoff.operation_type||'service',
-      customer_party_id:saleHandoff.customer_party_id||null,
+      customer_party_id:customerPartyId,
       customer_name:customerName,
       service_code:serviceCode||saleHandoff.service_code||null,
       service_name:serviceName,
@@ -295,6 +400,10 @@
       service_code:capture.service_code,
       package_text:packageText||null,
       destination:destination||null,
+      customer_party_id:customerPartyId,
+      customer_resolution:customerPartyId?'confirmed':'unassigned',
+      customer_match_source:customerPartyId?'correction':'manual_text',
+      financial_state:customerPartyId?'not_posted':'blocked_unassigned',
       parsed_payload:parsed,
       status:execution==='done'?'success':execution==='review'?'review':'in_progress',
       updated_at:new Date().toISOString()
@@ -304,9 +413,11 @@
     try{
       const {error}=await supabase.from('mytool_service_orders').update(patch).eq('id',saleHandoff.order_id)
       if(error)throw error
-      saleHandoff={...saleHandoff,...patch,parsed_payload:parsed,package_text:packageText,destination}
+      saleHandoff={...saleHandoff,...patch,parsed_payload:parsed,package_text:packageText,destination,customer_name:customerName,customer_party_id:customerPartyId}
+      if(customerPartyId){try{await rememberSaleCustomerIdentity(customerPartyId)}catch(_e){}}
       sessionStorage.setItem(SALE_HANDOFF_KEY,JSON.stringify(saleHandoff))
-      notify('تم حفظ بيانات البيع داخل الطلب. السعر والتسوية والتنفيذ محفوظة للمراجعة المالية.','ok')
+      $('handoffCustomer').textContent=customerName||'غير محدد'
+      notify('تم حفظ بيانات البيع داخل الطلب. التعبئة قابلة للتعديل، وربط العميل يُحفظ عند اختياره من الدليل.','ok')
     }catch(error){
       notify('تعذر حفظ بيانات البيع: '+(error?.message||error),'error')
     }finally{
@@ -337,7 +448,7 @@
     const box=$('orderHandoff')
     if(!box)return false
     box.classList.remove('hidden')
-    $('handoffCustomer').textContent=handoff.customer_name||'غير محدد'
+    $('handoffCustomer').textContent=handoff.customer_name||handoff.customer_sender||handoff.parsed_payload?.whatsapp?.customer_sender||'غير محدد'
     $('handoffService').textContent=handoff.service_name||handoff.service_code||'غير محددة'
     $('handoffPackage').textContent=genericPackageFromHandoff(handoff)||'—'
     $('handoffDestination').textContent=handoff.destination||'—'
@@ -355,6 +466,14 @@
   }
 
   $('digitalSaleForm')?.addEventListener('submit',saveDigitalSaleDraft)
+  $('digitalCustomer')?.addEventListener('input',()=>resolveDigitalCustomerInput())
+  $('digitalCustomer')?.addEventListener('change',()=>resolveDigitalCustomerInput())
+  $('digitalCustomerSuggestions')?.addEventListener('click',event=>{
+    const btn=event.target.closest('button[data-party-id]');if(!btn)return
+    const id=Number(btn.dataset.partyId),name=btn.dataset.partyName||''
+    setDigitalValue('digitalCustomer',name)
+    setCustomerLinkedState(id,name,'suggestion')
+  })
   $('openOperationPicker')?.addEventListener('click',openOperationPicker)
   $('closeOperationPicker')?.addEventListener('click',closeOperationPicker)
   $('operationSheetOverlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeOperationPicker()})
@@ -648,7 +767,15 @@
   consumeSaleHandoff()
 
   async function init(){
-    try{await detectSession();if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}if(state.mode==='worker')await loadWorker();else await loadAdmin();renderBase();applyScreenMode();await loadInventory(state.defaultBranchId);if(document.body.dataset.screen==='transfers'&&state.permissions.can_transfer)await loadTransfers();notify('العمليات جاهزة حسب الفرع.','ok')}catch(err){if(expireInvalidWorkerSession(err))return;notify('تعذر تشغيل الصفحة: '+err.message,'error')}
+    try{
+      await detectSession()
+      if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}
+      if(state.mode==='worker')await loadWorker();else await loadAdmin()
+      await loadDigitalCustomers()
+      renderBase();applyScreenMode();await loadInventory(state.defaultBranchId)
+      if(document.body.dataset.screen==='transfers'&&state.permissions.can_transfer)await loadTransfers()
+      notify('العمليات جاهزة حسب الفرع.','ok')
+    }catch(err){if(expireInvalidWorkerSession(err))return;notify('تعذر تشغيل الصفحة: '+err.message,'error')}
   }
   init()
 </script>
