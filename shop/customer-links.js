@@ -68,6 +68,27 @@ function partyAccountCount(partyId){
   if(!id)return 0;
   return sources.filter(x=>Number(x.linked_party_id||0)===id).length;
 }
+function partyPlatformCount(partyId){
+  const id=Number(partyId||0);
+  if(!id)return 0;
+  return new Set(
+    sources
+      .filter(x=>Number(x.linked_party_id||0)===id)
+      .map(x=>String(x.platform_key||'').trim())
+      .filter(Boolean)
+  ).size;
+}
+function crossPlatformPartyCount(){
+  const byParty=new Map();
+  for(const s of sources){
+    const id=Number(s.linked_party_id||0);
+    const platform=String(s.platform_key||'').trim();
+    if(!id||!platform)continue;
+    if(!byParty.has(id))byParty.set(id,new Set());
+    byParty.get(id).add(platform);
+  }
+  return [...byParty.values()].filter(set=>set.size>=2).length;
+}
 function safeError(error){
   return String(error?.message||error||'خطأ غير معروف').replace(/(eyJ[a-zA-Z0-9._-]{20,}|sb_[a-zA-Z0-9_-]{20,})/g,'[محجوب]');
 }
@@ -161,29 +182,37 @@ function renderMetrics(){
   const total=sources.length;
   const unlinked=sources.filter(x=>x.link_status==='unlinked').length;
   const pending=sources.filter(x=>x.link_status==='pending_review').length;
-  const linked=sources.filter(x=>x.link_status==='linked').length;
+  const registered=sources.filter(x=>x.link_status==='linked').length;
   const conflict=sources.filter(x=>x.link_status==='conflict').length;
+  const crossPlatform=crossPlatformPartyCount();
+
   $('mSources').textContent=total;
   $('mUnlinked').textContent=unlinked;
   $('mPending').textContent=pending;
-  $('mLinked').textContent=linked;
+  $('mLinked').textContent=registered;
   $('mConflict').textContent=conflict;
+  if($('mCrossPlatform'))$('mCrossPlatform').textContent=crossPlatform;
+
   const summary=$('metricsSummary');
   if(summary){
     const work=unlinked+pending+conflict;
-    summary.textContent=work>0?(total+' حساب · '+work+' يحتاج تدخل'):(total+' حساب · الكل مربوط');
+    const parts=[total+' حساب مصدر',crossPlatform+' عميل مجمّع بين منصات'];
+    if(work>0)parts.push(work+' يحتاج تدخل');
+    summary.textContent=parts.join(' · ');
   }
+
   const visibility=[
-    ['metricSources',total],
-    ['metricUnlinked',unlinked],
-    ['metricPending',pending],
-    ['metricLinked',linked],
-    ['metricConflict',conflict]
+    ['metricSources',total,true],
+    ['metricLinked',registered,false],
+    ['metricCrossPlatform',crossPlatform,true],
+    ['metricUnlinked',unlinked,false],
+    ['metricPending',pending,false],
+    ['metricConflict',conflict,false]
   ];
-  for(const [id,count] of visibility){
+  for(const [id,count,keepZero] of visibility){
     const el=$(id);
     if(!el)continue;
-    el.hidden=id!=='metricSources'&&id!=='metricLinked'&&count===0;
+    el.hidden=!keepZero&&count===0;
   }
 }
 function renderBulk(){
@@ -224,10 +253,11 @@ function renderSources(){
   $('sources').innerHTML=chunk.map(s=>{
     const name=s.display_name||[s.first_name,s.last_name].filter(Boolean).join(' ')||s.username;
     const linkedCount=partyAccountCount(s.linked_party_id);
+    const platformCount=partyPlatformCount(s.linked_party_id);
     const linkedLine=s.link_status==='linked'
-      ? '<div class="linked-line">'+(linkedCount>1
-          ? 'مجمّع تحت العميل «'+esc(s.linked_party_name||('عميل #'+s.linked_party_id))+'» · '+linkedCount+' حسابات'
-          : 'هوية MyTool: '+esc(s.linked_party_name||('عميل #'+s.linked_party_id)))+'</div>'
+      ? '<div class="linked-line">'+(platformCount>=2
+          ? 'مجمّع بين '+platformCount+' منصات تحت العميل «'+esc(s.linked_party_name||('عميل #'+s.linked_party_id))+'» · '+linkedCount+' حسابات'
+          : 'مسجل في MyTool فقط: '+esc(s.linked_party_name||('عميل #'+s.linked_party_id)))+'</div>'
       : '';
     const unlink=s.link_status==='linked'&&s.link_id
       ? '<button class="btn danger" data-unlink="'+s.link_id+'" data-source="'+s.id+'" type="button">إلغاء الربط</button>'
@@ -239,7 +269,7 @@ function renderSources(){
     const checked=selectedSources.has(Number(s.id));
     return '<div class="source-card'+(checked?' selected':'')+'" data-source-card="'+s.id+'">'+
       '<div class="source-top"><label class="source-select"><input type="checkbox" data-select-source="'+s.id+'" '+(checked?'checked':'')+'><span><div class="name">'+esc(name)+'</div><div class="username">'+esc(s.username)+'</div></span></label>'+
-      '<div class="badges"><span class="badge platform">'+esc(platformLabel(s.platform_key))+'</span><span class="badge '+esc(s.link_status)+'">'+esc(s.link_status==='linked'&&partyAccountCount(s.linked_party_id)>1?'مجمّع '+partyAccountCount(s.linked_party_id)+' حسابات':statusLabel(s.link_status))+'</span></div></div>'+
+      '<div class="badges"><span class="badge platform">'+esc(platformLabel(s.platform_key))+'</span><span class="badge '+esc(s.link_status)+'">'+esc(s.link_status==='linked'&&platformCount>=2?'مجمّع بين '+platformCount+' منصات':statusLabel(s.link_status))+'</span></div></div>'+
       (contactLine(s)?'<div class="meta">'+contactLine(s)+'</div>':'')+
       linkedLine+
       primaryActions+manualBox+
@@ -270,7 +300,7 @@ function suggestionSide(prefix,s){
   const person=[s[prefix+'_first_name'],s[prefix+'_last_name']].filter(Boolean).join(' ').trim();
   const name=person||s[prefix+'_username']||'بدون اسم شخص';
   const party=s[prefix+'_party_name'];
-  return '<div class="suggestion-side"><b>'+esc(name)+'</b><div class="username">'+esc(s[prefix+'_username']||'')+'</div><div class="meta">'+esc(platformLabel(s[prefix+'_platform']))+(party?' · مربوط بـ '+esc(party):' · غير مربوط')+'</div></div>';
+  return '<div class="suggestion-side"><b>'+esc(name)+'</b><div class="username">'+esc(s[prefix+'_username']||'')+'</div><div class="meta">'+esc(platformLabel(s[prefix+'_platform']))+(party?' · مسجل كـ '+esc(party):' · غير مسجل')+'</div></div>';
 }
 function renderSuggestions(){
   const active=suggestions.filter(s=>['pending','conflict'].includes(s.status));
