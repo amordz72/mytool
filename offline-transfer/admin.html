@@ -18,7 +18,7 @@
     .list{display:grid;gap:10px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
     .rowhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.name{font-size:17px;font-weight:900}.meta{color:var(--muted);font-size:11px;line-height:1.7;margin-top:4px;word-break:break-word}
     .status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:900;background:#f1f5f9;color:#475569}.status.active{background:#ecfdf3;color:var(--ok)}.status.pending,.status.pending_review{background:#fff7ed;color:var(--warn)}.status.rejected,.status.blocked{background:#fff1f0;color:var(--danger)}
-    .actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.actions input{flex:1;min-width:180px;border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+    .actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.actions input,.actions select{flex:1;min-width:180px;border:1px solid var(--line);border-radius:11px;padding:9px 11px;background:#fff}
     .items{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;display:grid;gap:5px}.item{display:flex;justify-content:space-between;gap:10px;font-size:13px}.total{font-size:19px;font-weight:900;color:var(--accent)}
     .msg{margin-bottom:12px;padding:10px 12px;border-radius:12px;background:#eef2ff;color:#3730a3;font-weight:800;font-size:13px}.msg.err{background:#fff1f0;color:var(--danger)}.empty{text-align:center;color:var(--muted);padding:22px;border:1px dashed var(--line);border-radius:14px;background:#fff}
     @media(max-width:640px){.wrap{padding:12px}.top{align-items:flex-start}.title h1{font-size:21px}.rowhead{flex-direction:column}.actions{display:grid;grid-template-columns:1fr 1fr}.actions input{grid-column:1/-1;width:100%}.actions .wide{grid-column:1/-1}}
@@ -95,8 +95,13 @@ function renderDevices(){
       '<span class="status '+esc(d.status)+'">'+esc(statusLabel(d.status))+'</span></div>'+
       '<div class="actions">'+
         '<input data-name value="'+esc(d.canonical_name||d.entered_name||'')+'" placeholder="الاسم المعتمد">'+
+        '<select data-class>'+
+          '<option value="standard" '+(d.account_class==='standard'?'selected':'')+'>مستخدم عادي</option>'+
+          '<option value="staff" '+(d.account_class==='staff'?'selected':'')+'>عامل</option>'+
+          '<option value="service_partner" '+(d.account_class==='service_partner'?'selected':'')+'>حساب خدمة</option>'+
+        '</select>'+
         (pending?'<button class="btn primary" data-action="approve" type="button">اعتماد الجهاز</button>':'')+
-        (active?'<button class="btn secondary" data-action="rename" type="button">حفظ الاسم</button>':'')+
+        (active?'<button class="btn secondary" data-action="rename" type="button">حفظ الاسم والتصنيف</button>':'')+
         (d.status!=='blocked'?'<button class="btn danger" data-action="block" type="button">حظر</button>':'')+
         (pending?'<button class="btn danger" data-action="reject" type="button">رفض</button>':'')+
       '</div>'+
@@ -108,7 +113,14 @@ function renderDevices(){
 async function actDevice(card,action){
   const id=card.dataset.device;
   const name=card.querySelector('[data-name]')?.value?.trim()||null;
+  const accountClass=card.querySelector('[data-class]')?.value||'standard';
   try{
+    if(action==='approve'||action==='rename'){
+      await rpc('admin_m2_set_account_class',{
+        p_link_id:id,
+        p_account_class:accountClass
+      });
+    }
     await rpc('admin_m2_review_device',{
       p_link_id:id,
       p_action:action,
@@ -116,7 +128,7 @@ async function actDevice(card,action){
       p_party_id:null,
       p_reason:action==='reject'?'رفض من الإدارة':action==='block'?'حظر من الإدارة':null
     });
-    msg(action==='approve'?'تم اعتماد الجهاز.':action==='rename'?'تم تحديث الاسم.':action==='block'?'تم حظر الجهاز.':'تم رفض الجهاز.');
+    msg(action==='approve'?'تم اعتماد الجهاز وتصنيف الحساب.':action==='rename'?'تم تحديث الاسم والتصنيف.':action==='block'?'تم حظر الجهاز.':'تم رفض الجهاز.');
     await Promise.all([loadDevices(),loadReports()]);
   }catch(e){msg(e.message||'تعذر تنفيذ العملية.',true)}
 }
