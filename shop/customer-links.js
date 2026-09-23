@@ -314,8 +314,13 @@ function renderParties(){
     '<button class="btn secondary" data-party-save="'+p.id+'" type="button">حفظ</button></div></div>').join('');
   document.querySelectorAll('[data-party-save]').forEach(b=>b.onclick=()=>saveParty(Number(b.dataset.partySave)));
 }
+function updateSourceVisibilityButton(){
+  const b=$('showAllSourcesBtn');if(!b)return;
+  const showingAll=$('statusFilter').value==='all';
+  b.textContent=showingAll?'إخفاء الحسابات السليمة':'عرض كل حسابات المصادر';
+}
 function renderAll(){
-  renderMetrics();renderIdentityReviews();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();
+  renderMetrics();renderIdentityReviews();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();updateSourceVisibilityButton();
 }
 async function identify(){
   const now=Date.now();
@@ -935,7 +940,12 @@ $('clearImportsBtn').onclick=clearImportQueue;
 $('smartBtn').onclick=generateSuggestions;
 $('search').oninput=()=>{page=1;renderSources()};
 $('platformFilter').onchange=()=>{page=1;renderSources()};
-$('statusFilter').onchange=()=>{page=1;renderSources()};
+$('statusFilter').onchange=()=>{page=1;renderSources();updateSourceVisibilityButton()};
+$('showAllSourcesBtn').onclick=()=>{
+  const f=$('statusFilter');
+  f.value=f.value==='all'?'work':'all';
+  page=1;selectedSources.clear();renderSources();renderBulk();updateSourceVisibilityButton();
+};
 $('prevPage').onclick=()=>{page=Math.max(1,page-1);renderSources();window.scrollTo({top:$('sources').offsetTop-100,behavior:'smooth'})};
 $('nextPage').onclick=()=>{page+=1;renderSources();window.scrollTo({top:$('sources').offsetTop-100,behavior:'smooth'})};
 window.addEventListener('online',()=>{renderConnectivity();void load()});
