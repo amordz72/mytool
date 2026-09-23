@@ -5,7 +5,7 @@
   const rootPath=rootUrl.pathname.endsWith('/')?rootUrl.pathname:rootUrl.pathname+'/';
   const rel=location.pathname.startsWith(rootPath)?location.pathname.slice(rootPath.length).replace(/^\/+|\/+$/g,''):'';
   const currentApp=(document.body?.dataset?.mytoolApp||script?.dataset?.app||rel.split('/')[0]||'').trim();
-  let mounted=false,backdrop,motherDrawer,localDrawer,localButton,scrollTopButton,flexyBellButton,flexyBellBadge,flexyBellObserver;
+  let mounted=false,backdrop,motherDrawer,localDrawer,localButton,scrollTopButton;
 
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const url=(p)=>new URL(p,rootUrl).href;
@@ -164,40 +164,6 @@
     const threshold=Math.max(420,Math.round(window.innerHeight*.65));
     scrollTopButton.classList.toggle('show',window.scrollY>threshold);
   }
-  function isFlexyIndex(){
-    if(currentApp!=='flexy')return false;
-    const file=(location.pathname.split('/').pop()||'index.html').toLowerCase();
-    return file==='index.html';
-  }
-  function syncFlexyBellBadge(){
-    if(!flexyBellBadge)return;
-    const source=document.querySelector('.flexy-alerts-trigger [data-flexy-alert-count]');
-    const count=Number(String(source?.textContent||'0').replace(/\D/g,''))||0;
-    flexyBellBadge.textContent=String(count);
-    flexyBellBadge.classList.toggle('zero',count===0);
-  }
-  function bindFlexyBell(){
-    flexyBellButton=document.querySelector('.mytool-shell-flexy-bell');
-    flexyBellBadge=flexyBellButton?.querySelector('.mytool-shell-flexy-badge')||null;
-    if(!flexyBellButton)return;
-    const attachSourceObserver=()=>{
-      const source=document.querySelector('.flexy-alerts-trigger [data-flexy-alert-count]');
-      if(!source)return false;
-      flexyBellObserver?.disconnect();
-      flexyBellObserver=new MutationObserver(syncFlexyBellBadge);
-      flexyBellObserver.observe(source,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['class']});
-      syncFlexyBellBadge();
-      return true;
-    };
-    if(!attachSourceObserver())setTimeout(attachSourceObserver,250);
-    flexyBellButton.addEventListener('click',()=>{
-      const trigger=document.querySelector('.flexy-alerts-trigger[data-bs-target="#flexyAlertsDrawer"]');
-      if(trigger){trigger.click();setTimeout(syncFlexyBellBadge,300);return}
-      const drawer=document.getElementById('flexyAlertsDrawer');
-      if(drawer&&window.bootstrap?.Offcanvas)window.bootstrap.Offcanvas.getOrCreateInstance(drawer).show();
-    });
-  }
-
   function mountScrollTop(){
     if(scrollTopButton)return;
     scrollTopButton=document.createElement('button');
