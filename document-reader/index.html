@@ -8,7 +8,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="mytool-build" content="20260922-docflow14">
+<meta name="mytool-build" content="20260923-docflow15">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -41,7 +41,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <body><main class="wrap">
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>رفع → تحليل → حفظ <span class="hero-version">نسخة 19</span></p>
+  <p>رفع → تحليل → حفظ <span class="hero-version">نسخة 20</span></p>
 </section>
 
 <section class="card security">
@@ -3340,8 +3340,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return out;
   }
 
-  async function recognizeFocusedRegion(worker,canvas,{digitsOnly=false,psm='7',threshold=205,scale=3}={}){
-    const prepared=enhanceOcrCrop(canvas,{scale,threshold});
+  async function recognizeFocusedRegion(worker,canvas,{digitsOnly=false,psm='7',threshold=205,scale=3,preprocess=true}={}){
+    const prepared=preprocess?enhanceOcrCrop(canvas,{scale,threshold}):canvas;
     try{
       await worker.setParameters({
         tessedit_pageseg_mode:String(psm),
@@ -3426,30 +3426,43 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   async function tryRecoverBnaDate(worker,degrees){
     try{
       progressTitle.textContent='تحسين قراءة تاريخ BNA…';
-      progressText.textContent='قراءة سطر Le + التاريخ والوقت من رأس الوصل.';
+      progressText.textContent='قراءة سطر التاريخ مباشرة من الرأس ثم تحسينه فقط عند الحاجة.';
       const page=drawRotatedCanvas(sourceImage,degrees,3000);
       const regions=[
-        cropCanvasFraction(page,0.54,0.145,0.38,0.065),
-        cropCanvasFraction(page,0.48,0.125,0.46,0.095),
-        cropCanvasFraction(page,0.42,0.105,0.54,0.13)
+        cropCanvasFraction(page,0.56,0.140,0.35,0.060),
+        cropCanvasFraction(page,0.54,0.135,0.38,0.075),
+        cropCanvasFraction(page,0.48,0.120,0.46,0.100)
+      ];
+      const attempts=[
+        {preprocess:false,psm:'6',threshold:210,scale:1,label:'خام'},
+        {preprocess:false,psm:'11',threshold:210,scale:1,label:'خام واسع'},
+        {preprocess:true,psm:'6',threshold:225,scale:2,label:'محسن'}
       ];
       let best=null;
       for(const region of regions){
-        const result=await recognizeFocusedRegion(worker,region,{digitsOnly:false,psm:'7',threshold:210,scale:3});
-        const raw=cleanText(result.data?.text||'');
-        const parsed=parseBnaHeaderDateRegion(raw);
-        if(!parsed)continue;
-        const confidence=Number(result.data?.confidence||0);
-        const candidate={
-          value:parsed.date,
-          time:parsed.time,
-          source:'قراءة مركزة لسطر التاريخ في رأس BNA'+(parsed.time?' — الوقت '+parsed.time:''),
-          status:confidence>=45?'read':'review',
-          confidence,
-          raw:parsed.raw
-        };
-        if(!best||candidate.confidence>best.confidence)best=candidate;
-        if(confidence>=45)return candidate;
+        for(const attempt of attempts){
+          const result=await recognizeFocusedRegion(worker,region,{
+            digitsOnly:false,
+            psm:attempt.psm,
+            threshold:attempt.threshold,
+            scale:attempt.scale,
+            preprocess:attempt.preprocess
+          });
+          const raw=cleanText(result.data?.text||'');
+          const parsed=parseBnaHeaderDateRegion(raw);
+          if(!parsed)continue;
+          const confidence=Number(result.data?.confidence||0);
+          const candidate={
+            value:parsed.date,
+            time:parsed.time,
+            source:'قراءة مركزة '+attempt.label+' لسطر تاريخ BNA'+(parsed.time?' — الوقت '+parsed.time:''),
+            status:confidence>=35?'read':'review',
+            confidence,
+            raw:parsed.raw
+          };
+          if(!best||candidate.confidence>best.confidence)best=candidate;
+          if(confidence>=35)return candidate;
+        }
       }
       return best;
     }catch(_e){
@@ -3483,53 +3496,78 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   async function tryRecoverBnaDocumentNumber(worker,degrees){
     try{
       progressTitle.textContent='تحسين قراءة رقم البوردرو…';
-      progressText.textContent='تكبير خانة الرقم وقراءتها كأرقام فقط.';
+      progressText.textContent='قراءة خانة No/رقم كما هي أولًا؛ المعالجة بالأرقام فقط احتياط.';
       const page=drawRotatedCanvas(sourceImage,degrees,3000);
       const regions=[
-        // الصورة الحقيقية 310765/310813: "No/N° + الرقم" في الشريط الأخضر العلوي.
-        {canvas:cropCanvasFraction(page,0.595,0.085,0.15,0.055),kind:'exact'},
-        {canvas:cropCanvasFraction(page,0.565,0.075,0.21,0.075),kind:'number-field'},
-        {canvas:cropCanvasFraction(page,0.50,0.060,0.31,0.095),kind:'number-line'}
+        // هذه الإحداثيات اختُبرت على صورة 310765 الحقيقية:
+        // القصاصة الواسعة قليلًا كانت تُفسد OCR، بينما هذه النافذة تعطي "No 310765".
+        {canvas:cropCanvasFraction(page,0.602,0.089,0.128,0.046),kind:'exact'},
+        {canvas:cropCanvasFraction(page,0.596,0.087,0.138,0.050),kind:'exact-alt'},
+        {canvas:cropCanvasFraction(page,0.575,0.078,0.19,0.070),kind:'field'}
+      ];
+      const attempts=[
+        // الأهم: على صورة 310765 الحقيقية، القصاصة الخام تقرأ "No 310765".
+        // التحويل الأسود/الأبيض السابق كان يمحو تفاصيل الحروف/الأرقام ويُرجع نتيجة فارغة.
+        {preprocess:false,digitsOnly:false,psm:'7',threshold:205,scale:1,label:'خام'},
+        {preprocess:false,digitsOnly:false,psm:'6',threshold:205,scale:1,label:'خام متعدد'},
+        {preprocess:false,digitsOnly:true,psm:'7',threshold:205,scale:1,label:'أرقام خام'},
+        {preprocess:true,digitsOnly:false,psm:'7',threshold:225,scale:2,label:'محسن'}
       ];
 
       const candidates=[];
       for(const region of regions){
-        const result=await recognizeFocusedRegion(worker,region.canvas,{
-          digitsOnly:true,
-          psm:'7',
-          threshold:205,
-          scale:4
-        });
-        const raw=cleanText(result.data?.text||'');
-        const value=parseBnaDocumentNumberRegion(raw);
-        if(!value)continue;
-        const confidence=Number(result.data?.confidence||0);
-        candidates.push({value,confidence,raw,kind:region.kind});
-        if(region.kind==='exact'&&confidence>=30){
-          return {
+        for(const attempt of attempts){
+          const result=await recognizeFocusedRegion(worker,region.canvas,{
+            digitsOnly:attempt.digitsOnly,
+            psm:attempt.psm,
+            threshold:attempt.threshold,
+            scale:attempt.scale,
+            preprocess:attempt.preprocess
+          });
+          const raw=cleanText(result.data?.text||'');
+          const value=parseBnaDocumentNumberRegion(raw);
+          if(!value)continue;
+          const confidence=Number(result.data?.confidence||0);
+          candidates.push({
             value,
-            source:'قراءة مركزة ومكبرة من خانة رقم Bordereau — أرقام فقط',
-            status:confidence>=42?'read':'review',
             confidence,
-            raw
-          };
+            raw,
+            kind:region.kind,
+            method:attempt.label,
+            cleanSignal:/\b(?:N\s*[°ºo.]?|NO)\s*[:.]?\s*[0-9]{5,8}\b/i.test(raw)
+          });
+
+          // Exact raw crop + visible No/N° label is the strongest evidence.
+          if(region.kind==='exact'&&attempt.preprocess===false&&attempt.digitsOnly===false){
+            return {
+              value,
+              source:'قراءة خام مباشرة من خانة No في Bordereau',
+              status:'read',
+              confidence,
+              raw
+            };
+          }
         }
       }
 
       if(!candidates.length)return null;
       const grouped=new Map();
       candidates.forEach(item=>{
-        const group=grouped.get(item.value)||{value:item.value,count:0,best:item};
+        const group=grouped.get(item.value)||{value:item.value,count:0,clean:0,best:item};
         group.count++;
+        if(item.cleanSignal)group.clean++;
         if(item.confidence>group.best.confidence)group.best=item;
         grouped.set(item.value,group);
       });
-      const ranked=[...grouped.values()].sort((a,b)=>b.count-a.count||b.best.confidence-a.best.confidence);
-      const chosen=ranked[0].best;
+      const ranked=[...grouped.values()].sort((a,b)=>
+        b.clean-a.clean||b.count-a.count||b.best.confidence-a.best.confidence
+      );
+      const winner=ranked[0];
+      const chosen=winner.best;
       return {
         value:chosen.value,
-        source:'قراءة مركزة ومكبرة لخانة Bordereau — أرقام فقط',
-        status:ranked[0].count>=2||chosen.confidence>=50?'read':'review',
+        source:'قراءة مركزة لخانة Bordereau — '+chosen.method,
+        status:winner.clean>=1||winner.count>=2||chosen.confidence>=55?'read':'review',
         confidence:chosen.confidence,
         raw:chosen.raw
       };
