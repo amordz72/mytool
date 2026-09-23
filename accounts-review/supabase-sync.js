@@ -48,7 +48,7 @@ async function rpc(ownerName,workspaceName,params={}){
 }
 function displayName(r){return String(r?.store||[r?.first,r?.last].filter(Boolean).join(' ').trim()||r?.username||'').trim()}
 function rowPayload(r){
-  const username=String(r?.username||r?.email||r?.phone||r?.externalId||r?.key||'').trim();
+  const username=String(r?.username||'').trim();
   if(!username)return null;
   return{
     username,
@@ -106,12 +106,8 @@ async function syncOne(source){
   return total;
 }
 function identityKeys(r){
-  const out=[];
-  const ext=String(r?.externalId||r?.external_account_id||'').trim();if(ext)out.push('x:'+ext);
-  const u=norm(r?.username);if(u)out.push('u:'+u);
-  const p=String(r?.phone||'').replace(/\D/g,'');if(p)out.push('p:'+p.replace(/^00213/,'213').replace(/^0(?=[5-7]\d{8}$)/,'213'));
-  const e=norm(r?.email);if(e)out.push('e:'+e);
-  return out;
+  const u=norm(r?.username);
+  return u?['u:'+u]:[];
 }
 function remoteToRow(r){
   return{
@@ -132,6 +128,8 @@ function remoteToRow(r){
     firstSeenAt:r.first_seen_at||null,
     lastSeenAt:r.last_seen_at||null,
     lastFinancialChangeAt:r.last_financial_change_at||null,
+    missingFromLatestSnapshot:Boolean(r.missing_from_latest_snapshot),
+    missingSinceAt:r.missing_since_at||null,
     cloudSourceAccountId:r.id
   };
 }
