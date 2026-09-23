@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0f766e">
+<title>تغذية ماستر العملاء — MyTool</title>
+<link rel="stylesheet" href="shop-common.css?v=20260923-master-feed1">
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#64748b;--line:#e2e8f0;--main:#0f766e;--main2:#14b8a6;--warn:#9a3412;--danger:#b91c1c}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:var(--text)}[hidden]{display:none!important}
+.page{max-width:1180px;margin:auto;padding:12px 12px 120px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:11px;box-shadow:0 5px 16px rgba(15,23,42,.04)}
+h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 8px}.muted{font-size:12px;color:var(--muted);line-height:1.6}
+.message{padding:10px 12px;border-radius:12px;margin-bottom:10px;font-size:12px;font-weight:800}.info{background:#eff6ff;color:#1d4ed8}.ok{background:#ecfdf5;color:#047857}.warn{background:#fff7ed;color:#9a3412}.error{background:#fff1f2;color:#b91c1c}
+.hero{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.hero-actions{display:flex;gap:7px;flex-wrap:wrap}.btn{border:0;border-radius:11px;padding:10px 12px;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.btn.secondary{background:#fff;color:var(--main);border:1px solid #99d5cf}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}.btn:disabled{opacity:.5;cursor:not-allowed}
+.mode-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}.mode-tabs button{width:auto}.mode-tabs button.active{background:var(--main);color:#fff}
+.master-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}.field label{display:block;font-size:11px;font-weight:900;margin-bottom:5px}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff;font:inherit}
+.master-result,.candidate{border:1px solid var(--line);border-radius:12px;padding:9px;background:#fafafa}.master-result{margin-top:7px;cursor:pointer}.master-result.selected{border-color:#14b8a6;background:#f0fdfa}.master-key{font:800 11px ui-monospace,SFMono-Regular,Consolas,monospace;color:#0f766e}.master-name{font-weight:900;margin-top:3px}.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.chip{font-size:10px;padding:4px 7px;border-radius:999px;background:#f1f5f9;color:#475569}.chip.warn{background:#fff7ed;color:#9a3412}
+.platforms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.platform-card{border:1px solid var(--line);border-radius:16px;padding:11px;background:#fbfdff;min-width:0}.platform-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}.platform-head h3{margin:0;font-size:15px}.count{font-size:10px;color:var(--muted)}
+.search{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px;font:inherit}.results{display:grid;gap:6px;margin-top:8px;max-height:330px;overflow:auto}.candidate{cursor:pointer}.candidate:hover{border-color:#94a3b8}.candidate.selected{border-color:#14b8a6;background:#ecfdf5}.candidate .user{direction:ltr;text-align:right;font:800 12px ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-all}.candidate .name{font-weight:900;margin-top:3px}.candidate .meta{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}.linked-note{font-size:10px;margin-top:5px;color:#9a3412}.selected-box{margin-top:8px;padding:8px;border-radius:11px;background:#f0fdfa;border:1px solid #99f6e4}.selected-box:empty{display:none}
+.sticky{position:fixed;z-index:50;bottom:72px;left:50%;transform:translateX(-50%);width:min(980px,calc(100% - 20px));background:#0f172a;color:#fff;border-radius:16px;padding:10px 12px;box-shadow:0 18px 50px #0004;display:flex;justify-content:space-between;align-items:center;gap:10px}.sticky small{display:block;color:#cbd5e1}.sticky .btn{width:auto;min-width:150px}.sticky .secondary{background:#fff;color:#0f766e}
+.near{display:grid;gap:6px;margin-top:8px}.near .master-result{margin-top:0}.locked{padding:9px 10px;border-radius:11px;background:#ecfdf5;color:#065f46;font-size:11px;line-height:1.6}
+@media(max-width:850px){.platforms{grid-template-columns:1fr 1fr}.master-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.page{padding:8px 8px 150px}.hero{display:block}.hero-actions{margin-top:9px}.platforms{grid-template-columns:1fr}.sticky{bottom:76px;display:grid;grid-template-columns:1fr}.sticky .btn{width:100%}}
+</style>
+<script src="shop-routes.js?v=20260923-master-feed1"></script>
+<script src="shop-shell.js?v=20260923-master-feed1"></script>
+</head>
+<body data-screen="customer-master-feed">
+<div class="page">
+  <div id="sharedOperationTop"></div>
+  <script>ShopShell.mountOperationTop('sharedOperationTop')</script>
+  <div id="message" class="message info">جاري تحميل ماستر العملاء…</div>
+
+  <section class="card">
+    <div class="hero">
+      <div>
+        <h1>تغذية ماستر العملاء</h1>
+        <div class="muted">هذه أداة تغذية فقط. تختار حسابات المنصات التي تخص نفس الشخص ثم تربطها بعميل واحد في الماستر. لا تحدث الديون هنا.</div>
+      </div>
+      <div class="hero-actions">
+        <a class="btn secondary" href="customers.html">سجل العملاء</a>
+        <a class="btn secondary" href="customer-links.html">صيانة الربط</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>1) اختر عميل الماستر</h2>
+    <div class="mode-tabs">
+      <button id="modeExisting" class="btn secondary active" type="button">عميل موجود</button>
+      <button id="modeNew" class="btn secondary" type="button">عميل جديد</button>
+    </div>
+
+    <div id="existingBox">
+      <div class="field"><label>ابحث في الماستر</label><input id="masterSearch" placeholder="الاسم، الهاتف، البريد أو CUST-000123"></div>
+      <div id="masterResults" class="near"></div>
+    </div>
+
+    <div id="newBox" hidden>
+      <div class="master-grid">
+        <div class="field"><label>اسم الماستر الثابت</label><input id="newMasterName" placeholder="مثال: Ali Pharmacie Khadija"></div>
+        <div>
+          <div class="master-grid">
+            <div class="field"><label>الهاتف الأساسي — اختياري</label><input id="newMasterPhone" inputmode="tel"></div>
+            <div class="field"><label>الإيميل الأساسي — اختياري</label><input id="newMasterEmail" inputmode="email"></div>
+          </div>
+        </div>
+      </div>
+      <div class="locked" style="margin-top:9px"><b>قاعدة:</b> الاسم الذي تنشئه هنا هو اسم الماستر. أسماء المنصات لا تستبدله لاحقًا من هذه الصفحة. معرف العميل الداخلي ثابت ويظهر بصيغة CUST-xxxxxx.</div>
+      <div id="similarMasters" class="near"></div>
+    </div>
+
+    <div id="chosenMaster" class="selected-box" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card">
+    <h2>2) اختر حساب العميل في المنصات</h2>
+    <div class="muted" style="margin-bottom:9px">اكتب أي جزء تعرفه: آخر حرفين من username، جزء من الاسم، الهاتف أو الإيميل. البحث فقط يساعدك على الوصول؛ القرار النهائي أنت تختاره.</div>
+    <div id="platforms" class="platforms"></div>
+  </section>
+</div>
+
+<div class="sticky">
+  <div><b id="selectionText">0 حساب محدد</b><small id="targetText">اختر عميل ماستر أولًا أو أنشئ واحدًا جديدًا.</small></div>
+  <div style="display:flex;gap:7px">
+    <button id="clearSelection" class="btn secondary" type="button">مسح الاختيار</button>
+    <button id="saveFeed" class="btn" type="button">تغذية الماستر</button>
+  </div>
+</div>
+
+<script type="module" src="customer-master-feed.js?v=20260923-1"></script>
+</body>
+</html>
