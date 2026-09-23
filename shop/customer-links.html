@@ -22,6 +22,15 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
 .party-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.party-edit{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:7px;align-items:end;margin-top:8px}.party-edit button{width:auto}.platform-matrix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:9px}.platform-slot{border:1px solid var(--line);border-radius:10px;padding:7px;background:#fff;font-size:11px}.platform-slot b{display:block;margin-bottom:3px}.platform-slot.missing{color:var(--muted);background:#f8fafc}.identity-review{border:1px solid #fed7aa;border-radius:14px;padding:10px;background:#fffaf5}.identity-review .incoming{margin-top:6px;padding:8px;border-radius:10px;background:#fff}.platform-add{display:grid;grid-template-columns:minmax(160px,1fr) auto;gap:7px;margin-top:8px}.platform-add button{width:auto}
 .dialog{position:fixed;inset:0;background:rgba(15,23,42,.56);display:grid;place-items:center;padding:16px;z-index:9999}.dialog-panel{width:min(460px,100%);background:#fff;border-radius:18px;padding:16px;box-shadow:0 24px 70px rgba(0,0,0,.25)}.dialog-actions{display:flex;gap:8px;margin-top:12px}.dialog-actions button{flex:1}
 .offline-note{font-size:11px;color:#9a3412;margin-top:6px}
+.import-preview{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.import-preview-list{display:grid;gap:8px;margin-top:9px}
+.import-file{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fafafa}
+.import-file.ready{border-color:#a7f3d0;background:#f0fdf4}.import-file.duplicate{border-color:#fde68a;background:#fffbeb}.import-file.blocked{border-color:#fecaca;background:#fff7f7}.import-file.review{border-color:#bfdbfe;background:#eff6ff}.import-file.done{border-color:#99f6e4;background:#f0fdfa}
+.import-file-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.import-file-name{font-weight:900;font-size:13px;word-break:break-word}.import-file-meta{font-size:10px;color:var(--muted);line-height:1.6;margin-top:3px}
+.import-file-grid{display:grid;grid-template-columns:1.2fr repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}.import-file-grid .mini{border:1px solid var(--line);border-radius:10px;background:#fff;padding:7px}.import-file-grid .mini small{display:block;color:var(--muted);font-size:9px}.import-file-grid .mini b{display:block;font-size:11px;margin-top:2px;word-break:break-word}
+.import-file-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.import-file-actions button{width:auto}.import-file-platform{margin-top:8px;display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:7px;align-items:end}.import-file-platform button{width:auto}
+.import-summary{padding:9px 10px;border-radius:11px;background:#f8fafc;color:#334155;font-size:11px;line-height:1.65}.import-safety{margin-top:8px;padding:9px 10px;border-radius:11px;background:#ecfdf5;color:#065f46;font-size:11px;line-height:1.65}
+@media(max-width:760px){.import-file-grid{grid-template-columns:1fr 1fr}.import-file-platform{grid-template-columns:1fr}.import-file-platform button{width:100%}}
 @media(max-width:760px){.page{padding:8px 8px 105px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.toolbar,.filters,.manual-grid,.party-edit,.bulk-bar{grid-template-columns:1fr}.link-controls{grid-template-columns:1fr auto auto}.suggestion-pair{grid-template-columns:1fr}.arrow{text-align:center}.party-grid{grid-template-columns:1fr}.card{padding:11px}.source-card,.suggestion,.party-card{padding:10px}}
 </style>
 <script src="shop-routes.js?v=20260918-real-mode-1"></script>
@@ -47,12 +56,21 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </section>
 
   <section class="card">
-    <div class="section-head"><div><h2>تحميل / تحديث المصادر</h2><div class="muted">الملف لا يُحفظ في GitHub. MyTool يتحقق من بصمة الملف وشكل بياناته حتى لا يُنسب ملف هني روحك لتهنى باي أو العكس.</div></div></div>
+    <div class="section-head"><div><h2>تحميل / تحديث المصادر</h2><div class="muted">يمكن اختيار عدة ملفات دفعة واحدة. المعاينة لا تكتب أي بيانات: يحدد MyTool المنصة، يفحص بصمة SHA-256، ويوقف المكرر أو المتعارض قبل الاعتماد.</div></div></div>
     <div class="toolbar">
-      <div class="field"><label>المنصة</label><select id="importPlatform"><option value="">اختر المنصة…</option></select><div class="platform-add"><input id="newPlatformName" placeholder="اسم منصة جديدة"><button id="newPlatformBtn" class="btn secondary" type="button">إضافة</button></div></div>
-      <div class="field"><label>CSV / XLSX</label><input id="sourceFile" class="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
-      <button id="importBtn" class="btn" type="button">تحديث المصادر</button>
-      <button id="smartBtn" class="btn secondary" type="button">إعادة الفحص</button>
+      <div class="field"><label>منصة افتراضية للملفات غير المعروفة فقط</label><select id="importPlatform"><option value="">لا تخمّن — اطلب مني الاختيار</option></select><div class="platform-add"><input id="newPlatformName" placeholder="اسم منصة جديدة"><button id="newPlatformBtn" class="btn secondary" type="button">إضافة</button></div></div>
+      <div class="field"><label>CSV / XLSX — يمكنك اختيار عدة ملفات</label><input id="sourceFile" class="file-input" type="file" multiple accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
+      <button id="importBtn" class="btn" type="button">معاينة الملفات</button>
+      <button id="smartBtn" class="btn secondary" type="button">إعادة فحص الروابط</button>
+    </div>
+    <div class="import-safety">الأرصدة والديون والأرباح في ملفات المنصات تُعامل كـ <b>لقطة حالية</b>: القيمة الجديدة تستبدل قيمة نفس الحساب، ولا تُجمع عليها. الملف المكرر لنفس المنصة يُتجاهل افتراضيًا، وإعادة معالجته تحتاج اختيارًا صريحًا.</div>
+    <div id="importPreview" class="import-preview" hidden>
+      <div class="section-head"><div><h2>مراجعة قبل الاعتماد</h2><div id="importPreviewSummary" class="muted"></div></div></div>
+      <div id="importPreviewList" class="import-preview-list"></div>
+      <div class="actions" style="margin-top:10px">
+        <button id="approveImportsBtn" class="btn" type="button">اعتماد الملفات السليمة</button>
+        <button id="clearImportsBtn" class="btn secondary" type="button">مسح المعاينة</button>
+      </div>
     </div>
     <div id="offlineNote" class="offline-note" hidden>أنت Offline: القائمة المحفوظة متاحة، لكن الربط والاستيراد يحتاجان اتصالًا.</div>
   </section>
@@ -114,6 +132,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260920-identity-v2-1"></script>
+<script type="module" src="customer-links.js?v=20260923-multi-import-preview1"></script>
 </body>
 </html>
