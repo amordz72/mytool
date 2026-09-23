@@ -8,7 +8,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="mytool-build" content="20260923-docflow15">
+<meta name="mytool-build" content="20260923-docflow16">
 <title>قارئ الوثائق - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -41,7 +41,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <body><main class="wrap">
 <section class="hero">
   <h1>📄 قارئ الوثائق</h1>
-  <p>رفع → تحليل → حفظ <span class="hero-version">نسخة 20</span></p>
+  <p>رفع → تحليل → حفظ <span class="hero-version">نسخة 21</span></p>
 </section>
 
 <section class="card security">
@@ -105,7 +105,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     <button id="addImageBtn" class="btn" type="button" disabled>+ صورة مرجع</button>
     <button id="rotateRightBtn" class="btn" type="button" disabled>↻ تدوير</button>
     <button id="copyBtn" class="btn" type="button" disabled>نسخ النتائج</button>
-    <button id="clearBtn" class="btn danger" type="button" disabled>مسح</button>
+    <button id="clearBtn" class="btn" type="button" disabled>تفريغ الشاشة</button>
   </div>
 
   <div class="preview">
@@ -276,6 +276,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   const SUPPLIER_DEBTS_KEY='mytool.document-reader.supplier-debts.v1';
   const DEVICE_LOCK_KEY='mytool.document-reader.device-lock.v1';
   const ADMIN_PIN_KEY='mytool.document-reader.admin-pin.v1';
+  const TEMP_CLOUD_DELETE_QUEUE_KEY='mytool.document-reader.temp-cloud-delete.v1';
   const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
   const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
   const SUPABASE_MODULE='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -405,9 +406,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         status_before_archive:op.statusBeforeArchive||'',
         edit_log:Array.isArray(op.editLog)?op.editLog:[],
         settlement_log:Array.isArray(op.settlementLog)?op.settlementLog:[],
+        file_log:Array.isArray(op.fileLog)?op.fileLog:[],
         duplicate_info:op.duplicateInfo||null,
         hidden_attempt:Boolean(op.hiddenAttempt),
         merged_into_operation_id:op.mergedIntoOperationId||null,
+        platform_image_id:op.platformImageId||null,
         local_legacy_status:op.status||'',
         lifecycle_version:'supabase-v1'
       },
@@ -458,9 +461,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       dayClosedFor:row.day_closed_for||'',
       editLog:Array.isArray(meta.edit_log)?meta.edit_log:(existing?.editLog||[]),
       settlementLog:Array.isArray(meta.settlement_log)?meta.settlement_log:(existing?.settlementLog||[]),
+      fileLog:Array.isArray(meta.file_log)?meta.file_log:(existing?.fileLog||[]),
       duplicateInfo:meta.duplicate_info||existing?.duplicateInfo||null,
       hiddenAttempt:Boolean(meta.hidden_attempt),
       mergedIntoOperationId:meta.merged_into_operation_id||'',
+      platformImageId:meta.platform_image_id||existing?.platformImageId||'',
       cloudId:row.id,
       cloudSyncedAt:row.updated_at||row.created_at||'',
       rawTextAvailable:false,
@@ -589,7 +594,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   async function syncOperationToCloud(op,{silent=true,withImages=true}={}){
-    if(!op?.id)return null;
+    if(!op?.id||!isCloudEligibleReceipt(op))return null;
     const {client,user}=await getCloudContext();
     const payload=cloudReceiptPayload(op,user.id);
     if(!payload.client_operation_id)return null;
@@ -702,8 +707,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   async function syncAllLocalReceiptsToCloud({silent=true}={}){
-    const items=getRecentOperations();
-    if(!items.length)return 0;
+    const items=getRecentOperations().filter(isCloudEligibleReceipt);
+    if(!items.length){
+      if(cloudReady)setCloudStatus('ok','الحفظ الدائم متصل — لا توجد وصولات معرفة بانتظار المزامنة.');
+      return 0;
+    }
     let done=0;
     for(const op of items){
       setCloudStatus('sync','مزامنة الوصولات '+(done+1)+' / '+items.length+'…');
@@ -715,7 +723,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         if(String(err?.message||err)==='NO_SUPABASE_ADMIN_SESSION')break;
       }
     }
-    if(cloudReady)setCloudStatus('ok','الحفظ الدائم متصل — '+done+' / '+items.length+' عملية متزامنة.');
+    if(cloudReady)setCloudStatus('ok','الحفظ الدائم متصل — '+done+' / '+items.length+' وصل معرف متزامن.');
     return done;
   }
 
@@ -723,7 +731,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!operationId)return;
     cloudSyncQueue=cloudSyncQueue.then(async()=>{
       const op=getRecentOperations().find(item=>item.id===operationId);
-      if(!op)return;
+      if(!op||!isCloudEligibleReceipt(op))return;
       try{
         setCloudStatus('sync','حفظ آخر تغيير…');
         await syncOperationToCloud(op,{silent:true,withImages:true});
@@ -735,11 +743,117 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     });
   }
 
+  function getTempCloudDeleteQueue(){
+    try{
+      const data=JSON.parse(localStorage.getItem(TEMP_CLOUD_DELETE_QUEUE_KEY)||'[]');
+      return Array.isArray(data)?data:[];
+    }catch(_e){
+      return [];
+    }
+  }
+
+  function saveTempCloudDeleteQueue(items){
+    try{localStorage.setItem(TEMP_CLOUD_DELETE_QUEUE_KEY,JSON.stringify(items||[]));}catch(_e){}
+  }
+
+  function enqueueTempCloudDelete(op){
+    if(!op?.id)return;
+    const queue=getTempCloudDeleteQueue();
+    if(queue.some(item=>item.operationId===op.id))return;
+    queue.push({
+      operationId:op.id,
+      cloudId:op.cloudId||'',
+      queuedAt:new Date().toISOString()
+    });
+    saveTempCloudDeleteQueue(queue);
+  }
+
+  async function deleteTemporaryCloudCopy(task){
+    const {client}=await getCloudContext();
+    let query=client.from('mytool_receipts')
+      .select('id,client_operation_id,status,source_type,normalized_document_number')
+      .limit(1);
+    query=task.cloudId?query.eq('id',task.cloudId):query.eq('client_operation_id',task.operationId);
+    const found=await query.maybeSingle();
+    if(found.error)throw found.error;
+    const row=found.data;
+    if(!row)return true;
+
+    const temp=['pending_analysis','analysis_failed','analyzed','manual_entry'].includes(row.status)
+      &&(!row.source_type||!row.normalized_document_number);
+    if(!temp)throw new Error('TEMP_RECEIPT_BECAME_IDENTIFIED');
+
+    const images=await client.from('mytool_receipt_images')
+      .select('storage_path')
+      .eq('receipt_id',row.id);
+    if(images.error)throw images.error;
+    const paths=(images.data||[]).map(item=>item.storage_path).filter(Boolean);
+    if(paths.length){
+      const removed=await client.storage.from(RECEIPT_BUCKET).remove(paths);
+      if(removed.error&&!/not found/i.test(String(removed.error.message||removed.error)))throw removed.error;
+    }
+
+    const delImages=await client.from('mytool_receipt_images').delete().eq('receipt_id',row.id);
+    if(delImages.error)throw delImages.error;
+    const delReceipt=await client.from('mytool_receipts').delete().eq('id',row.id);
+    if(delReceipt.error)throw delReceipt.error;
+    return true;
+  }
+
+  async function processTempCloudDeleteQueue(){
+    const queue=getTempCloudDeleteQueue();
+    if(!queue.length)return 0;
+    const keep=[];
+    let removed=0;
+    for(const task of queue){
+      try{
+        await deleteTemporaryCloudCopy(task);
+        removed++;
+      }catch(err){
+        if(String(err?.message||err)==='TEMP_RECEIPT_BECAME_IDENTIFIED'){
+          removed++;
+          continue;
+        }
+        keep.push(task);
+      }
+    }
+    saveTempCloudDeleteQueue(keep);
+    return removed;
+  }
+
+  async function cancelTemporaryOperation(id){
+    const items=getRecentOperations();
+    const op=items.find(item=>item.id===id);
+    if(!op)return;
+    if(!isTemporaryUnidentified(op)){
+      showToast('warn','لا يمكن إلغاء هذا الملف','بعد تثبيت هوية الوصل يصبح ملفًا ماليًا حقيقيًا وتطبق عليه قواعد الحفظ والتتبع.',5600);
+      return;
+    }
+    if(!confirm('إلغاء هذا الملف المؤقت؟\n\nسيُحذف من الجهاز، وإذا كانت له نسخة مؤقتة قديمة في Supabase فسيتم تنظيفها أيضًا. لا توجد هوية وصل مالية مثبتة لهذا الملف.'))return;
+
+    enqueueTempCloudDelete(op);
+    await deleteReceiptImage(id);
+    const next=items.filter(item=>item.id!==id);
+    saveRecentOperations(next);
+    unregisterDocumentForOperation(op);
+
+    if(activeOperationId===id||currentResult?.operationId===id){
+      activeOperationId='';
+      clearAll();
+    }
+    renderRecentOperationTabs();
+    updateQuickDock();
+
+    processTempCloudDeleteQueue().catch(()=>{});
+    showToast('success','تم إلغاء الملف المؤقت','اختفى من «قيد التعرف» ولم يعد محسوبًا ضمن المتابعة المالية.',5200);
+  }
+
   async function initializeCloudPersistence({manual=false}={}){
     if(syncNowBtn)syncNowBtn.disabled=true;
     setCloudStatus('sync','الاتصال بـ Supabase…');
     try{
       await getCloudContext();
+      await processTempCloudDeleteQueue();
       const rows=await fetchAllCloudReceipts();
       mergeCloudReceiptsIntoLocal(rows);
       cloudReady=true;
@@ -1366,6 +1480,19 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       tx.onabort=()=>reject(tx.error||new Error('تعذر اعتماد الصورة الرئيسية.'));
     });
   }
+  async function setCurrentPlatformImage(index){
+    if(!currentResult?.operationId||!hasConfirmedReceiptIdentity(currentResult))return null;
+    const record=normalizeReceiptImageRecord(await getReceiptImage(currentResult.operationId),currentResult.operationId);
+    if(!record.images.length)return null;
+    const safeIndex=Math.max(0,Math.min(Number(index||0),record.images.length-1));
+    const image=record.images[safeIndex];
+    if(!image?.imageId)return null;
+    currentResult.platformImageId=String(image.imageId);
+    persistCurrentOperation({registerDoc:true});
+    renderImageRefs(record);
+    return image;
+  }
+
 
   async function mergeReceiptImages(fromId,toId){
     if(!fromId||!toId||fromId===toId)return getReceiptImage(toId);
@@ -1390,6 +1517,45 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     });
     return normalizeReceiptImageRecord(merged,toId);
   }
+  async function mergeOperationFileIntoCanonical(fromPayload,canonicalId){
+    const fromId=fromPayload?.operationId||fromPayload?.id||'';
+    if(!fromId||!canonicalId||fromId===canonicalId)return null;
+
+    const sourceRecord=normalizeReceiptImageRecord(await getReceiptImage(fromId).catch(()=>null),fromId);
+    const addedCount=sourceRecord.images?.length||0;
+    const merged=await mergeReceiptImages(fromId,canonicalId);
+
+    const items=getRecentOperations();
+    const canonical=items.find(op=>op.id===canonicalId);
+    if(!canonical)throw new Error('تعذر العثور على ملف الوصل الأصلي.');
+
+    const fileLog=Array.isArray(canonical.fileLog)?[...canonical.fileLog]:[];
+    fileLog.push({
+      at:new Date().toISOString(),
+      action:'images_attached',
+      fromOperationId:fromId,
+      count:addedCount
+    });
+
+    const updated={
+      ...canonical,
+      imageCount:merged?.images?.length||canonical.imageCount||1,
+      fileLog:fileLog.slice(-100)
+    };
+    const next=items
+      .filter(op=>op.id!==fromId)
+      .map(op=>op.id===canonicalId?updated:op);
+    saveRecentOperations(next);
+
+    // If this temporary file existed in an old cloud version, clean that temporary row.
+    enqueueTempCloudDelete({id:fromId,cloudId:fromPayload?.cloudId||''});
+    processTempCloudDeleteQueue().catch(()=>{});
+
+    queueCloudSync(canonicalId);
+    rebuildDocumentIndexFromRecent();
+    return {merged,canonical:updated,addedCount};
+  }
+
 
   async function deleteReceiptImage(id){
     if(!id)return;
@@ -1409,6 +1575,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function renderImageRefs(record){
     const images=record?.images||[];
     const primaryIndex=images.length?Math.max(0,Math.min(Number(record?.primaryIndex||0),images.length-1)):0;
+    const platformImageId=String(currentResult?.platformImageId||'');
     imageRefs.innerHTML='';
     imageBundleHint.classList.add('hidden');
     imageBundleHint.textContent='';
@@ -1421,8 +1588,13 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const btn=document.createElement('button');
       btn.type='button';
       btn.className='image-ref'+(index===currentImageIndex?' active':'');
-      btn.textContent=(index===primaryIndex?'★ ':'')+'صورة '+(index+1);
-      btn.title=(index===primaryIndex?'المعتمدة للتحليل — ':'')+(img.fileName||('صورة '+(index+1)));
+      const analysisMark=index===primaryIndex?'★ ':'';
+      const platformMark=platformImageId&&String(img.imageId||'')===platformImageId?'📤 ':'';
+      btn.textContent=analysisMark+platformMark+'صورة '+(index+1);
+      const roles=[];
+      if(index===primaryIndex)roles.push('المعتمدة للتحليل');
+      if(platformMark)roles.push('المعتمدة للإرسال للمنصة');
+      btn.title=(roles.length?roles.join(' — ')+' — ':'')+(img.fileName||('صورة '+(index+1)));
       btn.dataset.imageIndex=String(index);
       imageRefs.appendChild(btn);
     });
@@ -1436,10 +1608,25 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       choose.disabled=currentImageIndex===primaryIndex;
       choose.textContent=currentImageIndex===primaryIndex?'✓ المعروضة هي المعتمدة':'اعتماد المعروضة للتحليل';
       imageRefs.appendChild(choose);
-      imageBundleHint.textContent='هذه صور لنفس الوصل. اختر أوضح صورة واعتمدها قبل التحليل. التحليل يتم مرة واحدة فقط على ملف الوصل.';
+      imageBundleHint.textContent='هذه صور لنفس الملف المؤقت. اختر أوضح صورة للتحليل؛ لا تدخل المتابعة المالية قبل تثبيت نوع الوثيقة ورقمها.';
+      imageBundleHint.classList.remove('hidden');
+    }else if(hasConfirmedReceiptIdentity(currentResult)){
+      const shown=images[Math.max(0,Math.min(currentImageIndex,images.length-1))];
+      const shownId=String(shown?.imageId||'');
+      if(['analyzed','manual_entry','saved_unsettled','sent_to_platform'].includes(status)&&shownId){
+        const choosePlatform=document.createElement('button');
+        choosePlatform.type='button';
+        choosePlatform.className='image-primary-action';
+        choosePlatform.dataset.setPlatformImageIndex=String(currentImageIndex);
+        choosePlatform.disabled=shownId===platformImageId;
+        choosePlatform.textContent=shownId===platformImageId?'✓ المعروضة مخصصة للمنصة':'اعتماد المعروضة للإرسال';
+        imageRefs.appendChild(choosePlatform);
+      }
+      imageBundleHint.textContent='هذا وصل مالي واحد وله '+images.length+' صورة. تكرار رقم الوثيقة مسموح كصور داخل هذا الملف، لكن الإسناد المالي الحالي يبقى لمنصة واحدة فقط.'
+        +(platformImageId?' الرمز 📤 يحدد الصورة المعتمدة للإرسال.':' إذا كان للوصل أكثر من صورة اختر أي صورة هي النسخة المرسلة للمنصة.');
       imageBundleHint.classList.remove('hidden');
     }else if(images.length>1){
-      imageBundleHint.textContent='هذا ملف وصل واحد وله '+images.length+' صور محفوظة. لا تُنشأ عملية مالية جديدة لكل صورة.';
+      imageBundleHint.textContent='الصور محفوظة محليًا كملف قيد التعرف. بعد تثبيت نوع الوثيقة ورقمها ستصبح كلها صورًا لنفس الوصل المالي.';
       imageBundleHint.classList.remove('hidden');
     }
     imageRefs.classList.remove('hidden');
@@ -1525,6 +1712,21 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function hasConfirmedReceiptIdentity(payload){
     return Boolean(documentFingerprint(payload));
+  }
+
+  function isTemporaryUnidentified(op){
+    if(!op||hasConfirmedReceiptIdentity(op))return false;
+    return ['pending_analysis','analysis_failed','analyzed','manual_entry'].includes(effectiveStatus(op));
+  }
+
+  function isFinancialFollowUp(op){
+    if(!op||!hasConfirmedReceiptIdentity(op)||op.hiddenAttempt)return false;
+    return ['analyzed','manual_entry','saved_unsettled','sent_to_platform'].includes(effectiveStatus(op));
+  }
+
+  function isCloudEligibleReceipt(op){
+    if(!op||!hasConfirmedReceiptIdentity(op)||op.hiddenAttempt)return false;
+    return effectiveStatus(op)!=='duplicate';
   }
 
   function findDuplicateDocument(payload){
@@ -1791,11 +1993,19 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function renderHistorySupplierTabs(){
+    const items=getRecentOperations().filter(op=>!op?.hiddenAttempt);
+    const followCount=items.filter(isFinancialFollowUp).length;
+    const identifyCount=items.filter(isTemporaryUnidentified).length;
+    const unsentCount=items.filter(op=>hasConfirmedReceiptIdentity(op)
+      && ['analyzed','manual_entry','saved_unsettled'].includes(effectiveStatus(op))
+      && (!op.selectedRecipient||op.selectedRecipient===UNSENT_RECIPIENT)).length;
+    const waitingCount=items.filter(op=>hasConfirmedReceiptIdentity(op)&&effectiveStatus(op)==='sent_to_platform').length;
+
     const filters=[
-      ['all','المتابعة'],
-      ['__pending__','بانتظار التحليل'],
-      ['__unsettled__','غير مرسل'],
-      ['__waiting__','بانتظار المنصة']
+      ['all','المتابعة'+(followCount?' ('+followCount+')':'')],
+      ['__pending__','قيد التعرف'+(identifyCount?' ('+identifyCount+')':'')],
+      ['__unsettled__','غير مرسل'+(unsentCount?' ('+unsentCount+')':'')],
+      ['__waiting__','بانتظار المنصة'+(waitingCount?' ('+waitingCount+')':'')]
     ];
     getRecipientPresets().filter(name=>name!==UNSENT_RECIPIENT).forEach(name=>filters.push([name,name]));
     recipientTabs.innerHTML='';
@@ -1868,15 +2078,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(op?.hiddenAttempt)return false;
     if(!operationMatchesSearch(op))return false;
     const s=effectiveStatus(op);
-    if(activeHistorySupplier==='all')return s!=='archived';
-    if(activeHistorySupplier==='__pending__')return s==='pending_analysis'||s==='analysis_failed';
+    if(activeHistorySupplier==='all')return isFinancialFollowUp(op);
+    if(activeHistorySupplier==='__pending__')return isTemporaryUnidentified(op);
     if(activeHistorySupplier==='__unsettled__'){
-      return ['analyzed','manual_entry','saved_unsettled'].includes(s)
+      return hasConfirmedReceiptIdentity(op)
+        && ['analyzed','manual_entry','saved_unsettled'].includes(s)
         &&(!op.selectedRecipient||op.selectedRecipient===UNSENT_RECIPIENT);
     }
-    if(activeHistorySupplier==='__waiting__')return s==='sent_to_platform';
+    if(activeHistorySupplier==='__waiting__')return hasConfirmedReceiptIdentity(op)&&s==='sent_to_platform';
     if(isPlatformHistoryFilter(activeHistorySupplier)){
-      if(op.selectedRecipient!==activeHistorySupplier)return false;
+      if(!hasConfirmedReceiptIdentity(op)||op.selectedRecipient!==activeHistorySupplier)return false;
       return activePlatformHistoryMode==='archive'?s==='archived':s!=='archived';
     }
     return false;
@@ -1940,15 +2151,15 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   function operationStatusText(op){
     const s=effectiveStatus(op);
-    if(s==='pending_analysis')return 'بانتظار التحليل';
-    if(s==='analyzed')return 'محلّل — بانتظار الحفظ/التسوية';
-    if(s==='manual_entry')return 'إدخال يدوي — بانتظار الحفظ/التسوية';
+    if(s==='pending_analysis')return 'قيد التعرف — لم تُثبت الهوية';
+    if(s==='analyzed')return hasConfirmedReceiptIdentity(op)?'هوية مثبتة — بانتظار الحفظ':'قيد التعرف — رقم الوثيقة غير مؤكد';
+    if(s==='manual_entry')return hasConfirmedReceiptIdentity(op)?'هوية مثبتة يدويًا — بانتظار الحفظ':'إدخال يدوي — الهوية غير مكتملة';
     if(s==='saved_unsettled')return 'محفوظ — لم يُرسل';
     if(s==='sent_to_platform')return 'أُرسل للمنصة — بانتظار المال';
     if(s==='confirmed_received')return 'تم استلام المال ✓';
     if(s==='archived')return 'مؤرشف';
     if(s==='duplicate')return 'وصل مكرر — ممنوع الحفظ';
-    if(s==='analysis_failed')return 'فشل التحليل — أعد المحاولة';
+    if(s==='analysis_failed')return 'قيد التعرف — فشل التحليل';
     return 'بانتظار التحليل';
   }
 
@@ -1962,7 +2173,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       const empty=document.createElement('div');
       empty.className='history-empty';
       empty.textContent=activeHistorySupplier==='__pending__'
-        ?'لا توجد صور بانتظار التحليل.'
+        ?'لا توجد ملفات مؤقتة قيد التعرف.'
         :activeHistorySupplier==='__unsettled__'
           ?'لا توجد وصولات محفوظة غير مرسلة.'
           :activeHistorySupplier==='__waiting__'
@@ -2001,7 +2212,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       if(isProtectedHistoricalOperation(op)&&effectiveStatus(op)!=='archived')meta.push('مرحّل من '+operationCaptureDate(op)+' — محفوظ');
       if(op.imageCount>1)meta.push(op.imageCount+' صور');
       if(op.fileName)meta.push(op.fileName);
-      if(op.status!=='pending_analysis')meta.push('رقم '+doc);
+      if(hasConfirmedReceiptIdentity(op))meta.push('رقم '+doc);
+      else if(isTemporaryUnidentified(op))meta.push('ملف مؤقت — خارج المتابعة المالية');
       main.innerHTML='<b>'+escapeHtml(headline)+'</b>'
         +'<small>'+escapeHtml(meta.join(' · '))+'</small>';
 
@@ -2012,7 +2224,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       actions.appendChild(open);
 
       const status=effectiveStatus(op);
-      if(status==='sent_to_platform'&&supplier!==UNSENT_RECIPIENT){
+      if(isTemporaryUnidentified(op)){
+        const cancelTemp=document.createElement('button');
+        cancelTemp.type='button';
+        cancelTemp.className='history-delete';
+        cancelTemp.textContent='إلغاء الملف';
+        cancelTemp.dataset.cancelTempOperationId=op.id;
+        actions.appendChild(cancelTemp);
+      }else if(status==='sent_to_platform'&&supplier!==UNSENT_RECIPIENT){
         const confirmMoney=document.createElement('button');
         confirmMoney.type='button';confirmMoney.className='history-open';confirmMoney.textContent='تم استلام المال';confirmMoney.dataset.confirmMoneyOperationId=op.id;
         actions.appendChild(confirmMoney);
@@ -2102,6 +2321,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       dayClosedFor:payload.dayClosedFor||'',
       editLog:Array.isArray(payload.editLog)?payload.editLog.slice(-50):[],
       settlementLog:Array.isArray(payload.settlementLog)?payload.settlementLog.slice(-50):[],
+      fileLog:Array.isArray(payload.fileLog)?payload.fileLog.slice(-100):[],
       lastEditedAt:payload.lastEditedAt||'',
       imageCount:Number(payload.imageCount||1),
       duplicateInfo:payload.duplicateInfo?{
@@ -2112,6 +2332,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       }:null,
       hiddenAttempt:Boolean(payload.hiddenAttempt),
       mergedIntoOperationId:payload.mergedIntoOperationId||'',
+      platformImageId:payload.platformImageId||'',
       rawTextAvailable:false
     };
   }
@@ -2410,10 +2631,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   function updateQuickDock(){
     if(!quickPrimaryBtn||!quickFollowBtn)return;
     const s=effectiveStatus(currentResult);
-    const openCount=getRecentOperations().filter(op=>{
-      if(op?.hiddenAttempt)return false;
-      return !['archived','duplicate','confirmed_received'].includes(effectiveStatus(op));
-    }).length;
+    const openCount=getRecentOperations().filter(isFinancialFollowUp).length;
     quickFollowBtn.textContent=openCount?'المتابعة ('+openCount+')':'المتابعة';
 
     quickPrimaryBtn.disabled=Boolean(busy);
@@ -3273,15 +3491,33 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     input.focus();
     input.select();
 
-    save.addEventListener('click',()=>{
+    save.addEventListener('click',async()=>{
       const value=cleanLine(input.value);
       const nextFields={...(currentResult.fields||{})};
       nextFields[key]=value?{value,source:'تصحيح يدوي',status:'manual'}:null;
       const candidate={...currentResult,fields:nextFields};
       if(key==='documentNumber'){
         const dup=findDuplicateDocument(candidate);
-        if(dup){
-          showToast('error','هوية وصل مكررة','نفس نوع البنك/الوسيلة ونفس رقم الوثيقة موجودان في وصل آخر؛ لم يتم حفظ التعديل.',6000);
+        if(dup?.operationId){
+          const existing=getRecentOperations().find(op=>op.id===dup.operationId);
+          if(existing&&['analyzed','manual_entry','saved_unsettled','sent_to_platform','confirmed_received','archived'].includes(effectiveStatus(existing))){
+            try{
+              currentResult.fields=nextFields;
+              const mergedInfo=await mergeOperationFileIntoCanonical(currentResult,existing.id);
+              currentResult=null;
+              await openRecentOperation(existing.id);
+              if(mergedInfo?.merged)renderImageRefs(mergedInfo.merged);
+              showToast('success','الصورة أضيفت للوَصل الموجود',
+                'نفس رقم الوثيقة لا ينشئ عملية مالية ثانية. أضيفت الصورة كملف/مرجع داخل الوصل الأصلي.',
+                6500);
+              return;
+            }catch(_e){
+              showToast('error','تعذر ضم الصورة','لم أستطع نقل الصورة إلى ملف الوصل الموجود.',5500);
+              renderResult(currentResult);
+              return;
+            }
+          }
+          showToast('error','هوية وصل مكررة','يوجد وصل أصلي بهذه الهوية، لكن تعذر ضم الملف تلقائيًا.',6000);
           renderResult(currentResult);
           return;
         }
@@ -3781,28 +4017,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       if(duplicate?.operationId){
         const existing=getRecentOperations().find(op=>op.id===duplicate.operationId);
         const existingStatus=effectiveStatus(existing);
-        if(existing&&['analyzed','manual_entry','saved_unsettled'].includes(existingStatus)){
+        if(existing&&['analyzed','manual_entry','saved_unsettled','sent_to_platform','confirmed_received','archived'].includes(existingStatus)){
           try{
-            const merged=await mergeReceiptImages(payload.operationId,existing.id);
-            const hiddenAttempt={
-              ...snapshotResult(payload),
-              status:'duplicate',
-              duplicateInfo:duplicate,
-              hiddenAttempt:true,
-              mergedIntoOperationId:existing.id,
-              imageCount:0
-            };
-            const remaining=getRecentOperations()
-              .map(op=>op.id===payload.operationId?hiddenAttempt:op)
-              .map(op=>op.id===existing.id?{...op,imageCount:merged?.images?.length||op.imageCount||1}:op);
-            saveRecentOperations(remaining);
-            queueCloudSync(payload.operationId);
-            queueCloudSync(existing.id);
+            const mergedInfo=await mergeOperationFileIntoCanonical(payload,existing.id);
             currentResult=null;
             progressBox.classList.add('hidden');
             await openRecentOperation(existing.id);
-            if(merged)renderImageRefs(merged);
-            showToast('success','نفس الوصل — تم تجميع الصور','لم تُنشأ عملية مالية جديدة. الصور أضيفت إلى ملف الوصل الموجود، ومحاولة الدمج بقيت كسجل تدقيق غير ظاهر.',6800);
+            if(mergedInfo?.merged)renderImageRefs(mergedInfo.merged);
+            showToast('success','نفس الوصل — أضيفت الصور للملف',
+              'رقم الوثيقة مكرر كصور فقط، وهذا مسموح. بقي الوصل المالي واحدًا، وأضيفت '+(mergedInfo?.addedCount||1)+' صورة إلى ملفه.',
+              6800);
             return;
           }catch(_e){
             currentResult=payload;
@@ -3967,7 +4191,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     showToast('success','تم حفظ الوصل','تم الحفظ في «غير مرسل». اختيار المنصة وحده لا يغيّر الحساب؛ اضغط «إرسال لمنصة» عندما ترسل الوصل فعليًا.',6000);
   }
 
-  function confirmSettleCurrent(){
+  async function confirmSettleCurrent(){
     if(!currentResult||currentResult.historyView)return;
     const s=effectiveStatus(currentResult);
     if(!['saved_unsettled','sent_to_platform'].includes(s)){
@@ -3986,6 +4210,27 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       return;
     }
 
+    let imageRecord=null;
+    try{imageRecord=normalizeReceiptImageRecord(await getReceiptImage(currentResult.operationId),currentResult.operationId);}catch(_e){}
+    const images=imageRecord?.images||[];
+    if(!images.length){
+      showToast('warn','صورة الوصل مطلوبة','لا نسجل إرسالًا لمنصة بدون صورة محفوظة للوصل.',5200);
+      return;
+    }
+
+    let platformImageId=String(currentResult.platformImageId||'');
+    const existingImage=images.find(img=>String(img.imageId||'')===platformImageId);
+    if(!existingImage){
+      if(images.length===1){
+        platformImageId=String(images[0].imageId||'');
+        currentResult.platformImageId=platformImageId;
+      }else{
+        showToast('warn','اختر صورة الإرسال','هذا الوصل لديه '+images.length+' صور. افتح الصورة التي سترسلها للمنصة واضغط «اعتماد المعروضة للإرسال».',6500);
+        renderImageRefs(imageRecord);
+        return;
+      }
+    }
+
     const target=cleanLine(activeRecipient||'');
     if(!target||target===UNSENT_RECIPIENT){
       showToast('warn','اختر منصة','اختر المنصة ثم اضغط «إرسال لمنصة».',4800);
@@ -3994,14 +4239,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     const previous=currentResult.selectedRecipient||UNSENT_RECIPIENT;
     if(s==='sent_to_platform'&&previous===target){
-      showToast('info','الوصل مرسل','هذا الوصل بانتظار اعتماد '+target+' واستلام المال.',4300);
+      showToast('info','الوصل مرسل','هذا الوصل بانتظار اعتماد '+target+' واستلام المال. الصورة ذات الرمز 📤 هي النسخة المسجلة للإرسال.',5000);
       return;
     }
 
     if(s==='sent_to_platform'&&previous!==UNSENT_RECIPIENT&&previous!==target){
-      if(!confirm('نقل هذا الوصل من '+previous+' إلى '+target+' قبل استلام المال؟'))return;
+      if(!confirm('نقل هذا الوصل من '+previous+' إلى '+target+' قبل استلام المال؟\n\nسيبقى الوصل المالي نفسه، ويمكن أن تتغير صورة الإرسال المعتمدة فقط.'))return;
     }else{
-      if(!confirm('تأكيد أنك أرسلت هذا الوصل إلى '+target+'؟ سيبقى في المتابعة حتى تؤكد استلام المال.'))return;
+      if(!confirm('تأكيد أنك أرسلت هذا الوصل إلى '+target+'؟\n\nسيُسجل الوصل المالي مرة واحدة، والصورة ذات الرمز 📤 هي النسخة المرسلة.'))return;
     }
 
     const now=new Date().toISOString();
@@ -4010,8 +4255,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       at:now,
       action:s==='sent_to_platform'?'transfer':'send',
       from:previous,
-      to:target
+      to:target,
+      imageId:platformImageId
     });
+    currentResult.platformImageId=platformImageId;
     currentResult.selectedRecipient=target;
     currentResult.status='sent_to_platform';
     currentResult.assignedAt=currentResult.assignedAt||now;
@@ -4024,14 +4271,15 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!ok){
       currentResult.status='duplicate';
       renderResult(currentResult);
-      showToast('error','تعذر الإرسال','رقم الوثيقة أصبح متعارضًا مع وصل آخر.',6000);
+      showToast('error','تعذر الإرسال','هوية الوصل أصبحت متعارضة مع وصل مالي آخر.',6000);
       return;
     }
 
     renderResult(currentResult);
+    renderImageRefs(imageRecord);
     renderRecentOperationTabs();
     updateSaveButton();
-    showToast('success','تم تسجيل الإرسال','الوصل الآن عند '+target+'، وسيبقى ظاهرًا «بانتظار المنصة» حتى تؤكد استلام المال.',6000);
+    showToast('success','تم تسجيل الإرسال','الوصل بقي كعملية مالية واحدة عند '+target+'، والصورة 📤 هي النسخة المسجلة للمنصة.',6200);
   }
 
   function confirmMoneyReceivedCurrent(){
@@ -4053,7 +4301,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     currentResult.status='confirmed_received';
     currentResult.confirmedReceivedAt=now;
     currentResult.settlementLog=Array.isArray(currentResult.settlementLog)?currentResult.settlementLog:[];
-    currentResult.settlementLog.push({at:now,action:'confirm_received',from:platform,to:platform});
+    currentResult.settlementLog.push({at:now,action:'confirm_received',from:platform,to:platform,imageId:currentResult.platformImageId||''});
     persistCurrentOperation({registerDoc:true});
     renderResult(currentResult);
     renderRecentOperationTabs();
@@ -4202,6 +4450,25 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   });
 
   imageRefs.addEventListener('click',async event=>{
+    const platformImage=event.target.closest('[data-set-platform-image-index]');
+    if(platformImage&&currentResult?.operationId){
+      if(!hasConfirmedReceiptIdentity(currentResult)){
+        showToast('warn','الهوية أولًا','لا يمكن اعتماد صورة للمنصة قبل معرفة نوع الوثيقة ورقمها.',4500);
+        return;
+      }
+      const index=Number(platformImage.getAttribute('data-set-platform-image-index')||0);
+      try{
+        const image=await setCurrentPlatformImage(index);
+        if(image){
+          currentImageIndex=index;
+          showToast('success','تم اعتماد صورة الإرسال','هذه الصورة هي النسخة المرتبطة بإسناد المنصة الحالي. الوصل المالي نفسه لم يتكرر.',5000);
+        }
+      }catch(_e){
+        showToast('error','تعذر اعتماد الصورة','لم أستطع ربط الصورة بملف الوصل.',4500);
+      }
+      return;
+    }
+
     const primary=event.target.closest('[data-set-primary-index]');
     if(primary&&currentResult?.operationId){
       if(!['pending_analysis','analysis_failed'].includes(effectiveStatus(currentResult))){
@@ -4284,6 +4551,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   });
 
   operationHistory.addEventListener('click',event=>{
+    const cancelTemp=event.target.closest('[data-cancel-temp-operation-id]');
+    if(cancelTemp){
+      cancelTemporaryOperation(cancelTemp.getAttribute('data-cancel-temp-operation-id'));
+      return;
+    }
     const confirmMoney=event.target.closest('[data-confirm-money-operation-id]');
     if(confirmMoney){
       openRecentOperation(confirmMoney.getAttribute('data-confirm-money-operation-id')).then(()=>confirmMoneyReceivedCurrent());
