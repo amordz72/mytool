@@ -52,7 +52,7 @@
       source_kind:'paste',
       origin:'mytool_home'
     }));
-    location.href='orders/?intake=1&v=20260922-smart-intake1';
+    location.href='orders/?intake=1&v=20260923-editable-autofill1';
   }
 
   function mount(){
