@@ -1,0 +1,18 @@
+{
+  "id": "/mytool/offline-transfer/",
+  "name": "M2 Transfer",
+  "short_name": "M2",
+  "description": "أداة خفيفة لتسجيل البيانات ومشاركتها بملفات M2 بدون تسجيل دخول.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#4f46e5",
+  "prefer_related_applications": false,
+  "icons": [
+    {"src": "../icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "../icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
