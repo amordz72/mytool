@@ -366,6 +366,11 @@ function parseWhatsAppCopy(raw){
   };
 }
 
+function genericGameIntent(value){
+  const t=latinDigits(String(value||''));
+  return /(?:جوهرة|جواهر|كرة|كرات|شدة|شدات|يوسي|\buc\b|diamond(?:s)?|coin(?:s)?|كوينز?|point(?:s)?|بوينت(?:س)?)/i.test(t);
+}
+
 function parseRequest(raw){
   const whatsapp=parseWhatsAppCopy(raw);
   const businessText=whatsapp.detected&&whatsapp.customer_messages.length
@@ -375,6 +380,7 @@ function parseRequest(raw){
   const nt=norm(text);
   const operatorCode=detectOperator(text);
   const financialIntent=extractFinancialIntent(text);
+  const gameIntent=genericGameIntent(text);
   const explicit=[];
   catalog.filter(x=>x.enabled).forEach(service=>{
     const aliases=[service.code,service.display_name,...(service.aliases||[])].filter(Boolean).sort((a,b)=>String(b).length-String(a).length);
@@ -411,10 +417,17 @@ function parseRequest(raw){
         .filter(x=>x&&x.length<=80&&!/^\d+$/.test(x));
       packageText=candidates[0]||'';
     }
+  }else if(gameIntent){
+    const gameLine=text
+      .split(/\n+/)
+      .map(x=>x.replace(/\s+/g,' ').trim())
+      .find(x=>genericGameIntent(x)&&/\d/.test(x));
+    packageText=gameLine||nums[0]||'';
   }
 
   return{
     service_code:serviceCode,
+    operation_kind:gameIntent?'game':(service?.action_kind==='flexy'?'external_flexy':''),
     package_text:packageText,
     destination,
     ambiguous_services:unique.length>1?unique:[],
@@ -685,11 +698,27 @@ async function updateOrder(id,patch){
   await loadOrders();
 }
 
+function looksLikePlayerId(value){
+  const digits=String(value||'').replace(/\D/g,'');
+  return /^\d{6,20}$/.test(digits)&&!/^0[5-7]\d{8}$/.test(digits);
+}
+
+function orderPackageForHandoff(row){
+  if(row?.package_text)return row.package_text;
+  const parsed=parsedObject(row?.parsed_payload);
+  if(parsed.package_text)return parsed.package_text;
+  const wa=parseWhatsAppCopy(row?.raw_input||'');
+  const bodies=wa.detected?wa.customer_messages.map(m=>m.body):String(row?.raw_input||'').split(/\n+/);
+  return bodies.map(x=>String(x||'').trim()).find(x=>genericGameIntent(x)&&/\d/.test(x))||'';
+}
+
 function operationTypeForOrder(row){
   const service=serviceBy(row?.service_code);
   const code=String(row?.service_code||'').toUpperCase();
-  if(service?.action_kind==='flexy'||code==='FL')return'external_flexy';
-  if(service?.destination_kind==='player_id'||['FF','FREEFIRE','PUBG','FIFA'].includes(code))return'game';
+  const parsed=parsedObject(row?.parsed_payload);
+  if(service?.action_kind==='flexy'||code==='FL'||parsed.operation_kind==='external_flexy')return'external_flexy';
+  if(service?.destination_kind==='player_id'||['FF','FREEFIRE','PUBG','FIFA'].includes(code)||parsed.operation_kind==='game')return'game';
+  if(looksLikePlayerId(row?.destination)&&genericGameIntent(row?.raw_input||''))return'game';
   return'service';
 }
 
@@ -701,7 +730,7 @@ function handoffToSale(row){
     order_id:row?.id||null,order_uuid:row?.order_uuid||null,
     operation_type:operationTypeForOrder(row),
     service_code:row?.service_code||null,service_name:service?.display_name||row?.service_code||'',
-    package_text:row?.package_text||'',destination:row?.destination||'',
+    package_text:orderPackageForHandoff(row),destination:row?.destination||'',
     customer_party_id:row?.customer_party_id||null,customer_name:party?.display_name||'',
     source_kind:row?.source_kind||'',source_message_at_text:orderSourceTime(row),
     order_created_at:row?.created_at||null,raw_input:row?.raw_input||'',
@@ -709,7 +738,7 @@ function handoffToSale(row){
   };
   sessionStorage.setItem('mytool_sale_handoff_v1',JSON.stringify(envelope));
   const q=new URLSearchParams();
-  q.set('v','20260922-digital-sale2');
+  q.set('v','20260923-game-intent1');
   const orderRef=envelope.order_uuid||envelope.order_id;
   if(orderRef)q.set('from_order',String(orderRef));
   q.set('operation',envelope.operation_type);
