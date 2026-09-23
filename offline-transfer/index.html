@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#4f46e5">
-  <link rel="manifest" href="./manifest.webmanifest?v=20260923-m2-auth1">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260923-m2-auth2">
   <link rel="apple-touch-icon" href="../icons/icon-192.png">
   <title>حساب مستخدم — MyTool</title>
   <style>
@@ -48,8 +48,8 @@
     <div class="gate-card">
       <div id="loginView">
         <h1>حساب مستخدم</h1>
-        <p>أدخل اسم المستخدم وكلمة المرور التي استلمتها من الإدارة.</p>
-        <div class="field"><label for="loginUsername">اسم المستخدم</label><input id="loginUsername" autocomplete="username"></div>
+        <p>أدخل البريد الإلكتروني أو اسم المستخدم مع كلمة المرور التي استلمتها من الإدارة.</p>
+        <div class="field"><label for="loginUsername">البريد الإلكتروني أو اسم المستخدم</label><input id="loginUsername" autocomplete="username"></div>
         <div class="field"><label for="loginPassword">كلمة المرور</label><input id="loginPassword" type="password" autocomplete="current-password"></div>
         <button id="loginBtn" class="primary full" type="button">دخول</button>
       </div>
@@ -72,10 +72,11 @@
 
       <div id="pinView" class="hidden">
         <h1>فتح الحساب</h1>
-        <p><strong id="pinAccountName"></strong><br>أدخل PIN الخاص بهذا الجهاز.</p>
+        <p><strong id="pinAccountName"></strong><br>أدخل هوية الحساب وPIN الخاص بهذا الجهاز.</p>
+        <div class="field"><label for="pinIdentity">البريد الإلكتروني أو اسم المستخدم</label><input id="pinIdentity" autocomplete="username"></div>
         <div class="field"><label for="pinLogin">PIN</label><input id="pinLogin" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></div>
         <button id="pinLoginBtn" class="primary full" type="button">دخول</button>
-        <button id="usePasswordBtn" class="linkbtn full" type="button">الدخول باسم المستخدم وكلمة المرور</button>
+        <button id="usePasswordBtn" class="linkbtn full" type="button">الدخول بكلمة المرور</button>
       </div>
 
       <div id="lockedView" class="hidden">
@@ -167,7 +168,7 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260923-m2-auth1"></script>
-  <script src="./pwa-install.js?v=20260923-m2-auth1"></script>
+  <script src="./app.js?v=20260923-m2-auth2"></script>
+  <script src="./pwa-install.js?v=20260923-m2-auth2"></script>
 </body>
 </html>
