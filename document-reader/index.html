@@ -8,8 +8,8 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="mytool-build" content="20260923-docflow16">
-<title>قارئ الوثائق - MyTool</title>
+<meta name="mytool-build" content="20260923-docflow17">
+<title>الوصولات - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
 :root{--o:#ff8a1f;--b:#2ea8e6;--t:#163047;--m:#61778a;--l:#dbe7f0;--ok:#18794e;--warn:#9a6700;--bad:#b42318;--bg:#f7fbfd}
@@ -23,8 +23,9 @@ body{margin:0;padding:10px 12px 165px;font-family:Arial,Tahoma,sans-serif;backgr
 .management-card{padding:0;overflow:hidden;scroll-margin-top:10px}.management-summary{list-style:none;cursor:pointer;padding:12px 14px;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff}.management-summary::-webkit-details-marker{display:none}.management-summary:after{content:'⌄';font-size:16px;color:#53758b}.management-card[open] .management-summary:after{content:'⌃'}.management-summary span{font-size:10px;font-weight:600;color:var(--m)}.management-body{border-top:1px solid var(--l);padding:12px}
 .mobile-work-dock{position:fixed;z-index:9100;left:50%;transform:translateX(-50%);bottom:86px;width:min(520px,calc(100vw - 24px));background:#ffffffee;backdrop-filter:blur(12px);border:1px solid #d8e7ef;border-radius:16px;padding:8px;box-shadow:0 10px 30px #1630472b;display:grid;grid-template-columns:1fr 2fr;gap:8px}.mobile-work-dock .btn{min-height:48px;font-size:12px}.mobile-work-dock .quick-primary{font-size:14px}
 @media(min-width:700px){body{padding-bottom:92px}.mobile-work-dock{bottom:18px;width:min(520px,calc(100vw - 40px))}}.usage-settings{margin-top:10px;border-top:1px solid #cfe6d8;padding-top:10px;display:grid;gap:8px}.usage-status{font-size:11px;line-height:1.6;color:#416956;background:#fff;border:1px solid #d7ebe0;border-radius:10px;padding:9px 10px}.usage-danger{border:1px solid #f0b6b1;background:#fff7f6;border-radius:11px;padding:10px}.usage-danger b{color:var(--bad)}.usage-danger p{margin:4px 0 8px;color:#7c4c48;font-size:10px;line-height:1.55}.usage-recovery{border:1px solid #f0d58c;background:#fff9e8;border-radius:11px;padding:10px;font-size:11px;line-height:1.6;color:#6d571a}.usage-recovery code{display:block;direction:ltr;text-align:center;letter-spacing:1.3px;font-size:15px;font-weight:900;background:#fff;border:1px dashed #d9b95d;border-radius:8px;padding:9px;margin:7px 0;word-break:break-all}.security-modal{position:fixed;inset:0;background:#10283a88;z-index:10020;display:flex;align-items:center;justify-content:center;padding:16px}.security-dialog{width:min(420px,100%);background:#fff;border-radius:16px;border:1px solid #dbe7f0;box-shadow:0 18px 50px #10283a44;padding:16px}.security-dialog h3{margin:0 0 6px;font-size:17px}.security-dialog p{margin:0 0 10px;color:var(--m);font-size:11px;line-height:1.6}.security-dialog input{width:100%;border:1px solid #b9d5e3;border-radius:10px;padding:11px 12px;font:inherit;font-size:16px;direction:ltr;text-align:center;letter-spacing:2px}.security-dialog .security-confirm-input{margin-top:8px}.security-dialog-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}.security-dialog-error{margin-top:8px;color:var(--bad);font-size:10px;min-height:14px}
-.file-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.file-name{min-width:0;padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}.file-name{min-width:0;padding:10px 12px;background:var(--bg);border:1px solid var(--l);border-radius:11px;color:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn{border:1px solid #a9d5e9;background:#eef9ff;color:#0d5e86;border-radius:10px;padding:10px 12px;font-weight:700;font-size:12px;cursor:pointer}.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--o),var(--b))}.btn.danger{border-color:#f1b8b3;background:#fff4f2;color:var(--bad)}.btn:disabled{opacity:.55;cursor:not-allowed}
+.upload-hint{margin-top:7px;color:var(--m);font-size:10px;line-height:1.55}.upload-hint b{color:var(--t)}
 .actions{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:10px}
 .preview{margin-top:12px;min-height:160px;background:#f8fbfd;border:1px dashed #b9d5e3;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.preview img{display:block;max-width:100%;max-height:520px;object-fit:contain;transition:transform .18s ease}.preview .empty{color:var(--m);font-size:12px;padding:24px;text-align:center}
 .progress{margin-top:10px;padding:10px 12px;background:#f7fbfd;border:1px solid var(--l);border-radius:12px;font-size:12px;color:var(--m);line-height:1.6}.progress strong{color:var(--t)}
@@ -35,13 +36,13 @@ body{margin:0;padding:10px 12px 165px;font-family:Arial,Tahoma,sans-serif;backgr
 .image-refs{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding:6px 2px;align-items:center}.image-ref{flex:0 0 auto;border:1px solid #c9dce8;background:#f8fbfd;color:#17658a;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:800;cursor:pointer}.image-ref.active{background:#e8f7ff;border-color:#66b9df}.image-primary-action{flex:0 0 auto;border:1px solid #8fcce7;background:#eaf7fd;color:#0d5e86;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:900;cursor:pointer}.image-primary-action:disabled{opacity:.6;cursor:default}.toast-stack{position:fixed;top:16px;right:16px;z-index:9999;display:grid;gap:10px;width:min(360px,calc(100vw - 24px));pointer-events:none}.toast{pointer-events:auto;background:#fff;border:1px solid #dfe7ed;border-radius:15px;padding:13px 14px;box-shadow:0 12px 34px #10283a28;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;animation:toastIn .18s ease}.toast-icon{font-size:20px;line-height:1}.toast-title{font-weight:900;font-size:13px;color:var(--t)}.toast-message{margin-top:3px;font-size:11px;line-height:1.55;color:var(--m)}.toast-close{border:0;background:transparent;color:#81919d;font-size:20px;line-height:1;cursor:pointer}.toast.success{border-right:4px solid #35bf75}.toast.warn{border-right:4px solid #e4a21b}.toast.error{border-right:4px solid #ef6470}.toast.info{border-right:4px solid #45a8d8}@keyframes toastIn{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}@media(max-width:620px){.toast-stack{top:10px;right:12px;left:12px;width:auto}}
 details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{cursor:pointer;font-weight:700;font-size:12px;color:#0d5e86}pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#f8fbfd;border:1px solid var(--l);border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:10px}
 .hidden{display:none!important}
-@media(max-width:620px){.actions{grid-template-columns:1fr 1fr}.results,.detected{grid-template-columns:1fr}.file-row{grid-template-columns:1fr auto}.file-row .btn{padding:10px}.preview{min-height:135px}.recipient-context .context-top{grid-template-columns:1fr}.management-body{padding:10px}}
+@media(max-width:620px){.actions{grid-template-columns:1fr 1fr}.results,.detected{grid-template-columns:1fr}.file-row{grid-template-columns:1fr 1fr}.file-row .file-name{grid-column:1/-1}.file-row .btn{padding:10px}.preview{min-height:135px}.recipient-context .context-top{grid-template-columns:1fr}.management-body{padding:10px}}
 </style>
 </head>
 <body><main class="wrap">
 <section class="hero">
-  <h1>📄 قارئ الوثائق</h1>
-  <p>رفع → تحليل → حفظ <span class="hero-version">نسخة 21</span></p>
+  <h1>🧾 الوصولات</h1>
+  <p>رفع → فحص → مراجعة → حفظ <span class="hero-version">نسخة 22</span></p>
 </section>
 
 <section class="card security">
@@ -88,13 +89,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
 
 <section id="workCard" class="card work-card">
-  <div class="work-card-head"><b>ابدأ بالوصل</b><span>الرفع هنا مباشرة</span></div>
+  <div class="work-card-head"><b>رفع وفحص الوصولات</b><span>نفس السجل ونفس منع التكرار</span></div>
   <div class="file-row">
-    <div id="fileName" class="file-name">لم يتم اختيار صورة</div>
-    <label class="btn primary" for="fileInput">اختيار صور الوصل</label>
+    <div id="fileName" class="file-name">لم يتم اختيار وصل</div>
+    <label class="btn primary" for="fileInput">وصل واحد</label>
+    <label class="btn" for="batchFileInput">رفع دفعة</label>
     <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+    <input id="batchFileInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple hidden>
     <input id="additionalFileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
   </div>
+  <div class="upload-hint"><b>وصل واحد:</b> صورة أو عدة صور لنفس الوصل. <b>رفع دفعة:</b> PDF أو صور متعددة؛ كل صفحة أو صورة تُفحص كوَصل مستقل.</div>
 
   <div class="actions">
     <button id="analyzeBtn" class="btn primary" type="button" disabled>تحليل الصورة</button>
@@ -193,12 +197,14 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>
 (() => {
   'use strict';
 
   const $ = id => document.getElementById(id);
   const fileInput = $('fileInput');
+  const batchFileInput = $('batchFileInput');
   const additionalFileInput = $('additionalFileInput');
   const previewImg = $('previewImg');
   const previewEmpty = $('previewEmpty');
@@ -265,6 +271,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   let rotation = 0;
   let currentResult = null;
   let busy = false;
+  let batchRunning = false;
 
   const RECIPIENT_PRESETS_KEY='mytool.document-reader.recipient-presets.v1';
   const RECIPIENT_CONTEXT_KEY='mytool.document-reader.recipient-context.v1';
@@ -443,7 +450,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       detectedTemplateId:row.detected_template_id||row.source_type||'unknown',
       manualOverride:Boolean(row.manual_override),
       template:templateLabel(row.source_type||'unknown'),
-      identityKey:(row.source_type&&row.normalized_document_number)?row.source_type+'|'+row.normalized_document_number:'',
+      identityKey:row.normalized_document_number||'',
       fields:row.fields||emptyExtraction(),
       ocrConfidence:Number(row.ocr_confidence||0),
       orientation:Number(row.orientation||0),
@@ -698,7 +705,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       }else if(message.includes('POSITIVE_AMOUNT_REQUIRED_FOR_FINANCIAL_STATUS')){
         shown='لا يمكن تسجيل إرسال/استلام مالي بدون مبلغ أكبر من صفر.';
       }else if(message.includes('RECEIPT_IDENTITY_REQUIRED')){
-        shown='لا يمكن تثبيت العملية ماليًا بدون نوع المصدر ورقم الوصل.';
+        shown='لا يمكن تثبيت العملية ماليًا بدون رقم الوثيقة.';
       }else if(message.includes('PLATFORM_REQUIRED_FOR_RECEIPT_STATUS')){
         shown='اختر منصة قبل تسجيل الإرسال أو استلام المال.';
       }
@@ -1697,17 +1704,15 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   }
 
   function documentFingerprint(payload){
-    const type=receiptIdentityType(payload);
     const number=normalizedDocumentNumber(payload);
-    if(!type||!number)return '';
-    return type+'|'+number;
+    if(!number)return '';
+    return number;
   }
 
   function receiptIdentityText(payload){
-    const type=receiptIdentityType(payload);
     const number=cleanLine(payload?.fields?.documentNumber?.value||'');
-    if(!type||!number)return '';
-    return templateLabel(type)+' · '+number;
+    if(!number)return '';
+    return 'رقم الوثيقة '+number;
   }
 
   function hasConfirmedReceiptIdentity(payload){
@@ -2591,12 +2596,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
   const fields = [
     ['documentNumber','رقم الوثيقة'],
-    ['date','التاريخ'],
-    ['recipientAccount','حساب المستلم'],
-    ['bank','البنك / المصدر'],
-    ['sender','المرسل'],
+    ['recipient','المستلم'],
     ['amount','المبلغ'],
-    ['recipient','اسم المستفيد في الوصل']
+    ['date','التاريخ'],
+    ['bank','البنك / المصدر — استرشادي'],
+    ['recipientAccount','حساب المستلم'],
+    ['sender','المرسل']
   ];
 
   function cleanText(s){
@@ -2634,7 +2639,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const openCount=getRecentOperations().filter(isFinancialFollowUp).length;
     quickFollowBtn.textContent=openCount?'المتابعة ('+openCount+')':'المتابعة';
 
-    quickPrimaryBtn.disabled=Boolean(busy);
+    quickPrimaryBtn.disabled=Boolean(busy||batchRunning);
+    if(batchRunning){
+      quickPrimaryBtn.dataset.action='busy';
+      quickPrimaryBtn.textContent='جاري فحص الدفعة…';
+      return;
+    }
     if(busy){
       quickPrimaryBtn.dataset.action='busy';
       quickPrimaryBtn.textContent='جاري العمل…';
@@ -2712,8 +2722,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     analyzeBtn.disabled=on||!sourceImage;
     rotateRightBtn.disabled=on||!sourceImage;
     clearBtn.disabled=on||!sourceImage;
-    fileInput.disabled=on;
-    additionalFileInput.disabled=on;
+    fileInput.disabled=on||batchRunning;
+    batchFileInput.disabled=on||batchRunning;
+    additionalFileInput.disabled=on||batchRunning;
     const locked=currentResult&&['archived','duplicate'].includes(effectiveStatus(currentResult));
     recipientSelect.disabled=Boolean(on||currentResult?.historyView||locked);
     recipientAddBtn.disabled=recipientSelect.disabled;
@@ -2762,7 +2773,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     rotation=0;
     fileInput.value='';
     additionalFileInput.value='';
-    $('fileName').textContent='لم يتم اختيار صورة';
+    $('fileName').textContent='لم يتم اختيار وصل';
     previewImg.removeAttribute('src');
     previewImg.classList.add('hidden');
     previewImg.style.transform='';
@@ -2893,7 +2904,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     if(payload.duplicateInfo){
       const d=payload.duplicateInfo;
-      messages.push('وصل مكرر ممنوع: نفس هوية الوصل '+(d.templateId?templateLabel(d.templateId)+' · ':'')+(d.documentNumber||'')+' سبق تسجيلها'
+      messages.push('وصل مكرر ممنوع: رقم الوثيقة '+(d.documentNumber||'')+' سبق تسجيله'
         +(d.selectedRecipient?' إلى '+d.selectedRecipient:'')
         +(d.receiptDate?' بتاريخ '+d.receiptDate:'')+'.');
       level='bad';
@@ -3445,7 +3456,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const notice=$('resultNotice');
     if(payload.duplicateInfo){
       const d=payload.duplicateInfo;
-      notice.textContent='⛔ وصل مكرر: هوية '+(d.templateId?templateLabel(d.templateId)+' · ':'')+(d.documentNumber||'')+' موجودة في عملية أخرى'
+      notice.textContent='⛔ وصل مكرر: رقم الوثيقة '+(d.documentNumber||'')+' موجود في عملية أخرى'
         +(d.selectedRecipient?' عند '+d.selectedRecipient:'')
         +(d.receiptDate?' بتاريخ '+d.receiptDate:'')
         +(d.createdAt?' — '+new Date(d.createdAt).toLocaleTimeString('ar-DZ',{hour:'2-digit',minute:'2-digit'}):'')
@@ -4093,8 +4104,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     renderResult(currentResult);
     showToast('info','الإدخال اليدوي جاهز',
       selected==='unknown'
-        ? 'اختر نوع الوثيقة أولًا، ثم أدخل رقم الوثيقة وبقية الحقول يدويًا.'
-        : 'استعمل رقم الوثيقة الموضح في دليل ID ثم أكمل الحقول.',
+        ? 'أدخل رقم الوثيقة والمستلم والمبلغ والتاريخ. نوع البنك اختياري واستِرشادي.'
+        : 'ابدأ برقم الوثيقة ثم أكمل المستلم والمبلغ والتاريخ.',
       6000);
   }
 
@@ -4147,10 +4158,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     if(!currentResult||currentResult.historyView)return;
     if(!['analyzed','manual_entry'].includes(currentResult.status)||currentResult.duplicateInfo)return;
 
-    if(currentResult.templateId==='unknown'){
-      showToast('warn','حدد البنك أو الوسيلة','يجب معرفة نوع البنك/وسيلة الدفع قبل حفظ الوصل المالي.',6000);
-      return;
-    }
     const docNumber=cleanLine(currentResult.fields?.documentNumber?.value||'');
     if(!docNumber){
       const rule=documentIdRule(currentResult.templateId);
@@ -4160,7 +4167,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       return;
     }
     if(!hasConfirmedReceiptIdentity(currentResult)){
-      showToast('warn','هوية الوصل غير مكتملة','لا يمكن الحفظ أو التسوية قبل معرفة نوع البنك/الوسيلة ورقم الوثيقة معًا.',6000);
+      showToast('warn','رقم الوثيقة مطلوب','لا يمكن الحفظ أو التسوية بدون رقم الوثيقة.',6000);
       return;
     }
 
@@ -4169,7 +4176,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       currentResult.status='duplicate';
       persistCurrentOperation({registerDoc:false});
       renderResult(currentResult);
-      showToast('error','تعذر الحفظ','نفس البنك/الوسيلة مع رقم الوثيقة '+docNumber+' مسجل سابقًا.',6500);
+      showToast('error','تعذر الحفظ','رقم الوثيقة '+docNumber+' مسجل سابقًا، لذلك لن تُنشأ عملية مالية ثانية.',6500);
       return;
     }
 
@@ -4200,7 +4207,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }
 
     if(!hasConfirmedReceiptIdentity(currentResult)){
-      showToast('warn','هوية الوصل غير مكتملة','الإرسال ممنوع حتى تكون وسيلة الدفع ورقم الوثيقة معروفين.',5200);
+      showToast('warn','رقم الوثيقة مطلوب','الإرسال ممنوع حتى يكون رقم الوثيقة معروفًا.',5200);
       return;
     }
 
@@ -4330,15 +4337,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }).catch(()=>showError('تعذر النسخ التلقائي. يمكنك فتح النص الخام أو إعادة المحاولة.'));
   }
 
-  fileInput.addEventListener('change',async()=>{
-    const files=[...(fileInput.files||[])];
-    if(!files.length)return;
-    if(files.some(file=>!/^image\//i.test(file.type))){
-      showError('يوجد ملف غير مدعوم؛ اختر صورًا فقط.');
-      fileInput.value='';
-      return;
-    }
-
+  async function openSingleReceiptFiles(files){
     clearError();
     resetResults();
     activeOperationId='';
@@ -4348,75 +4347,211 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     updateDateHint();
     templateSelect.value='auto';
 
+    const mainFile=files[0];
+    sourceImage=await loadImage(mainFile);
+    rotation=0;
+    currentImageIndex=0;
+    $('fileName').textContent=mainFile.name||'صورة الوصل';
+    previewImg.src=objectUrl;
+    previewImg.classList.remove('hidden');
+    previewEmpty.classList.add('hidden');
+    updatePreview();
+
+    currentResult={
+      operationId:'op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+      createdAt:new Date().toISOString(),
+      selectedRecipient:UNSENT_RECIPIENT,
+      receiptDate:receiptDate.value,
+      language:'',
+      templateId:'unknown',
+      detectedTemplateId:'unknown',
+      manualOverride:false,
+      template:'بانتظار التحليل',
+      rawText:'',
+      fields:emptyExtraction(),
+      ocrConfidence:0,
+      orientation:0,
+      edgeCropSuspected:false,
+      status:'pending_analysis',
+      fileName:mainFile.name||'صورة الوصل',
+      imageCount:files.length,
+      rawTextAvailable:false,
+      historyView:false
+    };
+
+    let record=null;
     try{
-      const mainFile=files[0];
-      sourceImage=await loadImage(mainFile);
-      rotation=0;
-      currentImageIndex=0;
-      $('fileName').textContent=mainFile.name||'صورة الوثيقة';
-      previewImg.src=objectUrl;
-      previewImg.classList.remove('hidden');
-      previewEmpty.classList.add('hidden');
-      updatePreview();
-
-      currentResult={
-        operationId:'op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
-        createdAt:new Date().toISOString(),
-        selectedRecipient:UNSENT_RECIPIENT,
-        receiptDate:receiptDate.value,
-        language:'',
-        templateId:'unknown',
-        detectedTemplateId:'unknown',
-        manualOverride:false,
-        template:'بانتظار التحليل',
-        rawText:'',
-        fields:emptyExtraction(),
-        ocrConfidence:0,
-        orientation:0,
-        edgeCropSuspected:false,
-        status:'pending_analysis',
-        fileName:mainFile.name||'صورة الوثيقة',
-        imageCount:files.length,
-        rawTextAvailable:false,
-        historyView:false
-      };
-
-      let record=null;
-      try{
-        record=await saveReceiptImage(currentResult.operationId,mainFile,currentResult.fileName,false);
-        for(let i=1;i<files.length;i++){
-          record=await saveReceiptImage(currentResult.operationId,files[i],files[i].name||('مرجع '+(i+1)),true);
-        }
-        currentResult.imageCount=record?.images?.length||files.length;
-        currentImageIndex=Number(record?.primaryIndex||0);
-        renderImageRefs(record);
-      }catch(_e){
-        record=null;
+      record=await saveReceiptImage(currentResult.operationId,mainFile,currentResult.fileName,false);
+      for(let i=1;i<files.length;i++){
+        record=await saveReceiptImage(currentResult.operationId,files[i],files[i].name||('مرجع '+(i+1)),true);
       }
+      currentResult.imageCount=record?.images?.length||files.length;
+      currentImageIndex=Number(record?.primaryIndex||0);
+      renderImageRefs(record);
+    }catch(_e){
+      record=null;
+    }
 
-      activeRecipient=UNSENT_RECIPIENT;
-      persistCurrentOperation({registerDoc:false});
-      renderRecipientSelect();
-      renderRecentOperationTabs();
+    activeRecipient=UNSENT_RECIPIENT;
+    persistCurrentOperation({registerDoc:false});
+    renderRecipientSelect();
+    renderRecentOperationTabs();
 
-      analyzeBtn.disabled=false;
-      rotateRightBtn.disabled=false;
-      clearBtn.disabled=false;
-      updateSaveButton();
-      progressBox.classList.add('hidden');
+    analyzeBtn.disabled=false;
+    rotateRightBtn.disabled=false;
+    clearBtn.disabled=false;
+    updateSaveButton();
+    progressBox.classList.add('hidden');
 
-      if(record){
-        showToast('success','تم حفظ الوصل في الانتظار',
-          currentResult.imageCount>1
-            ? 'تم تجميع '+currentResult.imageCount+' صور في ملف وصل واحد. اختر أوضح صورة واعتمدها قبل التحليل.'
-            : 'تم حفظ الصورة داخل ملف وصل جديد، والعملية بانتظار التحليل.',
-          6000);
-      }else{
-        showToast('error','تعذر الحفظ المحلي','الصورة مفتوحة الآن، لكن إغلاق الصفحة قد يفقدها.',6500);
-      }
+    if(record){
+      showToast('success','تم حفظ الوصل في الانتظار',
+        currentResult.imageCount>1
+          ? 'تم تجميع '+currentResult.imageCount+' صور في ملف وصل واحد. اختر أوضح صورة واعتمدها قبل التحليل.'
+          : 'تم حفظ الصورة داخل ملف وصل جديد، والعملية بانتظار التحليل.',
+        6000);
+    }else{
+      showToast('error','تعذر الحفظ المحلي','الصورة مفتوحة الآن، لكن إغلاق الصفحة قد يفقدها.',6500);
+    }
+  }
+
+  async function pdfToReceiptImages(file){
+    if(!window.pdfjsLib)throw new Error('تعذر تحميل قارئ PDF. تحقق من الإنترنت ثم أعد المحاولة.');
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+    const out=[];
+    const base=String(file.name||'دفعة').replace(/\.pdf$/i,'');
+    for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
+      progressBox.classList.remove('hidden');
+      progressTitle.textContent='تحضير ملف PDF…';
+      progressText.textContent='تحويل الصفحة '+pageNo+' من '+pdf.numPages+' إلى وصل مستقل.';
+      const page=await pdf.getPage(pageNo);
+      const viewport=page.getViewport({scale:2});
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.ceil(viewport.width);
+      canvas.height=Math.ceil(viewport.height);
+      const ctx=canvas.getContext('2d',{alpha:false});
+      await page.render({canvasContext:ctx,viewport}).promise;
+      const blob=await new Promise((resolve,reject)=>{
+        canvas.toBlob(value=>value?resolve(value):reject(new Error('تعذر تجهيز صفحة PDF رقم '+pageNo+'.')),'image/jpeg',0.92);
+      });
+      out.push(new File([blob],base+' - صفحة '+pageNo+'.jpg',{type:'image/jpeg',lastModified:Date.now()}));
+      page.cleanup();
+    }
+    return out;
+  }
+
+  async function createPendingBatchReceipt(file){
+    const operationId='op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
+    const op={
+      operationId,
+      createdAt:new Date().toISOString(),
+      selectedRecipient:UNSENT_RECIPIENT,
+      receiptDate:todayLocal(),
+      language:'',
+      templateId:'unknown',
+      detectedTemplateId:'unknown',
+      manualOverride:false,
+      template:'بانتظار التحليل',
+      rawText:'',
+      fields:emptyExtraction(),
+      ocrConfidence:0,
+      orientation:0,
+      edgeCropSuspected:false,
+      status:'pending_analysis',
+      fileName:file.name||'صورة وصل من دفعة',
+      imageCount:1,
+      rawTextAvailable:false,
+      historyView:false
+    };
+    await saveReceiptImage(operationId,file,op.fileName,false);
+    currentResult=op;
+    activeOperationId=operationId;
+    persistCurrentOperation({registerDoc:false});
+    return operationId;
+  }
+
+  fileInput.addEventListener('change',async()=>{
+    const files=[...(fileInput.files||[])];
+    if(!files.length)return;
+    if(files.some(file=>!/^image\//i.test(file.type))){
+      showError('يوجد ملف غير مدعوم؛ في «وصل واحد» اختر صورًا فقط.');
+      fileInput.value='';
+      return;
+    }
+    try{
+      await openSingleReceiptFiles(files);
     }catch(err){
       showError(err.message||String(err));
       clearAll();
+    }
+  });
+
+  batchFileInput.addEventListener('change',async()=>{
+    const selected=[...(batchFileInput.files||[])];
+    batchFileInput.value='';
+    if(!selected.length||batchRunning)return;
+    const unsupported=selected.find(file=>!/^image\//i.test(file.type)&&file.type!=='application/pdf'&&!/\.pdf$/i.test(file.name||''));
+    if(unsupported){
+      showError('الدفعة تقبل صورًا أو ملفات PDF فقط.');
+      return;
+    }
+
+    batchRunning=true;
+    fileInput.disabled=true;
+    batchFileInput.disabled=true;
+    additionalFileInput.disabled=true;
+    updateQuickDock();
+    clearError();
+    const receiptFiles=[];
+    try{
+      for(let i=0;i<selected.length;i++){
+        const file=selected[i];
+        progressBox.classList.remove('hidden');
+        progressTitle.textContent='تجهيز الدفعة…';
+        progressText.textContent='الملف '+(i+1)+' من '+selected.length;
+        if(file.type==='application/pdf'||/\.pdf$/i.test(file.name||'')){
+          const pages=await pdfToReceiptImages(file);
+          receiptFiles.push(...pages);
+        }else{
+          receiptFiles.push(file);
+        }
+      }
+      if(!receiptFiles.length)throw new Error('لم أجد صفحات أو صورًا قابلة للفحص.');
+
+      const ids=[];
+      for(let i=0;i<receiptFiles.length;i++){
+        progressBox.classList.remove('hidden');
+        progressTitle.textContent='حفظ الدفعة…';
+        progressText.textContent='الوصل '+(i+1)+' من '+receiptFiles.length;
+        ids.push(await createPendingBatchReceipt(receiptFiles[i]));
+      }
+
+      activeHistorySupplier='__pending__';
+      renderRecentOperationTabs();
+
+      for(let i=0;i<ids.length;i++){
+        await openRecentOperation(ids[i]);
+        progressBox.classList.remove('hidden');
+        progressTitle.textContent='فحص الدفعة '+(i+1)+' / '+ids.length;
+        progressText.textContent='كل صفحة أو صورة تُعامل كوَصل مستقل.';
+        await analyze();
+      }
+
+      const stillExisting=new Set(getRecentOperations().map(op=>op.id));
+      const firstRemaining=ids.find(id=>stillExisting.has(id));
+      if(firstRemaining)await openRecentOperation(firstRemaining);
+      showToast('success','تم فحص الدفعة',
+        'تمت معالجة '+receiptFiles.length+' وصل/صفحة. راجع رقم الوثيقة والمستلم والمبلغ والتاريخ قبل الحفظ.',
+        7600);
+    }catch(err){
+      showToast('error','تعذر إكمال الدفعة',err?.message||String(err),7600);
+    }finally{
+      batchRunning=false;
+      fileInput.disabled=false;
+      batchFileInput.disabled=false;
+      additionalFileInput.disabled=false;
+      updateQuickDock();
+      updateSaveButton();
     }
   });
 
