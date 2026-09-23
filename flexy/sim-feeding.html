@@ -4,19 +4,35 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
 <title>تغذية الشرائح — Flexy</title>
-<link rel="stylesheet" href="app.css?v=20260923-admin-split-1">
-<script src="../auth-guard.js?v=20260923-admin-split-1" data-access="admin"></script>
+<link rel="stylesheet" href="app.css?v=20260923-feeding-source-1">
+<script src="../auth-guard.js?v=20260923-flexy-admin-split-2" data-access="admin"></script>
 <style>
-.feed-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.feed-stat{border:1px solid var(--fx-line);border-radius:14px;padding:12px;background:#fff}.feed-stat small{display:block;color:var(--fx-muted);font-size:11px}.feed-stat strong{display:block;font-size:20px;margin-top:5px}.codes{min-height:150px;resize:vertical;direction:ltr;text-align:left}.split-note{border-right:4px solid var(--fx-blue);padding:10px 12px;background:var(--fx-blue-soft);border-radius:12px;font-size:12px;line-height:1.7}.card-row,.attempt-row{border:1px solid var(--fx-line);border-radius:14px;padding:12px}.card-head{display:flex;justify-content:space-between;gap:10px}.status-ready{color:var(--fx-green)}.status-review,.status-queued,.status-processing{color:var(--fx-orange)}.status-used{color:var(--fx-muted)}.status-failed{color:var(--fx-red)}
+.feed-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.feed-stat{border:1px solid var(--fx-line);border-radius:14px;padding:12px;background:#fff}
+.feed-stat small{display:block;color:var(--fx-muted);font-size:11px}
+.feed-stat strong{display:block;font-size:20px;margin-top:5px}
+.codes{min-height:150px;resize:vertical;direction:ltr;text-align:left}
+.split-note{border-right:4px solid var(--fx-blue);padding:10px 12px;background:var(--fx-blue-soft);border-radius:12px;font-size:12px;line-height:1.7}
+.card-row,.attempt-row{border:1px solid var(--fx-line);border-radius:14px;padding:12px}
+.card-head{display:flex;justify-content:space-between;gap:10px}
+.status-ready{color:var(--fx-green)}.status-review,.status-queued,.status-processing{color:var(--fx-orange)}.status-used{color:var(--fx-muted)}.status-failed{color:var(--fx-red)}
+.source-box{border:1px solid var(--fx-line);border-radius:16px;padding:14px;background:#fbfdff}
+.source-title{font-size:14px;font-weight:900;margin-bottom:8px}
+.stock-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.stock-chip{border:1px solid var(--fx-line);border-radius:12px;padding:10px;background:#fff}
+.stock-chip small{display:block;color:var(--fx-muted);font-size:11px}.stock-chip strong{font-size:18px}
+.source-hint{margin-top:8px;padding:9px 10px;border-radius:10px;background:#f8fafc;color:var(--fx-muted);font-size:12px;line-height:1.6}
+.hidden{display:none!important}
 @media(max-width:560px){.feed-summary{grid-template-columns:1fr 1fr}.feed-summary .feed-stat:first-child{grid-column:1/-1}}
 </style>
 </head>
 <body data-mytool-app="flexy">
 <main class="fx-wrap">
   <div class="fx-top">
-    <div><h1 class="fx-title">تغذية الشرائح</h1><p class="fx-sub">مخزون تشغيل مستقل لتغذية SAMA. لا يظهر للبيع في تميز.</p></div>
+    <div><h1 class="fx-title">تغذية الشرائح</h1><p class="fx-sub">مخزون تشغيل مستقل لتغذية SAMA. المصدر يُحدد قبل أي إدخال.</p></div>
     <button id="refreshBtn" class="fx-btn secondary" type="button">تحديث</button>
   </div>
+
   <nav class="fx-tabs">
     <a class="fx-tab" href="./">فليكسي</a>
     <a class="fx-tab" href="sims.html">الشرائح والأرصدة</a>
@@ -24,7 +40,12 @@
     <a class="fx-tab" href="orders.html">الطابور</a>
     <a class="fx-tab" href="admin.html">الإدارة</a>
   </nav>
-  <div class="split-note">هذا المخزون خاص بالـAgent لشحن شريحة SAMA فقط. بطاقات البيع للعملاء تبقى في «تميز / بطاقات» ولا تنتقل إلى هنا تلقائيًا.</div>
+
+  <div class="split-note">
+    بطاقات تميز للبيع وبطاقات تغذية SAMA مخزونان منفصلان.
+    إذا اخترت «مخزوننا» يتم <strong>نقل</strong> البطاقة من المخزون التجاري إلى تغذية SAMA؛ لا تُنسخ ولا تبقى قابلة للبيع.
+  </div>
+
   <div id="message" class="fx-message" hidden style="margin-top:12px"></div>
 
   <section class="fx-card" style="margin-top:12px">
@@ -39,11 +60,59 @@
   <section class="fx-card">
     <h2>إضافة بطاقات تغذية SAMA</h2>
     <form id="importForm" class="fx-form">
-      <div class="fx-field"><label>قيمة البطاقات</label><select id="amount" class="fx-select" required><option value="">اختر</option><option value="1000">1000 دج</option><option value="2000">2000 دج</option></select></div>
-      <div class="fx-field"><label>لصق الأكواد — بطاقة واحدة في كل سطر</label><textarea id="codes" class="fx-input codes" inputmode="numeric" placeholder="123456789012345&#10;123456789012346"></textarea></div>
-      <div class="fx-field"><label>أو رفع TXT</label><input id="file" class="fx-input" type="file" accept=".txt,text/plain"></div>
-      <div class="fx-actions"><button id="saveBtn" class="fx-btn" type="submit">حفظ في مخزون تغذية SAMA</button><button id="clearBtn" class="fx-btn secondary" type="button">مسح</button></div>
-      <div class="fx-meta">كل كود يجب أن يكون 15 رقمًا. الإضافة لا ترسل الكود مباشرة؛ بعد الحفظ تصبح البطاقة جاهزة وقد يستعملها النظام تلقائيًا حسب سياسة تغذية SAMA.</div>
+      <div class="source-box">
+        <div class="source-title">1. المصدر</div>
+        <div class="fx-field">
+          <label>اختر من أين جاءت البطاقات</label>
+          <select id="source" class="fx-select" required>
+            <option value="">جاري تحميل المصادر…</option>
+          </select>
+        </div>
+        <div id="sourceHint" class="source-hint">اختر المصدر أولًا.</div>
+      </div>
+
+      <div class="fx-field">
+        <label>2. قيمة البطاقات</label>
+        <select id="amount" class="fx-select" required>
+          <option value="">اختر</option>
+          <option value="1000">1000 دج</option>
+          <option value="2000">2000 دج</option>
+        </select>
+      </div>
+
+      <div id="stockMode" class="source-box hidden">
+        <div class="source-title">من مخزوننا التجاري</div>
+        <div class="stock-strip">
+          <div class="stock-chip"><small>متاح للبيع 1000</small><strong id="stock1000">0</strong></div>
+          <div class="stock-chip"><small>متاح للبيع 2000</small><strong id="stock2000">0</strong></div>
+        </div>
+        <div class="fx-field" style="margin-top:10px">
+          <label>الكمية المراد نقلها إلى تغذية SAMA</label>
+          <input id="quantity" class="fx-input" type="number" inputmode="numeric" min="1" max="500" value="1">
+        </div>
+        <div class="source-hint">عند التنفيذ تخرج البطاقات من المتاح للبيع وتدخل مخزون تغذية SAMA مع سجل نقل واضح.</div>
+      </div>
+
+      <div id="platformMode" class="hidden">
+        <div class="fx-field">
+          <label>3. لصق الأكواد — بطاقة واحدة في كل سطر</label>
+          <textarea id="codes" class="fx-input codes" inputmode="numeric" placeholder="123456789012345&#10;123456789012346"></textarea>
+        </div>
+        <div class="fx-field">
+          <label>أو رفع TXT</label>
+          <input id="file" class="fx-input" type="file" accept=".txt,text/plain">
+        </div>
+      </div>
+
+      <div class="fx-actions">
+        <button id="saveBtn" class="fx-btn" type="submit">متابعة</button>
+        <button id="clearBtn" class="fx-btn secondary" type="button">مسح</button>
+      </div>
+
+      <div class="fx-meta">
+        من منصة: الأكواد تُحفظ مباشرة في مخزون تغذية SAMA باسم المنصة المختارة.
+        من مخزوننا: لا يظهر الكود في المتصفح؛ الخادم ينقل بطاقات متاحة تلقائيًا حسب القيمة والكمية.
+      </div>
     </form>
   </section>
 
@@ -57,54 +126,227 @@
     <div id="attempts" class="fx-list"><div class="fx-empty">جاري التحميل…</div></div>
   </section>
 </main>
+
 <script type="module">
 import {rpc,escapeHtml,money,fmtDate} from './api.js';
-const $=id=>document.getElementById(id);let cardRows=[];
-function show(t,bad=false){$('message').hidden=false;$('message').textContent=t;$('message').className='fx-message '+(bad?'bad':'ok')}
-function parse(raw){
- let text=String(raw||'').replace(/^\uFEFF/,'');const lines=text.split(/\r\n|\n|\r/).map(x=>x.trim()).filter(Boolean);
- const bad=lines.filter(x=>!/^[0-9]{15}$/.test(x));if(!lines.length)throw new Error('أدخل الأكواد أو اختر ملف TXT.');
- if(bad.length)throw new Error('يوجد '+bad.length+' سطر غير صالح. كل بطاقة يجب أن تكون 15 رقمًا فقط.');
- return [...new Set(lines)];
+
+const $=id=>document.getElementById(id);
+let sources=[];
+let stockMap={1000:0,2000:0};
+
+function show(text,bad=false){
+  $('message').hidden=false;
+  $('message').textContent=text;
+  $('message').className='fx-message '+(bad?'bad':'ok');
 }
-function status(s){return ({ready:'جاهزة',queued:'في الانتظار',processing:'جاري الشحن',used:'استُعملت',review:'تحتاج مراجعة',failed:'فشلت'})[s]||s||'—'}
+
+function hideMessage(){ $('message').hidden=true; }
+
+function selectedSource(){
+  const raw=$('source').value;
+  if(!raw)return null;
+  const [kind,key]=raw.split('|');
+  return sources.find(x=>x.source_kind===kind&&x.source_key===key)||null;
+}
+
+function parseCodes(raw){
+  const text=String(raw||'').replace(/^\uFEFF/,'');
+  const lines=text.split(/\r\n|\n|\r/).map(x=>x.trim()).filter(Boolean);
+  const bad=lines.filter(x=>!/^[0-9]{15}$/.test(x));
+  if(!lines.length)throw new Error('أدخل الأكواد أو اختر ملف TXT.');
+  if(bad.length)throw new Error('يوجد '+bad.length+' سطر غير صالح. كل بطاقة يجب أن تكون 15 رقمًا فقط.');
+  return [...new Set(lines)];
+}
+
+function status(s){
+  return ({ready:'جاهزة',queued:'في الانتظار',processing:'جاري الشحن',used:'استُعملت',review:'تحتاج مراجعة',failed:'فشلت'})[s]||s||'—';
+}
+
+function renderSources(){
+  const stock=sources.find(x=>x.source_kind==='stock');
+  const platforms=sources.filter(x=>x.source_kind==='platform');
+  let html='<option value="">اختر المصدر</option>';
+  if(stock)html+='<option value="stock|'+escapeHtml(stock.source_key)+'">مخزوننا</option>';
+  if(platforms.length){
+    html+='<optgroup label="المنصات">';
+    html+=platforms.map(p=>'<option value="platform|'+escapeHtml(p.source_key)+'">'+escapeHtml(p.display_name)+'</option>').join('');
+    html+='</optgroup>';
+  }
+  $('source').innerHTML=html;
+}
+
+function refreshSourceMode(){
+  const src=selectedSource();
+  const isStock=src?.source_kind==='stock';
+  const isPlatform=src?.source_kind==='platform';
+
+  $('stockMode').classList.toggle('hidden',!isStock);
+  $('platformMode').classList.toggle('hidden',!isPlatform);
+
+  if(!src){
+    $('sourceHint').textContent='اختر المصدر أولًا.';
+    $('saveBtn').textContent='متابعة';
+  }else if(isStock){
+    $('sourceHint').textContent='سيتم نقل بطاقات Mobilis متاحة من مخزون تميز التجاري إلى تغذية SAMA. لن تبقى قابلة للبيع.';
+    $('saveBtn').textContent='نقل من مخزوننا إلى تغذية SAMA';
+  }else{
+    $('sourceHint').textContent='المصدر: '+src.display_name+'. هذه الدفعة ستُسجل باسم المنصة نفسها.';
+    $('saveBtn').textContent='حفظ بطاقات '+src.display_name;
+  }
+}
+
+function renderStock(rows){
+  stockMap={1000:0,2000:0};
+  (rows||[]).forEach(r=>{ if(r.amount===1000||r.amount===2000)stockMap[r.amount]=Number(r.available_count||0); });
+  $('stock1000').textContent=String(stockMap[1000]);
+  $('stock2000').textContent=String(stockMap[2000]);
+}
+
 function renderCards(rows){
- cardRows=rows;$('cardCount').textContent=String(rows.length);
- if(!rows.length){$('cards').innerHTML='<div class="fx-empty">لا توجد بطاقات تغذية مضافة.</div>';return}
- $('cards').innerHTML=rows.map(c=>'<article class="card-row"><div class="card-head"><div><strong>'+escapeHtml(c.amount)+' دج — '+escapeHtml(c.masked_code)+'</strong><div class="fx-meta">'+escapeHtml(c.source_label||'Flexy')+' · '+escapeHtml(fmtDate(c.created_at))+'</div></div><strong class="status-'+escapeHtml(c.status)+'">'+escapeHtml(status(c.status))+'</strong></div>'+(c.result_text?'<div class="fx-meta" style="margin-top:7px">آخر رد: '+escapeHtml(c.result_text)+'</div>':'')+'</article>').join('');
+  $('cardCount').textContent=String(rows.length);
+  if(!rows.length){
+    $('cards').innerHTML='<div class="fx-empty">لا توجد بطاقات تغذية مضافة.</div>';
+    return;
+  }
+  $('cards').innerHTML=rows.map(c=>
+    '<article class="card-row">'+
+      '<div class="card-head">'+
+        '<div><strong>'+escapeHtml(c.amount)+' دج — '+escapeHtml(c.masked_code)+'</strong>'+
+        '<div class="fx-meta">'+escapeHtml(c.source_label||'Flexy')+' · '+escapeHtml(fmtDate(c.created_at))+'</div></div>'+
+        '<strong class="status-'+escapeHtml(c.status)+'">'+escapeHtml(status(c.status))+'</strong>'+
+      '</div>'+
+      (c.result_text?'<div class="fx-meta" style="margin-top:7px">ملاحظة: '+escapeHtml(c.result_text)+'</div>':'')+
+    '</article>'
+  ).join('');
 }
+
 function renderAttempts(rows){
- if(!rows.length){$('attempts').innerHTML='<div class="fx-empty">لا توجد محاولات شحن بعد.</div>';return}
- $('attempts').innerHTML=rows.map(a=>'<article class="attempt-row"><div class="card-head"><div><strong>'+escapeHtml(a.amount)+' دج — '+escapeHtml(a.masked_code)+'</strong><div class="fx-meta">'+escapeHtml(fmtDate(a.created_at))+'</div></div><span class="fx-pill '+(a.result_status==='success'?'ok':a.result_status==='failed'?'bad':'warn')+'">'+escapeHtml(a.result_status==='success'?'نجاح':a.result_status==='failed'?'فشل':'مراجعة')+'</span></div><div class="fx-meta" style="margin-top:7px">'+escapeHtml(a.response_text||'لا يوجد رد نصي')+'</div></article>').join('');
+  if(!rows.length){
+    $('attempts').innerHTML='<div class="fx-empty">لا توجد محاولات شحن بعد.</div>';
+    return;
+  }
+  $('attempts').innerHTML=rows.map(a=>
+    '<article class="attempt-row">'+
+      '<div class="card-head">'+
+        '<div><strong>'+escapeHtml(a.amount)+' دج — '+escapeHtml(a.masked_code)+'</strong>'+
+        '<div class="fx-meta">'+escapeHtml(fmtDate(a.created_at))+'</div></div>'+
+        '<span class="fx-pill '+(a.result_status==='success'?'ok':a.result_status==='failed'?'bad':'warn')+'">'+
+          escapeHtml(a.result_status==='success'?'نجاح':a.result_status==='failed'?'فشل':'مراجعة')+
+        '</span>'+
+      '</div>'+
+      '<div class="fx-meta" style="margin-top:7px">'+escapeHtml(a.response_text||'لا يوجد رد نصي')+'</div>'+
+    '</article>'
+  ).join('');
 }
+
 async function load(){
- try{
-  const [guard,cards,attempts]=await Promise.all([
-    rpc('station_connect_admin_recharge_guard'),
-    rpc('station_connect_admin_recharge_cards',{p_limit:50}),
-    rpc('station_connect_admin_recharge_attempts',{p_limit:30})
-  ]);
-  const g=guard?.[0]||{};$('samaBalance').textContent=g.balance_amount==null?'—':money(g.balance_amount)+' دج';
-  $('ready1000').textContent=String(g.ready_1000||0);$('ready2000').textContent=String(g.ready_2000||0);
-  renderCards(Array.isArray(cards)?cards:[]);renderAttempts(Array.isArray(attempts)?attempts:[]);
- }catch(e){show(String(e?.message||e),true)}
+  try{
+    const [guard,cards,attempts,sourceRows,stockRows]=await Promise.all([
+      rpc('station_connect_admin_recharge_guard'),
+      rpc('station_connect_admin_recharge_cards',{p_limit:50}),
+      rpc('station_connect_admin_recharge_attempts',{p_limit:30}),
+      rpc('station_connect_admin_feeding_sources'),
+      rpc('card_stock_admin_mobilis_available_summary')
+    ]);
+
+    const g=guard?.[0]||{};
+    $('samaBalance').textContent=g.balance_amount==null?'—':money(g.balance_amount)+' دج';
+    $('ready1000').textContent=String(g.ready_1000||0);
+    $('ready2000').textContent=String(g.ready_2000||0);
+
+    sources=Array.isArray(sourceRows)?sourceRows:[];
+    renderSources();
+    renderStock(Array.isArray(stockRows)?stockRows:[]);
+    renderCards(Array.isArray(cards)?cards:[]);
+    renderAttempts(Array.isArray(attempts)?attempts:[]);
+    refreshSourceMode();
+  }catch(e){
+    show(String(e?.message||e),true);
+  }
 }
-$('file').addEventListener('change',async()=>{const f=$('file').files?.[0];if(!f)return;$('codes').value=await f.text();const m=f.name.match(/(?:^|\D)(1000|2000)(?:\D|$)/);if(m)$('amount').value=m[1]});
-$('clearBtn').addEventListener('click',()=>{$('importForm').reset();$('codes').value='';$('message').hidden=true});
-$('importForm').addEventListener('submit',async e=>{
- e.preventDefault();const btn=$('saveBtn');btn.disabled=true;
- try{
-  const amount=Number($('amount').value||0);if(![1000,2000].includes(amount))throw new Error('اختر قيمة 1000 أو 2000 دج.');
-  const codes=parse($('codes').value);
-  const result=await rpc('station_connect_admin_bulk_add_recharge_cards',{p_codes:codes,p_amount:amount,p_source_code:'sim_feeding'});
-  const row=result?.[0]||{};show('تم الحفظ: '+Number(row.inserted_count||0)+' جديدة، '+Number(row.duplicate_count||0)+' مكررة.');
-  $('importForm').reset();$('codes').value='';await load();
- }catch(e){
-  const t=String(e?.message||e);
-  show(t.includes('MOBILIS_COMMERCIAL_STOCK_CONFLICT')?'هذه البطاقة موجودة في مخزون البيع التجاري ولا يمكن استخدامها لتغذية SAMA.':t,true);
- }finally{btn.disabled=false}
+
+$('source').addEventListener('change',()=>{hideMessage();refreshSourceMode();});
+
+$('amount').addEventListener('change',()=>{
+  const src=selectedSource();
+  if(src?.source_kind==='stock'){
+    const amount=Number($('amount').value||0);
+    const available=stockMap[amount]||0;
+    $('sourceHint').textContent='مخزوننا المتاح لهذه القيمة: '+available+' بطاقة. النقل يخرجها من البيع ويدخلها لتغذية SAMA.';
+  }
 });
-$('refreshBtn').addEventListener('click',load);load();
+
+$('file').addEventListener('change',async()=>{
+  const file=$('file').files?.[0];
+  if(!file)return;
+  $('codes').value=await file.text();
+  const match=file.name.match(/(?:^|\D)(1000|2000)(?:\D|$)/);
+  if(match)$('amount').value=match[1];
+});
+
+$('clearBtn').addEventListener('click',()=>{
+  $('importForm').reset();
+  $('codes').value='';
+  hideMessage();
+  refreshSourceMode();
+});
+
+$('importForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const btn=$('saveBtn');
+  btn.disabled=true;
+
+  try{
+    const src=selectedSource();
+    if(!src)throw new Error('اختر المصدر أولًا.');
+
+    const amount=Number($('amount').value||0);
+    if(![1000,2000].includes(amount))throw new Error('اختر قيمة 1000 أو 2000 دج.');
+
+    if(src.source_kind==='stock'){
+      const quantity=Number($('quantity').value||0);
+      if(!Number.isInteger(quantity)||quantity<1)throw new Error('أدخل كمية صحيحة.');
+      const available=stockMap[amount]||0;
+      if(quantity>available)throw new Error('المتاح في مخزوننا لهذه القيمة '+available+' بطاقة فقط.');
+
+      const result=await rpc('station_connect_admin_transfer_stock_to_feeding',{
+        p_amount:amount,
+        p_quantity:quantity
+      });
+      const row=result?.[0]||{};
+      show('تم نقل '+Number(row.transferred_count||0)+' بطاقة من مخزوننا إلى تغذية SAMA. المتبقي للبيع: '+Number(row.remaining_available||0)+'.');
+    }else{
+      const codes=parseCodes($('codes').value);
+      const result=await rpc('station_connect_admin_bulk_add_recharge_cards_v2',{
+        p_codes:codes,
+        p_amount:amount,
+        p_source_kind:'platform',
+        p_source_key:src.source_key
+      });
+      const row=result?.[0]||{};
+      show('تم الحفظ من '+(row.source_label||src.display_name)+': '+Number(row.inserted_count||0)+' جديدة، '+Number(row.duplicate_count||0)+' مكررة.');
+    }
+
+    $('importForm').reset();
+    $('codes').value='';
+    await load();
+  }catch(e){
+    const text=String(e?.message||e);
+    if(text.includes('MOBILIS_COMMERCIAL_STOCK_CONFLICT')){
+      show('هذه البطاقة موجودة في مخزون البيع التجاري. استخدم خيار «مخزوننا» لنقلها بدل نسخها.',true);
+    }else if(text.includes('INSUFFICIENT_COMMERCIAL_STOCK')){
+      show('الكمية المطلوبة أكبر من المخزون التجاري المتاح لهذه القيمة.',true);
+    }else{
+      show(text,true);
+    }
+  }finally{
+    btn.disabled=false;
+  }
+});
+
+$('refreshBtn').addEventListener('click',load);
+load();
 </script>
 <script src="flexy-nav.js?v=20260923-admin-split-1"></script>
-</body></html>
+</body>
+</html>
