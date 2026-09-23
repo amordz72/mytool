@@ -57,14 +57,15 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   <div id="message" class="message info">جاري تحميل إدارة ربط العملاء…</div>
 
   <section class="card">
-    <div class="section-head"><div><h1>ربط ومصادر العملاء</h1><div class="muted">كل حساب منصة يبقى بهويته الخاصة، ثم يُربط بعميل MyTool موحد. نفس المستخدم داخل نفس المنصة لا يمكن ربطه بعميلين في نفس الوقت.</div></div><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div>
+    <div class="section-head"><div><h1>ربط ومصادر العملاء</h1><div class="muted">كل حساب منصة يُسجل أولًا كهوية داخل MyTool. هذا لا يعني أنه مطابق لحساب في منصة أخرى. «مجمّع بين منصات» يظهر فقط عندما نفس العميل لديه حسابات من منصتين مختلفتين أو أكثر.</div></div><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div>
     <details id="linkingMetricsDrawer" class="metrics-drawer">
       <summary><span>ملخص الربط</span><b id="metricsSummary">جاري الحساب…</b></summary>
       <div class="metrics metrics-compact">
         <div id="metricSources" class="metric"><small>حسابات المصادر</small><b id="mSources">0</b></div>
-        <div id="metricUnlinked" class="metric"><small>غير مربوط</small><b id="mUnlinked">0</b></div>
+        <div id="metricUnlinked" class="metric"><small>غير مسجل</small><b id="mUnlinked">0</b></div>
         <div id="metricPending" class="metric"><small>بانتظار الموافقة</small><b id="mPending">0</b></div>
-        <div id="metricLinked" class="metric"><small>مربوط</small><b id="mLinked">0</b></div>
+        <div id="metricLinked" class="metric"><small>مسجل في MyTool</small><b id="mLinked">0</b></div>
+        <div id="metricCrossPlatform" class="metric"><small>عملاء مجمعون بين منصات</small><b id="mCrossPlatform">0</b></div>
         <div id="metricConflict" class="metric"><small>تعارض</small><b id="mConflict">0</b></div>
       </div>
     </details>
@@ -147,6 +148,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260923-metrics-drawer1"></script>
+<script type="module" src="customer-links.js?v=20260923-link-semantics2"></script>
 </body>
 </html>
