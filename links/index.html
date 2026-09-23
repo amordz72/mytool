@@ -7,72 +7,214 @@
 <meta name="theme-color" content="#2ea8e6">
 <title>روابط العمل - MyTool</title>
 <style>
-:root{--o:#ff8a1f;--b:#2ea8e6;--t:#163047;--m:#61778a;--l:#dbe7f0;--soft:#f7fbfe}
+:root{--o:#ff8a1f;--b:#2ea8e6;--t:#163047;--m:#61778a;--l:#dbe7f0;--soft:#f7fbfe;--ok:#168a63;--danger:#c83b4d}
 *{box-sizing:border-box}body{margin:0;padding:10px;font-family:Arial,Tahoma,sans-serif;color:var(--t);background:linear-gradient(135deg,#fff7ef,#eef9ff);min-height:100vh}
-.wrap{max-width:900px;margin:auto}.top{display:flex;gap:8px;margin-bottom:10px}.back{display:block;text-decoration:none;color:var(--t);font-weight:bold;background:#fff;border:1px solid var(--l);border-radius:12px;padding:10px 14px}
-.hero{background:linear-gradient(135deg,var(--o),#7fd3ff);color:#fff;border-radius:20px;padding:16px;box-shadow:0 8px 24px #16304718}.hero h1{font-size:22px;margin:0}.hero p{margin:5px 0 0;font-size:13px;line-height:1.6}
-.groups{display:grid;gap:12px;margin-top:10px}.group{background:#fff;border:1px solid var(--l);border-radius:18px;padding:10px;box-shadow:0 6px 18px #16304710}.group-head{display:flex;align-items:center;gap:8px;padding:2px 3px 5px}.group-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fff0df,#e9f8ff);font-size:18px}.group-title{font-size:15px;font-weight:900}.group-count{margin-right:auto;font-size:11px;color:var(--m)}
-table{width:100%;border-collapse:separate;border-spacing:0 8px}td{background:var(--soft);border-top:1px solid var(--l);border-bottom:1px solid var(--l);padding:10px}
-td:first-child{border-right:1px solid var(--l);border-radius:0 12px 12px 0}td:last-child{border-left:1px solid var(--l);border-radius:12px 0 0 12px}
-.initial{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;background:#fff;border:1px solid var(--l);direction:ltr;letter-spacing:.2px}
-.name{font-weight:800}.note{font-size:11px;color:var(--m);margin-top:3px}
-.open{display:inline-block;text-decoration:none;background:linear-gradient(135deg,#147fb2,var(--b));color:#fff;font-weight:800;border-radius:10px;padding:9px 12px;white-space:nowrap}
-.empty{text-align:center;color:var(--m);padding:24px;background:#fff;border:1px dashed var(--l);border-radius:16px;margin-top:10px}.hint{font-size:11px;color:var(--m);margin:9px 3px 0}
-@media(max-width:640px){body{padding:8px}.group{padding:7px}td{padding:8px}.open{padding:8px 10px}.name{font-size:13px}.note{font-size:10px}}
+button,input,select,textarea{font:inherit}.wrap{max-width:900px;margin:auto}.top{display:flex;gap:8px;margin-bottom:10px}.back{display:block;text-decoration:none;color:var(--t);font-weight:bold;background:#fff;border:1px solid var(--l);border-radius:12px;padding:10px 14px}
+.hero{background:linear-gradient(135deg,var(--o),#7fd3ff);color:#fff;border-radius:20px;padding:16px;box-shadow:0 8px 24px #16304718}.hero h1{font-size:22px;margin:0}.hero p{margin:5px 0 0;font-size:13px;line-height:1.6}.hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:0;border-radius:11px;padding:10px 13px;font-weight:800;cursor:pointer}.btn.primary{background:#137fae;color:#fff}.btn.light{background:#fff;color:var(--t);border:1px solid #ffffffaa}.btn.secondary{background:#eef7fc;color:var(--t);border:1px solid var(--l)}.btn.danger{background:#fff0f2;color:var(--danger);border:1px solid #f3c8cf}.btn:disabled{opacity:.55;cursor:not-allowed}
+.msg{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:800;background:#eef7fc;border:1px solid var(--l)}.msg.ok{background:#edf9f4;color:var(--ok)}.msg.danger{background:#fff0f2;color:var(--danger)}[hidden]{display:none!important}
+.editor{background:#fff;border:1px solid var(--l);border-radius:18px;padding:12px;margin-top:12px;box-shadow:0 6px 18px #16304710}.editor-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.editor h2{font-size:17px;margin:0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.field{display:block}.field.full{grid-column:1/-1}.field span{display:block;font-size:11px;font-weight:800;color:var(--m);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--l);border-radius:11px;padding:10px;background:#fff;color:var(--t)}.field textarea{min-height:70px;resize:vertical}.checks{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:12px;font-weight:800}.checks label{display:flex;align-items:center;gap:6px}.editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+.groups{display:grid;gap:12px;margin-top:12px}.group{background:#fff;border:1px solid var(--l);border-radius:18px;padding:10px;box-shadow:0 6px 18px #16304710}.group-head{display:flex;align-items:center;gap:8px;padding:2px 3px 5px}.group-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fff0df,#e9f8ff);font-size:18px}.group-title{font-size:15px;font-weight:900}.group-count{margin-right:auto;font-size:11px;color:var(--m)}.edit-group{border:0;background:transparent;cursor:pointer;font-size:15px;padding:6px}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}td{background:var(--soft);border-top:1px solid var(--l);border-bottom:1px solid var(--l);padding:10px}td:first-child{border-right:1px solid var(--l);border-radius:0 12px 12px 0}td:last-child{border-left:1px solid var(--l);border-radius:12px 0 0 12px}.initial{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;background:#fff;border:1px solid var(--l);direction:ltr;letter-spacing:.2px}.name{font-weight:800}.note{font-size:11px;color:var(--m);margin-top:3px;line-height:1.5}.row-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end}.open,.edit{display:inline-block;text-decoration:none;border-radius:10px;padding:9px 11px;white-space:nowrap;font-weight:800;border:0;cursor:pointer}.open{background:linear-gradient(135deg,#147fb2,var(--b));color:#fff}.edit{background:#fff;color:var(--t);border:1px solid var(--l)}.badge{display:inline-block;margin-right:5px;padding:2px 6px;border-radius:999px;background:#eef2f5;color:var(--m);font-size:9px}.empty{text-align:center;color:var(--m);padding:24px;background:#fff;border:1px dashed var(--l);border-radius:16px;margin-top:10px}.hint{font-size:11px;color:var(--m);margin:9px 3px 0}
+@media(max-width:640px){body{padding:8px}.group{padding:7px}td{padding:8px}.open,.edit{padding:8px 9px}.name{font-size:13px}.note{font-size:10px}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.row-actions{flex-direction:column}.row-actions>*{width:100%;text-align:center}}
 </style>
-<script src="../auth-guard.js?v=20260922-work-links-1" data-access="admin"></script>
+<script src="../auth-guard.js?v=20260923-work-links-db1" data-access="admin"></script>
 </head>
 <body>
 <main class="wrap">
 <div class="top"><a class="back" href="../">← My Tools</a></div>
+
 <section class="hero">
   <h1>روابط العمل</h1>
-  <p>مكان واحد للروابط الثابتة التي نحتاجها كثيرًا. كل رابط يفتح في صفحة جديدة حتى تبقى MyTool مفتوحة.</p>
+  <p>الروابط والمجموعات محفوظة الآن في Supabase. تقدر تضيف رابطًا جديدًا أو تعدّل أي رابط موجود بدون تعديل ملفات الموقع.</p>
+  <div class="hero-actions">
+    <button id="addLinkBtn" class="btn light" type="button">＋ إضافة رابط</button>
+    <button id="addGroupBtn" class="btn light" type="button">＋ إضافة مجموعة</button>
+    <button id="refreshBtn" class="btn light" type="button">↻ تحديث</button>
+  </div>
 </section>
+
+<div id="message" class="msg" hidden></div>
+
+<section id="linkEditor" class="editor" hidden>
+  <div class="editor-head"><h2 id="linkEditorTitle">إضافة رابط</h2><button id="closeLinkEditor" class="btn secondary" type="button">إغلاق</button></div>
+  <div class="grid">
+    <label class="field"><span>اسم الرابط</span><input id="linkName" autocomplete="off"></label>
+    <label class="field"><span>المجموعة</span><select id="linkGroup"></select></label>
+    <label class="field full"><span>الرابط</span><input id="linkUrl" dir="ltr" placeholder="https://example.com/ أو ../cards/"></label>
+    <label class="field"><span>الاختصار الصغير</span><input id="linkShort" maxlength="8" dir="ltr" placeholder="مثال: GM"></label>
+    <label class="field"><span>الترتيب</span><input id="linkOrder" type="number" inputmode="numeric" value="100"></label>
+    <label class="field full"><span>ملاحظة</span><textarea id="linkNote"></textarea></label>
+  </div>
+  <div class="checks"><label><input id="linkActive" type="checkbox" checked> ظاهر في القائمة</label></div>
+  <div class="editor-actions">
+    <button id="saveLinkBtn" class="btn primary" type="button">حفظ الرابط</button>
+    <button id="deleteLinkBtn" class="btn danger" type="button" hidden>حذف الرابط</button>
+  </div>
+</section>
+
+<section id="groupEditor" class="editor" hidden>
+  <div class="editor-head"><h2 id="groupEditorTitle">إضافة مجموعة</h2><button id="closeGroupEditor" class="btn secondary" type="button">إغلاق</button></div>
+  <div class="grid">
+    <label class="field"><span>اسم المجموعة</span><input id="groupName"></label>
+    <label class="field"><span>الأيقونة</span><input id="groupIcon" maxlength="8" value="🔗"></label>
+    <label class="field"><span>الترتيب</span><input id="groupOrder" type="number" inputmode="numeric" value="100"></label>
+  </div>
+  <div class="checks"><label><input id="groupActive" type="checkbox" checked> المجموعة مفعلة</label></div>
+  <div class="editor-actions">
+    <button id="saveGroupBtn" class="btn primary" type="button">حفظ المجموعة</button>
+    <button id="deleteGroupBtn" class="btn danger" type="button" hidden>حذف المجموعة</button>
+  </div>
+</section>
+
 <div id="groups" class="groups"></div>
-<div id="empty" class="empty" hidden>لا توجد روابط مفعلة.</div>
-<div class="hint">كل مجموعة لها غرض واضح. عندما تضيف رابطًا جديدًا نربطه بالمجموعة المناسبة بدل الاعتماد على الأيقونة أو أول حرف من الاسم.</div>
+<div id="empty" class="empty" hidden>لا توجد روابط.</div>
+<div class="hint">الحفظ يتم مباشرة في قاعدة بيانات Supabase، لذلك نفس القائمة تظهر من الهاتف والكمبيوتر.</div>
 </main>
-<script>
-(async()=>{
-  const root=document.getElementById('groups'),empty=document.getElementById('empty');
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
+const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let groups=[],links=[],session=null,editingLinkId=null,editingGroupId=null;
+
+function msg(text,type=''){
+  const box=$('message');box.textContent=text;box.className='msg'+(type?' '+type:'');box.hidden=false;
+  clearTimeout(msg.timer);msg.timer=setTimeout(()=>box.hidden=true,4500);
+}
+function validHref(value){
+  const v=String(value||'').trim();
+  return /^(https?:\/\/|mailto:|tel:|\/|\.\/|\.\.\/)/i.test(v)?v:'';
+}
+function linkInitial(row){return String(row.short||row.name||'?').trim().slice(0,2).toUpperCase()}
+function scrollToEditor(id){setTimeout(()=>$ (id).scrollIntoView({behavior:'smooth',block:'start'}),30)}
+
+function fillGroupOptions(selected=''){
+  const activeGroups=groups.filter(g=>g.active||g.id===selected).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  $('linkGroup').innerHTML=activeGroups.map(g=>'<option value="'+esc(g.id)+'">'+esc(g.icon||'🔗')+' '+esc(g.name)+'</option>').join('');
+  if(selected)$('linkGroup').value=selected;
+}
+
+function render(){
+  $('empty').hidden=links.length>0;
+  const byGroup=new Map();
+  groups.forEach(g=>byGroup.set(g.id,[]));
+  links.forEach(l=>{if(!byGroup.has(l.group_id))byGroup.set(l.group_id,[]);byGroup.get(l.group_id).push(l)});
+  const ordered=groups.slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)||String(a.name).localeCompare(String(b.name),'ar'));
+  $('groups').innerHTML=ordered.map(g=>{
+    const items=(byGroup.get(g.id)||[]).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)||String(a.name).localeCompare(String(b.name),'ar'));
+    if(!g.active&&!items.length)return '';
+    return '<section class="group">'+
+      '<div class="group-head">'+
+        '<div class="group-icon">'+esc(g.icon||'🔗')+'</div>'+
+        '<div class="group-title">'+esc(g.name)+(g.active?'':' <span class="badge">مخفية</span>')+'</div>'+
+        '<div class="group-count">'+items.length+'</div>'+
+        '<button class="edit-group" type="button" data-edit-group="'+esc(g.id)+'" title="تعديل المجموعة">✏️</button>'+
+      '</div>'+
+      (items.length?'<table><tbody>'+items.map(x=>{
+        const href=validHref(x.url);
+        return '<tr>'+
+          '<td><div class="initial">'+esc(linkInitial(x))+'</div></td>'+
+          '<td><div class="name">'+esc(x.name)+(x.active?'':' <span class="badge">مخفي</span>')+'</div><div class="note">'+esc(x.note||'')+'</div></td>'+
+          '<td><div class="row-actions">'+
+            (href?'<a class="open" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">فتح</a>':'')+
+            '<button class="edit" type="button" data-edit-link="'+esc(x.id)+'">تعديل</button>'+
+          '</div></td>'+
+        '</tr>';
+      }).join('')+'</tbody></table>':'<div class="empty" style="margin-top:5px;padding:12px">لا توجد روابط في هذه المجموعة.</div>')+
+    '</section>';
+  }).join('');
+}
+
+async function load(){
+  $('refreshBtn').disabled=true;
   try{
-    const r=await fetch('links.json?v=20260922-2',{cache:'no-store'});
-    if(!r.ok)throw new Error('LOAD_FAILED');
-    const data=await r.json();
-    const groups=Array.isArray(data?.groups)?data.groups:[];
-    const links=(Array.isArray(data?.links)?data.links:[]).filter(x=>x&&x.active!==false&&x.url);
-    if(!links.length){empty.hidden=false;return}
-    const groupMap=new Map(groups.map(g=>[g.id,g]));
-    const grouped=new Map();
-    for(const link of links){
-      const gid=link.group||'other';
-      if(!grouped.has(gid))grouped.set(gid,[]);
-      grouped.get(gid).push(link);
-    }
-    const ordered=[...grouped.entries()].sort((a,b)=>{
-      const ga=groupMap.get(a[0])||{},gb=groupMap.get(b[0])||{};
-      return Number(ga.order??999)-Number(gb.order??999);
-    });
-    root.innerHTML=ordered.map(([gid,items])=>{
-      const g=groupMap.get(gid)||{name:'روابط أخرى',icon:'🔗'};
-      const sorted=items.sort((a,b)=>Number(a.order||0)-Number(b.order||0));
-      return `<section class="group">
-        <div class="group-head">
-          <div class="group-icon">${esc(g.icon||'🔗')}</div>
-          <div class="group-title">${esc(g.name||'روابط أخرى')}</div>
-          <div class="group-count">${sorted.length}</div>
-        </div>
-        <table><tbody>${sorted.map(x=>`<tr>
-          <td><div class="initial">${esc(x.short||String(x.name||'?').trim().slice(0,2).toUpperCase())}</div></td>
-          <td><div class="name">${esc(x.name)}</div><div class="note">${esc(x.note||'')}</div></td>
-          <td><a class="open" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">فتح</a></td>
-        </tr>`).join('')}</tbody></table>
-      </section>`;
-    }).join('');
-  }catch(e){empty.hidden=false;empty.textContent='تعذر تحميل قائمة الروابط.'}
-})();
+    const auth=await supabase.auth.getSession();session=auth.data.session;
+    if(!session)throw new Error('جلسة Supabase للإدارة غير متاحة. ادخل كإدارة ثم أعد فتح الصفحة.');
+    const [gRes,lRes]=await Promise.all([
+      supabase.from('mytool_work_link_groups').select('*').order('sort_order').order('name'),
+      supabase.from('mytool_work_links').select('*').order('sort_order').order('name')
+    ]);
+    if(gRes.error)throw gRes.error;if(lRes.error)throw lRes.error;
+    groups=Array.isArray(gRes.data)?gRes.data:[];
+    links=Array.isArray(lRes.data)?lRes.data:[];
+    fillGroupOptions();
+    render();
+  }catch(e){
+    groups=[];links=[];render();msg(e?.message||'تعذر تحميل روابط العمل.','danger');
+  }finally{$('refreshBtn').disabled=false}
+}
+
+function openNewLink(){
+  editingLinkId=null;$('linkEditorTitle').textContent='إضافة رابط';$('linkName').value='';$('linkUrl').value='';$('linkShort').value='';$('linkNote').value='';$('linkOrder').value='100';$('linkActive').checked=true;fillGroupOptions(groups.find(g=>g.active)?.id||'');$('deleteLinkBtn').hidden=true;$('linkEditor').hidden=false;$('groupEditor').hidden=true;scrollToEditor('linkEditor');
+}
+function openEditLink(id){
+  const row=links.find(x=>x.id===id);if(!row)return;
+  editingLinkId=id;$('linkEditorTitle').textContent='تعديل الرابط';$('linkName').value=row.name||'';$('linkUrl').value=row.url||'';$('linkShort').value=row.short||'';$('linkNote').value=row.note||'';$('linkOrder').value=String(row.sort_order??100);$('linkActive').checked=row.active!==false;fillGroupOptions(row.group_id);$('deleteLinkBtn').hidden=false;$('linkEditor').hidden=false;$('groupEditor').hidden=true;scrollToEditor('linkEditor');
+}
+async function saveLink(){
+  const name=$('linkName').value.trim(),url=$('linkUrl').value.trim(),group_id=$('linkGroup').value;
+  if(!name)return msg('اكتب اسم الرابط.','danger');
+  if(!validHref(url))return msg('الرابط غير صالح. استعمل https:// أو رابطًا داخليًا مثل ../cards/.','danger');
+  if(!group_id)return msg('اختر مجموعة.','danger');
+  const payload={name,url,group_id,short:$('linkShort').value.trim()||null,note:$('linkNote').value.trim()||null,external:/^https?:\/\//i.test(url),active:$('linkActive').checked,sort_order:Number($('linkOrder').value||100),updated_by:session?.user?.id||null};
+  $('saveLinkBtn').disabled=true;
+  try{
+    let res;
+    if(editingLinkId)res=await supabase.from('mytool_work_links').update(payload).eq('id',editingLinkId);
+    else res=await supabase.from('mytool_work_links').insert({...payload,created_by:session?.user?.id||null});
+    if(res.error)throw res.error;
+    $('linkEditor').hidden=true;await load();msg(editingLinkId?'تم تعديل الرابط.':'تمت إضافة الرابط.','ok');
+  }catch(e){msg(e?.message||'تعذر حفظ الرابط.','danger')}finally{$('saveLinkBtn').disabled=false}
+}
+async function deleteLink(){
+  if(!editingLinkId||!confirm('حذف هذا الرابط نهائيًا؟'))return;
+  $('deleteLinkBtn').disabled=true;
+  try{const r=await supabase.from('mytool_work_links').delete().eq('id',editingLinkId);if(r.error)throw r.error;$('linkEditor').hidden=true;await load();msg('تم حذف الرابط.','ok')}catch(e){msg(e?.message||'تعذر حذف الرابط.','danger')}finally{$('deleteLinkBtn').disabled=false}
+}
+
+function openNewGroup(){
+  editingGroupId=null;$('groupEditorTitle').textContent='إضافة مجموعة';$('groupName').value='';$('groupIcon').value='🔗';$('groupOrder').value='100';$('groupActive').checked=true;$('deleteGroupBtn').hidden=true;$('groupEditor').hidden=false;$('linkEditor').hidden=true;scrollToEditor('groupEditor');
+}
+function openEditGroup(id){
+  const row=groups.find(x=>x.id===id);if(!row)return;
+  editingGroupId=id;$('groupEditorTitle').textContent='تعديل المجموعة';$('groupName').value=row.name||'';$('groupIcon').value=row.icon||'🔗';$('groupOrder').value=String(row.sort_order??100);$('groupActive').checked=row.active!==false;$('deleteGroupBtn').hidden=false;$('groupEditor').hidden=false;$('linkEditor').hidden=true;scrollToEditor('groupEditor');
+}
+async function saveGroup(){
+  const name=$('groupName').value.trim();if(!name)return msg('اكتب اسم المجموعة.','danger');
+  const payload={name,icon:$('groupIcon').value.trim()||'🔗',sort_order:Number($('groupOrder').value||100),active:$('groupActive').checked};
+  $('saveGroupBtn').disabled=true;
+  try{
+    const r=editingGroupId?await supabase.from('mytool_work_link_groups').update(payload).eq('id',editingGroupId):await supabase.from('mytool_work_link_groups').insert(payload);
+    if(r.error)throw r.error;$('groupEditor').hidden=true;await load();msg(editingGroupId?'تم تعديل المجموعة.':'تمت إضافة المجموعة.','ok');
+  }catch(e){msg(e?.message||'تعذر حفظ المجموعة.','danger')}finally{$('saveGroupBtn').disabled=false}
+}
+async function deleteGroup(){
+  if(!editingGroupId)return;
+  if(links.some(x=>x.group_id===editingGroupId))return msg('لا يمكن حذف مجموعة فيها روابط. انقل الروابط أو احذفها أولًا.','danger');
+  if(!confirm('حذف هذه المجموعة نهائيًا؟'))return;
+  $('deleteGroupBtn').disabled=true;
+  try{const r=await supabase.from('mytool_work_link_groups').delete().eq('id',editingGroupId);if(r.error)throw r.error;$('groupEditor').hidden=true;await load();msg('تم حذف المجموعة.','ok')}catch(e){msg(e?.message||'تعذر حذف المجموعة.','danger')}finally{$('deleteGroupBtn').disabled=false}
+}
+
+$('addLinkBtn').addEventListener('click',openNewLink);
+$('addGroupBtn').addEventListener('click',openNewGroup);
+$('refreshBtn').addEventListener('click',load);
+$('closeLinkEditor').addEventListener('click',()=>{$('linkEditor').hidden=true});
+$('closeGroupEditor').addEventListener('click',()=>{$('groupEditor').hidden=true});
+$('saveLinkBtn').addEventListener('click',saveLink);
+$('deleteLinkBtn').addEventListener('click',deleteLink);
+$('saveGroupBtn').addEventListener('click',saveGroup);
+$('deleteGroupBtn').addEventListener('click',deleteGroup);
+$('groups').addEventListener('click',e=>{
+  const linkBtn=e.target.closest('[data-edit-link]');if(linkBtn)return openEditLink(linkBtn.dataset.editLink);
+  const groupBtn=e.target.closest('[data-edit-group]');if(groupBtn)return openEditGroup(groupBtn.dataset.editGroup);
+});
+load();
 </script>
 </body>
 </html>
