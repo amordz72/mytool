@@ -224,13 +224,33 @@
   function setDigitalValue(id,value){
     const el=$(id);if(el)el.value=value==null?'':String(value)
   }
+  function genericGameSignal(value){
+    return /(?:جوهرة|جواهر|كرة|كرات|شدة|شدات|يوسي|\buc\b|diamond(?:s)?|coin(?:s)?|كوينز?|point(?:s)?|بوينت(?:س)?)/i.test(String(value||''))
+  }
+  function looksLikePlayerIdValue(value){
+    const digits=String(value||'').replace(/\D/g,'')
+    return /^\d{6,20}$/.test(digits)&&!/^0[5-7]\d{8}$/.test(digits)
+  }
+  function genericPackageFromHandoff(handoff){
+    if(handoff?.package_text)return handoff.package_text
+    const rows=handoff?.parsed_payload?.whatsapp?.customer_messages||[]
+    const bodies=rows.length?rows.map(x=>x.body):String(handoff?.raw_input||'').split(/\n+/)
+    return bodies.map(x=>String(x||'').trim()).find(x=>genericGameSignal(x)&&/\d/.test(x))||''
+  }
+  function resolvedHandoffOperationType(handoff,requestedType){
+    const direct=requestedType||handoff?.operation_type||'service'
+    if(direct!=='service')return direct
+    if(handoff?.parsed_payload?.operation_kind==='game')return'game'
+    if(looksLikePlayerIdValue(handoff?.destination)&&genericGameSignal(handoff?.raw_input||''))return'game'
+    return direct
+  }
   function fillDigitalSaleFields(handoff){
     const previous=handoff?.parsed_payload?.sale_capture||{}
     setDigitalValue('digitalCustomer',handoff?.customer_name||previous.customer_name||'')
     setDigitalValue('digitalServiceName',handoff?.service_name||handoff?.service_code||previous.service_name||'')
     setDigitalValue('digitalServiceCode',handoff?.service_code||previous.service_code||'')
     setDigitalValue('digitalDestination',handoff?.destination||previous.destination||'')
-    setDigitalValue('digitalPackage',handoff?.package_text||previous.package_text||'')
+    setDigitalValue('digitalPackage',genericPackageFromHandoff(handoff)||previous.package_text||'')
     setDigitalValue('digitalPrice',previous.sale_price??'')
     setDigitalValue('digitalSettlement',previous.settlement_mode||'cash')
     setDigitalValue('digitalFulfillment',previous.fulfillment_source||(handoff?.operation_type==='card'?'card_registry':'external_manual'))
@@ -309,7 +329,9 @@
     const actualRef=handoff.order_uuid||handoff.order_id
     if(!actualRef||String(actualRef)!==String(expected))return false
     saleHandoff=handoff
-    const type=params.get('operation')||handoff.operation_type||'service'
+    const type=resolvedHandoffOperationType(handoff,params.get('operation'))
+    handoff.operation_type=type
+    handoff.package_text=genericPackageFromHandoff(handoff)
     if(OPERATION_TYPES[type])selectOperationType(type)
     fillDigitalSaleFields(handoff)
     const box=$('orderHandoff')
@@ -317,7 +339,7 @@
     box.classList.remove('hidden')
     $('handoffCustomer').textContent=handoff.customer_name||'غير محدد'
     $('handoffService').textContent=handoff.service_name||handoff.service_code||'غير محددة'
-    $('handoffPackage').textContent=handoff.package_text||'—'
+    $('handoffPackage').textContent=genericPackageFromHandoff(handoff)||'—'
     $('handoffDestination').textContent=handoff.destination||'—'
     $('handoffRaw').textContent=handoff.raw_input||''
     const sourceTime=handoff.source_message_at_text||handoff.parsed_payload?.intake_meta?.source_message_at_text||''
