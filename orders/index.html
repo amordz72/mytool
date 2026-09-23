@@ -170,6 +170,25 @@ function matchScore(sender,source){
   if(!matched)return 0;
   return Math.min(96,strongest+(matched-1)*6);
 }
+function customerCandidateList(sender,limit=6){
+  if(!sender)return [];
+  const found=new Map();
+  const add=(partyId,name,score,source=null,reason='اقتراح')=>{
+    const id=Number(partyId||0);if(!id)return;
+    const current=found.get(id);
+    const item={party_id:id,party_name:name||partyBy(id)?.display_name||'عميل',score:Number(score||0),reason,
+      platform_key:source?.platform_key||null,source_account_id:source?.id?Number(source.id):null};
+    if(!current||item.score>current.score)found.set(id,item);
+  };
+  const exact=exactPartyCandidate(sender);
+  if(exact)add(exact.id,exact.display_name,100,null,'اسم مطابق');
+  customerSources.filter(s=>Number(s.linked_party_id||0)>0).forEach(source=>{
+    const score=matchScore(sender,source);
+    if(score>=55)add(source.linked_party_id,source.linked_party_name||partyBy(source.linked_party_id)?.display_name,score,source,'تشابه اسم/هوية');
+  });
+  return [...found.values()].sort((a,b)=>b.score-a.score).slice(0,limit);
+}
+
 function discoverCustomerCandidate(sender){
   if(!sender)return null;
   const rule=approvedIdentityRule(sender);
@@ -593,6 +612,7 @@ async function saveOrder(openSale=false){
   const capturedAt=incomingIntakeMeta?.captured_at||new Date().toISOString();
   parsed.intake_meta={captured_at:capturedAt,origin:incomingIntakeMeta?.origin||'orders',source_message_at_text:sourceMessageTimeText(parsed),source_message_times:sourceMessageMeta(parsed)};
   const sender=parsed.whatsapp?.customer_sender||'';
+  if(sender)parsed.customer_candidates=customerCandidateList(sender);
   let partyId=$('party').value?Number($('party').value):null;
   if(!partyId&&sender){
     const candidate=discoverCustomerCandidate(sender);
@@ -728,20 +748,28 @@ function operationTypeForOrder(row){
 function handoffToSale(row){
   const service=serviceBy(row?.service_code);
   const party=partyBy(row?.customer_party_id);
+  const parsed=parsedObject(row?.parsed_payload);
+  const sender=parsed.whatsapp?.customer_sender||'';
+  const candidates=Array.isArray(parsed.customer_candidates)&&parsed.customer_candidates.length
+    ?parsed.customer_candidates
+    :customerCandidateList(sender);
   const envelope={
-    version:1,handoff_at:new Date().toISOString(),
+    version:2,handoff_at:new Date().toISOString(),
     order_id:row?.id||null,order_uuid:row?.order_uuid||null,
     operation_type:operationTypeForOrder(row),
     service_code:row?.service_code||null,service_name:service?.display_name||row?.service_code||'',
     package_text:orderPackageForHandoff(row),destination:row?.destination||'',
-    customer_party_id:row?.customer_party_id||null,customer_name:party?.display_name||'',
+    customer_party_id:row?.customer_party_id||null,
+    customer_name:party?.display_name||sender||'',
+    customer_sender:sender,
+    customer_candidates:candidates,
     source_kind:row?.source_kind||'',source_message_at_text:orderSourceTime(row),
     order_created_at:row?.created_at||null,raw_input:row?.raw_input||'',
-    parsed_payload:parsedObject(row?.parsed_payload)
+    parsed_payload:parsed
   };
   sessionStorage.setItem('mytool_sale_handoff_v1',JSON.stringify(envelope));
   const q=new URLSearchParams();
-  q.set('v','20260923-game-intent1');
+  q.set('v','20260923-editable-autofill1');
   const orderRef=envelope.order_uuid||envelope.order_id;
   if(orderRef)q.set('from_order',String(orderRef));
   q.set('operation',envelope.operation_type);
