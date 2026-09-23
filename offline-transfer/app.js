@@ -130,6 +130,7 @@
   async function applyDeviceState(state){
     if(!state||typeof state!=='object')return;
     profile.server_status=state.status||profile.server_status||null;
+    profile.account_class=state.account_class||profile.account_class||'standard';
     profile.identity_version=Number(state.identity_version||profile.identity_version||1);
     profile.party_id=state.party_id??profile.party_id??null;
     if(state.display_name&&String(state.display_name).trim()){
