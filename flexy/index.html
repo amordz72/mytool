@@ -909,6 +909,22 @@ async function watchOrdinaryFlexy(jobUuid){
  ]);
 }
 
+const dispatchRequestState={offer:{fingerprint:null,key:null},ordinary:{fingerprint:null,key:null}};
+function dispatchRequestKey(kind,fingerprint){
+ const state=dispatchRequestState[kind];
+ if(!state)throw new Error('UNKNOWN_DISPATCH_KIND');
+ if(!state.key||state.fingerprint!==fingerprint){
+  const uuid=crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2);
+  state.fingerprint=fingerprint;
+  state.key='flexy-'+kind+':'+uuid;
+ }
+ return state.key;
+}
+function clearDispatchRequestKey(kind){
+ const state=dispatchRequestState[kind];
+ if(state){state.fingerprint=null;state.key=null;}
+}
+
 confirmSendOfferBtn.addEventListener('click',async()=>{
  if(!isAdmin||!selectedOffer||!selectedOffer.executionAvailable){
   statusBox.textContent='لا يمكن التنفيذ: لا توجد طريقة إرسال معتمدة لهذا العرض.';
@@ -920,21 +936,25 @@ confirmSendOfferBtn.addEventListener('click',async()=>{
   return;
  }
  const predictedSource=selectedRoutePreview?.source_label||flexySourceLabel(selectedRoutePreview?.sim_type);
+ const requestFingerprint=[value,selectedOffer.family,selectedOffer.amount,selectedRoutePreview?.route_uuid||selectedRoutePreview?.sim_uuid||'route'].join('|');
+ const idempotencyKey=dispatchRequestKey('offer',requestFingerprint);
  confirmSendOfferBtn.disabled=true;
  confirmSendOfferBtn.textContent='جاري التنفيذ…';
  statusBox.textContent='جاري إنشاء العملية عبر '+(predictedSource||'المصدر المحدد')+'…';
  try{
   const {supabase}=await getApi();
-  const {data,error}=await supabase.rpc('station_connect_admin_create_offer_execute',{
+  const {data,error}=await supabase.rpc('station_connect_admin_create_offer_execute_v2',{
    p_phone:value,
    p_family:selectedOffer.family,
    p_network_index:String(selectedOffer.index||''),
    p_amount:selectedOffer.amount,
+   p_idempotency_key:idempotencyKey,
    p_station_uuid:null
   });
   if(error)throw error;
   const job=data?.[0];
   if(!job?.job_uuid)throw new Error('EXECUTE_JOB_NOT_CREATED');
+  clearDispatchRequestKey('offer');
   let actualSource=predictedSource;
   try{
    const snapshot=await supabase.rpc('station_connect_admin_offer_execute_job',{p_job_uuid:job.job_uuid});
@@ -982,20 +1002,24 @@ ordinaryConfirmBtn?.addEventListener('click',async()=>{
   statusBox.textContent='بيانات الفليكسي غير صالحة.';
   return;
  }
+ const ordinaryFingerprint=[value,amount].join('|');
+ const ordinaryIdempotencyKey=dispatchRequestKey('ordinary',ordinaryFingerprint);
  ordinaryConfirmBtn.disabled=true;
  ordinaryConfirmBtn.textContent='جاري الإرسال…';
  statusBox.textContent='جاري إنشاء العملية…';
  try{
   const {supabase}=await getApi();
-  const {data,error}=await supabase.rpc('station_connect_admin_create_arsselli_flexy_696',{
+  const {data,error}=await supabase.rpc('station_connect_admin_create_arsselli_flexy_696_v2',{
    p_phone:value,
    p_amount:amount,
+   p_idempotency_key:ordinaryIdempotencyKey,
    p_station_uuid:null
   });
   if(error)throw error;
 
   const job=data?.[0];
   if(!job?.job_uuid)throw new Error('FLEXY_JOB_NOT_CREATED');
+  clearDispatchRequestKey('ordinary');
 
   bootstrap.Modal.getOrCreateInstance(ordinarySendModal).hide();
   clearPhoneAfterDispatch();
