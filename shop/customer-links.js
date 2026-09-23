@@ -720,8 +720,8 @@ async function reviewIdentity(id,action){
   if(!navigator.onLine)return msg('مراجعة الهوية تحتاج اتصالًا.','warn');
   const {error}=await adminRpc('admin_customer_review_source_identity','workspace_admin_review_source_identity',{p_review_id:id,p_action:action});
   if(error)return msg('تعذر حفظ قرار الهوية: '+safeError(error),'error');
-  if(action!=='ignore'){await autoBootstrap(null);await generateSuggestions({silent:true})}
-  await load();msg(action==='same'?'تم تحديث نفس الحساب بدون إنشاء نسخة.':action==='new'?'تم إنشاء الحساب الجديد بعد تأكيدك.':'تم تجاهل الاقتراح.','ok');
+  if(action!=='ignore')await generateSuggestions({silent:true});
+  await load();msg(action==='same'?'تم تحديث نفس حساب المصدر بدون إنشاء عميل ماستر جديد.':action==='new'?'تم إنشاء حساب المصدر الجديد، وسيبقى غير مربوط حتى تغذية ماستر العملاء.':'تم تجاهل الاقتراح.','ok');
 }
 function phoneKey(value){
   return String(value||'').replace(/\D/g,'').replace(/^00213/,'213').replace(/^0(?=[5-7]\d{8}$)/,'213');
@@ -950,10 +950,8 @@ async function approveImports(){
       }
     }
     if(done){
-      const boot=await autoBootstrap(null);
       await generateSuggestions({silent:true});
       await load();
-      if(boot?.error)console.warn('bootstrap warning:',boot.error);
     }
     $('sourceFile').value='';
     msg('انتهى الاعتماد: ملفات ناجحة '+done+' · متجاهلة '+skipped+' · فشلت '+failed+' · حسابات معالجة '+totalProcessed+' · جديدة '+totalInserted+' · محدثة '+totalUpdated+'.',failed?'warn':'ok');
@@ -1006,14 +1004,8 @@ window.addEventListener('offline',()=>{renderConnectivity();msg('انقطع ال
 (async()=>{
   try{
     await identify();
-    let bootstrapResult=null;
-    if(navigator.onLine){
-      msg('جاري تجهيز الربط الأولي تلقائيًا…');
-      bootstrapResult=await autoBootstrap(null);
-      await generateSuggestions({silent:true});
-    }
+    if(navigator.onLine)await generateSuggestions({silent:true});
     await load();
-    if(bootstrapResult?.error)msg('تم فتح الصفحة. توجد حالة ربط تحتاج مراجعة، لكن بقية البيانات متاحة.','warn');
   }catch(error){
     if(!navigator.onLine&&loadCache())return;
     if(error?.message==='ADMIN_REQUIRED')msg('هذه الصفحة للإدارة فقط.','error');
