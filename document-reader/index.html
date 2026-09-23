@@ -104,7 +104,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     <button id="analyzeBtn" class="btn primary" type="button" disabled>تحليل الصورة</button>
     <button id="manualEntryBtn" class="btn" type="button" disabled>إدخال يدوي</button>
     <button id="saveBtn" class="btn" type="button" disabled>حفظ</button>
-    <button id="settleBtn" class="btn primary" type="button" disabled>إرسال لمنصة</button>
+    <button id="settleBtn" class="btn primary" type="button" disabled>إرسال الوصل</button>
     <button id="confirmMoneyBtn" class="btn primary" type="button" disabled>تأكيد استلام المال</button>
     <button id="addImageBtn" class="btn" type="button" disabled>+ صورة مرجع</button>
     <button id="rotateRightBtn" class="btn" type="button" disabled>↻ تدوير</button>
@@ -155,7 +155,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   <div class="management-body">
     <div class="history-title">الوصولات المفتوحة — ما يحتاج مراجعة أو إرسال يظهر هنا</div>
     <div class="history-search-wrap"><input id="historySearch" class="history-search" type="search" placeholder="بحث: رقم الوصل، المبلغ، البنك، المنصة، التاريخ…" autocomplete="off"></div>
-    <div id="recipientTabs" class="recipient-tabs" role="tablist" aria-label="المورد في السجل"></div>
+    <div id="recipientTabs" class="recipient-tabs" role="tablist" aria-label="حالة الوصل والمنصة"></div>
     <div id="platformHistoryTabs" class="platform-history-tabs hidden" role="tablist" aria-label="حالة سجل المنصة"></div>
     <div id="operationHistory" class="operation-history"></div>
     <div id="recipientContextText" class="context-body"></div>
@@ -2315,7 +2315,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     updateSaveButton();
     const actual=currentResult?.selectedRecipient||UNSENT_RECIPIENT;
     recipientContextText.innerHTML=actual&&actual!==UNSENT_RECIPIENT
-      ? '<b>مرسل إلى '+escapeHtml(actual)+'</b> — منصة مختارة للتغيير قبل استلام المال: <b>'+escapeHtml(value===UNSENT_RECIPIENT?'لا شيء':value)+'</b>'
+      ? '<b>مرسل إلى '+escapeHtml(actual)+'</b> — '+(value===UNSENT_RECIPIENT?'بدون تغيير':'تغيير المنصة إلى <b>'+escapeHtml(value)+'</b>')
       : (value===UNSENT_RECIPIENT
           ? '<b>لم تحدد منصة بعد</b>'
           : '<b>جاهز للإرسال إلى '+escapeHtml(value)+'</b>');
