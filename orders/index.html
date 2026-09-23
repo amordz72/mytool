@@ -154,7 +154,8 @@ function approvedIdentityRule(sender){
 function matchScore(sender,source){
   const q=identityKey(sender);
   if(!q)return 0;
-  const vals=[source.display_name,source.first_name,source.last_name,source.username,source.phone,source.email,source.linked_party_name].filter(Boolean);
+  const personName=[source.first_name,source.last_name].filter(Boolean).join(' ').trim();
+  const vals=[personName,source.first_name,source.last_name,source.username,source.phone,source.email].filter(Boolean);
   const normalized=vals.map(identityKey);
   if(normalized.includes(q))return 100;
   const qTokens=phoneticToken(sender);
@@ -180,8 +181,6 @@ function customerCandidateList(sender,limit=6){
       platform_key:source?.platform_key||null,source_account_id:source?.id?Number(source.id):null};
     if(!current||item.score>current.score)found.set(id,item);
   };
-  const exact=exactPartyCandidate(sender);
-  if(exact)add(exact.id,exact.display_name,100,null,'اسم مطابق');
   customerSources.filter(s=>Number(s.linked_party_id||0)>0).forEach(source=>{
     const score=matchScore(sender,source);
     if(score>=55)add(source.linked_party_id,source.linked_party_name||partyBy(source.linked_party_id)?.display_name,score,source,'تشابه اسم/هوية');
@@ -200,8 +199,6 @@ function discoverCustomerCandidate(sender){
       return {party_id:Number(rule.party_id),party_name:party.display_name,score:100,approved:true,reason:'قاعدة معتمدة',source};
     }
   }
-  const exact=exactPartyCandidate(sender);
-  if(exact)return {party_id:Number(exact.id),party_name:exact.display_name,score:96,approved:false,reason:'اسم مطابق',source:customerSources.find(s=>Number(s.linked_party_id||0)===Number(exact.id))||null};
   const ranked=customerSources
     .filter(s=>Number(s.linked_party_id||0)>0)
     .map(s=>({source:s,score:matchScore(sender,s)}))
@@ -213,7 +210,7 @@ function discoverCustomerCandidate(sender){
   return {
     party_id:Number(best.source.linked_party_id),
     party_name:best.source.linked_party_name||partyBy(best.source.linked_party_id)?.display_name||'عميل مقترح',
-    score:best.score,approved:false,reason:'تشابه هوية/اسم',source:best.source
+    score:best.score,approved:false,reason:'تشابه اسم شخص/هوية',source:best.source
   };
 }
 function renderCustomerCandidate(candidate,sender=''){
