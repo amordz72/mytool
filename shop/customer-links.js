@@ -796,7 +796,10 @@ async function previewImports(){
       item.parsed=await parseImportFile(file);
       item.hash=await sha256File(file);
       item.detectedPlatform=item.parsed.detectedPlatform||'';
-      item.platform=item.detectedPlatform||fallback||'';
+      item.platform=item.detectedPlatform||'';
+      if(!item.detectedPlatform&&fallback){
+        item.hintPlatform={key:fallback,label:platformLabel(fallback),score:null,manual_hint:true};
+      }
       const prior=importQueue.find(x=>x!==item&&x.hash&&x.hash===item.hash);
       if(prior){
         item.platform=prior.platform||item.platform;
@@ -804,7 +807,7 @@ async function previewImports(){
         item.serverPreview={existing_platform_key:prior.platform||null};
         item.diff=estimateImportChanges(item);
       }else{
-        if(!item.detectedPlatform&&!item.platform){
+        if(!item.detectedPlatform&&!item.platform&&!item.hintPlatform){
           const hints=platformHints(item.parsed.accounts);
           item.hintPlatform=hints[0]||null;
         }
