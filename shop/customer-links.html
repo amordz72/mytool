@@ -79,7 +79,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
       <button id="importBtn" class="btn" type="button">معاينة الملفات</button>
       <button id="smartBtn" class="btn secondary" type="button">إعادة فحص الروابط</button>
     </div>
-    <div class="import-safety">الأرصدة والديون والأرباح في ملفات المنصات تُعامل كـ <b>لقطة حالية</b>: القيمة الجديدة تستبدل قيمة نفس الحساب، ولا تُجمع عليها. الملف المكرر لنفس المنصة يُتجاهل افتراضيًا، وإعادة معالجته تحتاج اختيارًا صريحًا.</div>
+    <div class="import-safety">الأرصدة والديون والأرباح في ملفات المنصات تُعامل كـ <b>Snapshot حالي</b>: هوية الحساب هي <b>المنصة + username</b>. القيمة الجديدة تستبدل قيمة نفس الحساب ولا تُجمع عليها. الملف المكتمل المكرر يُتجاهل، والحساب الغائب من Snapshot لا يُحذف بل يُعلّم «لم يظهر في آخر ملف».</div>
     <div id="importPreview" class="import-preview" hidden>
       <div class="section-head"><div><h2>مراجعة قبل الاعتماد</h2><div id="importPreviewSummary" class="muted"></div></div></div>
       <div id="importPreviewList" class="import-preview-list"></div>
@@ -104,7 +104,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </section>
 
   <section id="identityReviewsCard" class="card">
-    <div class="section-head"><div><h2>مراجعة هوية داخل المنصة</h2><div class="muted">المطابقة تعتمد فقط على اسم المستخدم، اسم الشخص، الهاتف والإيميل. <b>اسم المحل لا يدخل في المطابقة ولا في الاقتراح.</b></div></div><span id="identityReviewCount" class="badge pending_review">0</span></div>
+    <div class="section-head"><div><h2>مراجعة هوية داخل المنصة</h2><div class="muted">هوية حساب المنصة تعتمد على <b>المنصة + username</b>. الهاتف والإيميل بيانات متغيرة ولا يدمجان حسابين داخل نفس المنصة. <b>اسم المحل لا يدخل في هوية الحساب.</b></div></div><span id="identityReviewCount" class="badge pending_review">0</span></div>
     <div id="identityReviews" class="list"></div>
   </section>
 
@@ -148,6 +148,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260923-master-name-lock2"></script>
+<script type="module" src="customer-links.js?v=20260923-snapshot1"></script>
 </body>
 </html>
