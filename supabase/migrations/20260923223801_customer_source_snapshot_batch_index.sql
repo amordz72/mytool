@@ -1,0 +1,3 @@
+create index if not exists money_platform_source_accounts_snapshot_batch_idx
+on public.money_platform_source_accounts(last_snapshot_batch_id)
+where last_snapshot_batch_id is not null;
