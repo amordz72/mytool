@@ -46,6 +46,7 @@
 .recharge-upload{padding:12px;border:1px dashed #b9d3e8;border-radius:14px;background:#f8fbfe}
 .recharge-upload input[type="file"]{width:100%;font:inherit}
 .recharge-stock-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+ .recharge-legacy-hidden{display:none!important}
 </style>
 <script src="../auth-guard.js?v=20260918-real-local-1" data-access="admin"></script>
 </head>
@@ -95,7 +96,7 @@
   </div>
 </div>
 
-<div id="rechargeGuard" class="mt-alert danger" hidden>
+<div id="rechargeGuard" class="mt-alert danger recharge-legacy-hidden" hidden aria-hidden="true">
   <div class="mt-alert-icon" aria-hidden="true">⚠️</div>
   <div class="mt-alert-copy">
     <h3 id="rechargeGuardTitle">بطاقات الشحن انتهت</h3>
@@ -106,6 +107,14 @@
 <section id="stationList" aria-label="قائمة المحطات">
   <div class="mt-card"><div class="mt-meta">جاري تحميل المحطات…</div></div>
 </section>
+<div class="mt-alert" style="margin-top:12px">
+  <div class="mt-alert-icon" aria-hidden="true">🔋</div>
+  <div class="mt-alert-copy">
+    <h3>تغذية الشرائح نُقلت إلى Flexy</h3>
+    <p>هذه الصفحة للمحطات والمودمات فقط. إدارة بطاقات SAMA والأرصدة التشغيلية أصبحت داخل إدارة Flexy.</p>
+    <p style="margin-top:8px"><a href="../flexy/sim-feeding.html">فتح تغذية الشرائح</a> · <a href="../flexy/sims.html">فتح الشرائح والأرصدة</a></p>
+  </div>
+</div>
 
 <div id="emptyState" class="mt-alert" hidden>
   <div class="mt-alert-icon" aria-hidden="true">🖥️</div>
@@ -115,7 +124,7 @@
   </div>
 </div>
 
-<section class="mt-card">
+<section class="mt-card recharge-legacy-hidden" aria-hidden="true">
   <div class="mt-section-head" style="margin:0 0 8px">
     <div class="mt-section-copy">
       <h2>بطاقات شحن Mobilis</h2>
