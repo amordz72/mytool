@@ -8,7 +8,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="mytool-build" content="20260923-docflow18">
+<meta name="mytool-build" content="20260923-docflow19">
 <title>الوصولات - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -42,7 +42,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <body><main class="wrap">
 <section class="hero">
   <h1>🧾 الوصولات</h1>
-  <p>رفع → فحص → مراجعة → حفظ <span class="hero-version">نسخة 23</span></p>
+  <p>رفع → فحص → مراجعة → حفظ <span class="hero-version">نسخة 24</span></p>
 </section>
 
 <section class="card security">
@@ -105,7 +105,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     <button id="confirmMoneyBtn" class="btn primary" type="button" disabled>تأكيد استلام المال</button>
     <button id="rotateRightBtn" class="btn" type="button" disabled>↻ تدوير</button>
     <button id="copyBtn" class="btn" type="button" disabled>نسخ النتائج</button>
-    <button id="clearBtn" class="btn" type="button" disabled>تفريغ الشاشة</button>
+    <button id="clearBtn" class="btn danger" type="button" disabled>إلغاء الوصل</button>
   </div>
 
   <div class="preview">
@@ -778,9 +778,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const row=found.data;
     if(!row)return true;
 
-    const temp=['pending_analysis','analysis_failed','analyzed','manual_entry'].includes(row.status)
-      &&(!row.source_type||!row.normalized_document_number);
-    if(!temp)throw new Error('TEMP_RECEIPT_BECAME_IDENTIFIED');
+    const cancelable=['pending_analysis','analysis_failed','analyzed','manual_entry','saved_unsettled','duplicate'].includes(row.status);
+    if(!cancelable)throw new Error('RECEIPT_ALREADY_SENT');
 
     const images=await client.from('mytool_receipt_images')
       .select('storage_path')
@@ -809,7 +808,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         await deleteTemporaryCloudCopy(task);
         removed++;
       }catch(err){
-        if(String(err?.message||err)==='TEMP_RECEIPT_BECAME_IDENTIFIED'){
+        if(String(err?.message||err)==='RECEIPT_ALREADY_SENT'){
           removed++;
           continue;
         }
@@ -820,31 +819,45 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return removed;
   }
 
-  async function cancelTemporaryOperation(id){
+  async function cancelReceiptOperation(id){
     const items=getRecentOperations();
     const op=items.find(item=>item.id===id);
-    if(!op)return;
-    if(!isTemporaryUnidentified(op)){
-      showToast('warn','لا يمكن إلغاء هذا الملف','بعد تثبيت هوية الوصل يصبح ملفًا ماليًا حقيقيًا وتطبق عليه قواعد الحفظ والتتبع.',5600);
-      return;
-    }
-    if(!confirm('إلغاء هذا الملف المؤقت؟\n\nسيُحذف من الجهاز، وإذا كانت له نسخة مؤقتة قديمة في Supabase فسيتم تنظيفها أيضًا. لا توجد هوية وصل مالية مثبتة لهذا الملف.'))return;
+    if(!op)return false;
 
+    if(!canCancelReceipt(op)){
+      showToast('warn','لا يمكن إلغاء هذا الوصل',
+        'هذا الوصل تم إرساله للمنصة أو دخل مرحلة مالية لاحقة. الإلغاء متاح فقط قبل الإرسال.',
+        6200);
+      return false;
+    }
+
+    const doc=cleanLine(op?.fields?.documentNumber?.value||'');
+    const label=doc?' رقم '+doc:'';
+    if(!confirm('إلغاء الوصل'+label+' والبدء من جديد؟\n\nسيُحذف الوصل وصوره من السجل لأنه لم يُرسل للمنصة بعد.'))return false;
+
+    // Queue cloud cleanup first so an already-synced unsent receipt is also removed.
     enqueueTempCloudDelete(op);
-    await deleteReceiptImage(id);
-    const next=items.filter(item=>item.id!==id);
-    saveRecentOperations(next);
+    await deleteReceiptImage(id).catch(()=>{});
     unregisterDocumentForOperation(op);
 
-    if(activeOperationId===id||currentResult?.operationId===id){
+    const next=items.filter(item=>item.id!==id);
+    saveRecentOperations(next);
+    rebuildDocumentIndexFromRecent();
+
+    if(activeOperationId===id||currentResult?.operationId===id||currentResult?.id===id){
       activeOperationId='';
       clearAll();
     }
+
     renderRecentOperationTabs();
     updateQuickDock();
-
     processTempCloudDeleteQueue().catch(()=>{});
-    showToast('success','تم إلغاء الملف المؤقت','اختفى من «قيد التعرف» ولم يعد محسوبًا ضمن المتابعة المالية.',5200);
+
+    showToast('success','تم إلغاء الوصل',
+      'حُذف الوصل'+label+' لأنه لم يُرسل للمنصة. يمكنك رفعه من جديد الآن.',
+      6000);
+    setTimeout(()=>workCard?.scrollIntoView({behavior:'smooth',block:'start'}),120);
+    return true;
   }
 
   async function initializeCloudPersistence({manual=false}={}){
@@ -1928,6 +1941,12 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return s==='archived'&&op.statusBeforeArchive==='confirmed_received';
   }
 
+  function canCancelReceipt(op){
+    if(!op)return false;
+    const s=effectiveStatus(op);
+    return ['pending_analysis','analysis_failed','analyzed','manual_entry','saved_unsettled','duplicate'].includes(s);
+  }
+
   function amountNumber(op){
     const raw=Number(op?.fields?.amount?.raw);
     if(Number.isFinite(raw))return raw;
@@ -2256,13 +2275,13 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       actions.appendChild(open);
 
       const status=effectiveStatus(op);
-      if(isTemporaryUnidentified(op)){
-        const cancelTemp=document.createElement('button');
-        cancelTemp.type='button';
-        cancelTemp.className='history-delete';
-        cancelTemp.textContent='إلغاء الملف';
-        cancelTemp.dataset.cancelTempOperationId=op.id;
-        actions.appendChild(cancelTemp);
+      if(canCancelReceipt(op)){
+        const cancelReceipt=document.createElement('button');
+        cancelReceipt.type='button';
+        cancelReceipt.className='history-delete';
+        cancelReceipt.textContent='إلغاء';
+        cancelReceipt.dataset.cancelReceiptOperationId=op.id;
+        actions.appendChild(cancelReceipt);
       }else if(status==='sent_to_platform'&&supplier!==UNSENT_RECIPIENT){
         const confirmMoney=document.createElement('button');
         confirmMoney.type='button';confirmMoney.className='history-open';confirmMoney.textContent='تم استلام المال';confirmMoney.dataset.confirmMoneyOperationId=op.id;
@@ -2422,7 +2441,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         await displayStoredImage(op.id,currentImageIndex);
         rotation=Number(op.orientation||0);
         updatePreview();
-        clearBtn.disabled=false;
         rotateRightBtn.disabled=['archived','duplicate'].includes(effectiveStatus(op));
         analyzeBtn.disabled=['archived','duplicate','sent_to_platform','confirmed_received','saved_unsettled'].includes(effectiveStatus(op));
       }catch(_e){
@@ -2711,6 +2729,8 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     manualEntryBtn.disabled=busy||!currentResult||currentResult.historyView||finalized;
     analyzeBtn.disabled=busy||!sourceImage||!['pending_analysis','analysis_failed'].includes(s);
     rotateRightBtn.disabled=busy||!sourceImage||['archived','duplicate'].includes(s);
+    clearBtn.disabled=Boolean(busy||uploadRunning||!currentResult||!canCancelReceipt(currentResult));
+    clearBtn.textContent='إلغاء الوصل';
     receiptDate.disabled=Boolean(busy||currentResult?.historyView||['archived','duplicate','confirmed_received'].includes(s));
     renderRecipientSelect();
     updateQuickDock();
@@ -2720,7 +2740,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     busy=on;
     analyzeBtn.disabled=on||!sourceImage;
     rotateRightBtn.disabled=on||!sourceImage;
-    clearBtn.disabled=on||!sourceImage;
+    clearBtn.disabled=Boolean(on||uploadRunning||!currentResult||!canCancelReceipt(currentResult));
     fileInput.disabled=on||uploadRunning;
     const locked=currentResult&&['archived','duplicate'].includes(effectiveStatus(currentResult));
     recipientSelect.disabled=Boolean(on||currentResult?.historyView||locked);
@@ -4488,7 +4508,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     await saveReceiptImage(currentResult.operationId,file,currentResult.fileName,false);
     analyzeBtn.disabled=false;
     rotateRightBtn.disabled=false;
-    clearBtn.disabled=false;
     return currentResult.operationId;
   }
 
@@ -4669,9 +4688,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   });
 
   operationHistory.addEventListener('click',event=>{
-    const cancelTemp=event.target.closest('[data-cancel-temp-operation-id]');
-    if(cancelTemp){
-      cancelTemporaryOperation(cancelTemp.getAttribute('data-cancel-temp-operation-id'));
+    const cancelReceipt=event.target.closest('[data-cancel-receipt-operation-id]');
+    if(cancelReceipt){
+      cancelReceiptOperation(cancelReceipt.getAttribute('data-cancel-receipt-operation-id'));
       return;
     }
     const confirmMoney=event.target.closest('[data-confirm-money-operation-id]');
@@ -4799,7 +4818,10 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
   saveBtn.addEventListener('click',confirmSaveCurrent);
   settleBtn.addEventListener('click',confirmSettleCurrent);
   confirmMoneyBtn.addEventListener('click',confirmMoneyReceivedCurrent);
-  clearBtn.addEventListener('click',clearAll);
+  clearBtn.addEventListener('click',()=>{
+    const id=currentResult?.operationId||currentResult?.id||'';
+    if(id)cancelReceiptOperation(id);
+  });
   copyBtn.addEventListener('click',copyResults);
 })();
 </script>
