@@ -98,11 +98,11 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </section>
 
   <section class="card">
-    <div class="section-head"><div><h2>حسابات المصادر</h2><div class="muted">كل حساب جديد يُربط تلقائيًا أول مرة. تدخلك يكون فقط عند دمج أكثر من حساب لنفس العميل.</div></div></div>
+    <div class="section-head"><div><h2>الحسابات التي تحتاج تدخل</h2><div class="muted">تظهر هنا فقط الحالات غير المسجلة أو التي تنتظر مراجعة أو فيها تعارض. الحسابات السليمة المسجلة في MyTool مخفية افتراضيًا.</div></div><button id="showAllSourcesBtn" class="btn secondary" type="button" style="width:auto">عرض كل حسابات المصادر</button></div>
     <div class="filters">
       <div class="field"><label>بحث</label><input id="search" placeholder="اسم، مستخدم، هاتف، بريد…"></div>
       <div class="field"><label>المصدر</label><select id="platformFilter"><option value="all">كل المنصات</option></select></div>
-      <div class="field"><label>الحالة</label><select id="statusFilter"><option value="all" selected>الكل</option><option value="pending_review">بانتظار الموافقة</option><option value="conflict">تعارض</option><option value="linked">مربوط</option><option value="unlinked">غير مربوط</option></select></div>
+      <div class="field"><label>الحالة</label><select id="statusFilter"><option value="work" selected>يحتاج تدخل فقط</option><option value="pending_review">بانتظار الموافقة</option><option value="conflict">تعارض</option><option value="unlinked">غير مسجل</option><option value="linked">مسجل في MyTool</option><option value="all">الكل</option></select></div>
     </div>
     <div class="bulk-toolbar">
       <button id="selectPage" class="btn secondary" type="button">تحديد الصفحة</button>
@@ -132,6 +132,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260923-person-identity-only1"></script>
+<script type="module" src="customer-links.js?v=20260923-work-only1"></script>
 </body>
 </html>
