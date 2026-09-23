@@ -9,7 +9,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=v=>String(v??'').trim().toLowerCase();
 
-let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformSignatures=[],identityReviews=[],page=1;
+let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformSignatures=[],identityReviews=[],importQueue=[],page=1;
 let adminMode='none',workspaceToken='';
 let confirmResolve=null;
 const selectedSources=new Set();
@@ -28,7 +28,7 @@ function platformKeyFromName(name){
 }
 function renderPlatformControls(){
   const current=$('importPlatform').value;
-  $('importPlatform').innerHTML='<option value="">اختر المنصة…</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
+  $('importPlatform').innerHTML='<option value="">لا تخمّن — اطلب مني الاختيار</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
   if(platforms.some(p=>p.platform_key===current))$('importPlatform').value=current;
   const pf=$('platformFilter').value;
   $('platformFilter').innerHTML='<option value="all">كل المنصات</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
@@ -39,8 +39,17 @@ async function sha256File(file){
   const digest=await crypto.subtle.digest('SHA-256',bytes);
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-async function registerSourceImport(platform,file){
-  const hash=await sha256File(file);
+async function previewSourceImport(platform,hash){
+  const {data,error}=await adminRpc(
+    'admin_customer_preview_source_import',
+    'workspace_admin_preview_source_import',
+    {p_platform_key:platform||null,p_file_sha256:hash}
+  );
+  if(error)throw error;
+  return data;
+}
+async function registerSourceImport(platform,file,knownHash=null){
+  const hash=knownHash||await sha256File(file);
   const {data,error}=await adminRpc(
     'admin_customer_register_source_import',
     'workspace_admin_register_source_import',
@@ -95,6 +104,7 @@ function renderConnectivity(){
   $('offlineNote').hidden=!off;
   $('importBtn').disabled=off;
   $('smartBtn').disabled=off;
+  if($('approveImportsBtn'))$('approveImportsBtn').disabled=off||!importQueue.some(x=>x.status==='ready'||(x.status==='duplicate'&&x.forceRepeat));
   $('manualSave').disabled=off;
   $('newPlatformBtn').disabled=off;
 }
@@ -510,14 +520,22 @@ function firstValue(obj,names){
   }
   return '';
 }
-function amountValue(v){const n=Number(String(v??'').trim().replace(/[\s\u00a0,]/g,'').replace(/٫/g,'.'));return Number.isFinite(n)?n:0}
-function sourceDateValue(v){
-  const raw=String(v??'').replace(/[\u200e\u200f]/g,'').trim();if(!raw)return null;
-  const iso=raw.match(/^(20\d{2})[-\/]([01]?\d)[-\/]([0-3]?\d)(?:[ T]([0-2]?\d):([0-5]\d))?/);
-  if(iso){const d=new Date(Number(iso[1]),Number(iso[2])-1,Number(iso[3]),Number(iso[4]||0),Number(iso[5]||0));return Number.isNaN(d.getTime())?null:d.toISOString()}
-  const ar=raw.match(/(\d{1,2})\/(\d{1,2})\/(20\d{2})[^\d]*(\d{1,2}):(\d{2})\s*([صم])/);
-  if(ar){let h=Number(ar[4]);if(ar[6]==='م'&&h<12)h+=12;if(ar[6]==='ص'&&h===12)h=0;const d=new Date(Number(ar[3]),Number(ar[2])-1,Number(ar[1]),h,Number(ar[5]));return Number.isNaN(d.getTime())?null:d.toISOString()}
-  return null;
+function hasColumn(headers,names){
+  const keys=new Set(headers.map(norm));
+  return names.some(name=>keys.has(norm(name)));
+}
+function numericValue(value){
+  if(value===null||value===undefined||String(value).trim()==='')return null;
+  if(typeof value==='number')return Number.isFinite(value)?value:null;
+  let s=String(value).trim().replace(/\s+/g,'').replace(/[^0-9,\.\-]/g,'');
+  if(!s)return null;
+  if(s.includes(',')&&s.includes('.'))s=s.replace(/,/g,'');
+  else if(s.includes(',')){
+    const parts=s.split(',');
+    s=(parts.length===2&&parts[1].length<=2)?parts[0]+'.'+parts[1]:parts.join('');
+  }
+  const n=Number(s);
+  return Number.isFinite(n)?n:null;
 }
 function headerSignature(headers){return headers.map(norm).filter(Boolean).join('|')}
 function detectPlatformFromMatrix(matrix,headerIndex,headers){
@@ -548,6 +566,14 @@ function rowsToAccounts(matrix){
   if(headerIndex<0)throw new Error('لم أجد عمود اسم المستخدم.');
   const headers=matrix[headerIndex].map(v=>String(v??'').trim());
   const detectedPlatform=detectPlatformFromMatrix(matrix,headerIndex,headers);
+  const balanceNames=['رصيد','الرصيد','balance','solde'];
+  const debtNames=['ديون','الدين','debt','مقترض','مقترض (المفوض)'];
+  const profitNames=['ارباح','أرباح','الارباح','الأرباح','profit'];
+  const financialFields={
+    balance:hasColumn(headers,balanceNames),
+    debt:hasColumn(headers,debtNames),
+    profit:hasColumn(headers,profitNames)
+  };
   const accounts=matrix.slice(headerIndex+1).filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()!=='')).map(row=>{
     const obj={};headers.forEach((h,i)=>{if(h)obj[h]=row[i]??''});
     let username=firstValue(obj,['اسم المستخدم','username','user']);
@@ -566,24 +592,29 @@ function rowsToAccounts(matrix){
     if(!email&&username.includes('@')&&username.includes('.'))email=username;
     const status=firstValue(obj,['حالة الحساب','الحالة','status']);
     const external=firstValue(obj,['المعرف','معرف الحساب','account id','id']);
-    const updated=sourceDateValue(firstValue(obj,['تاريخ التحديث','updated at','last updated']));
-    const created=sourceDateValue(firstValue(obj,['تاريخ الإنشاء','joined at','created at']));
-    const balance=amountValue(firstValue(obj,['رصيد','الرصيد','balance','solde']));
-    let debt=amountValue(firstValue(obj,['ديون','الدين','debt','مقترض']));
-    if(detectedPlatform==='wafarly')debt=amountValue(firstValue(obj,['مقترض']))+amountValue(firstValue(obj,['مقترض (المفوض)']));
-    const profit=amountValue(firstValue(obj,['ارباح','أرباح','الأرباح','profit','profits']));
+    const created=firstValue(obj,['تاريخ الإنشاء','created at','joined at']);
+    const updated=firstValue(obj,['تاريخ التحديث','تعديل','updated at','updated_at'])||created;
     const disabled=/معطل|disabled|inactive/i.test(status);
-    return {
+    const payload={
       username:uid||username,
       external_account_id:external||uid||null,
       display_name:shop||[first,last].filter(Boolean).join(' ').trim()||username,
       first_name:first||null,last_name:last||null,phone:phone||null,email:email||null,
-      source_status:status||null,source_updated_at:updated,source_created_at:created,active:!disabled,
-      balance,debt,profit,
-      raw_data:{username:uid||username,display_name:shop||[first,last].filter(Boolean).join(' ').trim()||username,phone:phone||null,email:email||null,balance,debt,profit,source_created_at:created}
+      source_status:status||null,source_updated_at:updated||null,source_created_at:created||null,
+      active:!disabled,raw_data:obj
     };
+    if(financialFields.balance){
+      const n=numericValue(firstValue(obj,balanceNames));if(n!==null)payload.balance=n;
+    }
+    if(financialFields.debt){
+      const n=numericValue(firstValue(obj,debtNames));if(n!==null)payload.debt=n;
+    }
+    if(financialFields.profit){
+      const n=numericValue(firstValue(obj,profitNames));if(n!==null)payload.profit=n;
+    }
+    return payload;
   }).filter(Boolean);
-  return {accounts,detectedPlatform,headers,headerSignature:headerSignature(headers)};
+  return {accounts,detectedPlatform,headers,financialFields,headerSignature:headerSignature(headers)};
 }
 async function parseImportFile(file){
   const ext=(file.name.split('.').pop()||'').toLowerCase();
@@ -629,65 +660,240 @@ async function reviewIdentity(id,action){
   if(action!=='ignore'){await autoBootstrap(null);await generateSuggestions({silent:true})}
   await load();msg(action==='same'?'تم تحديث نفس الحساب بدون إنشاء نسخة.':action==='new'?'تم إنشاء الحساب الجديد بعد تأكيدك.':'تم تجاهل الاقتراح.','ok');
 }
-async function importSources(){
-  if(!navigator.onLine)return msg('الاستيراد يحتاج اتصالًا.','warn');
-  const file=$('sourceFile').files?.[0];
-  if(!file)return msg('اختر ملف CSV أو XLSX أولًا.','error');
-  let platform=$('importPlatform').value;
-  $('importBtn').disabled=true;msg('جاري التحقق من الملف…');
-  try{
-    const parsed=await parseImportFile(file);
-    const accounts=parsed.accounts;
-    if(!platform&&parsed.detectedPlatform){platform=parsed.detectedPlatform;$('importPlatform').value=platform}
-    if(!platform){
-      const hints=platformHints(accounts),hint=hints[0];
-      throw new Error('الصيغة غير معروفة ولم أحدد لها منصة.'+(hint?' أقوى ترشيح حسب الهاتف/البريد/المستخدم: «'+hint.label+'». اختر المنصة أو أضف اسم منصة جديدة ثم أعد التحديث.':' اختر المنصة أو أضف اسم منصة جديدة ثم أعد التحديث.'));
-    }
-    if(parsed.detectedPlatform&&parsed.detectedPlatform!==platform){
-      throw new Error(
-        'شكل هذا الملف يخص «'+platformLabel(parsed.detectedPlatform)+'» وليس «'+platformLabel(platform)+'». غيّر المنصة قبل التحديث.'
-      );
-    }
-    const registration=await registerSourceImport(platform,file);
-    if(registration?.status==='wrong_platform'){
-      const existing=platformLabel(registration.existing_platform_key);
-      const requested=platformLabel(registration.requested_platform_key);
-      throw new Error('هذا الملف سبق تحميله لمنصة «'+existing+'» ولا يمكن تحميله مرة أخرى كمنصة «'+requested+'».');
-    }
-    if(!accounts.length)throw new Error('لم أجد حسابات صالحة في الملف.');
-    let processed=0,inserted=0,updated=0,unchanged=0,reviews=0,conflicts=0,stale=0;
-    for(let i=0;i<accounts.length;i+=150){
-      const chunk=accounts.slice(i,i+150);
-      const {data,error}=await adminRpc('admin_customer_upsert_source_accounts','workspace_admin_upsert_source_accounts',{
-        p_platform_key:platform,p_accounts:chunk
-      });
-      if(error)throw error;
-      processed+=Number(data?.processed||chunk.length);
-      inserted+=Number(data?.inserted||0);
-      updated+=Number(data?.updated||0);unchanged+=Number(data?.unchanged||0);
-      reviews+=Number(data?.identity_reviews||0);conflicts+=Number(data?.identity_conflicts||0);stale+=Number(data?.stale_skipped||0);
-    }
-    const sig=parsed.headerSignature;
-    if(sig){
-      const {error:sigError}=await adminRpc('admin_customer_register_schema_signature','workspace_admin_register_schema_signature',{p_platform_key:platform,p_header_signature:sig});
-      if(sigError)console.warn('schema signature not saved:',safeError(sigError));
-    }
-    $('sourceFile').value='';
-    const boot=await autoBootstrap(platform);
-    const smart=await generateSuggestions({silent:true});
-    await load();
-    if(boot?.error){
-      msg('تم تحديث '+processed+' حساب. بقيت بعض حالات الربط للمراجعة، ولم تتوقف الصفحة.','warn');
-    }else{
-      const repeat=registration?.status==='same_platform'?' · إعادة تحديث لنفس المصدر':'';
-      msg('تمت معالجة '+processed+' سطر: جديد '+inserted+' · تغيّر '+updated+' · بدون تغيير '+unchanged+' · مراجعة هوية '+reviews+' · تعارض '+conflicts+' · أقدم من المحفوظ '+stale+' · ربط أولي '+Number(boot?.created||0)+' · دمج تلقائي قوي '+Number(smart?.auto_merged||0)+' · اقتراحات '+Number(smart?.pending||0)+repeat+'.','ok');
-    }
-  }catch(error){
-    msg('تعذر الاستيراد: '+safeError(error),'error');
-  }finally{
-    $('importBtn').disabled=!navigator.onLine;
-  }
+function phoneKey(value){
+  return String(value||'').replace(/\D/g,'').replace(/^00213/,'213').replace(/^0(?=[5-7]\d{8}$)/,'213');
 }
+function previewMatch(platform,incoming){
+  if(!platform)return {source:null,conflict:false};
+  const candidates=sources.filter(old=>{
+    if(old.platform_key!==platform)return false;
+    const user=incoming.username&&old.username&&norm(incoming.username)===norm(old.username);
+    const phone=incoming.phone&&old.phone&&phoneKey(incoming.phone)===phoneKey(old.phone);
+    const email=incoming.email&&old.email&&norm(incoming.email)===norm(old.email);
+    return user||phone||email;
+  });
+  return {source:candidates.length===1?candidates[0]:null,conflict:candidates.length>1};
+}
+function estimateImportChanges(item){
+  const out={newCount:0,matched:0,financialChanged:0,debtChanged:0,balanceChanged:0,profitChanged:0,conflicts:0,unchanged:0};
+  if(!item.platform||!item.parsed?.accounts)return out;
+  for(const incoming of item.parsed.accounts){
+    const hit=previewMatch(item.platform,incoming);
+    if(hit.conflict){out.conflicts++;continue}
+    if(!hit.source){out.newCount++;continue}
+    out.matched++;
+    let changed=false;
+    if(Object.prototype.hasOwnProperty.call(incoming,'debt')&&Number(incoming.debt)!==Number(hit.source.debt_amount||0)){out.debtChanged++;changed=true}
+    if(Object.prototype.hasOwnProperty.call(incoming,'balance')&&Number(incoming.balance)!==Number(hit.source.balance_amount||0)){out.balanceChanged++;changed=true}
+    if(Object.prototype.hasOwnProperty.call(incoming,'profit')&&Number(incoming.profit)!==Number(hit.source.profit_amount||0)){out.profitChanged++;changed=true}
+    if(changed)out.financialChanged++;else out.unchanged++;
+  }
+  return out;
+}
+function importStatusText(item){
+  if(item.status==='ready')return 'جاهز للاعتماد';
+  if(item.status==='duplicate')return item.forceRepeat?'مكرر — سيعاد بعد موافقتك':'مكرر — سيُتجاهل';
+  if(item.status==='duplicate_batch')return 'مكرر داخل هذه الدفعة — سيُتجاهل';
+  if(item.status==='review')return 'يحتاج تحديد المنصة';
+  if(item.status==='wrong_platform')return 'مرفوض: المنصة لا تطابق البصمة';
+  if(item.status==='shape_conflict')return 'مرفوض: بنية الملف تخص منصة أخرى';
+  if(item.status==='error')return 'تعذر قراءة الملف';
+  if(item.status==='processing')return 'جاري الاعتماد…';
+  if(item.status==='done')return 'تم التحديث';
+  if(item.status==='skipped')return 'تم التجاهل';
+  return 'قيد الفحص';
+}
+function importStatusClass(item){
+  if(item.status==='ready')return'ready';
+  if(item.status==='duplicate'||item.status==='duplicate_batch')return'duplicate';
+  if(['wrong_platform','shape_conflict','error'].includes(item.status))return'blocked';
+  if(item.status==='done')return'done';
+  return'review';
+}
+function platformOptions(selected){
+  return '<option value="">اختر المنصة…</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'" '+(p.platform_key===selected?'selected':'')+'>'+esc(p.display_name)+'</option>').join('');
+}
+function renderImportQueue(){
+  const box=$('importPreview'),list=$('importPreviewList');
+  if(!box||!list)return;
+  box.hidden=!importQueue.length;
+  if(!importQueue.length){list.innerHTML='';return}
+  const ready=importQueue.filter(x=>x.status==='ready'||(x.status==='duplicate'&&x.forceRepeat)).length;
+  const duplicate=importQueue.filter(x=>['duplicate','duplicate_batch'].includes(x.status)&&!x.forceRepeat).length;
+  const blocked=importQueue.filter(x=>['wrong_platform','shape_conflict','error','review'].includes(x.status)).length;
+  $('importPreviewSummary').textContent=importQueue.length+' ملف · جاهز '+ready+' · سيُتجاهل '+duplicate+' · يحتاج مراجعة/مرفوض '+blocked;
+  list.innerHTML=importQueue.map((item,index)=>{
+    const diff=item.diff||{};
+    const finance=item.parsed?.financialFields||{};
+    const finLabels=[finance.debt?'دين':'',finance.balance?'رصيد':'',finance.profit?'ربح':''].filter(Boolean).join(' + ')||'لا توجد أعمدة مالية معروفة';
+    const locked=Boolean(item.detectedPlatform||item.serverPreview?.existing_platform_key||item.status==='duplicate_batch');
+    const hint=item.hintPlatform?' · ترشيح فقط: '+item.hintPlatform.label:'';
+    const existing=item.serverPreview?.existing_platform_key?' · مسجل سابقًا: '+platformLabel(item.serverPreview.existing_platform_key):'';
+    return '<article class="import-file '+importStatusClass(item)+'">'+
+      '<div class="import-file-top"><div><div class="import-file-name">'+esc(item.file?.name||'ملف')+'</div><div class="import-file-meta">SHA-256: '+esc((item.hash||'').slice(0,12)||'—')+'…'+existing+hint+'</div></div><span class="badge '+(item.status==='ready'||item.status==='done'?'linked':item.status==='duplicate'?'pending_review':(['wrong_platform','shape_conflict','error'].includes(item.status)?'conflict':'platform'))+'">'+esc(importStatusText(item))+'</span></div>'+
+      '<div class="import-file-platform"><div class="field"><label>المنصة</label><select data-import-platform-index="'+index+'" '+(locked?'disabled':'')+'>'+platformOptions(item.platform||'')+'</select></div>'+
+      (item.detectedPlatform?'<div class="badge linked">كشف من البنية: '+esc(platformLabel(item.detectedPlatform))+'</div>':'<div class="badge pending_review">غير مؤكدة من البنية</div>')+'</div>'+
+      '<div class="import-file-grid">'+
+        '<div class="mini"><small>الحسابات</small><b>'+Number(item.parsed?.accounts?.length||0)+'</b></div>'+
+        '<div class="mini"><small>أعمدة مالية</small><b>'+esc(finLabels)+'</b></div>'+
+        '<div class="mini"><small>تغيرات دين متوقعة</small><b>'+Number(diff.debtChanged||0)+'</b></div>'+
+        '<div class="mini"><small>حسابات جديدة متوقعة</small><b>'+Number(diff.newCount||0)+'</b></div>'+
+      '</div>'+
+      (item.error?'<div class="meta" style="color:#b91c1c;margin-top:7px">'+esc(item.error)+'</div>':'')+
+      (item.status==='duplicate'?'<div class="import-file-actions"><button class="btn secondary" data-import-reprocess="'+index+'" type="button">'+(item.forceRepeat?'إلغاء إعادة المعالجة':'إعادة المعالجة رغم التكرار')+'</button></div>':'')+
+      '</article>';
+  }).join('');
+  list.querySelectorAll('[data-import-platform-index]').forEach(select=>select.onchange=async()=>{
+    const item=importQueue[Number(select.dataset.importPlatformIndex)];if(!item)return;
+    item.platform=select.value||'';
+    await evaluateImportItem(item);
+    renderImportQueue();
+  });
+  list.querySelectorAll('[data-import-reprocess]').forEach(button=>button.onclick=()=>{
+    const item=importQueue[Number(button.dataset.importReprocess)];if(!item)return;
+    item.forceRepeat=!item.forceRepeat;
+    renderImportQueue();
+  });
+  renderConnectivity();
+}
+async function evaluateImportItem(item){
+  item.error='';
+  if(item.detectedPlatform&&item.platform&&item.platform!==item.detectedPlatform){
+    item.status='shape_conflict';
+    item.error='بنية الملف تخص «'+platformLabel(item.detectedPlatform)+'» ولا يمكن نسبه إلى «'+platformLabel(item.platform)+'».';
+    return;
+  }
+  const server=await previewSourceImport(item.platform||item.detectedPlatform||null,item.hash);
+  item.serverPreview=server||{};
+  if(server?.status==='duplicate_known'&&!item.platform){
+    item.platform=server.existing_platform_key||'';
+    item.status='duplicate';
+  }else if(server?.status==='wrong_platform'){
+    item.status='wrong_platform';
+    item.error='هذه البصمة سبق اعتمادها لمنصة «'+platformLabel(server.existing_platform_key)+'».';
+  }else if(server?.status==='same_platform'){
+    item.status='duplicate';
+  }else{
+    if(!item.platform&&item.detectedPlatform)item.platform=item.detectedPlatform;
+    item.status=item.platform?'ready':'review';
+  }
+  item.diff=estimateImportChanges(item);
+}
+async function previewImports(){
+  if(!navigator.onLine)return msg('معاينة الاستيراد تحتاج اتصالًا.','warn');
+  const files=[...($('sourceFile').files||[])];
+  if(!files.length)return msg('اختر ملفًا واحدًا أو أكثر أولًا.','error');
+  importQueue=[];
+  $('importBtn').disabled=true;
+  $('approveImportsBtn').disabled=true;
+  $('importPreview').hidden=false;
+  msg('جاري فحص الملفات بدون كتابة أي بيانات…');
+  const fallback=$('importPlatform').value||'';
+  for(const file of files){
+    const item={file,hash:'',parsed:null,detectedPlatform:'',platform:'',status:'checking',forceRepeat:false,error:'',diff:null,hintPlatform:null,serverPreview:null};
+    importQueue.push(item);renderImportQueue();
+    try{
+      item.parsed=await parseImportFile(file);
+      item.hash=await sha256File(file);
+      item.detectedPlatform=item.parsed.detectedPlatform||'';
+      item.platform=item.detectedPlatform||fallback||'';
+      const prior=importQueue.find(x=>x!==item&&x.hash&&x.hash===item.hash);
+      if(prior){
+        item.platform=prior.platform||item.platform;
+        item.status='duplicate_batch';
+        item.serverPreview={existing_platform_key:prior.platform||null};
+        item.diff=estimateImportChanges(item);
+      }else{
+        if(!item.detectedPlatform&&!item.platform){
+          const hints=platformHints(item.parsed.accounts);
+          item.hintPlatform=hints[0]||null;
+        }
+        await evaluateImportItem(item);
+      }
+    }catch(error){
+      item.status='error';item.error=safeError(error);
+    }
+    renderImportQueue();
+  }
+  $('importBtn').disabled=false;
+  msg('المعاينة جاهزة. لم تُكتب أي بيانات بعد. راجع كل ملف ثم اضغط «اعتماد الملفات السليمة».','ok');
+}
+async function processImportItem(item){
+  if(item.status==='duplicate'&&!item.forceRepeat){item.status='skipped';return {skipped:true,reason:'duplicate'}}
+  if(item.status!=='ready'&&!(item.status==='duplicate'&&item.forceRepeat))return {skipped:true,reason:'not_ready'};
+  if(!item.platform)throw new Error('PLATFORM_REQUIRED');
+  if(item.detectedPlatform&&item.detectedPlatform!==item.platform)throw new Error('FILE_PLATFORM_MISMATCH');
+  item.status='processing';renderImportQueue();
+  const registration=await registerSourceImport(item.platform,item.file,item.hash);
+  if(registration?.status==='wrong_platform')throw new Error('هذا الملف مسجل لمنصة أخرى: '+platformLabel(registration.existing_platform_key));
+  if(registration?.status==='same_platform'&&!item.forceRepeat){
+    item.status='skipped';return {skipped:true,reason:'duplicate_race'};
+  }
+  const accounts=item.parsed.accounts||[];
+  if(!accounts.length)throw new Error('لم أجد حسابات صالحة في الملف.');
+  const result={processed:0,inserted:0,updated:0,reviews:0,conflicts:0,stale:0,unchanged:0};
+  for(let i=0;i<accounts.length;i+=150){
+    const chunk=accounts.slice(i,i+150);
+    const {data,error}=await adminRpc('admin_customer_upsert_source_accounts','workspace_admin_upsert_source_accounts',{
+      p_platform_key:item.platform,p_accounts:chunk
+    });
+    if(error)throw error;
+    result.processed+=Number(data?.processed||chunk.length);
+    result.inserted+=Number(data?.inserted||0);
+    result.updated+=Number(data?.updated||0);
+    result.unchanged+=Number(data?.unchanged||0);
+    result.reviews+=Number(data?.identity_reviews||0);
+    result.conflicts+=Number(data?.identity_conflicts||0);
+    result.stale+=Number(data?.stale_skipped||0);
+  }
+  if(item.parsed.headerSignature){
+    const {error}=await adminRpc('admin_customer_register_schema_signature','workspace_admin_register_schema_signature',{
+      p_platform_key:item.platform,p_header_signature:item.parsed.headerSignature
+    });
+    if(error)console.warn('schema signature not saved:',safeError(error));
+  }
+  item.result=result;item.status='done';renderImportQueue();return result;
+}
+async function approveImports(){
+  if(!navigator.onLine)return msg('الاعتماد يحتاج اتصالًا.','warn');
+  const eligible=importQueue.filter(x=>x.status==='ready'||(x.status==='duplicate'&&x.forceRepeat));
+  if(!eligible.length)return msg('لا يوجد ملف سليم جاهز للاعتماد.','warn');
+  const ok=await askConfirm(
+    'اعتماد '+eligible.length+' ملف',
+    'سيتم تحديث نفس حسابات المنصات بالقيم الحالية. الدين/الرصيد/الربح لا تُجمع؛ تستبدل لقطة نفس الحساب. الملفات المكررة غير المختارة لإعادة المعالجة ستبقى متجاهلة.',
+    'اعتماد السليمة'
+  );
+  if(!ok)return;
+  $('approveImportsBtn').disabled=true;$('importBtn').disabled=true;
+  let done=0,failed=0,skipped=0,totalProcessed=0,totalUpdated=0,totalInserted=0;
+  for(const item of importQueue){
+    if(!eligible.includes(item)){
+      if(['duplicate','duplicate_batch'].includes(item.status)){item.status='skipped';skipped++}
+      continue;
+    }
+    try{
+      const r=await processImportItem(item);
+      if(r?.skipped){skipped++;continue}
+      done++;totalProcessed+=Number(r.processed||0);totalUpdated+=Number(r.updated||0);totalInserted+=Number(r.inserted||0);
+    }catch(error){
+      failed++;item.status='error';item.error=safeError(error);renderImportQueue();
+    }
+  }
+  if(done){
+    const boot=await autoBootstrap(null);
+    await generateSuggestions({silent:true});
+    await load();
+    if(boot?.error)console.warn('bootstrap warning:',boot.error);
+  }
+  $('sourceFile').value='';
+  $('importBtn').disabled=false;
+  renderImportQueue();
+  msg('انتهى الاعتماد: ملفات ناجحة '+done+' · متجاهلة '+skipped+' · فشلت '+failed+' · حسابات معالجة '+totalProcessed+' · جديدة '+totalInserted+' · محدثة '+totalUpdated+'.',failed?'warn':'ok');
+}
+function clearImportQueue(){
+  importQueue=[];$('sourceFile').value='';$('importPreview').hidden=true;$('importPreviewList').innerHTML='';$('importPreviewSummary').textContent='';renderConnectivity();
+}
+
 async function createManual(){
   if(!navigator.onLine)return msg('إنشاء العميل يحتاج اتصالًا.','warn');
   const name=$('manualName').value.trim(),phone=$('manualPhone').value.trim()||null,email=$('manualEmail').value.trim()||null;
@@ -706,7 +912,9 @@ $('clearSelected').onclick=()=>{selectedSources.clear();renderSources();renderBu
 $('mergeSelected').onclick=mergeSelectedSources;
 $('manualSave').onclick=createManual;
 $('newPlatformBtn').onclick=addPlatform;
-$('importBtn').onclick=importSources;
+$('importBtn').onclick=previewImports;
+$('approveImportsBtn').onclick=approveImports;
+$('clearImportsBtn').onclick=clearImportQueue;
 $('smartBtn').onclick=generateSuggestions;
 $('search').oninput=()=>{page=1;renderSources()};
 $('platformFilter').onchange=()=>{page=1;renderSources()};
