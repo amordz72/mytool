@@ -39,7 +39,7 @@
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',()=>{
-      navigator.serviceWorker.register('./sw.js?v=20260923-m2-auth1',{scope:'./'}).catch(()=>{});
+      navigator.serviceWorker.register('./sw.js?v=20260923-m2-auth2',{scope:'./'}).catch(()=>{});
     },{once:true});
   }
 })();
