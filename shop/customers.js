@@ -183,15 +183,14 @@ function renderAccount(s){
 }
 async function saveIdentity(){
   const p=partyBy(selectedPartyId);if(!p)return;
-  const name=$('editName').value.trim(),phone=$('editPhone').value.trim(),email=$('editEmail').value.trim();
-  if(name.length<2)return msg('الاسم الرئيسي قصير جدًا.','error');
+  const phone=$('editPhone').value.trim(),email=$('editEmail').value.trim();
   $('saveIdentity').disabled=true;
   const r=await adminRpc('admin_customer_update_canonical','workspace_admin_update_canonical_party',{
-    p_party_id:p.id,p_display_name:name,p_phone:phone||null,p_email:email||null
+    p_party_id:p.id,p_display_name:p.display_name,p_phone:phone||null,p_email:email||null
   });
   $('saveIdentity').disabled=false;
-  if(r.error)return msg('تعذر حفظ هوية العميل: '+(r.error.message||r.error),'error');
-  await load();selectedPartyId=p.id;renderDetail(p.id);msg('تم تحديث الهوية الرئيسية بدون تغيير حسابات المنصات.','ok');
+  if(r.error)return msg('تعذر حفظ بيانات العميل: '+(r.error.message||r.error),'error');
+  await load();selectedPartyId=p.id;renderDetail(p.id);msg('تم تحديث الهاتف/البريد. اسم الماستر بقي ثابتًا.','ok');
 }
 
 $('refreshBtn').onclick=()=>load().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));
