@@ -72,12 +72,12 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
     <div class="panel" style="margin-top:10px">
       <h3>الهوية الرئيسية</h3>
       <div class="edit-grid">
-        <div class="field"><label>الاسم الرئيسي</label><input id="editName"></div>
+        <div class="field"><label>اسم الماستر الثابت</label><input id="editName" readonly></div>
         <div class="field"><label>الهاتف الأساسي</label><input id="editPhone" inputmode="tel"></div>
         <div class="field"><label>البريد الأساسي</label><input id="editEmail" inputmode="email"></div>
         <button id="saveIdentity" class="btn" type="button">حفظ</button>
       </div>
-      <div class="muted" style="margin-top:7px">تعديل هذه القيم لا يمس أسماء المستخدمين أو الحسابات داخل المنصات.</div>
+      <div class="muted" style="margin-top:7px">اسم الماستر ثابت في هذه الشاشة. يمكن تحديث الهاتف والبريد فقط؛ أسماء المنصات لا تستبدل اسم الماستر.</div>
     </div>
 
     <div class="detail-grid">
@@ -104,6 +104,6 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
     <div class="pagination"><button id="prevPage" class="btn secondary" type="button">السابق</button><span id="pageText" class="muted"></span><button id="nextPage" class="btn secondary" type="button">التالي</button></div>
   </section>
 </div>
-<script type="module" src="customers.js?v=20260923-customer-registry1"></script>
+<script type="module" src="customers.js?v=20260923-master-name-lock1"></script>
 </body>
 </html>
