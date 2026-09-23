@@ -45,10 +45,10 @@
 
   <section id="accountsPanel" class="panel active">
     <div class="card" style="margin-bottom:12px">
-      <div class="rowhead"><div><div class="name">إنشاء حساب مستخدم</div><div class="meta">أنت ترسل له اسم المستخدم وكلمة المرور، وهو يطلب اعتماد جهازه أول مرة.</div></div></div>
+      <div class="rowhead"><div><div class="name">إنشاء حساب مستخدم</div><div class="meta">B1 للعامل: جهاز واحد افتراضيًا. B2 للمستخدم العادي: جهازان. الحساب العادي يستعمل البريد الإلكتروني كاسم دخول.</div></div></div>
       <div class="create-grid" style="margin-top:12px">
         <input id="newDisplayName" placeholder="الاسم الظاهر">
-        <input id="newUsername" placeholder="اسم المستخدم" autocomplete="off">
+        <input id="newUsername" placeholder="اسم المستخدم / البريد الإلكتروني" autocomplete="off">
         <input id="newPassword" type="password" minlength="6" placeholder="كلمة مرور مؤقتة" autocomplete="new-password">
         <select id="newRole">
           <option value="worker">عامل</option>
@@ -97,7 +97,11 @@ function friendlyError(e){
     PASSWORD_TOO_SHORT:'كلمة المرور لازم تكون 6 أحرف أو أرقام على الأقل.',
     ACCOUNT_NOT_FOUND:'الحساب غير موجود.',
     DEVICE_REQUEST_NOT_PENDING:'طلب الجهاز لم يعد بانتظار الموافقة.',
-    TRUST_NOT_ACTIVE:'الجهاز غير معتمد حاليًا.'
+    TRUST_NOT_ACTIVE:'الجهاز غير معتمد حاليًا.',
+    EMAIL_REQUIRED_FOR_CUSTOMER:'الحساب العادي أو حساب الخدمة يحتاج بريدًا إلكترونيًا صحيحًا.',
+    DEVICE_LIMIT_REACHED:'وصل الحساب إلى الحد الأقصى للأجهزة. ألغِ جهازًا قديمًا أو ارفع الحد.',
+    INVALID_DEVICE_LIMIT:'حد الأجهزة يجب أن يكون بين 1 و10.',
+    DEVICE_LIMIT_BELOW_ACTIVE_COUNT:'لا يمكن تخفيض الحد تحت عدد الأجهزة المعتمدة حاليًا.'
   };
   for(const [k,v] of Object.entries(map))if(s.includes(k))return v;
   return s||'تعذر تنفيذ العملية.';
@@ -127,7 +131,7 @@ function renderAccounts(){
   host.innerHTML=accounts.map(a=>
     '<article class="card" data-account="'+esc(a.id)+'">'+
       '<div class="rowhead"><div><div class="name">'+esc(a.display_name)+'</div>'+
-      '<div class="meta">@'+esc(a.username)+' · أجهزة معتمدة: '+esc(a.trusted_devices||0)+' · طلبات أجهزة: '+esc(a.pending_devices||0)+'</div></div>'+
+      '<div class="meta">'+esc(a.username)+' · '+(a.account_role==='worker'?'B1':'B2')+' · أجهزة معتمدة: '+esc(a.trusted_devices||0)+' / '+esc(a.max_trusted_devices||1)+' · طلبات: '+esc(a.pending_devices||0)+'</div></div>'+
       '<span class="status '+(a.active?'active':'revoked')+'">'+(a.active?'نشط':'موقوف')+'</span></div>'+
       '<div class="actions">'+
         '<input data-account-name value="'+esc(a.display_name)+'" placeholder="الاسم الظاهر">'+
@@ -137,6 +141,7 @@ function renderAccounts(){
           '<option value="service_partner" '+(a.account_role==='service_partner'?'selected':'')+'>حساب خدمة</option>'+
         '</select>'+
         '<select data-account-active><option value="1" '+(a.active?'selected':'')+'>نشط</option><option value="0" '+(!a.active?'selected':'')+'>موقوف</option></select>'+
+        '<input data-account-limit type="number" min="1" max="10" value="'+esc(a.max_trusted_devices||1)+'" placeholder="حد الأجهزة">'+
         '<button class="btn secondary" data-account-action="save" type="button">حفظ الحساب</button>'+
         '<input data-new-password type="password" minlength="6" placeholder="كلمة مرور جديدة" autocomplete="new-password">'+
         '<button class="btn danger" data-account-action="password" type="button">تغيير كلمة المرور</button>'+
@@ -152,6 +157,9 @@ async function createAccount(){
   const password=$('newPassword').value;
   const role=$('newRole').value;
   if(!username){$('newUsername').focus();return}
+  if((role==='standard'||role==='service_partner')&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username)){
+    msg('الحساب العادي وحساب الخدمة: أدخل البريد الإلكتروني في خانة اسم الدخول.',true);$('newUsername').focus();return
+  }
   if(password.length<6){msg('كلمة المرور لازم تكون 6 أحرف أو أرقام على الأقل.',true);$('newPassword').focus();return}
   const btn=$('createAccountBtn');btn.disabled=true;btn.textContent='جاري الإنشاء…';
   try{
@@ -160,7 +168,7 @@ async function createAccount(){
       p_username:username,p_password:password,p_display_name:displayName||username,p_account_role:role
     });
     $('newDisplayName').value='';$('newUsername').value='';$('newPassword').value='';
-    msg('تم إنشاء الحساب. أرسل اسم المستخدم وكلمة المرور للشخص.');
+    msg(role==='worker'?'تم إنشاء B1. أرسل اسم المستخدم وكلمة المرور للعامل.':'تم إنشاء B2. أرسل البريد وكلمة المرور للمستخدم.');
     await loadAccounts();
   }catch(e){msg(friendlyError(e),true)}
   finally{btn.disabled=false;btn.textContent='إنشاء الحساب'}
@@ -177,7 +185,11 @@ async function accountAction(card,action){
         p_account_role:card.querySelector('[data-account-role]').value,
         p_active:card.querySelector('[data-account-active]').value==='1'
       });
-      msg('تم تحديث الحساب.');
+      await rpc('admin_account_set_device_limit',{
+        p_account_id:id,
+        p_max_trusted_devices:Number(card.querySelector('[data-account-limit]').value)
+      });
+      msg('تم تحديث الحساب وحد الأجهزة.');
     }else if(action==='password'){
       const input=card.querySelector('[data-new-password]');
       const pwd=input.value;
@@ -210,7 +222,7 @@ function renderDevices(){
     const pinText=d.pin_locked?'PIN مقفول':d.pin_set?'PIN مضبوط':'PIN غير مضبوط';
     return '<article class="card" data-trust="'+esc(d.trust_id)+'">'+
       '<div class="rowhead"><div><div class="name">'+esc(d.display_name)+'</div>'+
-      '<div class="meta">@'+esc(d.username)+' · '+esc(roleLabel(d.account_role))+'<br>الجهاز: '+esc(String(d.public_device_id||'').slice(0,12))+'… · '+esc(d.device_label||'جهاز')+'<br>آخر اتصال: '+esc(date(d.last_seen_at))+'</div></div>'+
+      '<div class="meta">'+esc(d.username)+' · '+esc(roleLabel(d.account_role))+' · الحد '+esc(d.max_trusted_devices||1)+' جهاز<br>الجهاز: '+esc(String(d.public_device_id||'').slice(0,12))+'… · '+esc(d.device_label||'جهاز')+'<br>آخر اتصال: '+esc(date(d.last_seen_at))+'</div></div>'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><span class="status '+esc(d.status)+'">'+esc(statusLabel(d.status))+'</span><span class="pin '+pinClass+'">'+pinText+'</span></div></div>'+
       '<div class="actions">'+
         (pending?'<button class="btn primary wide" data-device-action="approve" type="button">اعتماد الجهاز</button><button class="btn danger wide" data-device-action="reject" type="button">رفض</button>':'')+
