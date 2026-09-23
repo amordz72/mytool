@@ -90,6 +90,7 @@ dialog{border:0;border-radius:18px;padding:0;width:min(94vw,560px);box-shadow:0 
       <option value="reserved">محجوزة</option>
       <option value="review">مراجعة</option>
       <option value="used">مستعملة</option>
+      <option value="transferred">منقولة لتغذية SAMA</option>
     </select>
     <button id="refresh" class="btn secondary">تحديث</button>
   </div>
@@ -123,7 +124,7 @@ const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publi
 const $=id=>document.getElementById(id),DRAFT_KEY='mytool.cards.masterStockDraft.v1';
 let types=[],currentTaken=null,currentTakenRisk=false,importMethod='manual';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const statusName=s=>({available:'متاحة',reserved:'محجوزة',review:'مراجعة',used:'مستعملة',invalid:'غير صالحة'}[s]||s);
+const statusName=s=>({available:'متاحة',reserved:'محجوزة',review:'مراجعة',used:'مستعملة',invalid:'غير صالحة',transferred:'منقولة لتغذية SAMA'}[s]||s);
 const sourceName=s=>({supplier:'مورد',platform:'منصة',customer_return:'مرتجع عميل',internal:'داخلي',unknown_exception:'مصدر مجهول'}[s]||s);
 function setStatus(text,bad=false){$('importStatus').className='status '+(bad?'bad':'ok');$('importStatus').textContent=text}
 function parseRows(){
@@ -201,7 +202,7 @@ async function loadSummary(){
   const a=data||[];const sum=k=>a.reduce((n,x)=>n+Number(x[k]||0),0);
   $('availableK').textContent=sum('available_count');$('reservedK').textContent=sum('reserved_count');$('reviewK').textContent=sum('review_count');$('usedK').textContent=sum('used_count');
 }
-function tagClass(s){return s==='available'?'good':s==='review'?'warn':s==='used'?'bad':''}
+function tagClass(s){return s==='available'?'good':s==='review'?'warn':s==='used'?'bad':s==='transferred'?'warn':''}
 async function loadItems(){
   const st=$('statusFilter').value||null;
   const {data,error}=await supabase.rpc('card_stock_admin_items_v2',{p_limit:100,p_status:st});if(error)throw error;
