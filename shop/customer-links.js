@@ -158,11 +158,33 @@ function filteredSources(){
   });
 }
 function renderMetrics(){
-  $('mSources').textContent=sources.length;
-  $('mUnlinked').textContent=sources.filter(x=>x.link_status==='unlinked').length;
-  $('mPending').textContent=sources.filter(x=>x.link_status==='pending_review').length;
-  $('mLinked').textContent=sources.filter(x=>x.link_status==='linked').length;
-  $('mConflict').textContent=sources.filter(x=>x.link_status==='conflict').length;
+  const total=sources.length;
+  const unlinked=sources.filter(x=>x.link_status==='unlinked').length;
+  const pending=sources.filter(x=>x.link_status==='pending_review').length;
+  const linked=sources.filter(x=>x.link_status==='linked').length;
+  const conflict=sources.filter(x=>x.link_status==='conflict').length;
+  $('mSources').textContent=total;
+  $('mUnlinked').textContent=unlinked;
+  $('mPending').textContent=pending;
+  $('mLinked').textContent=linked;
+  $('mConflict').textContent=conflict;
+  const summary=$('metricsSummary');
+  if(summary){
+    const work=unlinked+pending+conflict;
+    summary.textContent=work>0?(total+' حساب · '+work+' يحتاج تدخل'):(total+' حساب · الكل مربوط');
+  }
+  const visibility=[
+    ['metricSources',total],
+    ['metricUnlinked',unlinked],
+    ['metricPending',pending],
+    ['metricLinked',linked],
+    ['metricConflict',conflict]
+  ];
+  for(const [id,count] of visibility){
+    const el=$(id);
+    if(!el)continue;
+    el.hidden=id!=='metricSources'&&id!=='metricLinked'&&count===0;
+  }
 }
 function renderBulk(){
   for(const id of [...selectedSources]){
