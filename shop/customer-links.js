@@ -127,7 +127,7 @@ function renderConnectivity(){
   $('offlineNote').hidden=!off;
   $('importBtn').disabled=off||importBusy;
   $('smartBtn').disabled=off||importBusy;
-  if($('approveImportsBtn'))$('approveImportsBtn').disabled=off||importBusy||!importQueue.some(x=>x.status==='ready'||(x.status==='duplicate'&&x.forceRepeat));
+  if($('approveImportsBtn'))$('approveImportsBtn').disabled=off||importBusy||!importQueue.some(x=>x.status==='ready'||x.status==='resume');
   if($('clearImportsBtn'))$('clearImportsBtn').disabled=importBusy;
   $('manualSave').disabled=off;
   $('newPlatformBtn').disabled=off;
@@ -677,6 +677,17 @@ function rowsToAccounts(matrix){
     }
     return payload;
   }).filter(Boolean);
+  const seenUsernames=new Map(),duplicateUsernames=[];
+  for(const account of accounts){
+    const key=norm(account.username);
+    if(!key)continue;
+    if(seenUsernames.has(key))duplicateUsernames.push(account.username);
+    else seenUsernames.set(key,account.username);
+  }
+  if(duplicateUsernames.length){
+    const sample=[...new Set(duplicateUsernames)].slice(0,5).join('، ');
+    throw new Error('يوجد اسم مستخدم مكرر داخل نفس الملف: '+sample+'. صحح الملف قبل الاعتماد.');
+  }
   return {accounts,detectedPlatform,headers,financialFields,headerSignature:headerSignature(headers)};
 }
 async function parseImportFile(file){
@@ -727,20 +738,20 @@ function phoneKey(value){
   return String(value||'').replace(/\D/g,'').replace(/^00213/,'213').replace(/^0(?=[5-7]\d{8}$)/,'213');
 }
 function previewMatch(platform,incoming){
-  if(!platform)return {source:null,conflict:false};
-  const candidates=sources.filter(old=>{
-    if(old.platform_key!==platform)return false;
-    const user=incoming.username&&old.username&&norm(incoming.username)===norm(old.username);
-    const phone=incoming.phone&&old.phone&&phoneKey(incoming.phone)===phoneKey(old.phone);
-    const email=incoming.email&&old.email&&norm(incoming.email)===norm(old.email);
-    return user||phone||email;
-  });
+  if(!platform||!incoming?.username)return {source:null,conflict:false};
+  const usernameKey=norm(incoming.username);
+  const candidates=sources.filter(old=>old.platform_key===platform&&norm(old.username)===usernameKey);
   return {source:candidates.length===1?candidates[0]:null,conflict:candidates.length>1};
 }
 function estimateImportChanges(item){
-  const out={newCount:0,matched:0,financialChanged:0,debtChanged:0,balanceChanged:0,profitChanged:0,conflicts:0,unchanged:0};
+  const out={
+    newCount:0,matched:0,financialChanged:0,debtChanged:0,balanceChanged:0,profitChanged:0,
+    conflicts:0,unchanged:0,newlyMissing:0,stillMissing:0,contactChanged:0
+  };
   if(!item.platform||!item.parsed?.accounts)return out;
+  const incomingKeys=new Set();
   for(const incoming of item.parsed.accounts){
+    const key=norm(incoming.username);if(key)incomingKeys.add(key);
     const hit=previewMatch(item.platform,incoming);
     if(hit.conflict){out.conflicts++;continue}
     if(!hit.source){out.newCount++;continue}
@@ -749,13 +760,24 @@ function estimateImportChanges(item){
     if(Object.prototype.hasOwnProperty.call(incoming,'debt')&&Number(incoming.debt)!==Number(hit.source.debt_amount||0)){out.debtChanged++;changed=true}
     if(Object.prototype.hasOwnProperty.call(incoming,'balance')&&Number(incoming.balance)!==Number(hit.source.balance_amount||0)){out.balanceChanged++;changed=true}
     if(Object.prototype.hasOwnProperty.call(incoming,'profit')&&Number(incoming.profit)!==Number(hit.source.profit_amount||0)){out.profitChanged++;changed=true}
+    const incomingPhone=String(incoming.phone||'').trim(),oldPhone=String(hit.source.phone||'').trim();
+    const incomingEmail=norm(incoming.email||''),oldEmail=norm(hit.source.email||'');
+    if(incomingPhone!==oldPhone||incomingEmail!==oldEmail)out.contactChanged++;
     if(changed)out.financialChanged++;else out.unchanged++;
+  }
+  for(const old of sources.filter(s=>s.platform_key===item.platform)){
+    const key=norm(old.username);
+    if(key&&!incomingKeys.has(key)){
+      if(old.missing_from_latest_snapshot)out.stillMissing++;
+      else out.newlyMissing++;
+    }
   }
   return out;
 }
 function importStatusText(item){
   if(item.status==='ready')return 'جاهز للاعتماد';
-  if(item.status==='duplicate')return item.forceRepeat?'مكرر — سيعاد بعد موافقتك':'مكرر — سيُتجاهل';
+  if(item.status==='resume')return 'استيراد غير مكتمل — جاهز للاستئناف';
+  if(item.status==='duplicate')return 'مكرر مكتمل — سيُتجاهل';
   if(item.status==='duplicate_batch')return 'مكرر داخل هذه الدفعة — سيُتجاهل';
   if(item.status==='review')return 'يحتاج تحديد المنصة';
   if(item.status==='wrong_platform')return 'مرفوض: المنصة لا تطابق البصمة';
@@ -767,7 +789,7 @@ function importStatusText(item){
   return 'قيد الفحص';
 }
 function importStatusClass(item){
-  if(item.status==='ready')return'ready';
+  if(item.status==='ready'||item.status==='resume')return'ready';
   if(item.status==='duplicate'||item.status==='duplicate_batch')return'duplicate';
   if(['wrong_platform','shape_conflict','error'].includes(item.status))return'blocked';
   if(item.status==='done')return'done';
@@ -781,10 +803,10 @@ function renderImportQueue(){
   if(!box||!list)return;
   box.hidden=!importQueue.length;
   if(!importQueue.length){list.innerHTML='';return}
-  const ready=importQueue.filter(x=>x.status==='ready'||(x.status==='duplicate'&&x.forceRepeat)).length;
-  const duplicate=importQueue.filter(x=>['duplicate','duplicate_batch'].includes(x.status)&&!x.forceRepeat).length;
+  const ready=importQueue.filter(x=>x.status==='ready'||x.status==='resume').length;
+  const duplicate=importQueue.filter(x=>['duplicate','duplicate_batch'].includes(x.status)).length;
   const blocked=importQueue.filter(x=>['wrong_platform','shape_conflict','error','review'].includes(x.status)).length;
-  $('importPreviewSummary').textContent=importQueue.length+' ملف · جاهز '+ready+' · سيُتجاهل '+duplicate+' · يحتاج مراجعة/مرفوض '+blocked;
+  $('importPreviewSummary').textContent=importQueue.length+' ملف · جاهز '+ready+' · مكرر مكتمل '+duplicate+' · يحتاج مراجعة/مرفوض '+blocked;
   list.innerHTML=importQueue.map((item,index)=>{
     const diff=item.diff||{};
     const finance=item.parsed?.financialFields||{};
@@ -793,28 +815,27 @@ function renderImportQueue(){
     const hint=item.hintPlatform?' · ترشيح فقط: '+item.hintPlatform.label:'';
     const existing=item.serverPreview?.existing_platform_key?' · مسجل سابقًا: '+platformLabel(item.serverPreview.existing_platform_key):'';
     return '<article class="import-file '+importStatusClass(item)+'">'+
-      '<div class="import-file-top"><div><div class="import-file-name">'+esc(item.file?.name||'ملف')+'</div><div class="import-file-meta">SHA-256: '+esc((item.hash||'').slice(0,12)||'—')+'…'+existing+hint+'</div></div><span class="badge '+(item.status==='ready'||item.status==='done'?'linked':item.status==='duplicate'?'pending_review':(['wrong_platform','shape_conflict','error'].includes(item.status)?'conflict':'platform'))+'">'+esc(importStatusText(item))+'</span></div>'+
+      '<div class="import-file-top"><div><div class="import-file-name">'+esc(item.file?.name||'ملف')+'</div><div class="import-file-meta">SHA-256: '+esc((item.hash||'').slice(0,12)||'—')+'…'+existing+hint+'</div></div><span class="badge '+(item.status==='ready'||item.status==='resume'||item.status==='done'?'linked':item.status==='duplicate'?'pending_review':(['wrong_platform','shape_conflict','error'].includes(item.status)?'conflict':'platform'))+'">'+esc(importStatusText(item))+'</span></div>'+
       '<div class="import-file-platform"><div class="field"><label>المنصة</label><select data-import-platform-index="'+index+'" '+(locked?'disabled':'')+'>'+platformOptions(item.platform||'')+'</select></div>'+
       (item.detectedPlatform?'<div class="badge linked">كشف من البنية: '+esc(platformLabel(item.detectedPlatform))+'</div>':'<div class="badge pending_review">غير مؤكدة من البنية</div>')+'</div>'+
       '<div class="import-file-grid">'+
-        '<div class="mini"><small>الحسابات</small><b>'+Number(item.parsed?.accounts?.length||0)+'</b></div>'+
-        '<div class="mini"><small>أعمدة مالية</small><b>'+esc(finLabels)+'</b></div>'+
-        '<div class="mini"><small>تغيرات دين متوقعة</small><b>'+Number(diff.debtChanged||0)+'</b></div>'+
-        '<div class="mini"><small>حسابات جديدة متوقعة</small><b>'+Number(diff.newCount||0)+'</b></div>'+
+        '<div class="mini"><small>الحسابات في الملف</small><b>'+Number(item.parsed?.accounts?.length||0)+'</b></div>'+
+        '<div class="mini"><small>موجودة بنفس username</small><b>'+Number(diff.matched||0)+'</b></div>'+
+        '<div class="mini"><small>حسابات جديدة</small><b>'+Number(diff.newCount||0)+'</b></div>'+
+        '<div class="mini"><small>ستصبح غير ظاهرة في آخر ملف</small><b>'+Number(diff.newlyMissing||0)+'</b></div>'+
+        '<div class="mini"><small>تغيرات مالية</small><b>'+Number(diff.financialChanged||0)+'</b></div>'+
+        '<div class="mini"><small>تغير هاتف/بريد</small><b>'+Number(diff.contactChanged||0)+'</b></div>'+
       '</div>'+
+      '<div class="meta" style="margin-top:7px">الأعمدة المالية: '+esc(finLabels)+' · تغير دين '+Number(diff.debtChanged||0)+' · رصيد '+Number(diff.balanceChanged||0)+' · ربح '+Number(diff.profitChanged||0)+(diff.stillMissing?' · ما زال غائبًا '+Number(diff.stillMissing):'')+'</div>'+
+      (item.status==='duplicate'?'<div class="meta" style="margin-top:7px">هذا الملف مكتمل سابقًا؛ لن يعاد تطبيقه ولن تتضاعف القيم.</div>':'')+
+      (item.status==='resume'?'<div class="meta" style="margin-top:7px">هذا الملف بدأ سابقًا ولم يكتمل؛ سيُستأنف بأمان ثم تُغلق لقطة المنصة.</div>':'')+
       (item.error?'<div class="meta" style="color:#b91c1c;margin-top:7px">'+esc(item.error)+'</div>':'')+
-      (item.status==='duplicate'?'<div class="import-file-actions"><button class="btn secondary" data-import-reprocess="'+index+'" type="button" '+(importBusy?'disabled':'')+'>'+(item.forceRepeat?'إلغاء إعادة المعالجة':'إعادة المعالجة رغم التكرار')+'</button></div>':'')+
       '</article>';
   }).join('');
   list.querySelectorAll('[data-import-platform-index]').forEach(select=>select.onchange=async()=>{
     const item=importQueue[Number(select.dataset.importPlatformIndex)];if(!item)return;
     item.platform=select.value||'';
     await evaluateImportItem(item);
-    renderImportQueue();
-  });
-  list.querySelectorAll('[data-import-reprocess]').forEach(button=>button.onclick=()=>{
-    const item=importQueue[Number(button.dataset.importReprocess)];if(!item)return;
-    item.forceRepeat=!item.forceRepeat;
     renderImportQueue();
   });
   renderConnectivity();
@@ -828,14 +849,16 @@ async function evaluateImportItem(item){
   }
   const server=await previewSourceImport(item.platform||item.detectedPlatform||null,item.hash);
   item.serverPreview=server||{};
-  if(server?.status==='duplicate_known'&&!item.platform){
+  if((server?.status==='duplicate_known'||server?.status==='duplicate_incomplete')&&!item.platform){
     item.platform=server.existing_platform_key||'';
-    item.status='duplicate';
+    item.status=server.status==='duplicate_incomplete'?'resume':'duplicate';
   }else if(server?.status==='wrong_platform'){
     item.status='wrong_platform';
-    item.error='هذه البصمة سبق اعتمادها لمنصة «'+platformLabel(server.existing_platform_key)+'».';
+    item.error='هذه البصمة سبق تسجيلها لمنصة «'+platformLabel(server.existing_platform_key)+'».';
   }else if(server?.status==='same_platform'){
     item.status='duplicate';
+  }else if(server?.status==='same_platform_incomplete'){
+    item.status='resume';
   }else{
     if(!item.platform&&item.detectedPlatform)item.platform=item.detectedPlatform;
     item.status=item.platform?'ready':'review';
@@ -887,23 +910,28 @@ async function previewImports(){
   msg('المعاينة جاهزة. لم تُكتب أي بيانات بعد. راجع كل ملف ثم اضغط «اعتماد الملفات السليمة».','ok');
 }
 async function processImportItem(item){
-  if(item.status==='duplicate'&&!item.forceRepeat){item.status='skipped';return {skipped:true,reason:'duplicate'}}
-  if(item.status!=='ready'&&!(item.status==='duplicate'&&item.forceRepeat))return {skipped:true,reason:'not_ready'};
+  if(item.status==='duplicate'){item.status='skipped';return {skipped:true,reason:'duplicate'}}
+  if(item.status!=='ready'&&item.status!=='resume')return {skipped:true,reason:'not_ready'};
   if(!item.platform)throw new Error('PLATFORM_REQUIRED');
   if(item.detectedPlatform&&item.detectedPlatform!==item.platform)throw new Error('FILE_PLATFORM_MISMATCH');
   item.status='processing';renderImportQueue();
+
   const registration=await registerSourceImport(item.platform,item.file,item.hash);
   if(registration?.status==='wrong_platform')throw new Error('هذا الملف مسجل لمنصة أخرى: '+platformLabel(registration.existing_platform_key));
-  if(registration?.status==='same_platform'&&!item.forceRepeat){
+  if(registration?.status==='same_platform'){
     item.status='skipped';return {skipped:true,reason:'duplicate_race'};
   }
+  if(!['new','resume_incomplete'].includes(registration?.status||''))throw new Error('IMPORT_REGISTRATION_FAILED');
+  const batchId=Number(registration.batch_id||0);
+  if(!batchId)throw new Error('IMPORT_BATCH_REQUIRED');
+
   const accounts=item.parsed.accounts||[];
   if(!accounts.length)throw new Error('لم أجد حسابات صالحة في الملف.');
-  const result={processed:0,inserted:0,updated:0,reviews:0,conflicts:0,stale:0,unchanged:0};
+  const result={processed:0,inserted:0,updated:0,reviews:0,conflicts:0,stale:0,unchanged:0,restored:0,invalid:0,newlyMissing:0,totalMissing:0};
   for(let i=0;i<accounts.length;i+=150){
     const chunk=accounts.slice(i,i+150);
-    const {data,error}=await adminRpc('admin_customer_upsert_source_accounts','workspace_admin_upsert_source_accounts',{
-      p_platform_key:item.platform,p_accounts:chunk
+    const {data,error}=await adminRpc('admin_customer_upsert_source_snapshot_chunk','workspace_admin_upsert_source_snapshot_chunk',{
+      p_platform_key:item.platform,p_batch_id:batchId,p_accounts:chunk
     });
     if(error)throw error;
     result.processed+=Number(data?.processed||chunk.length);
@@ -913,7 +941,18 @@ async function processImportItem(item){
     result.reviews+=Number(data?.identity_reviews||0);
     result.conflicts+=Number(data?.identity_conflicts||0);
     result.stale+=Number(data?.stale_skipped||0);
+    result.restored+=Number(data?.restored_from_missing||0);
+    result.invalid+=Number(data?.invalid_rows||0);
   }
+
+  const finalized=await adminRpc('admin_customer_finalize_source_snapshot','workspace_admin_finalize_source_snapshot',{
+    p_platform_key:item.platform,p_batch_id:batchId
+  });
+  if(finalized.error)throw finalized.error;
+  result.newlyMissing=Number(finalized.data?.newly_missing||0);
+  result.totalMissing=Number(finalized.data?.total_missing||0);
+  result.snapshotAccounts=Number(finalized.data?.snapshot_accounts||accounts.length);
+
   if(item.parsed.headerSignature){
     const {error}=await adminRpc('admin_customer_register_schema_signature','workspace_admin_register_schema_signature',{
       p_platform_key:item.platform,p_header_signature:item.parsed.headerSignature
@@ -925,16 +964,16 @@ async function processImportItem(item){
 async function approveImports(){
   if(!navigator.onLine)return msg('الاعتماد يحتاج اتصالًا.','warn');
   if(importBusy)return;
-  const eligible=importQueue.filter(x=>x.status==='ready'||(x.status==='duplicate'&&x.forceRepeat));
+  const eligible=importQueue.filter(x=>x.status==='ready'||x.status==='resume');
   if(!eligible.length)return msg('لا يوجد ملف سليم جاهز للاعتماد.','warn');
   const ok=await askConfirm(
     'اعتماد '+eligible.length+' ملف',
-    'سيتم تحديث نفس حسابات المنصات بالقيم الحالية. الدين/الرصيد/الربح لا تُجمع؛ تستبدل لقطة نفس الحساب. الملفات المكررة غير المختارة لإعادة المعالجة ستبقى متجاهلة.',
+    'سيتم تطبيق كل ملف كلقطة Snapshot للمنصة. نفس platform + username سيُحدّث بدل إنشاء نسخة. الدين/الرصيد/الربح تُستبدل بالقيم الحالية ولا تُجمع. الحساب الذي لا يظهر في اللقطة سيُعلّم «لم يظهر في آخر ملف» فقط ولن يُحذف.',
     'اعتماد السليمة'
   );
   if(!ok)return;
   importBusy=true;renderImportQueue();
-  let done=0,failed=0,skipped=0,totalProcessed=0,totalUpdated=0,totalInserted=0;
+  let done=0,failed=0,skipped=0,totalProcessed=0,totalUpdated=0,totalInserted=0,totalMissing=0;
   try{
     for(const item of importQueue){
       if(!eligible.includes(item)){
@@ -944,7 +983,7 @@ async function approveImports(){
       try{
         const r=await processImportItem(item);
         if(r?.skipped){skipped++;continue}
-        done++;totalProcessed+=Number(r.processed||0);totalUpdated+=Number(r.updated||0);totalInserted+=Number(r.inserted||0);
+        done++;totalProcessed+=Number(r.processed||0);totalUpdated+=Number(r.updated||0);totalInserted+=Number(r.inserted||0);totalMissing+=Number(r.newlyMissing||0);
       }catch(error){
         failed++;item.status='error';item.error=safeError(error);renderImportQueue();
       }
@@ -954,7 +993,7 @@ async function approveImports(){
       await load();
     }
     $('sourceFile').value='';
-    msg('انتهى الاعتماد: ملفات ناجحة '+done+' · متجاهلة '+skipped+' · فشلت '+failed+' · حسابات معالجة '+totalProcessed+' · جديدة '+totalInserted+' · محدثة '+totalUpdated+'.',failed?'warn':'ok');
+    msg('انتهى الاعتماد: ملفات ناجحة '+done+' · مكررة/متجاهلة '+skipped+' · فشلت '+failed+' · حسابات معالجة '+totalProcessed+' · جديدة '+totalInserted+' · محدثة '+totalUpdated+' · لم تظهر في آخر Snapshot '+totalMissing+'.',failed?'warn':'ok');
   }catch(error){
     msg('اكتملت بعض الملفات لكن تعذر إنهاء المراجعة: '+safeError(error),'warn');
   }finally{
