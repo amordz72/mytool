@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
 <title>إدارة Flexy — MyTool</title>
 <link rel="stylesheet" href="app.css?v=20260921-flexy-admin-1">
-<script src="../auth-guard.js?v=20260922-shell-4" data-access="admin"></script>
+<script src="../auth-guard.js?v=20260923-admin-split-1" data-access="admin"></script>
 <style>
 .fx-admin-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
 .fx-admin-link{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--fx-line);border-radius:14px;padding:13px}
@@ -34,6 +34,8 @@
   <nav class="fx-tabs">
     <a class="fx-tab" href="./">فليكسي</a>
     <a class="fx-tab active" href="admin.html">الإدارة</a>
+    <a class="fx-tab" href="sims.html">الشرائح</a>
+    <a class="fx-tab" href="sim-feeding.html">التغذية</a>
     <a class="fx-tab" href="accounts.html">الحسابات</a>
     <a class="fx-tab" href="orders.html">الطابور</a>
     <a class="fx-tab" href="review.html">المراجعة</a>
@@ -46,8 +48,9 @@
     <div class="fx-admin-links">
       <a class="fx-admin-link" href="#offers"><strong>العروض</strong><small>إظهار/إخفاء حسب الإدارة والعامل والعميل.</small></a>
       <a class="fx-admin-link" href="#policies"><strong>سياسات الظهور</strong><small>مثل حد العامل 500 دج بدل شرط ثابت في الكود.</small></a>
-      <a class="fx-admin-link" href="../access-admin/stations.html"><strong>المحطات</strong><small>الحالة والمودمات الحالية. اللوحة التشغيلية الموسعة لاحقًا.</small></a>
-      <a class="fx-admin-link" href="../access-admin/sims.html"><strong>الشرائح</strong><small>ربط SIM بالمودم والنوع والبيانات الأساسية.</small></a>
+      <a class="fx-admin-link" href="sims.html"><strong>الشرائح والأرصدة</strong><small>الرصيد التشغيلي والحالة وآخر مرجع شبكة لكل شريحة.</small></a>
+      <a class="fx-admin-link" href="sim-feeding.html"><strong>تغذية الشرائح</strong><small>بطاقات 1000/2000 الخاصة بتغذية SAMA وسجل استعمالها.</small></a>
+      <a class="fx-admin-link" href="../access-admin/stations.html"><strong>المحطات التقنية</strong><small>Agent والمودمات والاتصال وبيانات الأجهزة فقط.</small></a>
       <a class="fx-admin-link" href="../access-admin/flexy-offers-reference.html"><strong>مرجع الشبكة</strong><small>العروض الموثقة من صور/جلسات الشبكة الحقيقية.</small></a>
       <a class="fx-admin-link" href="../documentation/flexy-policy.html"><strong>سياسة Flexy</strong><small>المصدر الثابت لفصل Catalog وRoutes والأولوية والرصيد والشحن.</small></a>
       <a class="fx-admin-link" href="orders.html"><strong>العمليات</strong><small>الطابور الحالي، وسجل العملية الكامل يتوسع لاحقًا.</small></a>
@@ -187,5 +190,5 @@ familyFilter.addEventListener('change',renderOffers);
 document.getElementById('reloadBtn').addEventListener('click',load);
 load();
 </script>
-<script src="flexy-nav.js?v=20260922-shell-4"></script>
+<script src="flexy-nav.js?v=20260923-admin-split-1"></script>
 </body></html>
