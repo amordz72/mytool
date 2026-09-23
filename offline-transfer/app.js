@@ -7,12 +7,13 @@
   const PROFILE_KEY='profile';
   const REPORT_KEY='current_report';
   const SESSION_KEY='m2_account_session';
+  const IDENTITY_KEY='m2_account_identity';
 
   const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
   const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
 
   const $=id=>document.getElementById(id);
-  let db=null,profile=null,report=null,sending=false,pendingTimer=null;
+  let db=null,profile=null,report=null,sending=false,pendingTimer=null,currentIdentity=sessionStorage.getItem(IDENTITY_KEY)||'';
 
   function uuid(){
     if(crypto.randomUUID)return crypto.randomUUID();
@@ -138,12 +139,14 @@
     $(id).classList.remove('hidden');
     $('authMsg').classList.add('hidden');
     if(id==='loginView'){
-      $('loginUsername').value=profile?.username||'';
-      setTimeout(()=>((profile?.username?$('loginPassword'):$('loginUsername'))?.focus()),0);
+      const remembered=(profile?.account_role==='worker'||profile?.account_role==='workspace_admin')?(profile?.username||''):'';
+      $('loginUsername').value=remembered;
+      setTimeout(()=>((remembered?$('loginPassword'):$('loginUsername'))?.focus()),0);
     }else if(id==='pinView'){
       $('pinAccountName').textContent=profile?.display_name||profile?.username||'';
+      $('pinIdentity').value=(profile?.account_role==='worker'||profile?.account_role==='workspace_admin')?(profile?.username||''):'';
       $('pinLogin').value='';
-      setTimeout(()=>$('pinLogin').focus(),0);
+      setTimeout(()=>($('pinIdentity').value?$('pinLogin'):$('pinIdentity')).focus(),0);
     }else if(id==='pendingView'){
       schedulePendingCheck();
     }
@@ -158,6 +161,12 @@
     if(state.display_name)profile.display_name=state.display_name;
     if(state.account_role)profile.account_role=state.account_role;
     if(state.trust_id)profile.trust_id=state.trust_id;
+    if(state.device_limit)profile.device_limit=Number(state.device_limit);
+    if(state.account_role==='worker'||state.account_role==='workspace_admin'){
+      if(currentIdentity)profile.username=currentIdentity;
+    }else if(state.account_role){
+      delete profile.username;
+    }
     await put(PROFILE_KEY,profile);
   }
 
@@ -225,6 +234,9 @@
         showAuthView('loginView');authMsg('محاولات كثيرة. انتظر قليلًا ثم أعد المحاولة.','warn');break;
       case 'INVALID_DEVICE_CREDENTIAL':
         showAuthView('loginView');authMsg('هوية هذا الجهاز غير مطابقة. اتصل بالإدارة.','err');break;
+      case 'DEVICE_LIMIT_REACHED':
+        showAuthView('loginView');
+        authMsg('وصل الحساب إلى الحد الأقصى للأجهزة ('+String(state.device_limit||'')+'). يجب إلغاء جهاز قديم أو رفع الحد من الإدارة.','err');break;
       default:
         authMsg('تعذر إكمال الدخول. الحالة: '+String(state.state||'UNKNOWN'),'err');
     }
@@ -239,8 +251,8 @@
 
     const btn=$('loginBtn');btn.disabled=true;btn.textContent='جاري التحقق…';
     try{
-      profile.username=username;
-      await put(PROFILE_KEY,profile);
+      currentIdentity=username;
+      sessionStorage.setItem(IDENTITY_KEY,currentIdentity);
       const state=await rpc('core_account_begin_device_login',{
         p_username:username,
         p_password:password,
@@ -290,12 +302,13 @@
     if(!password){$('pinSetupPassword').focus();return;}
     if(!/^\d{4,6}$/.test(pin)){authMsg('PIN لازم يكون من 4 إلى 6 أرقام.','err');$('newPin').focus();return;}
     if(pin!==confirmPin){authMsg('تأكيد PIN غير مطابق.','err');$('confirmPin').focus();return;}
-    if(!profile?.username){showAuthView('loginView');return;}
+    const identity=currentIdentity||profile?.username||'';
+    if(!identity){showAuthView('loginView');authMsg('أدخل البريد أو اسم المستخدم ثم أعد التحقق.','warn');return;}
 
     const btn=$('setPinBtn');btn.disabled=true;btn.textContent='جاري الحفظ…';
     try{
       const state=await rpc('core_account_set_device_pin',{
-        p_username:profile.username,
+        p_username:identity,
         p_password:password,
         p_public_device_id:profile.public_device_id,
         p_device_secret:profile.device_secret,
@@ -308,15 +321,18 @@
   }
 
   async function pinLogin(){
+    const identity=$('pinIdentity').value.trim()||profile?.username||'';
     const pin=$('pinLogin').value.trim();
+    if(!identity){authMsg('أدخل البريد الإلكتروني أو اسم المستخدم.','err');$('pinIdentity').focus();return;}
     if(!/^\d{4,6}$/.test(pin)){authMsg('أدخل PIN من 4 إلى 6 أرقام.','err');return;}
-    if(!profile?.username){showAuthView('loginView');return;}
     if(!navigator.onLine){authMsg('الفتح الحالي يحتاج تحققًا أونلاين. دعم Offline سيضاف لاحقًا.','warn');return;}
 
+    currentIdentity=identity;
+    sessionStorage.setItem(IDENTITY_KEY,currentIdentity);
     const btn=$('pinLoginBtn');btn.disabled=true;btn.textContent='جاري الفتح…';
     try{
       const state=await rpc('core_account_pin_login',{
-        p_username:profile.username,
+        p_username:identity,
         p_pin:pin,
         p_public_device_id:profile.public_device_id,
         p_device_secret:profile.device_secret
@@ -337,6 +353,9 @@
     setSession('');
     if(token&&navigator.onLine){
       try{await rpc('core_account_logout',{p_session_token:token});}catch(_e){}
+    }
+    if(profile?.account_role!=='worker'&&profile?.account_role!=='workspace_admin'){
+      currentIdentity='';sessionStorage.removeItem(IDENTITY_KEY);
     }
     if(profile?.pin_ready)showAuthView('pinView');else showAuthView('loginView');
   }
@@ -513,7 +532,7 @@
       if(profile.request_token){
         showAuthView('pendingView');
         if(navigator.onLine)checkApproval({silent:true});
-      }else if(profile.username&&profile.pin_ready){
+      }else if(profile.pin_ready){
         showAuthView('pinView');
       }else{
         showAuthView('loginView');
@@ -534,6 +553,7 @@
   $('confirmPin').addEventListener('keydown',e=>{if(e.key==='Enter')setDevicePin();});
   $('pinLoginBtn').addEventListener('click',pinLogin);
   $('pinLogin').addEventListener('keydown',e=>{if(e.key==='Enter')pinLogin();});
+  $('pinIdentity').addEventListener('keydown',e=>{if(e.key==='Enter')$('pinLogin').focus();});
   $('usePasswordBtn').addEventListener('click',()=>showAuthView('loginView'));
   $('lockedBackBtn').addEventListener('click',()=>showAuthView('loginView'));
   $('logoutBtn').addEventListener('click',logout);
