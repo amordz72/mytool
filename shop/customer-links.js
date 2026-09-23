@@ -360,7 +360,7 @@ function renderParties(){
   }
   $('parties').innerHTML=parties.map(p=>'<div class="party-card"><div><b>#'+p.id+' · '+esc(p.display_name)+'</b></div>'+
     partyMatrix(p)+
-    '<div class="party-edit"><div class="field"><label>الاسم</label><input data-party-name="'+p.id+'" value="'+esc(p.display_name)+'"></div>'+
+    '<div class="party-edit"><div class="field"><label>اسم الماستر الثابت</label><input data-party-name="'+p.id+'" value="'+esc(p.display_name)+'" readonly></div>'+
     '<div class="field"><label>الهاتف</label><input data-party-phone="'+p.id+'" value="'+esc(p.primary_phone||'')+'" inputmode="tel"></div>'+
     '<div class="field"><label>البريد</label><input data-party-email="'+p.id+'" value="'+esc(p.primary_email||'')+'" inputmode="email"></div>'+
     '<button class="btn secondary" data-party-save="'+p.id+'" type="button">حفظ</button></div></div>').join('');
@@ -520,15 +520,15 @@ async function unlinkSource(linkId){
 }
 async function saveParty(id){
   if(!navigator.onLine)return msg('تعديل العميل يحتاج اتصالًا.','warn');
-  const name=document.querySelector('[data-party-name="'+id+'"]')?.value.trim()||'';
+  const current=parties.find(p=>Number(p.id)===Number(id));
+  if(!current)return msg('تعذر العثور على عميل الماستر.','error');
   const phone=document.querySelector('[data-party-phone="'+id+'"]')?.value.trim()||null;
   const email=document.querySelector('[data-party-email="'+id+'"]')?.value.trim()||null;
-  if(!name)return msg('اسم العميل مطلوب.','error');
   const {error}=await adminRpc('admin_customer_update_canonical','workspace_admin_update_canonical_party',{
-    p_party_id:id,p_display_name:name,p_phone:phone,p_email:email
+    p_party_id:id,p_display_name:current.display_name,p_phone:phone,p_email:email
   });
-  if(error)return msg('تعذر تعديل العميل: '+safeError(error),'error');
-  await load();msg('تم تعديل العميل الموحد.','ok');
+  if(error)return msg('تعذر تعديل بيانات العميل: '+safeError(error),'error');
+  await load();msg('تم تحديث الهاتف/البريد. اسم الماستر بقي ثابتًا.','ok');
 }
 async function reviewSuggestion(id,action){
   if(!navigator.onLine)return msg('مراجعة الاقتراح تحتاج اتصالًا.','warn');
