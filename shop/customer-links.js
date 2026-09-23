@@ -596,7 +596,7 @@ function rowsToAccounts(matrix){
     const status=firstValue(obj,['حالة الحساب','الحالة','status']);
     const external=firstValue(obj,['المعرف','معرف الحساب','account id','id']);
     const created=firstValue(obj,['تاريخ الإنشاء','created at','joined at']);
-    const updated=firstValue(obj,['تاريخ التحديث','تعديل','updated at','updated_at'])||created;
+    const updated=firstValue(obj,['تاريخ التحديث','تعديل','updated at','updated_at']);
     const disabled=/معطل|disabled|inactive/i.test(status);
     const payload={
       username:uid||username,
