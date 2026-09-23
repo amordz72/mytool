@@ -48,7 +48,8 @@
     .mobile-toolbar{min-height:58px;background:#fff}.menu-trigger{width:42px;height:42px;border:0;background:transparent;color:#52657a;font-size:1.55rem;border-radius:.5rem}
     .menu-trigger:hover,.menu-trigger:focus{background:#f0f2ff;color:var(--brand)}
     .flexy-alerts-trigger{position:relative}.flexy-alerts-badge{position:absolute;top:1px;left:0;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:.62rem;font-weight:800;line-height:17px;text-align:center;border:2px solid #fff}.flexy-alerts-badge.zero{background:#e2e8f0;color:#64748b}
-    .flexy-alerts-drawer{height:auto!important;max-height:min(72vh,620px);border-radius:1.25rem 1.25rem 0 0}.flexy-alerts-drawer .offcanvas-body{overflow:auto;padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
+    .flexy-alerts-drawer{height:auto!important;max-height:min(72vh,620px);border-radius:1.25rem 1.25rem 0 0;background:#fff;z-index:1100!important}.flexy-alerts-drawer .offcanvas-body{overflow:auto;padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
+    body.flexy-alerts-open .offcanvas-backdrop{z-index:1095!important;opacity:.22!important}
     .balance-source-card{border:1px solid #e5e9f1;border-radius:.85rem;padding:.85rem;background:#fff}.balance-source-title{font-weight:800;color:#475569}.balance-source-value{font-size:1.25rem;font-weight:900;color:#334155}.balance-meta{font-size:.72rem;color:#8795a7}.balance-state{display:inline-flex;align-items:center;border-radius:999px;padding:.2rem .55rem;font-size:.68rem;font-weight:800}.balance-state.ready{background:#e9f9ee;color:#237a3b}.balance-state.warn{background:#fff5d8;color:#8a6500}.balance-state.bad{background:#feecec;color:#a92e2e}
     .stock-strip{border:1px solid #e5e9f1;border-radius:.8rem;background:#f8fafc;padding:.8rem}.flexy-alert-item{border-radius:.7rem;background:#fff7e6;color:#765b13;padding:.7rem .8rem;font-size:.78rem}.route-preview-box{border:1px solid #e5e9f1;border-radius:.7rem;background:#f8fafc;padding:.75rem;margin-top:.8rem}.route-source-name{font-weight:900;color:#4f46e5}
     .mobile-sidebar{--bs-offcanvas-width:280px;z-index:1070}.offcanvas-backdrop{z-index:1065}
@@ -84,7 +85,7 @@
     }
     @media(max-width:420px){.phone-input{font-size:1.12rem;letter-spacing:.045em}.operator-logo{width:54px}}
   </style>
-<script src="../auth-guard.js?v=20260922-flexy-bell-5" data-access="worker"></script>
+<script src="../auth-guard.js?v=20260923-alerts-overlay-1" data-access="worker"></script>
 </head>
 <body>
 <aside class="sidebar d-none d-xxl-flex position-fixed top-0 vh-100 flex-column p-3" style="right:0!important;left:auto!important">
@@ -1138,7 +1139,13 @@ document.querySelectorAll('.flexy-alerts-trigger').forEach(btn=>{
  btn.addEventListener('click',()=>loadFlexyBalanceCenter().catch(()=>{}));
 });
 refreshFlexyBalancesBtn?.addEventListener('click',()=>loadFlexyBalanceCenter());
-flexyAlertsDrawer?.addEventListener('show.bs.offcanvas',()=>loadFlexyBalanceCenter().catch(()=>{}));
+flexyAlertsDrawer?.addEventListener('show.bs.offcanvas',()=>{
+ document.body.classList.add('flexy-alerts-open');
+ loadFlexyBalanceCenter().catch(()=>{});
+});
+flexyAlertsDrawer?.addEventListener('hidden.bs.offcanvas',()=>{
+ document.body.classList.remove('flexy-alerts-open');
+});
 
 const launchParams=new URLSearchParams(location.search);
 const incomingPhone=(launchParams.get('phone')||'').replace(/\D/g,'').slice(0,10);
@@ -1158,7 +1165,7 @@ loadAdminFlexyWallet(); // admin-wallet-init
 loadRecentOperations();
 loadFlexyBalanceCenter();
 </script>
-<script src="flexy-nav.js?v=20260922-flexy-bell-2"></script>
+<script src="flexy-nav.js?v=20260923-alerts-overlay-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
