@@ -4123,7 +4123,21 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
               if(mergedInfo?.merged)renderImageRefs(mergedInfo.merged);
               if(!quiet)showToast('success','تم جمع الصور تلقائيًا','أُدخل رقم الوثيقة يدويًا وربطت الصورة بالوصل الموجود.',5600);
               return {accepted:true,merged:true,operationId:existing.id,documentNumber:manualNumber};
-            }catch(_e){}
+            }catch(_e){
+              await discardUnidentifiedOperation(currentResult);
+              currentResult=null;
+              progressBox.classList.add('hidden');
+              showToast('error','تعذر جمع الصورة','رقم الوثيقة موجود مسبقًا، لكن تعذر ضم الصورة للوصل الأصلي. لم تُنشأ عملية ثانية.',6500);
+              return {accepted:false,rejected:true,reason:'merge_failed',documentNumber:manualNumber};
+            }
+          }
+          rebuildDocumentIndexFromRecent();
+          const stillDuplicate=findDuplicateDocument(currentResult);
+          if(stillDuplicate?.operationId){
+            await discardUnidentifiedOperation(currentResult);
+            currentResult=null;
+            progressBox.classList.add('hidden');
+            return {accepted:false,rejected:true,reason:'duplicate_without_canonical',documentNumber:manualNumber};
           }
         }
         persistCurrentOperation({registerDoc:true});
