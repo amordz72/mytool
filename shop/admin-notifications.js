@@ -7,8 +7,9 @@
   marker.dataset.mytoolAdminNotificationsMounted='1';
   document.head.appendChild(marker);
 
+  const script=document.currentScript;
   const WORKER_TOKEN='mytool_shop_worker_token';
-  if(localStorage.getItem(WORKER_TOKEN)) return;
+  if(localStorage.getItem(WORKER_TOKEN)&&!window.MyToolAccessContext?.adminLike) return;
 
   const style=document.createElement('style');
   style.textContent=`
@@ -23,12 +24,19 @@
 
   function ensureBell(){
     if(bell?.isConnected)return bell;
+    const shared=document.querySelector('.mytool-shell-admin-bell');
+    if(shared){
+      bell=shared;
+      bell.href=new URL('cash-receipts.html',script?.src||location.href).href;
+      bell.setAttribute('aria-label','إشعارات المحلات');
+      return bell;
+    }
     const header=document.querySelector('.shell-canonical-header .topbar-title');
     if(!header)return null;
     bell=document.createElement('a');
     bell.className='mytool-admin-bell';
-    bell.href='cash-receipts.html';
-    bell.setAttribute('aria-label','إشعارات الإدارة');
+    bell.href=new URL('cash-receipts.html',script?.src||location.href).href;
+    bell.setAttribute('aria-label','إشعارات المحلات');
     bell.innerHTML='<span aria-hidden="true">🔔</span><span class="mytool-admin-bell-count">0</span>';
     const menu=header.querySelector('.menu-toggle');
     if(menu)header.insertBefore(bell,menu);else header.appendChild(bell);
@@ -39,7 +47,7 @@
     const target=ensureBell();if(!target)return;
     const held=Number(row?.worker_held_count||0),cash=Number(row?.worker_handover_count||0),pending=Number(row?.pending_party_count||0),total=Number(row?.total_count||0);
     target.classList.toggle('has-alerts',total>0);
-    const count=target.querySelector('.mytool-admin-bell-count');if(count)count.textContent=total>99?'99+':String(total);
+    const count=target.querySelector('.mytool-admin-bell-count,.mytool-shell-admin-bell-count');if(count)count.textContent=total>99?'99+':String(total);
     const details=[];
     if(held)details.push(held+' مبلغ مسجل عند الخدام');
     if(cash)details.push(cash+' مبلغ بانتظار المراجعة');
@@ -50,9 +58,12 @@
 
   async function getClient(){
     if(client)return client;
-    if(!window.ShopApiConfig?.url||!window.ShopApiConfig?.key)return null;
+    const api=window.ShopApiConfig||{
+      url:'https://wqyebqzbbpohbnznqdjj.supabase.co',
+      key:'sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj'
+    };
     const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-    client=createClient(window.ShopApiConfig.url,window.ShopApiConfig.key,{auth:{detectSessionInUrl:false}});
+    client=createClient(api.url,api.key,{auth:{detectSessionInUrl:false}});
     return client;
   }
 
