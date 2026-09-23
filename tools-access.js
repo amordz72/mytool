@@ -304,6 +304,7 @@
       panel.innerHTML=`
         <h2 class="section-title">الأدوات العامة</h2>
         <section class="grid">
+          <a class="card" href="commands/"><div class="icon">⌨️</div><h2>أوامر أساسية</h2><p>ملفات تحديث وبناء جاهزة للتحميل والاستعمال على الكمبيوتر.</p><span class="badge">تحميل مباشر</span></a>
           <a class="card" href="cards/"><div class="icon">🎫</div><h2>معالج البطاقات</h2><p>استخراج الأكواد وتنظيمها وتحميل النتائج.</p><span class="badge">جلسة أدوات</span></a>
           <a class="card" href="programs/"><div class="icon">🧰</div><h2>البرامج</h2><p>روابط البرامج وأدوات الصيانة الأساسية.</p><span class="badge">جلسة أدوات</span></a>
           <a class="card" href="qr/"><div class="icon">🔳</div><h2>مولّد QR</h2><p>تحويل رابط أو رقم أو نص إلى QR.</p><span class="badge">جلسة أدوات</span></a>
