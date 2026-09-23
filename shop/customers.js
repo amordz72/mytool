@@ -151,7 +151,7 @@ function chips(values,empty='لا توجد بيانات'){
 function renderDetail(id){
   const p=partyBy(id);if(!p)return;
   const a=accountsFor(id),names=knownNames(p),c=contacts(p),pks=platformKeysFor(id),t=totals(id);
-  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ هوية مؤكدة · Customer #'+p.id;
+  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+masterRef(p.id)+' · هوية ماستر ثابتة';
   $('editName').value=p.display_name||'';$('editPhone').value=p.primary_phone||'';$('editEmail').value=p.primary_email||'';
   const learned=identityRules.filter(r=>Number(r.party_id)===Number(id)&&r.status==='approved');
   $('detailNames').innerHTML=chips(names)+
