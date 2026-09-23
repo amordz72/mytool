@@ -4,10 +4,11 @@ body.mytool-shell-nav-active{padding-top:var(--mts-topbar-h)!important}
 .mytool-shell-topbar{position:fixed;top:0;right:0;left:0;height:var(--mts-topbar-h);z-index:1088;display:grid;grid-template-columns:56px minmax(0,1fr) 56px;align-items:center;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--mts-nav-line);box-shadow:0 3px 14px rgba(15,23,42,.06);direction:rtl}
 .mytool-shell-title{min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;font:800 16px/1.2 Tahoma,Arial,sans-serif;color:var(--mts-nav-text);padding:0 6px}
 .mytool-shell-title-text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mytool-shell-flexy-bell{position:relative;flex:0 0 38px;width:38px;height:38px;border:0;border-radius:12px;background:#f8fafc;color:#334155;font-size:18px;display:grid;place-items:center;cursor:pointer}
-.mytool-shell-flexy-bell:hover,.mytool-shell-flexy-bell:focus{background:#eef2ff;outline:none}
-.mytool-shell-flexy-badge{position:absolute;top:-2px;left:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;border:2px solid #fff;font:800 9px/13px Arial,Tahoma,sans-serif;text-align:center}
-.mytool-shell-flexy-badge.zero{background:#e2e8f0;color:#64748b}
+.mytool-shell-admin-bell{position:relative;flex:0 0 38px;width:38px;height:38px;border:0;border-radius:12px;background:#f8fafc;color:#334155;font-size:18px;display:grid;place-items:center;cursor:pointer;text-decoration:none}
+.mytool-shell-admin-bell:hover,.mytool-shell-admin-bell:focus{background:#eef2ff;outline:none;color:#334155}
+.mytool-shell-admin-bell.has-alerts{background:#fff7ed;color:#9a3412;box-shadow:inset 0 0 0 1px #fdba74}
+.mytool-shell-admin-bell-count{position:absolute;top:-2px;left:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;border:2px solid #fff;font:800 9px/13px Arial,Tahoma,sans-serif;text-align:center;display:none}
+.mytool-shell-admin-bell.has-alerts .mytool-shell-admin-bell-count{display:block}
 .mytool-shell-menu-btn{width:42px;height:42px;margin:auto;border:0;border-radius:12px;background:transparent;color:#334155;font-size:21px;display:grid;place-items:center;cursor:pointer}
 .mytool-shell-menu-btn:hover,.mytool-shell-menu-btn:focus{background:#f1f5f9;outline:none}
 .mytool-shell-menu-btn[hidden]{visibility:hidden!important;display:block!important}
