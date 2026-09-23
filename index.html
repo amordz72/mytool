@@ -26,6 +26,7 @@
     .login-wrap{max-width:460px;margin:7vh auto}.login-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 10px 35px rgba(22,48,71,.12)}.login-card h1{margin:0 0 5px;font-size:28px}.login-card p{color:var(--muted);font-size:13px;line-height:1.6}.field{margin:12px 0}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:6px}.field input{width:100%}.login-card .btn{width:100%}.msg{margin-top:11px;padding:10px;border-radius:12px;font-size:13px}.msg.error{background:#fff1f2;color:var(--danger)}.msg.ok{background:#ecfdf5;color:var(--ok)}.small{font-size:11px;color:var(--muted);margin-top:10px}.mode{font-weight:800}.offline-note{margin-top:8px;font-size:11px;color:var(--muted)}.recovery-title{font-size:18px;margin:0 0 4px}.recovery-actions{display:grid;gap:8px;margin-top:10px}
     .password-wrap{position:relative}.password-wrap input{padding-left:72px}.password-toggle{position:absolute;left:7px;top:50%;transform:translateY(-50%);width:auto!important;padding:7px 9px!important;border:0;background:transparent;color:#14729f;font-size:12px;font-weight:800;cursor:pointer}
     .local-note{margin-top:10px;padding:10px;border-radius:12px;background:#fffbeb;color:#92400e;font-size:12px;line-height:1.6}
+    .dashboard-search{display:flex;align-items:center;gap:8px;margin:10px 0 4px}.dashboard-search input{flex:1;min-width:0;background:#fff}.dashboard-search .btn{width:auto;flex:0 0 auto}.dashboard-search-status{min-height:18px;margin:4px 3px 0}
     .mfa-qr{display:block;width:min(230px,100%);height:auto;margin:12px auto;border:1px solid var(--line);border-radius:14px;background:#fff;padding:8px}.mfa-secret{display:block;direction:ltr;text-align:center;word-break:break-all;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px;margin:8px 0;font-size:12px}
     @media(max-width:600px){body{padding:10px}.grid{grid-template-columns:1fr}.core-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.core-grid .card{padding:12px}.core-grid .icon{width:42px;height:42px;font-size:22px}.core-grid .card h2{font-size:14px}.core-grid .card p,.core-grid .badge{display:none}.hero{padding:16px 15px}.hero h1{font-size:24px}.sessionbar{align-items:center;flex-direction:row}.sessionbar button{width:auto}.sessionbar .mode{font-size:13px}.sessionbar .small{font-size:10px}}
   </style>
@@ -96,6 +97,12 @@
       <button id="dashboardOrderResetBtn" class="btn secondary" type="button" hidden>الترتيب الافتراضي</button>
       <span id="dashboardOrderHint" class="small" hidden>↑ ↓ يحفظ الترتيب تلقائيًا على هذا الجهاز.</span>
     </div>
+
+    <div class="dashboard-search" role="search">
+      <input id="dashboardSearchInput" type="search" autocomplete="off" placeholder="ابحث عن أداة: وصولات، فليكسي، شرائح، حسابات...">
+      <button id="dashboardSearchClear" class="btn secondary" type="button" hidden>مسح</button>
+    </div>
+    <div id="dashboardSearchStatus" class="small dashboard-search-status" aria-live="polite" hidden></div>
 
     <div id="adminTools">
       <h2 class="section-title">البرامج الأساسية</h2><section class="grid core-grid" data-dashboard-section="core">
@@ -482,6 +489,7 @@
 </script>
 <script src="tools-access.js?v=20260919-tools-resume2"></script>
 <script src="tools-home.js?v=20260922-shell-4"></script>
+<script src="dashboard-search.js?v=20260923-search1"></script>
 <script src="smart-intake.js?v=20260923-person-identity-only1"></script>\n<script src="dashboard-order.js?v=20260919-order2"></script>
 </body>
 </html>
