@@ -1673,6 +1673,20 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }
   }
 
+  function purgeUnidentifiedLocalReceipts(){
+    const items=getRecentOperations();
+    const removed=items.filter(op=>!normalizedDocumentNumber(op));
+    if(!removed.length)return 0;
+    const kept=items.filter(op=>normalizedDocumentNumber(op));
+    saveRecentOperations(kept);
+    removed.forEach(op=>{
+      if(op?.id)deleteReceiptImage(op.id).catch(()=>{});
+      if(op?.cloudId)enqueueTempCloudDelete({id:op.id,cloudId:op.cloudId});
+    });
+    processTempCloudDeleteQueue().catch(()=>{});
+    return removed.length;
+  }
+
   function getDocumentIndex(){
     try{
       const data=JSON.parse(localStorage.getItem(DOCUMENT_INDEX_KEY)||'{}');
@@ -2584,6 +2598,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     const legacyMoneyReopened=migrateLegacyMoneyLifecycle();
     const archiveRuleRepaired=migrateLegacyInvalidArchives();
     const before=getRecentOperations().filter(op=>op.status==='duplicate').length;
+    const removedWithoutNumber=purgeUnidentifiedLocalReceipts();
     cleanupLegacyDocumentIndexOnce();
     rebuildDocumentIndexFromRecent();
     const after=getRecentOperations().filter(op=>op.status==='duplicate').length;
@@ -2591,6 +2606,9 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     selectRecipient(UNSENT_RECIPIENT);
     updateDateHint();
     renderRecentOperationTabs();
+    if(removedWithoutNumber){
+      showToast('info','تم تنظيف السجل',removedWithoutNumber+' ملف قديم بدون رقم وثيقة أزيل من الوصولات.',5600);
+    }
     if(archiveRuleRepaired){
       showToast('warn','تم تصحيح أرشيف قديم','أي وصل مؤرشف سابقًا بدون حالة مالية صحيحة عاد إلى المتابعة.',6500);
     }
@@ -2662,7 +2680,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       && !currentResult.historyView
       && ['analyzed','manual_entry'].includes(s)
       && !currentResult.duplicateInfo);
-    saveBtn.disabled=busy||!canSave;
+    saveBtn.disabled=busy||uploadRunning||!canSave;
     if(s==='saved_unsettled')saveBtn.textContent='جاهز للإرسال';
     else if(s==='sent_to_platform')saveBtn.textContent='أُرسل — بانتظار المال';
     else if(s==='confirmed_received')saveBtn.textContent='تم استلام المال ✓';
@@ -2677,7 +2695,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       && ['saved_unsettled','sent_to_platform'].includes(s)
       && target!==UNSENT_RECIPIENT
       && !currentResult.duplicateInfo);
-    settleBtn.disabled=busy||!canSend||(s==='sent_to_platform'&&target===actual);
+    settleBtn.disabled=busy||uploadRunning||!canSend||(s==='sent_to_platform'&&target===actual);
     if(s==='sent_to_platform'&&target===actual)settleBtn.textContent='مرسل إلى '+actual+' — ينتظر';
     else if(s==='sent_to_platform'&&target!==UNSENT_RECIPIENT&&target!==actual)settleBtn.textContent='نقل إلى '+target;
     else if(s==='saved_unsettled'&&target!==UNSENT_RECIPIENT)settleBtn.textContent='إرسال إلى '+target;
@@ -2729,7 +2747,6 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     copyBtn.disabled=true;
     saveBtn.disabled=true;
     saveBtn.textContent='حفظ';
-    addImageBtn.disabled=true;
     manualEntryBtn.disabled=true;
     renderDocumentIdGuide('unknown');
     imageRefs.innerHTML='';
@@ -3482,6 +3499,11 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 
     save.addEventListener('click',async()=>{
       const value=cleanLine(input.value);
+      if(key==='documentNumber'&&!value){
+        showToast('error','رقم الوثيقة إجباري','لا يمكن حذف رقم الوثيقة. الوصل بدون رقم وثيقة لا يُحفظ.',5200);
+        renderResult(currentResult);
+        return;
+      }
       const nextFields={...(currentResult.fields||{})};
       nextFields[key]=value?{value,source:'تصحيح يدوي',status:'manual'}:null;
       const candidate={...currentResult,fields:nextFields};
@@ -3895,12 +3917,33 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return {rotation:degrees,text:result.data?.text||'',confidence:Number(result.data?.confidence||0),score:scoreText(result.data?.text||'')};
   }
 
-  async function analyze(){
-    if(!sourceImage||busy)return;
+  function requestRequiredDocumentNumber(){
+    const value=prompt('لم يتم التعرف على رقم الوثيقة.\n\nأدخل رقم الوثيقة يدويًا.\nإذا ألغيت أو تركته فارغًا سيُرفض الملف ولن يُحفظ.');
+    return cleanLine(value||'');
+  }
+
+  async function discardUnidentifiedOperation(op){
+    const id=op?.operationId||op?.id||'';
+    if(id){
+      await deleteReceiptImage(id).catch(()=>{});
+      const items=getRecentOperations();
+      if(items.some(item=>item.id===id)){
+        saveRecentOperations(items.filter(item=>item.id!==id));
+      }
+      unregisterDocumentForOperation({id});
+      if(op?.cloudId)enqueueTempCloudDelete({id,cloudId:op.cloudId});
+      processTempCloudDeleteQueue().catch(()=>{});
+    }
+    if(currentResult&&(currentResult.operationId===id||currentResult.id===id))currentResult=null;
+    renderRecentOperationTabs();
+  }
+
+  async function analyze({quiet=false}={}){
+    if(!sourceImage||busy)return {accepted:false,rejected:true,reason:'not_ready'};
     const existingStatus=effectiveStatus(currentResult);
     if(currentResult&&!['pending_analysis','analysis_failed'].includes(existingStatus)){
-      showToast('warn','التحليل تم مسبقًا','ملف الوصل لا يُحلل مرة ثانية. أضف الصور كمرجع وصحح الحقول يدويًا عند الحاجة.',5600);
-      return;
+      if(!quiet)showToast('warn','التحليل تم مسبقًا','هذا الوصل تم فحصه. أي رفع جديد يمر من نفس القراءة ويُجمع تلقائيًا حسب رقم الوثيقة.',5200);
+      return {accepted:false,rejected:true,reason:'already_analyzed'};
     }
     if(currentResult?.operationId){
       try{await ensurePrimaryImageLoaded();}catch(_e){}
@@ -3950,20 +3993,15 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       let bnaHeaderEvidence=null;
       if(detectedTemplateId==='unknown'||templateSelect.value==='bna'){
         bnaHeaderEvidence=await tryDetectBnaHeader(worker,best.rotation);
-        if(detectedTemplateId==='unknown'&&bnaHeaderEvidence?.detected){
-          detectedTemplateId='bna';
-        }
+        if(detectedTemplateId==='unknown'&&bnaHeaderEvidence?.detected)detectedTemplateId='bna';
       }
       const manualOverride=templateSelect.value!=='auto';
       const templateId=manualOverride?templateSelect.value:detectedTemplateId;
       const extracted=parseByTemplate(templateId,best.text);
+
       if(templateId==='bna'){
         if(bnaHeaderEvidence?.detected&&!extracted.bank){
-          extracted.bank={
-            value:"BNA — Banque Nationale d'Algérie",
-            source:'تعرف مركز على رأس الوثيقة وشعار/اسم BNA',
-            status:'read'
-          };
+          extracted.bank={value:"BNA — Banque Nationale d'Algérie",source:'تعرف مركز على رأس الوثيقة وشعار/اسم BNA',status:'read'};
         }
         const recoveredDocumentNumber=await tryRecoverBnaDocumentNumber(worker,best.rotation);
         if(recoveredDocumentNumber)extracted.documentNumber=recoveredDocumentNumber;
@@ -3977,6 +4015,18 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       if(templateId==='bdl'&&!extracted.sender){
         const recoveredSender=await tryRecoverBdlSender(worker,best.rotation);
         if(recoveredSender)extracted.sender=recoveredSender;
+      }
+
+      let documentNumber=cleanLine(extracted.documentNumber?.value||'');
+      if(!documentNumber){
+        documentNumber=requestRequiredDocumentNumber();
+        if(!documentNumber){
+          await discardUnidentifiedOperation(workingOperation);
+          progressBox.classList.add('hidden');
+          if(!quiet)showToast('warn','تم رفض الملف','لم يُدخل رقم الوثيقة، لذلك لم يُحفظ هذا الملف ولم يدخل سجل الوصولات.',6200);
+          return {accepted:false,rejected:true,reason:'missing_document_number'};
+        }
+        extracted.documentNumber={value:documentNumber,source:'إدخال يدوي إلزامي بعد فشل القراءة',status:'manual'};
       }
 
       const payload={
@@ -4002,31 +4052,32 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         historyView:false
       };
       currentResult=payload;
+
       const duplicate=findDuplicateDocument(payload);
       if(duplicate?.operationId){
         const existing=getRecentOperations().find(op=>op.id===duplicate.operationId);
-        const existingStatus=effectiveStatus(existing);
-        if(existing&&['analyzed','manual_entry','saved_unsettled','sent_to_platform','confirmed_received','archived'].includes(existingStatus)){
+        if(existing){
           try{
             const mergedInfo=await mergeOperationFileIntoCanonical(payload,existing.id);
             currentResult=null;
             progressBox.classList.add('hidden');
             await openRecentOperation(existing.id);
             if(mergedInfo?.merged)renderImageRefs(mergedInfo.merged);
-            showToast('success','نفس الوصل — أضيفت الصور للملف',
-              'رقم الوثيقة مكرر كصور فقط، وهذا مسموح. بقي الوصل المالي واحدًا، وأضيفت '+(mergedInfo?.addedCount||1)+' صورة إلى ملفه.',
-              6800);
-            return;
+            if(!quiet)showToast('success','تم جمع الصور تلقائيًا',
+              'رقم الوثيقة '+documentNumber+' موجود؛ أضيفت الصورة إلى نفس الوصل ولم تُنشأ عملية جديدة.',
+              6000);
+            return {accepted:true,merged:true,operationId:existing.id,documentNumber};
           }catch(_e){
-            currentResult=payload;
+            await discardUnidentifiedOperation(payload);
+            progressBox.classList.add('hidden');
+            showToast('error','تعذر جمع الصورة','وجدت نفس رقم الوثيقة لكن تعذر ضم الصورة للوصل الأصلي. لم تُنشأ عملية ثانية.',6500);
+            return {accepted:false,rejected:true,reason:'merge_failed',documentNumber};
           }
         }
-        currentResult.duplicateInfo=duplicate;
-        currentResult.status='duplicate';
-        persistCurrentOperation({registerDoc:false});
-      }else{
-        persistCurrentOperation({registerDoc:true});
+        rebuildDocumentIndexFromRecent();
       }
+
+      persistCurrentOperation({registerDoc:true});
       renderResult(currentResult);
 
       progressBox.classList.add('hidden');
@@ -4036,30 +4087,60 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
         const primaryIndex=Number(imageRecord?.primaryIndex||0);
         currentImageIndex=Math.max(0,Math.min(primaryIndex,(imageRecord?.images?.length||1)-1));
         renderImageRefs(imageRecord);
-        persistCurrentOperation({registerDoc:currentResult.status!=='duplicate'});
+        persistCurrentOperation({registerDoc:true});
       }catch(_e){}
-      if(currentResult.status==='duplicate'){
-        showToast('error','هذا الوصل موجود سابقًا','نفس هوية الوصل ('+receiptIdentityText(currentResult)+') موجودة. افتح الأصل؛ لا يمكن إنشاء عملية مالية ثانية.',6800);
-      }else{
-        showToast('warn','تم التحليل مرة واحدة','ثبتت هوية الوصل. راجع الحقول ثم احفظه؛ أي صور إضافية تبقى داخل نفس الملف ولا تعيد التحليل.',6800);
-      }
+
+      if(!quiet)showToast('success','تم التعرف على الوصل',
+        'رقم الوثيقة '+documentNumber+' ثبت. راجع المستلم والمبلغ والتاريخ ثم احفظ.',
+        5600);
+      return {accepted:true,merged:false,operationId:currentResult.operationId,documentNumber};
     }catch(err){
-      if(workingOperation){
-        currentResult=workingOperation;
-        currentResult.status='analysis_failed';
-        currentResult.language='';
-        currentResult.templateId=templateSelect.value==='auto'?'unknown':templateSelect.value;
-        currentResult.manualOverride=currentResult.templateId!=='unknown';
-        currentResult.template=currentResult.templateId==='unknown'?'فشل التحليل — بانتظار إعادة المحاولة أو الإدخال اليدوي':templateLabel(currentResult.templateId);
-        currentResult.fields=currentResult.fields||emptyExtraction();
-        persistCurrentOperation({registerDoc:false});
-        resultCard.classList.add('hidden');
+      const manualNumber=requestRequiredDocumentNumber();
+      if(manualNumber&&workingOperation){
+        currentResult={
+          ...workingOperation,
+          language:'يدوي',
+          templateId:templateSelect.value==='auto'?'unknown':templateSelect.value,
+          detectedTemplateId:'unknown',
+          manualOverride:templateSelect.value!=='auto',
+          template:templateSelect.value==='auto'?'إدخال يدوي':templateLabel(templateSelect.value),
+          rawText:'',
+          fields:{...emptyExtraction(),documentNumber:{value:manualNumber,source:'إدخال يدوي إلزامي بعد فشل التحليل',status:'manual'}},
+          ocrConfidence:0,
+          status:'manual_entry',
+          rawTextAvailable:false,
+          historyView:false
+        };
+        const duplicate=findDuplicateDocument(currentResult);
+        if(duplicate?.operationId){
+          const existing=getRecentOperations().find(op=>op.id===duplicate.operationId);
+          if(existing){
+            try{
+              const mergedInfo=await mergeOperationFileIntoCanonical(currentResult,existing.id);
+              currentResult=null;
+              progressBox.classList.add('hidden');
+              await openRecentOperation(existing.id);
+              if(mergedInfo?.merged)renderImageRefs(mergedInfo.merged);
+              if(!quiet)showToast('success','تم جمع الصور تلقائيًا','أُدخل رقم الوثيقة يدويًا وربطت الصورة بالوصل الموجود.',5600);
+              return {accepted:true,merged:true,operationId:existing.id,documentNumber:manualNumber};
+            }catch(_e){}
+          }
+        }
+        persistCurrentOperation({registerDoc:true});
+        renderResult(currentResult);
+        progressBox.classList.add('hidden');
+        if(!quiet)showToast('warn','تم قبول رقم الوثيقة يدويًا','تعذر التحليل الكامل، لكن الوصل حُفظ برقم الوثيقة. أكمل المستلم والمبلغ والتاريخ يدويًا.',6500);
+        return {accepted:true,merged:false,operationId:currentResult.operationId,documentNumber:manualNumber,manual:true};
       }
+
+      await discardUnidentifiedOperation(workingOperation);
+      currentResult=null;
       clearError();
       progressBox.classList.add('hidden');
-      showToast('error','فشل التحليل — يمكنك الإدخال يدويًا',
-        'الصورة محفوظة محليًا. '+(err&&err.message?err.message:String(err))+' اختر نوع الوثيقة وأدخل الحقول يدويًا.',
-        7500);
+      if(!quiet)showToast('warn','تم رفض الملف',
+        'تعذر التعرف على رقم الوثيقة ولم يتم إدخاله يدويًا، لذلك لم يُحفظ الملف.',
+        6500);
+      return {accepted:false,rejected:true,reason:'analysis_failed_without_document'};
     }finally{
       if(worker){try{await worker.terminate();}catch(_e){}}
       setBusy(false);
@@ -4077,8 +4158,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     currentResult.manualOverride=selected!=='unknown';
     currentResult.template=selected==='unknown'?'نوع غير محدد — إدخال يدوي':templateLabel(selected);
     currentResult.fields=manualTemplateBaseFields(selected,currentResult.fields||emptyExtraction());
+    if(!normalizedDocumentNumber(currentResult)){
+      const manualNumber=requestRequiredDocumentNumber();
+      if(!manualNumber){
+        showToast('warn','لم يُحفظ','رقم الوثيقة إجباري. بدون رقم لا يدخل الملف إلى سجل الوصولات.',5200);
+        return;
+      }
+      currentResult.fields.documentNumber={value:manualNumber,source:'إدخال يدوي إلزامي',status:'manual'};
+    }
     currentResult.duplicateInfo=findDuplicateDocument(currentResult);
-    persistCurrentOperation({registerDoc:Boolean(documentFingerprint(currentResult))});
+    persistCurrentOperation({registerDoc:true});
     renderResult(currentResult);
     showToast('info','الإدخال اليدوي جاهز',
       selected==='unknown'
@@ -4315,93 +4404,16 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     }).catch(()=>showError('تعذر النسخ التلقائي. يمكنك فتح النص الخام أو إعادة المحاولة.'));
   }
 
-  async function openSingleReceiptFiles(files){
-    clearError();
-    resetResults();
-    activeOperationId='';
-    activeHistorySupplier='__pending__';
-    activeRecipient=UNSENT_RECIPIENT;
-    receiptDate.value=todayLocal();
-    updateDateHint();
-    templateSelect.value='auto';
-
-    const mainFile=files[0];
-    sourceImage=await loadImage(mainFile);
-    rotation=0;
-    currentImageIndex=0;
-    $('fileName').textContent=mainFile.name||'صورة الوصل';
-    previewImg.src=objectUrl;
-    previewImg.classList.remove('hidden');
-    previewEmpty.classList.add('hidden');
-    updatePreview();
-
-    currentResult={
-      operationId:'op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
-      createdAt:new Date().toISOString(),
-      selectedRecipient:UNSENT_RECIPIENT,
-      receiptDate:receiptDate.value,
-      language:'',
-      templateId:'unknown',
-      detectedTemplateId:'unknown',
-      manualOverride:false,
-      template:'بانتظار التحليل',
-      rawText:'',
-      fields:emptyExtraction(),
-      ocrConfidence:0,
-      orientation:0,
-      edgeCropSuspected:false,
-      status:'pending_analysis',
-      fileName:mainFile.name||'صورة الوصل',
-      imageCount:files.length,
-      rawTextAvailable:false,
-      historyView:false
-    };
-
-    let record=null;
-    try{
-      record=await saveReceiptImage(currentResult.operationId,mainFile,currentResult.fileName,false);
-      for(let i=1;i<files.length;i++){
-        record=await saveReceiptImage(currentResult.operationId,files[i],files[i].name||('مرجع '+(i+1)),true);
-      }
-      currentResult.imageCount=record?.images?.length||files.length;
-      currentImageIndex=Number(record?.primaryIndex||0);
-      renderImageRefs(record);
-    }catch(_e){
-      record=null;
-    }
-
-    activeRecipient=UNSENT_RECIPIENT;
-    persistCurrentOperation({registerDoc:false});
-    renderRecipientSelect();
-    renderRecentOperationTabs();
-
-    analyzeBtn.disabled=false;
-    rotateRightBtn.disabled=false;
-    clearBtn.disabled=false;
-    updateSaveButton();
-    progressBox.classList.add('hidden');
-
-    if(record){
-      showToast('success','تم حفظ الوصل في الانتظار',
-        currentResult.imageCount>1
-          ? 'تم تجميع '+currentResult.imageCount+' صور في ملف وصل واحد. اختر أوضح صورة واعتمدها قبل التحليل.'
-          : 'تم حفظ الصورة داخل ملف وصل جديد، والعملية بانتظار التحليل.',
-        6000);
-    }else{
-      showToast('error','تعذر الحفظ المحلي','الصورة مفتوحة الآن، لكن إغلاق الصفحة قد يفقدها.',6500);
-    }
-  }
-
   async function pdfToReceiptImages(file){
     if(!window.pdfjsLib)throw new Error('تعذر تحميل قارئ PDF. تحقق من الإنترنت ثم أعد المحاولة.');
     pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
     const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
     const out=[];
-    const base=String(file.name||'دفعة').replace(/\.pdf$/i,'');
+    const base=String(file.name||'وصولات').replace(/\.pdf$/i,'');
     for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
       progressBox.classList.remove('hidden');
-      progressTitle.textContent='تحضير ملف PDF…';
-      progressText.textContent='تحويل الصفحة '+pageNo+' من '+pdf.numPages+' إلى وصل مستقل.';
+      progressTitle.textContent='تحضير PDF…';
+      progressText.textContent='الصفحة '+pageNo+' من '+pdf.numPages;
       const page=await pdf.getPage(pageNo);
       const viewport=page.getViewport({scale:2});
       const canvas=document.createElement('canvas');
@@ -4418,128 +4430,134 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
     return out;
   }
 
-  async function createPendingBatchReceipt(file){
-    const operationId='op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
-    const op={
-      operationId,
+  async function prepareTransientReceipt(file,index,total){
+    clearError();
+    resetResults();
+    activeOperationId='';
+    activeRecipient=UNSENT_RECIPIENT;
+    receiptDate.value=todayLocal();
+    updateDateHint();
+    templateSelect.value='auto';
+
+    sourceImage=await loadImage(file);
+    rotation=0;
+    currentImageIndex=0;
+    $('fileName').textContent=(file.name||'صورة وصل')+(total>1?' — '+index+'/'+total:'');
+    previewImg.src=objectUrl;
+    previewImg.classList.remove('hidden');
+    previewEmpty.classList.add('hidden');
+    updatePreview();
+
+    currentResult={
+      operationId:'op-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
       createdAt:new Date().toISOString(),
       selectedRecipient:UNSENT_RECIPIENT,
-      receiptDate:todayLocal(),
+      receiptDate:receiptDate.value,
       language:'',
       templateId:'unknown',
       detectedTemplateId:'unknown',
       manualOverride:false,
-      template:'بانتظار التحليل',
+      template:'بانتظار القراءة',
       rawText:'',
       fields:emptyExtraction(),
       ocrConfidence:0,
       orientation:0,
       edgeCropSuspected:false,
       status:'pending_analysis',
-      fileName:file.name||'صورة وصل من دفعة',
+      fileName:file.name||'صورة وصل',
       imageCount:1,
       rawTextAvailable:false,
-      historyView:false
+      historyView:false,
+      transientUpload:true
     };
-    await saveReceiptImage(operationId,file,op.fileName,false);
-    currentResult=op;
-    activeOperationId=operationId;
-    persistCurrentOperation({registerDoc:false});
-    return operationId;
+
+    await saveReceiptImage(currentResult.operationId,file,currentResult.fileName,false);
+    analyzeBtn.disabled=false;
+    rotateRightBtn.disabled=false;
+    clearBtn.disabled=false;
+    return currentResult.operationId;
   }
 
   fileInput.addEventListener('change',async()=>{
-    const files=[...(fileInput.files||[])];
-    if(!files.length)return;
-    if(files.some(file=>!/^image\//i.test(file.type))){
-      showError('يوجد ملف غير مدعوم؛ في «وصل واحد» اختر صورًا فقط.');
-      fileInput.value='';
-      return;
-    }
-    try{
-      await openSingleReceiptFiles(files);
-    }catch(err){
-      showError(err.message||String(err));
-      clearAll();
-    }
-  });
+    const selected=[...(fileInput.files||[])];
+    fileInput.value='';
+    if(!selected.length||uploadRunning)return;
 
-  batchFileInput.addEventListener('change',async()=>{
-    const selected=[...(batchFileInput.files||[])];
-    batchFileInput.value='';
-    if(!selected.length||batchRunning)return;
     const unsupported=selected.find(file=>!/^image\//i.test(file.type)&&file.type!=='application/pdf'&&!/\.pdf$/i.test(file.name||''));
     if(unsupported){
-      showError('الدفعة تقبل صورًا أو ملفات PDF فقط.');
+      showToast('error','ملف غير مدعوم','يمكن رفع صور أو PDF فقط.',5000);
       return;
     }
 
-    batchRunning=true;
+    uploadRunning=true;
     fileInput.disabled=true;
-    batchFileInput.disabled=true;
-    additionalFileInput.disabled=true;
     updateQuickDock();
     clearError();
+
     const receiptFiles=[];
+    let rejected=0;
+    let merged=0;
+    let created=0;
+    let manual=0;
+    let lastOperationId='';
+
     try{
       for(let i=0;i<selected.length;i++){
         const file=selected[i];
         progressBox.classList.remove('hidden');
-        progressTitle.textContent='تجهيز الدفعة…';
+        progressTitle.textContent='تجهيز الملفات…';
         progressText.textContent='الملف '+(i+1)+' من '+selected.length;
         if(file.type==='application/pdf'||/\.pdf$/i.test(file.name||'')){
-          const pages=await pdfToReceiptImages(file);
-          receiptFiles.push(...pages);
+          receiptFiles.push(...await pdfToReceiptImages(file));
         }else{
           receiptFiles.push(file);
         }
       }
-      if(!receiptFiles.length)throw new Error('لم أجد صفحات أو صورًا قابلة للفحص.');
+      if(!receiptFiles.length)throw new Error('لم أجد صورًا أو صفحات قابلة للفحص.');
 
-      const ids=[];
       for(let i=0;i<receiptFiles.length;i++){
+        const file=receiptFiles[i];
         progressBox.classList.remove('hidden');
-        progressTitle.textContent='حفظ الدفعة…';
-        progressText.textContent='الوصل '+(i+1)+' من '+receiptFiles.length;
-        ids.push(await createPendingBatchReceipt(receiptFiles[i]));
+        progressTitle.textContent='فحص الوصولات…';
+        progressText.textContent='الصفحة/الصورة '+(i+1)+' من '+receiptFiles.length;
+        await prepareTransientReceipt(file,i+1,receiptFiles.length);
+        const outcome=await analyze({quiet:true});
+        if(outcome?.accepted){
+          if(outcome.merged)merged++;
+          else created++;
+          if(outcome.manual)manual++;
+          if(outcome.operationId)lastOperationId=outcome.operationId;
+        }else{
+          rejected++;
+        }
       }
 
-      activeHistorySupplier='__pending__';
+      activeHistorySupplier='all';
       renderRecentOperationTabs();
+      if(lastOperationId)await openRecentOperation(lastOperationId);
 
-      for(let i=0;i<ids.length;i++){
-        await openRecentOperation(ids[i]);
-        progressBox.classList.remove('hidden');
-        progressTitle.textContent='فحص الدفعة '+(i+1)+' / '+ids.length;
-        progressText.textContent='كل صفحة أو صورة تُعامل كوَصل مستقل.';
-        await analyze();
-      }
-
-      const stillExisting=new Set(getRecentOperations().map(op=>op.id));
-      const firstRemaining=ids.find(id=>stillExisting.has(id));
-      if(firstRemaining)await openRecentOperation(firstRemaining);
-      showToast('success','تم فحص الدفعة',
-        'تمت معالجة '+receiptFiles.length+' وصل/صفحة. راجع رقم الوثيقة والمستلم والمبلغ والتاريخ قبل الحفظ.',
-        7600);
+      const parts=['تم فحص '+receiptFiles.length+' صورة/صفحة'];
+      if(created)parts.push(created+' وصل جديد');
+      if(merged)parts.push(merged+' صورة جُمعت مع وصل يحمل نفس الرقم');
+      if(manual)parts.push(manual+' برقم أُدخل يدويًا');
+      if(rejected)parts.push(rejected+' مرفوض بدون رقم وثيقة');
+      showToast(rejected?'warn':'success','اكتمل فحص الوصولات',parts.join(' · ')+'.',7800);
     }catch(err){
-      showToast('error','تعذر إكمال الدفعة',err?.message||String(err),7600);
+      showToast('error','تعذر إكمال الفحص',err?.message||String(err),7600);
     }finally{
-      batchRunning=false;
+      uploadRunning=false;
       fileInput.disabled=false;
-      batchFileInput.disabled=false;
-      additionalFileInput.disabled=false;
+      progressBox.classList.add('hidden');
       updateQuickDock();
       updateSaveButton();
     }
   });
 
-
-
   imageRefs.addEventListener('click',async event=>{
     const platformImage=event.target.closest('[data-set-platform-image-index]');
     if(platformImage&&currentResult?.operationId){
       if(!hasConfirmedReceiptIdentity(currentResult)){
-        showToast('warn','الهوية أولًا','لا يمكن اعتماد صورة للمنصة قبل معرفة نوع الوثيقة ورقمها.',4500);
+        showToast('warn','الهوية أولًا','لا يمكن اعتماد صورة للمنصة قبل معرفة رقم الوثيقة.',4500);
         return;
       }
       const index=Number(platformImage.getAttribute('data-set-platform-image-index')||0);
