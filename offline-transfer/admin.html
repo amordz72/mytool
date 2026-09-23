@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <title>إدارة M2 — MyTool</title>
+  <style>
+    :root{--bg:#f6f8fb;--card:#fff;--line:#e5eaf0;--text:#172033;--muted:#6b7280;--accent:#4f46e5;--soft:#eef2ff;--ok:#067647;--warn:#9a3412;--danger:#b42318;--shadow:0 8px 28px rgba(15,23,42,.08)}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    button,input{font:inherit}.wrap{max-width:1050px;margin:auto;padding:18px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+    .back{text-decoration:none;color:var(--accent);font-weight:900}.title h1{margin:0;font-size:24px}.title p{margin:5px 0 0;color:var(--muted);font-size:13px}
+    .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}.tab{border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 14px;border-radius:12px;font-weight:900;cursor:pointer}
+    .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .panel{display:none}.panel.active{display:block}.toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap}
+    .btn{border:0;border-radius:11px;padding:9px 13px;font-weight:900;cursor:pointer}.btn.primary{background:var(--accent);color:#fff}.btn.secondary{background:#fff;color:var(--text);border:1px solid var(--line)}.btn.danger{background:#fff1f0;color:var(--danger);border:1px solid #fecaca}.btn:disabled{opacity:.5;cursor:not-allowed}
+    .list{display:grid;gap:10px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+    .rowhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.name{font-size:17px;font-weight:900}.meta{color:var(--muted);font-size:11px;line-height:1.7;margin-top:4px;word-break:break-word}
+    .status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:900;background:#f1f5f9;color:#475569}.status.active{background:#ecfdf3;color:var(--ok)}.status.pending,.status.pending_review{background:#fff7ed;color:var(--warn)}.status.rejected,.status.blocked{background:#fff1f0;color:var(--danger)}
+    .actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.actions input{flex:1;min-width:180px;border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+    .items{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;display:grid;gap:5px}.item{display:flex;justify-content:space-between;gap:10px;font-size:13px}.total{font-size:19px;font-weight:900;color:var(--accent)}
+    .msg{margin-bottom:12px;padding:10px 12px;border-radius:12px;background:#eef2ff;color:#3730a3;font-weight:800;font-size:13px}.msg.err{background:#fff1f0;color:var(--danger)}.empty{text-align:center;color:var(--muted);padding:22px;border:1px dashed var(--line);border-radius:14px;background:#fff}
+    @media(max-width:640px){.wrap{padding:12px}.top{align-items:flex-start}.title h1{font-size:21px}.rowhead{flex-direction:column}.actions{display:grid;grid-template-columns:1fr 1fr}.actions input{grid-column:1/-1;width:100%}.actions .wide{grid-column:1/-1}}
+  </style>
+  <script src="../auth-guard.js?v=20260923-m2-admin1" data-access="admin" data-nav="off"></script>
+</head>
+<body>
+<main class="wrap">
+  <div class="top">
+    <div class="title"><h1>إدارة M2</h1><p>الأجهزة والتقارير الواردة من العملاء والعاملين.</p></div>
+    <a class="back" href="../">← My Tools</a>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="devices" type="button">الأجهزة</button>
+    <button class="tab" data-tab="reports" type="button">التقارير</button>
+  </div>
+
+  <div id="message" class="msg" hidden></div>
+
+  <section id="devicesPanel" class="panel active">
+    <div class="toolbar"><strong>الأجهزة المسجلة</strong><button id="refreshDevices" class="btn secondary" type="button">↻ تحديث</button></div>
+    <div id="devices" class="list"></div>
+  </section>
+
+  <section id="reportsPanel" class="panel">
+    <div class="toolbar"><strong>التقارير الواردة</strong><button id="refreshReports" class="btn secondary" type="button">↻ تحديث</button></div>
+    <div id="reports" class="list"></div>
+  </section>
+</main>
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
+const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let devices=[],reports=[];
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fmt(n){return new Intl.NumberFormat('fr-DZ').format(Number(n)||0)+' دج'}
+function date(v){if(!v)return '—';try{return new Date(v).toLocaleString('ar-DZ')}catch{return String(v)}}
+function msg(text,error=false){const e=$('message');e.textContent=text;e.className='msg'+(error?' err':'');e.hidden=false;clearTimeout(msg.t);msg.t=setTimeout(()=>e.hidden=true,4200)}
+function rpc(name,args={}){return supabase.rpc(name,args).then(({data,error})=>{if(error)throw error;return data})}
+function statusLabel(s){return ({pending:'بانتظار الاعتماد',active:'معتمد',rejected:'مرفوض',blocked:'محظور',pending_review:'بانتظار المراجعة',accepted:'مقبول'}[s]||s||'—')}
+
+async function requireSession(){
+  const {data}=await supabase.auth.getSession();
+  if(!data.session)throw new Error('جلسة Supabase غير موجودة. ارجع للرئيسية وسجل الدخول كإدارة.');
+}
+
+async function loadDevices(){
+  $('refreshDevices').disabled=true;
+  try{
+    await requireSession();
+    const data=await rpc('admin_m2_list_devices');
+    devices=Array.isArray(data?.devices)?data.devices:[];
+    renderDevices();
+  }catch(e){devices=[];renderDevices();msg(e.message||'تعذر تحميل الأجهزة.',true)}
+  finally{$('refreshDevices').disabled=false}
+}
+
+function renderDevices(){
+  const host=$('devices');
+  if(!devices.length){host.innerHTML='<div class="empty">لا توجد أجهزة M2 مسجلة بعد.</div>';return}
+  host.innerHTML=devices.map(d=>{
+    const active=d.status==='active';
+    const pending=d.status==='pending';
+    const id=esc(d.id);
+    return '<article class="card" data-device="'+id+'">'+
+      '<div class="rowhead"><div><div class="name">'+esc(d.display_name)+'</div>'+
+      '<div class="meta">دخل أول مرة باسم: '+esc(d.entered_name)+'<br>الجهاز: '+esc(String(d.public_device_id||'').slice(0,12))+'… · آخر اتصال: '+esc(date(d.last_seen_at))+'</div></div>'+
+      '<span class="status '+esc(d.status)+'">'+esc(statusLabel(d.status))+'</span></div>'+
+      '<div class="actions">'+
+        '<input data-name value="'+esc(d.canonical_name||d.entered_name||'')+'" placeholder="الاسم المعتمد">'+
+        (pending?'<button class="btn primary" data-action="approve" type="button">اعتماد الجهاز</button>':'')+
+        (active?'<button class="btn secondary" data-action="rename" type="button">حفظ الاسم</button>':'')+
+        (d.status!=='blocked'?'<button class="btn danger" data-action="block" type="button">حظر</button>':'')+
+        (pending?'<button class="btn danger" data-action="reject" type="button">رفض</button>':'')+
+      '</div>'+
+      (d.status_reason?'<div class="meta">السبب: '+esc(d.status_reason)+'</div>':'')+
+    '</article>';
+  }).join('');
+}
+
+async function actDevice(card,action){
+  const id=card.dataset.device;
+  const name=card.querySelector('[data-name]')?.value?.trim()||null;
+  try{
+    await rpc('admin_m2_review_device',{
+      p_link_id:id,
+      p_action:action,
+      p_canonical_name:name,
+      p_party_id:null,
+      p_reason:action==='reject'?'رفض من الإدارة':action==='block'?'حظر من الإدارة':null
+    });
+    msg(action==='approve'?'تم اعتماد الجهاز.':action==='rename'?'تم تحديث الاسم.':action==='block'?'تم حظر الجهاز.':'تم رفض الجهاز.');
+    await Promise.all([loadDevices(),loadReports()]);
+  }catch(e){msg(e.message||'تعذر تنفيذ العملية.',true)}
+}
+
+async function loadReports(){
+  $('refreshReports').disabled=true;
+  try{
+    await requireSession();
+    const data=await rpc('admin_m2_list_reports',{p_status:null,p_limit:100});
+    reports=Array.isArray(data?.reports)?data.reports:[];
+    renderReports();
+  }catch(e){reports=[];renderReports();msg(e.message||'تعذر تحميل التقارير.',true)}
+  finally{$('refreshReports').disabled=false}
+}
+
+function renderReports(){
+  const host=$('reports');
+  if(!reports.length){host.innerHTML='<div class="empty">لا توجد تقارير M2 واردة بعد.</div>';return}
+  host.innerHTML=reports.map(r=>{
+    const items=Array.isArray(r.payload?.items)?r.payload.items:[];
+    const pending=r.status==='pending_review';
+    const deviceActive=r.device_status==='active';
+    return '<article class="card" data-report="'+esc(r.id)+'">'+
+      '<div class="rowhead"><div><div class="name">'+esc(r.display_name)+'</div>'+
+      '<div class="meta">Revision '+esc(r.revision)+' · وصل: '+esc(date(r.received_at))+'<br>الجهاز: '+esc(String(r.public_device_id||'').slice(0,12))+'…</div></div>'+
+      '<span class="status '+esc(r.status)+'">'+esc(statusLabel(r.status))+'</span></div>'+
+      '<div class="items">'+items.map((x,i)=>'<div class="item"><span>'+(i+1)+'. '+esc(x.name)+'</span><strong>'+esc(fmt(x.amount))+'</strong></div>').join('')+'</div>'+
+      '<div class="item" style="margin-top:10px"><strong>الإجمالي</strong><span class="total">'+esc(fmt(r.total_amount))+'</span></div>'+
+      (pending?'<div class="actions">'+
+        '<button class="btn primary wide" data-report-action="accept" type="button" '+(deviceActive?'':'disabled title="اعتمد الجهاز أولًا"')+'>اعتماد التقرير</button>'+
+        '<button class="btn danger wide" data-report-action="reject" type="button">رفض التقرير</button>'+
+      '</div>':'')+
+      (!deviceActive&&pending?'<div class="meta" style="color:#9a3412">اعتمد الجهاز أولًا قبل اعتماد التقرير.</div>':'')+
+    '</article>';
+  }).join('');
+}
+
+async function actReport(card,action){
+  try{
+    await rpc('admin_m2_review_report',{
+      p_report_id:card.dataset.report,
+      p_action:action,
+      p_note:null
+    });
+    msg(action==='accept'?'تم اعتماد التقرير.':'تم رفض التقرير.');
+    await loadReports();
+  }catch(e){msg(e.message||'تعذر مراجعة التقرير.',true)}
+}
+
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===btn));
+  $('devicesPanel').classList.toggle('active',btn.dataset.tab==='devices');
+  $('reportsPanel').classList.toggle('active',btn.dataset.tab==='reports');
+  if(btn.dataset.tab==='reports')loadReports();
+}));
+
+$('refreshDevices').addEventListener('click',loadDevices);
+$('refreshReports').addEventListener('click',loadReports);
+$('devices').addEventListener('click',e=>{
+  const b=e.target.closest('[data-action]');if(!b)return;
+  actDevice(b.closest('[data-device]'),b.dataset.action);
+});
+$('reports').addEventListener('click',e=>{
+  const b=e.target.closest('[data-report-action]');if(!b)return;
+  actReport(b.closest('[data-report]'),b.dataset.reportAction);
+});
+
+await loadDevices();
+await loadReports();
+</script>
+</body>
+</html>
