@@ -33,7 +33,7 @@
     .empty{padding:20px;text-align:center;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}.sum{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}.sum:last-child{border:0}.sum.total strong{font-size:20px;color:var(--accent)}
     .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.report{margin-top:12px;background:#fafbff;border:1px solid #e0e7ff;border-radius:12px;padding:12px;white-space:pre-wrap;line-height:1.8;font-size:13px}
     .msg{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:13px;font-weight:800}.msg.ok{background:#ecfdf3;color:var(--ok)}.msg.err{background:#fff1f0;color:var(--danger)}
-    .meta{margin-top:14px;color:var(--muted);font-size:11px;line-height:1.8}.install-row{margin-top:10px}.install-row .secondary{width:100%}
+    .meta{margin-top:14px;color:var(--muted);font-size:11px;line-height:1.8}.sync-state{margin-top:12px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#f8fafc;font-size:12px;line-height:1.7;color:var(--muted)}.sync-state.ok{background:#ecfdf3;color:var(--ok);border-color:#bbf7d0}.sync-state.warn{background:#fff7ed;color:#9a3412;border-color:#fed7aa}.more{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.more summary{cursor:pointer;font-weight:800;color:var(--muted);font-size:13px}.more-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.install-row{margin-top:10px}.install-row .secondary{width:100%}
     @media(max-width:800px){.app{display:block}.side{min-height:auto;position:static;border-left:0;border-bottom:1px solid var(--line);padding:12px}.nav{grid-template-columns:repeat(2,minmax(0,1fr))}.identity{display:none}.grid{grid-template-columns:1fr}.content{padding:15px}.top{padding:0 14px}}
     @media(max-width:520px){.two,.actions{grid-template-columns:1fr}.row{grid-template-columns:minmax(0,1fr) auto}.row .x{grid-column:2}.intro h2{font-size:21px}}
   </style>
@@ -42,7 +42,7 @@
   <section id="setup" class="setup">
     <div class="setup-card">
       <h1>إعداد أول مرة</h1>
-      <p>اكتب اسمك مرة واحدة. سيُحفظ على هذا الجهاز، ولن يطلبه البرنامج في كل مرة.</p>
+      <p>اكتب اسمك مرة واحدة. هذا الجهاز يتسجل بهوية خاصة، وبعدها يرسل التقارير إلى MyTool مباشرة.</p>
       <div class="field">
         <label for="setupName">الاسم</label>
         <input id="setupName" autocomplete="name" placeholder="اكتب اسمك">
@@ -73,7 +73,7 @@
       <div class="content">
         <section class="intro">
           <h2>تسجيل الأموال</h2>
-          <p>أضف الاسم والمبلغ، ثم شارك التقرير أو ملف M2. البيانات تبقى على هذا الجهاز.</p>
+          <p>أضف الاسم والمبلغ، ثم اضغط «إرسال / تحديث». إذا انقطع الإنترنت يبقى التقرير محفوظًا على الجهاز حتى يرجع الاتصال.</p>
         </section>
 
         <div class="grid">
@@ -95,18 +95,19 @@
             <div class="body">
               <div class="sum"><span>عدد السطور</span><strong id="count">0</strong></div>
               <div class="sum total"><span>الإجمالي</span><strong id="total">0 دج</strong></div>
-              <button id="makeReportBtn" class="primary full" type="button" style="margin-top:12px">إنشاء التقرير</button>
-              <div id="reportBox" class="report hidden"></div>
-              <div class="actions">
-                <button id="shareTextBtn" class="secondary hidden" type="button">مشاركة التقرير</button>
-                <button id="exportBtn" class="secondary" type="button">تصدير M2</button>
-              </div>
-              <div class="actions">
-                <button id="shareJsonBtn" class="secondary" type="button">مشاركة M2</button>
-                <button id="newReportBtn" class="danger" type="button">تقرير جديد</button>
-              </div>
+              <button id="sendBtn" class="primary full" type="button" style="margin-top:12px">إرسال / تحديث</button>
+              <button id="shareTextBtn" class="secondary full" type="button" style="margin-top:10px">مشاركة</button>
+              <div id="syncState" class="sync-state">لم يُرسل هذا التقرير بعد.</div>
               <div id="actionMsg" class="msg hidden"></div>
-              <div class="meta">لا توجد قاعدة بيانات أونلاين في هذه النسخة. الاستيراد داخل MyTool سيضاف في مرحلة مستقلة.</div>
+              <details class="more">
+                <summary>خيارات إضافية</summary>
+                <div class="more-actions">
+                  <button id="shareJsonBtn" class="secondary" type="button">مشاركة ملف M2</button>
+                  <button id="exportBtn" class="secondary" type="button">حفظ M2 بالجهاز</button>
+                  <button id="newReportBtn" class="danger" type="button" style="grid-column:1/-1">بدء تقرير جديد</button>
+                </div>
+              </details>
+              <div class="meta">المسار الأساسي الآن هو الإرسال المباشر إلى MyTool. ملف M2 يبقى احتياطًا عند الحاجة.</div>
             </div>
           </aside>
         </div>
