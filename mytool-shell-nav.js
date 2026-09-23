@@ -41,7 +41,7 @@
     const file=(location.pathname.split('/').pop()||'index.html').toLowerCase();
     if(!currentApp)return 'رئيسية My Tools';
     if(currentApp==='flexy'){
-      const map={'home.html':'تميز','index.html':'فليكسي','admin.html':'إدارة فليكسي','accounts.html':'حسابات فليكسي','orders.html':'الطابور','review.html':'مراجعة فليكسي','my-account.html':'حسابي'};
+      const map={'home.html':'تميز','index.html':'فليكسي','admin.html':'إدارة فليكسي','accounts.html':'حسابات فليكسي','orders.html':'الطابور','review.html':'مراجعة فليكسي','my-account.html':'حسابي','sims.html':'الشرائح والأرصدة','sim-feeding.html':'تغذية الشرائح'};
       return map[file]||'تميز';
     }
     if(currentApp==='shop'){
@@ -89,6 +89,8 @@
       ['cards','▣','البطاقات','cards/']
     ];
     if(a.admin)items.push(
+      ['sims','📶','الشرائح والأرصدة','flexy/sims.html'],
+      ['feeding','🔋','تغذية الشرائح','flexy/sim-feeding.html'],
       ['orders','▤','الطابور','flexy/orders.html'],
       ['accounts','◎','الحسابات','flexy/accounts.html'],
       ['review','✓','المراجعة','flexy/review.html'],
@@ -227,14 +229,12 @@
     const top=document.createElement('header');
     top.className='mytool-shell-topbar';
     top.setAttribute('aria-label','تنقل My Tools');
-    const showFlexyBell=isFlexyIndex()&&a.admin&&Boolean(document.getElementById('flexyAlertsDrawer'));
-    const flexyBellHtml=showFlexyBell
-      ? '<button class="mytool-shell-flexy-bell" type="button" aria-label="أرصدة وتنبيهات فليكسي" title="أرصدة وتنبيهات فليكسي">🔔<span class="mytool-shell-flexy-badge zero">0</span></button>'
+    const adminBellHtml=a.admin
+      ? '<a class="mytool-shell-admin-bell" href="'+esc(url('shop/cash-receipts.html'))+'" aria-label="إشعارات المحلات" title="إشعارات المحلات">🔔<span class="mytool-shell-admin-bell-count">0</span></a>'
       : '';
-    top.innerHTML='<button class="mytool-shell-menu-btn" data-open="mother" type="button" aria-label="قائمة My Tools">☰</button><div class="mytool-shell-title"><span class="mytool-shell-title-text">'+esc(screenTitle())+'</span>'+flexyBellHtml+'</div><button class="mytool-shell-menu-btn" data-open="local" type="button" aria-label="قائمة الأداة">☰</button>';
+    top.innerHTML='<button class="mytool-shell-menu-btn" data-open="mother" type="button" aria-label="قائمة My Tools">☰</button><div class="mytool-shell-title"><span class="mytool-shell-title-text">'+esc(screenTitle())+'</span>'+adminBellHtml+'</div><button class="mytool-shell-menu-btn" data-open="local" type="button" aria-label="قائمة الأداة">☰</button>';
     document.body.appendChild(top);
     localButton=top.querySelector('[data-open="local"]');
-    bindFlexyBell();
 
     backdrop=document.createElement('div');backdrop.className='mytool-shell-backdrop';document.body.appendChild(backdrop);
     motherDrawer=document.createElement('aside');motherDrawer.className='mytool-shell-drawer mother';motherDrawer.setAttribute('dir','rtl');
