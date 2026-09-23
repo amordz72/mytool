@@ -241,13 +241,14 @@ function renderSources(){
 }
 function reasonHtml(r){
   if(!r||typeof r!=='object')return '';
-  const labels={phone:'نفس الهاتف',email:'نفس البريد',username:'نفس المستخدم',username_loose:'مستخدم متشابه',email_loose:'بريد متشابه',phone_near:'هاتف قريب',near_phone:'هاتف قريب',name_close:'اسم قريب',identity_history:'هوية سابقة مشتركة',smart_similarity:'تشابه ذكي',exact_identity_conflict:'تعارض هوية قوي'};
+  const labels={phone:'نفس الهاتف',email:'نفس البريد',username:'نفس المستخدم',username_loose:'مستخدم متشابه',email_loose:'بريد متشابه',phone_near:'هاتف قريب',near_phone:'هاتف قريب',person_name_close:'اسم الشخص متشابه',name_close:'اسم قديم ملغى',identity_history:'هوية سابقة مشتركة',smart_similarity:'تشابه ذكي',exact_identity_conflict:'تعارض هوية قوي'};
   return Object.keys(r).filter(k=>r[k]!==false&&r[k]!=null).map(k=>'<span class="reason">'+esc(labels[k]||k)+'</span>').join('');
 }
 function suggestionSide(prefix,s){
-  const name=s[prefix+'_display_name']||s[prefix+'_username'];
+  const person=[s[prefix+'_first_name'],s[prefix+'_last_name']].filter(Boolean).join(' ').trim();
+  const name=person||s[prefix+'_username']||'بدون اسم شخص';
   const party=s[prefix+'_party_name'];
-  return '<div class="suggestion-side"><b>'+esc(name)+'</b><div class="username">'+esc(s[prefix+'_username'])+'</div><div class="meta">'+esc(platformLabel(s[prefix+'_platform']))+(party?' · مربوط بـ '+esc(party):' · غير مربوط')+'</div></div>';
+  return '<div class="suggestion-side"><b>'+esc(name)+'</b><div class="username">'+esc(s[prefix+'_username']||'')+'</div><div class="meta">'+esc(platformLabel(s[prefix+'_platform']))+(party?' · مربوط بـ '+esc(party):' · غير مربوط')+'</div></div>';
 }
 function renderSuggestions(){
   const active=suggestions.filter(s=>['pending','conflict'].includes(s.status));
@@ -277,8 +278,10 @@ function renderIdentityReviews(){
   badge.textContent=active.length;
   if(!active.length){box.innerHTML='<div class="empty">لا توجد حالات هوية داخل المنصة تحتاج مراجعة.</div>';return}
   box.innerHTML=active.map(r=>{
-    const incoming=r.incoming_payload||{},candidate=r.candidate_display_name||r.candidate_username||'غير محسوم';
-    const incomingName=incoming.display_name||[incoming.first_name,incoming.last_name].filter(Boolean).join(' ')||incoming.username||'بيانات واردة';
+    const incoming=r.incoming_payload||{};
+    const candidatePerson=[r.candidate_first_name,r.candidate_last_name].filter(Boolean).join(' ').trim();
+    const candidate=candidatePerson||r.candidate_username||'غير محسوم';
+    const incomingName=[incoming.first_name,incoming.last_name].filter(Boolean).join(' ').trim()||incoming.username||'بيانات واردة';
     const canSame=!!r.candidate_source_account_id;
     return '<div class="identity-review"><div class="source-top"><div><b>'+esc(platformLabel(r.platform_key))+' · '+esc(incomingName)+'</b><div class="meta">درجة: '+Number(r.score||0)+' · '+(r.status==='conflict'?'تعارض':'مراجعة')+'</div></div><span class="badge '+(r.status==='conflict'?'conflict':'pending_review')+'">'+(r.status==='conflict'?'تعارض':'اقتراح')+'</span></div>'+
       '<div class="incoming"><b>الحساب الأقرب:</b> '+esc(candidate)+'<div class="meta">'+esc([r.candidate_phone,r.candidate_email].filter(Boolean).join(' · '))+'</div></div>'+
