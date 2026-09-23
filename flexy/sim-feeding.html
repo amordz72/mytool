@@ -308,6 +308,7 @@ $('importForm').addEventListener('submit',async e=>{
       if(!Number.isInteger(quantity)||quantity<1)throw new Error('أدخل كمية صحيحة.');
       const available=stockMap[amount]||0;
       if(quantity>available)throw new Error('المتاح في مخزوننا لهذه القيمة '+available+' بطاقة فقط.');
+      if(!confirm('سيتم نقل '+quantity+' بطاقة بقيمة '+amount+' دج من مخزون البيع إلى تغذية SAMA. بعد النقل لن تبقى قابلة للبيع. هل تؤكد؟'))return;
 
       const result=await rpc('station_connect_admin_transfer_stock_to_feeding',{
         p_amount:amount,
