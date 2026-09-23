@@ -57,7 +57,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   <div id="message" class="message info">جاري تحميل إدارة ربط العملاء…</div>
 
   <section class="card">
-    <div class="section-head"><div><h1>صيانة ربط العملاء</h1><div class="muted">كل حساب منصة يُسجل أولًا كهوية داخل MyTool. هذا لا يعني أنه مطابق لحساب في منصة أخرى. «مجمّع بين منصات» يظهر فقط عندما نفس العميل لديه حسابات من منصتين مختلفتين أو أكثر.</div></div><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div>
+    <div class="section-head"><div><h1>صيانة ربط العملاء</h1><div class="muted">كل حساب منصة يُسجل أولًا كهوية داخل MyTool. هذا لا يعني أنه مطابق لحساب في منصة أخرى. «مجمّع بين منصات» يظهر فقط عندما نفس العميل لديه حسابات من منصتين مختلفتين أو أكثر.</div></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn" href="customer-master-feed.html?v=20260923-1" style="width:auto;text-decoration:none">⊕ تغذية ماستر العملاء</a><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div></div>
     <details id="linkingMetricsDrawer" class="metrics-drawer">
       <summary><span>ملخص الربط</span><b id="metricsSummary">جاري الحساب…</b></summary>
       <div class="metrics metrics-compact">
@@ -91,7 +91,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
     <div id="offlineNote" class="offline-note" hidden>أنت Offline: القائمة المحفوظة متاحة، لكن الربط والاستيراد يحتاجان اتصالًا.</div>
   </section>
 
-  <section class="card">
+  <section class="card" hidden>
     <div class="section-head"><div><h2>عميل موحد يدوي</h2><div class="muted">للحالات التي لا تبدأ من حساب منصة.</div></div><button id="toggleManual" class="btn secondary" type="button" style="width:auto">إضافة عميل</button></div>
     <div id="manualBox" hidden>
       <div class="manual-grid">
@@ -148,6 +148,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260923-master-feed-stop-bootstrap1"></script>
+<script type="module" src="customer-links.js?v=20260923-master-name-lock2"></script>
 </body>
 </html>
