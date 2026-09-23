@@ -1,8 +1,9 @@
-const CACHE='m2-transfer-v2';
+const CACHE='m2-transfer-v3';
 const CORE=[
   './',
   './index.html',
   './app.js',
+  './pwa-install.js',
   './manifest.webmanifest',
   '../icons/icon-192.png',
   '../icons/icon-512.png'
