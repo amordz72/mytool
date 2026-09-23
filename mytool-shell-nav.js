@@ -74,7 +74,7 @@
       ['notes','📝','الملاحظات','notes/'],
       ['document-reader','📄','قارئ المستندات','document-reader/'],
       ['chat-payments-reader','💬','قارئ مدفوعات الدردشة','chat-payments-reader/'],
-      ['offline-transfer','⇄','إدارة M2','offline-transfer/admin.html'],
+      ['offline-transfer','👤','الحسابات والأجهزة','offline-transfer/admin.html'],
       ['programs','🧰','البرامج','programs/'],
       ['links','↗','روابط العمل','links/'],
       ['qr','▣','QR','qr/']
