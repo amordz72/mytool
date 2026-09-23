@@ -734,9 +734,6 @@ async function reviewIdentity(id,action){
   if(action!=='ignore')await generateSuggestions({silent:true});
   await load();msg(action==='same'?'تم تحديث نفس حساب المصدر بدون إنشاء عميل ماستر جديد.':action==='new'?'تم إنشاء حساب المصدر الجديد، وسيبقى غير مربوط حتى تغذية ماستر العملاء.':'تم تجاهل الاقتراح.','ok');
 }
-function phoneKey(value){
-  return String(value||'').replace(/\D/g,'').replace(/^00213/,'213').replace(/^0(?=[5-7]\d{8}$)/,'213');
-}
 function previewMatch(platform,incoming){
   if(!platform||!incoming?.username)return {source:null,conflict:false};
   const usernameKey=norm(incoming.username);
@@ -877,7 +874,7 @@ async function previewImports(){
   msg('جاري فحص الملفات بدون كتابة أي بيانات…');
   const fallback=$('importPlatform').value||'';
   for(const file of files){
-    const item={file,hash:'',parsed:null,detectedPlatform:'',platform:'',status:'checking',forceRepeat:false,error:'',diff:null,hintPlatform:null,serverPreview:null};
+    const item={file,hash:'',parsed:null,detectedPlatform:'',platform:'',status:'checking',error:'',diff:null,hintPlatform:null,serverPreview:null};
     importQueue.push(item);renderImportQueue();
     try{
       item.parsed=await parseImportFile(file);
