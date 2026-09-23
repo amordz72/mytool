@@ -8,7 +8,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="mytool-build" content="20260923-docflow17">
+<meta name="mytool-build" content="20260923-docflow18">
 <title>الوصولات - MyTool</title>
 <script src="../auth-guard.js" data-access="admin"></script>
 <style>
@@ -42,7 +42,7 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
 <body><main class="wrap">
 <section class="hero">
   <h1>🧾 الوصولات</h1>
-  <p>رفع → فحص → مراجعة → حفظ <span class="hero-version">نسخة 22</span></p>
+  <p>رفع → فحص → مراجعة → حفظ <span class="hero-version">نسخة 23</span></p>
 </section>
 
 <section class="card security">
@@ -137,12 +137,13 @@ details{margin-top:10px;border-top:1px solid var(--l);padding-top:10px}summary{c
       </select>
     </div>
   </div>
-  <div id="idRuleHint" class="id-guide"></div>
+  <!-- الحقول أولًا: على الهاتف يظهر رقم الوثيقة مباشرة بعد تصحيح نوع الوثيقة -->
+  <div id="results" class="results"></div>
 
+  <div id="idRuleHint" class="id-guide"></div>
   <div id="selectedContext" class="selected-context hidden"></div>
   <div id="qualityNotice" class="quality hidden"></div>
   <div id="resultNotice" class="notice hidden"></div>
-  <div id="results" class="results"></div>
 
   <details>
     <summary>النص الخام المستخرج — للتدقيق فقط</summary>
