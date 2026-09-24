@@ -47,7 +47,8 @@
 </section>
 
 <div class="summary-actions">
-  <a class="mt-btn secondary" href="devices.html">USB والمودمات</a>
+  <a class="mt-btn" href="usb-sim-center.html">مركز USB والشرائح</a>
+  <a class="mt-btn secondary" href="devices.html">كشف Windows USB</a>
   <a class="mt-btn secondary" href="../flexy/sims.html">إدارة الشرائح / PIN</a>
   <button id="copyBtn" class="mt-btn secondary" type="button">نسخ التقرير</button>
   <button id="printBtn" class="mt-btn secondary" type="button">طباعة / PDF</button>
@@ -78,7 +79,7 @@
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
 const $=id=>document.getElementById(id);
-let rows=[];
+let rows=[],usbCenter=[];
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function simLabel(v){return ({'mobilis-sama':'Mobilis SAMA','mobilis-arsselli':'Mobilis Arsselli','unknown':'غير مصنفة','mobilis':'Mobilis','djezzy':'Djezzy','ooredoo':'Ooredoo'})[String(v||'').toLowerCase()]||v||'غير مصنفة';}
@@ -88,8 +89,21 @@ function show(title,text,type=''){const b=$('message');b.hidden=false;b.classNam
 async function requireAdmin(){const {data}=await supabase.auth.getSession();if(!data.session)throw new Error('جلسة الإدارة غير متاحة.');}
 function complete(r){return !!(r.iccid&&r.msisdn&&r.sim_type!=='unknown'&&r.has_pin)}
 function usbIps(r){return Array.isArray(r.usb_ipv4_addresses)?r.usb_ipv4_addresses.join(', '):'—'}
+function usbInfo(r){
+  const current=usbCenter.find(u=>u.modem_uuid===r.modem_uuid);
+  if(current)return {label:current.usb_label,state:'شوهدت الآن على USB '+current.usb_label};
+  let latest=null;
+  for(const u of usbCenter){
+    for(const h of (Array.isArray(u.sim_history)?u.sim_history:[])){
+      if(h.sim_uuid!==r.sim_uuid)continue;
+      if(!latest||new Date(h.last_seen_at).getTime()>new Date(latest.last_seen_at).getTime())latest={label:u.usb_label,last_seen_at:h.last_seen_at};
+    }
+  }
+  return latest?{label:latest.label,state:'آخر مرة شوهدت على USB '+latest.label}:{label:null,state:'لم تسجل مشاهدة USB بعد'};
+}
 function card(r){
   const title=r.msisdn||r.iccid||r.imsi||'شريحة بدون رقم';
+  const usb=usbInfo(r);
   const badges=[
     '<span class="badge '+(r.connected?'good':'muted')+'">'+(r.connected?'مركبة الآن':'غير مركبة')+'</span>',
     '<span class="badge '+(r.has_pin?'good':'warn')+'">'+(r.has_pin?'PIN محفوظ':'PIN ناقص')+'</span>',
@@ -97,7 +111,7 @@ function card(r){
   ];
   if(r.phone_discovery_status==='running'||r.phone_discovery_status==='queued')badges.push('<span class="badge warn">جاري اكتشاف الرقم</span>');
   if(r.phone_discovery_status==='review'||r.phone_discovery_status==='failed')badges.push('<span class="badge bad">اكتشاف الرقم يحتاج مراجعة</span>');
-  const search=[title,r.iccid,r.imsi,r.msisdn,r.sim_type,r.owner_name,r.modem_imei,r.modem_serial_number,r.modem_ip,r.station_name,r.usb_name,r.usb_pnp_instance_id,r.usb_interface_alias,usbIps(r)].filter(Boolean).join(' ').toLowerCase();
+  const search=[title,r.iccid,r.imsi,r.msisdn,r.sim_type,r.owner_name,r.modem_imei,r.modem_serial_number,r.modem_ip,r.station_name,r.usb_name,r.usb_pnp_instance_id,r.usb_interface_alias,usbIps(r),usb.label,usb.state].filter(Boolean).join(' ').toLowerCase();
   return '<article class="mt-card sim-report-card sim-entry" data-search="'+esc(search)+'">'+
     '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">📶</div><div class="mt-row-copy"><div class="sim-title" dir="ltr">'+esc(title)+'</div><div class="sim-sub">'+esc(simLabel(r.sim_type))+(r.owner_name?' · '+esc(r.owner_name):'')+'</div></div></div></div>'+
     '<div class="summary-badges" style="margin-top:9px">'+badges.join('')+'</div>'+
@@ -108,6 +122,8 @@ function card(r){
       '<div><small>ICCID — هوية الشريحة</small><strong class="mono">'+esc(r.iccid||'—')+'</strong></div>'+
       '<div><small>IMSI</small><strong class="mono">'+esc(r.imsi||'—')+'</strong></div>'+
       '<div><small>PIN</small><strong>'+(r.has_pin?'محفوظ بأمان':'غير محفوظ')+'</strong></div>'+
+      '<div><small>USB الثابت</small><strong>'+(usb.label?'USB '+esc(usb.label):'—')+'</strong></div>'+
+      '<div><small>حالة USB</small><strong>'+esc(usb.state)+'</strong></div>'+
       '<div><small>المودم</small><strong>'+esc(r.modem_name||'—')+'</strong></div>'+
       '<div><small>IMEI</small><strong class="mono">'+esc(r.modem_imei||'—')+'</strong></div>'+
       '<div><small>Serial</small><strong class="mono">'+esc(r.modem_serial_number||'—')+'</strong></div>'+
@@ -144,6 +160,7 @@ function reportText(){
       'ICCID: '+(r.iccid||'—'),
       'IMSI: '+(r.imsi||'—'),
       'PIN: '+(r.has_pin?'محفوظ':'غير محفوظ'),
+      'USB: '+usbInfo(r).state,
       'Modem: '+(r.modem_name||'—')+' / IMEI '+(r.modem_imei||'—')+' / '+(r.modem_ip||'—'),
       'USB: '+(r.usb_name||'—')+' / '+(r.usb_interface_alias||'—')+' / '+usbIps(r),
       'Station: '+(r.station_name||'—')+' / '+(r.station_online?'ONLINE':'OFFLINE'),
@@ -155,9 +172,15 @@ function reportText(){
 async function load(){
   try{
     await requireAdmin();
-    const {data,error}=await supabase.rpc('station_connect_admin_sim_summary');
-    if(error)throw error;
-    rows=Array.isArray(data)?data:[];render();
+    const [summaryResult,centerResult]=await Promise.all([
+      supabase.rpc('station_connect_admin_sim_summary'),
+      supabase.rpc('station_connect_admin_usb_sim_center')
+    ]);
+    if(summaryResult.error)throw summaryResult.error;
+    if(centerResult.error)throw centerResult.error;
+    rows=Array.isArray(summaryResult.data)?summaryResult.data:[];
+    usbCenter=Array.isArray(centerResult.data)?centerResult.data:[];
+    render();
   }catch(e){rows=[];render();show('تعذر تحميل ملخص الشرائح',e?.message||'خطأ غير متوقع','danger')}
 }
 $('search').addEventListener('input',applySearch);
