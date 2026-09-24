@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f5f9fc">
+<title>متطلبات وقدرات البرنامج — MyTool</title>
+<link rel="stylesheet" href="../ui/template-v1.css">
+<link rel="stylesheet" href="../mytool-bottom-nav.css">
+<style>
+[hidden]{display:none!important}
+.cap-actions,.cap-filters,.cap-badges,.cap-form-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cap-grid{display:grid;gap:10px}
+.cap-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+.cap-summary .mt-card{padding:12px;text-align:center}
+.cap-summary strong{display:block;font-size:20px}
+.cap-summary span{font-size:11px;color:#6b7f93}
+.cap-card{padding:14px}
+.cap-code{direction:ltr;text-align:left;font-family:monospace;background:#f7fafc;border-radius:10px;padding:8px;margin-top:8px;word-break:break-all}
+.cap-meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px}
+.cap-meta-grid div{background:#f8fbfd;border-radius:10px;padding:8px;min-width:0}
+.cap-meta-grid small{display:block;color:#6b7f93;font-size:10px}
+.cap-meta-grid strong{display:block;font-size:12px;word-break:break-word}
+.cap-chip{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}
+.cap-chip.good{background:#e8f7ef;color:#17764a}.cap-chip.warn{background:#fff4df;color:#9a6200}.cap-chip.bad{background:#ffe8e8;color:#a32929}.cap-chip.muted{background:#edf2f6;color:#65778a}
+.cap-editor{margin-top:14px;padding:14px;border:1px solid #dbe6ef;border-radius:14px;background:#f8fbfd}
+.cap-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.cap-form label{display:grid;gap:5px;font-size:11px;font-weight:800;color:#627589}
+.cap-form input,.cap-form select,.cap-form textarea{width:100%;padding:10px;border:1px solid #d7e2ea;border-radius:10px;background:white;font:inherit;color:inherit}
+.cap-form textarea{min-height:86px;resize:vertical}
+.cap-form .wide{grid-column:1/-1}
+@media(max-width:720px){.cap-summary{grid-template-columns:1fr 1fr}.cap-form,.cap-meta-grid{grid-template-columns:1fr}.cap-actions .mt-btn{flex:1}}
+</style>
+<script src="../auth-guard.js?v=20260919-personal-persist1" data-access="admin"></script>
+</head>
+<body class="mt-app" data-mytool-app="access-admin">
+<main class="mt-shell">
+<header class="mt-topbar">
+  <div class="mt-brand"><div class="mt-brand-mark">M</div><div class="mt-brand-copy"><strong>MyTool</strong><small>إدارة النظام</small></div></div>
+  <div class="mt-user"><div class="mt-user-copy"><strong>مدير النظام</strong><small>Program Capability Registry</small></div><div class="mt-avatar">A</div></div>
+</header>
+
+<section class="mt-page-head">
+  <div class="mt-page-title"><div class="mt-page-icon">🧩</div><div class="mt-page-copy"><h1>متطلبات وقدرات البرنامج</h1><p>قاعدة حية: ماذا يعرف البرنامج؟ ما المتاح؟ وما الذي يحتاج اختبارًا أو تنفيذًا؟</p></div></div>
+  <button id="addBtn" class="mt-btn mt-page-action" type="button">+ إضافة قدرة</button>
+</section>
+
+<div class="cap-actions">
+  <a class="mt-btn secondary" href="devices.html">USB والمودمات</a>
+  <a class="mt-btn secondary" href="sims.html">سجل الشرائح</a>
+  <button id="refreshBtn" class="mt-btn secondary" type="button">تحديث</button>
+</div>
+
+<div class="cap-summary">
+  <div class="mt-card"><strong id="totalCount">0</strong><span>كل القدرات</span></div>
+  <div class="mt-card"><strong id="availableCount">0</strong><span>منفذة</span></div>
+  <div class="mt-card"><strong id="plannedCount">0</strong><span>مخططة</span></div>
+  <div class="mt-card"><strong id="testCount">0</strong><span>تحتاج اختبار</span></div>
+</div>
+
+<label class="mt-search">
+  <span class="mt-search-icon">⌕</span>
+  <input id="search" placeholder="ابحث: رقم الهاتف، Mobilis، ICCID، *101#..." autocomplete="off">
+</label>
+<div class="cap-filters" style="margin-top:8px">
+  <select id="operatorFilter" class="mt-btn secondary"><option value="">كل المتعاملين</option><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option><option value="generic">عام</option></select>
+  <select id="implFilter" class="mt-btn secondary"><option value="">كل حالات التنفيذ</option><option value="available">منفذة</option><option value="planned">مخططة</option><option value="blocked">محجوبة</option><option value="unavailable">غير متاحة</option></select>
+</div>
+
+<div id="message" class="mt-alert" hidden><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3 id="messageTitle"></h3><p id="messageText"></p></div></div>
+
+<section id="editor" class="cap-editor" hidden>
+  <div class="mt-section-head"><div class="mt-section-copy"><h2 id="editorTitle">إضافة قدرة</h2><p>لا تضع PIN أو كلمة مرور أو Secret هنا.</p></div></div>
+  <form id="form">
+    <input type="hidden" name="capability_uuid">
+    <div class="cap-form">
+      <label>المفتاح التقني<input name="capability_key" required placeholder="sim.phone_number.mobilis.ussd"></label>
+      <label>العنوان<input name="title_ar" required placeholder="اكتشاف رقم شريحة Mobilis"></label>
+      <label>الترتيب<input name="sort_order" type="number" min="0" value="100"></label>
+      <label>المجال<input name="domain" required value="sim_identity"></label>
+      <label>الغرض<input name="purpose" required value="phone_number"></label>
+      <label>المتعامل<select name="operator_key"><option value="">عام</option><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option></select></label>
+      <label>نوع/بروفايل SIM<input name="sim_profile" value="any" placeholder="any / arsselli / sama"></label>
+      <label>الطريقة<select name="method"><option value="hilink_api">HiLink API</option><option value="ussd">USSD</option><option value="service_code">Service code</option><option value="windows">Windows</option><option value="derived">Derived</option><option value="manual">Manual</option></select></label>
+      <label>IMSI Prefix<input name="imsi_prefix" inputmode="numeric" placeholder="60301"></label>
+      <label class="wide">الكود/القالب<input name="command_template" dir="ltr" placeholder="*101#"></label>
+      <label>حالة المعلومة<select name="knowledge_status"><option value="confirmed">confirmed</option><option value="tested_partial">tested_partial</option><option value="needs_test">needs_test</option><option value="unavailable">unavailable</option><option value="unknown">unknown</option></select></label>
+      <label>حالة دعم البرنامج<select name="implementation_status"><option value="available">available</option><option value="planned">planned</option><option value="blocked">blocked</option><option value="unavailable">unavailable</option></select></label>
+      <label>طريقة التشغيل<select name="run_mode"><option value="auto">auto</option><option value="manual_only">manual_only</option><option value="disabled">disabled</option></select></label>
+      <label>Parser<input name="parser_key" placeholder="algeria.msisdn.single"></label>
+      <label>آخر تحقق<input name="last_verified_at" type="datetime-local"></label>
+      <label><span>يحتاج PIN خدمة؟</span><select name="requires_service_pin"><option value="false">لا</option><option value="true">نعم</option></select></label>
+      <label class="wide">مرجع المعرفة<input name="source_ref" placeholder="developer/telecom/TELECOM-SERVICE-CODES.md"></label>
+      <label class="wide">ملاحظات<textarea name="notes"></textarea></label>
+    </div>
+    <div class="cap-form-actions" style="margin-top:10px">
+      <button class="mt-btn" type="submit">حفظ</button>
+      <button id="cancelBtn" class="mt-btn secondary" type="button">إلغاء</button>
+    </div>
+  </form>
+</section>
+
+<section id="list" class="cap-grid" style="margin-top:14px"><div class="mt-card"><div class="mt-meta">جاري تحميل القدرات…</div></div></section>
+</main>
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
+const $=id=>document.getElementById(id);
+let rows=[];
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function label(v){return ({confirmed:'مؤكد',tested_partial:'جزئي',needs_test:'يحتاج اختبار',unavailable:'غير متاح',unknown:'غير معروف',available:'منفذ',planned:'مخطط',blocked:'محجوب',auto:'تلقائي',manual_only:'يدوي فقط',disabled:'معطل'})[v]||v||'—';}
+function cls(v){return ['confirmed','available','auto'].includes(v)?'good':['needs_test','tested_partial','planned','manual_only'].includes(v)?'warn':['blocked','unavailable'].includes(v)?'bad':'muted';}
+function operator(v){return ({mobilis:'Mobilis',djezzy:'Djezzy',ooredoo:'Ooredoo'})[v]||'عام';}
+function show(title,text,type=''){const box=$('message');box.hidden=false;box.className='mt-alert'+(type?' '+type:'');$('messageTitle').textContent=title;$('messageText').textContent=text;clearTimeout(show.t);show.t=setTimeout(()=>box.hidden=true,4500);}
+async function requireAdmin(){const {data}=await supabase.auth.getSession();if(!data.session)throw new Error('جلسة الإدارة غير متاحة.');}
+
+function render(){
+  $('totalCount').textContent=rows.length;
+  $('availableCount').textContent=rows.filter(r=>r.implementation_status==='available').length;
+  $('plannedCount').textContent=rows.filter(r=>r.implementation_status==='planned').length;
+  $('testCount').textContent=rows.filter(r=>r.knowledge_status==='needs_test'||r.knowledge_status==='tested_partial').length;
+  applyFilters();
+}
+function card(r){
+  const code=r.command_template?'<div class="cap-code">'+esc(r.command_template)+'</div>':'';
+  const search=[r.title_ar,r.capability_key,r.operator_key,r.sim_profile,r.method,r.command_template,r.notes,r.purpose].filter(Boolean).join(' ').toLowerCase();
+  return '<article class="mt-card cap-card cap-entry" data-id="'+esc(r.capability_uuid)+'" data-search="'+esc(search)+'" data-operator="'+esc(r.operator_key||'generic')+'" data-impl="'+esc(r.implementation_status)+'">'+
+    '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">🧩</div><div class="mt-row-copy"><h3>'+esc(r.title_ar)+'</h3><div class="mt-meta">'+esc(r.capability_key)+' · '+esc(operator(r.operator_key))+'</div></div></div>'+
+    '<button class="mt-btn secondary editBtn" type="button">تعديل</button></div>'+
+    code+
+    '<div class="cap-badges" style="margin-top:9px"><span class="cap-chip '+cls(r.knowledge_status)+'">المعلومة: '+esc(label(r.knowledge_status))+'</span><span class="cap-chip '+cls(r.implementation_status)+'">البرنامج: '+esc(label(r.implementation_status))+'</span><span class="cap-chip '+cls(r.run_mode)+'">'+esc(label(r.run_mode))+'</span></div>'+
+    '<div class="cap-meta-grid">'+
+      '<div><small>الغرض</small><strong>'+esc(r.purpose)+'</strong></div>'+
+      '<div><small>الطريقة</small><strong>'+esc(r.method)+'</strong></div>'+
+      '<div><small>SIM profile</small><strong>'+esc(r.sim_profile||'any')+'</strong></div>'+
+      '<div><small>IMSI Prefix</small><strong>'+esc(r.imsi_prefix||'—')+'</strong></div>'+
+      '<div><small>PIN خدمة</small><strong>'+(r.requires_service_pin?'مطلوب':'لا')+'</strong></div>'+
+      '<div><small>Parser</small><strong>'+esc(r.parser_key||'—')+'</strong></div>'+
+    '</div>'+
+    (r.notes?'<div class="mt-meta" style="margin-top:9px">'+esc(r.notes)+'</div>':'')+
+  '</article>';
+}
+function applyFilters(){
+  const q=$('search').value.trim().toLowerCase(),op=$('operatorFilter').value,impl=$('implFilter').value;
+  const filtered=rows.filter(r=>{
+    const hay=[r.title_ar,r.capability_key,r.operator_key,r.sim_profile,r.method,r.command_template,r.notes,r.purpose].filter(Boolean).join(' ').toLowerCase();
+    return (!q||hay.includes(q))&&(!op||(r.operator_key||'generic')===op)&&(!impl||r.implementation_status===impl);
+  });
+  $('list').innerHTML=filtered.length?filtered.map(card).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد قدرات مطابقة.</div></div>';
+  document.querySelectorAll('.editBtn').forEach(btn=>btn.addEventListener('click',()=>openEdit(btn.closest('.cap-entry').dataset.id)));
+}
+async function load(){
+  try{
+    await requireAdmin();
+    const {data,error}=await supabase.rpc('mytool_admin_program_requirements_list');
+    if(error)throw error;
+    rows=Array.isArray(data)?data:[];
+    render();
+  }catch(e){rows=[];render();show('تعذر تحميل المتطلبات',e?.message||'خطأ غير متوقع','danger');}
+}
+function openEdit(id){
+  const r=rows.find(x=>x.capability_uuid===id);if(!r)return;
+  const f=$('form');
+  for(const [k,v] of Object.entries(r)){
+    if(!f.elements[k])continue;
+    if(k==='last_verified_at'){f.elements[k].value=v?new Date(v).toISOString().slice(0,16):'';continue}
+    if(k==='requires_service_pin'){f.elements[k].value=v?'true':'false';continue}
+    f.elements[k].value=v??'';
+  }
+  $('editorTitle').textContent='تعديل القدرة';
+  $('editor').hidden=false;$('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function openAdd(){
+  const f=$('form');f.reset();f.elements.capability_uuid.value='';f.elements.domain.value='sim_identity';f.elements.purpose.value='phone_number';f.elements.sim_profile.value='any';f.elements.sort_order.value='100';f.elements.knowledge_status.value='unknown';f.elements.implementation_status.value='planned';f.elements.run_mode.value='disabled';f.elements.requires_service_pin.value='false';
+  $('editorTitle').textContent='إضافة قدرة';$('editor').hidden=false;$('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const fd=new FormData(e.currentTarget);
+  const args={
+    p_capability_uuid:fd.get('capability_uuid')||null,
+    p_capability_key:String(fd.get('capability_key')||'').trim(),
+    p_domain:String(fd.get('domain')||'').trim(),
+    p_purpose:String(fd.get('purpose')||'').trim(),
+    p_title_ar:String(fd.get('title_ar')||'').trim(),
+    p_operator_key:String(fd.get('operator_key')||'').trim()||null,
+    p_sim_profile:String(fd.get('sim_profile')||'any').trim(),
+    p_method:String(fd.get('method')||'').trim(),
+    p_command_template:String(fd.get('command_template')||'').trim()||null,
+    p_imsi_prefix:String(fd.get('imsi_prefix')||'').replace(/\D/g,'')||null,
+    p_requires_service_pin:fd.get('requires_service_pin')==='true',
+    p_knowledge_status:String(fd.get('knowledge_status')||'unknown'),
+    p_implementation_status:String(fd.get('implementation_status')||'planned'),
+    p_run_mode:String(fd.get('run_mode')||'disabled'),
+    p_parser_key:String(fd.get('parser_key')||'').trim()||null,
+    p_source_ref:String(fd.get('source_ref')||'').trim()||null,
+    p_notes:String(fd.get('notes')||'').trim()||null,
+    p_sort_order:Number(fd.get('sort_order')||100),
+    p_last_verified_at:fd.get('last_verified_at')?new Date(String(fd.get('last_verified_at'))).toISOString():null
+  };
+  try{
+    const {error}=await supabase.rpc('mytool_admin_program_requirement_save',args);
+    if(error)throw error;
+    $('editor').hidden=true;show('تم الحفظ','تحدثت بطاقة القدرة في قاعدة المتطلبات.');await load();
+  }catch(err){show('تعذر الحفظ',err?.message||'خطأ غير متوقع','danger');}
+});
+$('addBtn').addEventListener('click',openAdd);$('cancelBtn').addEventListener('click',()=>{$('editor').hidden=true});$('refreshBtn').addEventListener('click',load);$('search').addEventListener('input',applyFilters);$('operatorFilter').addEventListener('change',applyFilters);$('implFilter').addEventListener('change',applyFilters);
+load();
+</script>
+<script src="../ui/template-v1.js"></script>
+<script src="../mytool-bottom-nav.js" data-root="../" data-app="access-admin"></script>
+</body>
+</html>
