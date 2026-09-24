@@ -13,7 +13,7 @@
 .device-grid{display:grid;gap:10px}
 .device-actions{display:flex;gap:8px;flex-wrap:wrap}
 .device-id{direction:ltr;text-align:right;word-break:break-all}
-.device-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
+.device-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0 14px}
 .device-summary .mt-card{padding:12px;text-align:center}
 .device-summary strong{display:block;font-size:20px}
 .device-summary span{font-size:11px;color:#6b7f93}
@@ -29,7 +29,7 @@
 </header>
 
 <section class="mt-page-head">
-  <div class="mt-page-title"><div class="mt-page-icon">🔌</div><div class="mt-page-copy"><h1>سجل USB والأجهزة</h1><p>مرجع سريع: أي مودم مربوط بأي Station وأي شريحة.</p></div></div>
+  <div class="mt-page-title"><div class="mt-page-icon">🔌</div><div class="mt-page-copy"><h1>اكتشاف USB والمودمات</h1><p>Windows أولًا: ما هو مركب فعليًا، ثم أي HiLink وشريحة مرتبطان به.</p></div></div>
   <button id="refreshBtn" class="mt-btn secondary mt-page-action" type="button">تحديث</button>
 </section>
 
@@ -44,14 +44,19 @@
 </label>
 
 <div class="device-summary">
-  <div class="mt-card"><strong id="deviceCount">0</strong><span>USB / Modem</span></div>
+  <div class="mt-card"><strong id="usbCount">0</strong><span>USB موجود الآن</span></div>
+  <div class="mt-card"><strong id="deviceCount">0</strong><span>HiLink Modem</span></div>
   <div class="mt-card"><strong id="stationCount">0</strong><span>Stations</span></div>
   <div class="mt-card"><strong id="linkedSimCount">0</strong><span>شرائح مربوطة</span></div>
 </div>
 
 <div id="pageMessage" class="mt-alert" hidden><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3 id="messageTitle"></h3><p id="messageText"></p></div></div>
 
-<section id="deviceList" class="device-grid"><div class="mt-card"><div class="mt-meta">جاري تحميل الأجهزة…</div></div></section>
+<div class="mt-section-head"><div class="mt-section-copy"><h2>USB الموجود فعليًا في Windows</h2><p>هذه القائمة تأتي من PnP/Network Adapter في الكمبيوتر، وليس من IP محفوظ.</p></div></div>
+<section id="usbList" class="device-grid"><div class="mt-card"><div class="mt-meta">جاري كشف USB…</div></div></section>
+
+<div class="mt-section-head" style="margin-top:18px"><div class="mt-section-copy"><h2>مودمات HiLink والشرائح</h2><p>الهوية المقروءة من المودم: IMEI/Serial ثم ICCID/IMSI للشريحة.</p></div></div>
+<section id="deviceList" class="device-grid"><div class="mt-card"><div class="mt-meta">جاري تحميل المودمات…</div></div></section>
 <div id="emptyState" class="mt-alert" hidden><div class="mt-alert-icon">🔌</div><div class="mt-alert-copy"><h3>لا توجد أجهزة مطابقة</h3><p>شغّل Station Agent أو غيّر عبارة البحث.</p></div></div>
 </main>
 
@@ -59,7 +64,7 @@
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
 const $=id=>document.getElementById(id);
-let stations=[],devices=[];
+let stations=[],devices=[],usbDevices=[];
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function msg(title,text,type=''){const box=$('pageMessage');box.className='mt-alert'+(type?' '+type:'');$('messageTitle').textContent=title;$('messageText').textContent=text;box.hidden=false;}
@@ -76,9 +81,14 @@ async function load(){
   const btn=$('refreshBtn');btn.disabled=true;clearMsg();
   try{
     await requireAdmin();
-    const stationResult=await supabase.rpc('station_connect_admin_list');
+    const [stationResult,usbResult]=await Promise.all([
+      supabase.rpc('station_connect_admin_list'),
+      supabase.rpc('station_connect_admin_usb_devices')
+    ]);
     if(stationResult.error)throw stationResult.error;
+    if(usbResult.error)throw usbResult.error;
     stations=Array.isArray(stationResult.data)?stationResult.data:[];
+    usbDevices=Array.isArray(usbResult.data)?usbResult.data:[];
     const groups=await Promise.all(stations.map(async station=>{
       if(String(station.status||'').toLowerCase()!=='approved')return [];
       const hardware=await supabase.rpc('station_connect_admin_hardware',{p_station_uuid:station.station_uuid});
@@ -88,9 +98,36 @@ async function load(){
     devices=groups.flat();
     render();
   }catch(e){
-    stations=[];devices=[];render();
+    stations=[];devices=[];usbDevices=[];render();
     msg('تعذر تحميل سجل الأجهزة',e?.message||'حدث خطأ غير متوقع.','danger');
   }finally{btn.disabled=false;}
+}
+
+function sameSubnet24(a,b){
+  const x=String(a||'').split('.'),y=String(b||'').split('.');
+  return x.length===4&&y.length===4&&x.slice(0,3).join('.')===y.slice(0,3).join('.');
+}
+function usbCard(item){
+  const ips=Array.isArray(item.ipv4_addresses)?item.ipv4_addresses:[];
+  const station=stations.find(s=>s.station_uuid===item.station_uuid);
+  const likely=devices.find(d=>d._station?.station_uuid===item.station_uuid&&ips.some(ip=>sameSubnet24(ip,d.modem_ip)));
+  const title=item.friendly_name||item.adapter_name||'USB device';
+  const ids=[
+    item.vid||item.pid?'VID: '+(item.vid||'—')+' · PID: '+(item.pid||'—'):'',
+    item.interface_alias?'Windows: '+item.interface_alias+(item.interface_index?' · #'+item.interface_index:''):'',
+    ips.length?'IPv4 محلي: '+ips.join(', '):'',
+    item.location?'USB: '+item.location:'',
+    likely?'شبكة HiLink المطابقة: '+likely.modem_ip+(likely.imei?' · IMEI '+likely.imei:''):''
+  ].filter(Boolean);
+  const search=[title,item.manufacturer,item.device_class,item.pnp_instance_id,item.vid,item.pid,item.interface_alias,ips.join(' '),station?.computer_name,likely?.modem_ip,likely?.imei].filter(Boolean).join(' ').toLowerCase();
+  return '<article class="mt-card usb-entry" data-search="'+esc(search)+'">'+
+    '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">🔌</div><div class="mt-row-copy">'+
+      '<h3>'+esc(title)+'</h3><div class="mt-meta">Station: '+esc(item.station_name||station?.computer_name||'—')+
+      '<br>'+esc(item.manufacturer||'—')+' · '+esc(item.device_class||'USB')+'</div></div></div>'+
+      '<span class="mt-chip '+(item.present?'success':'muted')+'">'+(item.present?'موجود الآن':'غير موجود')+'</span></div>'+
+    (ids.length?'<div class="mt-meta device-id" style="margin-top:9px">'+ids.map(esc).join('<br>')+'</div>':'')+
+    '<div class="mt-meta device-id" style="margin-top:7px">PNP: '+esc(item.pnp_instance_id||'—')+'</div>'+
+  '</article>';
 }
 
 function card(item){
@@ -120,16 +157,18 @@ function card(item){
 }
 
 function render(){
+  $('usbCount').textContent=String(usbDevices.filter(d=>d.present).length);
   $('deviceCount').textContent=String(devices.length);
   $('stationCount').textContent=String(stations.filter(s=>String(s.status||'').toLowerCase()==='approved').length);
   $('linkedSimCount').textContent=String(devices.filter(d=>d.sim_uuid||d.msisdn).length);
-  $('deviceList').innerHTML=devices.map(card).join('');
+  $('usbList').innerHTML=usbDevices.length?usbDevices.map(usbCard).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد قراءة USB بعد. يلزم Agent 0.4.7 أو أحدث.</div></div>';
+  $('deviceList').innerHTML=devices.length?devices.map(card).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد مودمات HiLink مسجلة.</div></div>';
   applySearch();
 }
 
 function applySearch(){
   const q=$('deviceSearch').value.trim().toLowerCase();let visible=0;
-  document.querySelectorAll('.device-entry').forEach(el=>{const ok=!q||(el.dataset.search||'').includes(q)||el.textContent.toLowerCase().includes(q);el.hidden=!ok;if(ok)visible++;});
+  document.querySelectorAll('.device-entry,.usb-entry').forEach(el=>{const ok=!q||(el.dataset.search||'').includes(q)||el.textContent.toLowerCase().includes(q);el.hidden=!ok;if(ok)visible++;});
   $('emptyState').hidden=visible!==0;
 }
 
