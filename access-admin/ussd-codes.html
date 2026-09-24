@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#f5f9fc">
+<title>جدول أكواد USSD — MyTool</title>
+<link rel="stylesheet" href="../ui/template-v1.css"><link rel="stylesheet" href="../mytool-bottom-nav.css">
+<style>
+[hidden]{display:none!important}.actions,.chips,.form-actions{display:flex;gap:8px;flex-wrap:wrap}
+.grid{display:grid;gap:10px}.card{padding:14px}.code{direction:ltr;text-align:left;font-family:monospace;background:#f7fafc;border-radius:10px;padding:9px;margin-top:8px;word-break:break-all}
+.meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}.meta div{background:#f8fbfd;border-radius:10px;padding:8px}.meta small{display:block;color:#6b7f93;font-size:10px}.meta strong{display:block;font-size:12px;word-break:break-word}
+.chip{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}.good{background:#e8f7ef;color:#17764a}.warn{background:#fff4df;color:#9a6200}.bad{background:#ffe8e8;color:#a32929}.muted{background:#edf2f6;color:#65778a}
+.editor{margin:14px 0;padding:14px;border:1px solid #dbe6ef;border-radius:14px;background:#f8fbfd}.form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.form label{display:grid;gap:5px;font-size:11px;font-weight:800;color:#627589}.form input,.form select,.form textarea{width:100%;padding:10px;border:1px solid #d7e2ea;border-radius:10px;background:#fff;font:inherit}.wide{grid-column:1/-1}
+@media(max-width:720px){.form,.meta{grid-template-columns:1fr}.actions .mt-btn{flex:1}}
+</style>
+<script src="../auth-guard.js?v=20260919-personal-persist1" data-access="admin"></script>
+</head>
+<body class="mt-app" data-mytool-app="access-admin"><main class="mt-shell">
+<header class="mt-topbar"><div class="mt-brand"><div class="mt-brand-mark">M</div><div class="mt-brand-copy"><strong>MyTool</strong><small>إدارة النظام</small></div></div><div class="mt-user"><div class="mt-user-copy"><strong>مدير النظام</strong><small>USSD Catalog</small></div><div class="mt-avatar">A</div></div></header>
+<section class="mt-page-head"><div class="mt-page-title"><div class="mt-page-icon">⌨️</div><div class="mt-page-copy"><h1>جدول أكواد USSD</h1><p>مرجع مركزي حسب المتعامل ونوع الشريحة. القوالب فقط؛ لا نحفظ PIN حقيقي هنا.</p></div></div><button id="addBtn" class="mt-btn mt-page-action" type="button">+ إضافة كود</button></section>
+<div class="actions"><a class="mt-btn secondary" href="devices.html">USB والمودمات</a><a class="mt-btn secondary" href="program-requirements.html">متطلبات البرنامج</a><button id="refreshBtn" class="mt-btn secondary" type="button">تحديث</button></div>
+<label class="mt-search" style="margin-top:12px"><span class="mt-search-icon">⌕</span><input id="search" placeholder="ابحث: Mobilis، Djezzy، Ooredoo، balance، *101#..."></label>
+<div id="message" class="mt-alert" hidden><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3 id="messageTitle"></h3><p id="messageText"></p></div></div>
+<section id="editor" class="editor" hidden><form id="form"><input type="hidden" name="ussd_uuid"><div class="form">
+<label>المتعامل<select name="operator_key"><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option></select></label>
+<label>نوع الشريحة / Profile<input name="sim_profile" value="any" placeholder="any / retail / distributor / arsselli"></label>
+<label>الغرض<input name="purpose_key" required placeholder="phone_number / balance"></label>
+<label class="wide">العنوان<input name="title_ar" required></label>
+<label>الطريقة<select name="method"><option value="ussd">USSD</option><option value="service_code">Service code</option></select></label>
+<label>الحالة<select name="knowledge_status"><option value="confirmed">confirmed</option><option value="tested_partial">tested_partial</option><option value="needs_test">needs_test</option><option value="rejected_current">rejected_current</option><option value="unknown">unknown</option></select></label>
+<label>دعم البرنامج<select name="implementation_status"><option value="available">available</option><option value="planned">planned</option><option value="blocked">blocked</option><option value="unavailable">unavailable</option></select></label>
+<label class="wide">الكود / القالب<input name="code_template" dir="ltr" required placeholder="*200*{pin}#"></label>
+<label>يحتاج PIN؟<select name="requires_pin"><option value="false">لا</option><option value="true">نعم</option></select></label>
+<label>الترتيب<input name="sort_order" type="number" min="0" value="100"></label>
+<label>آخر تحقق<input name="last_verified_at" type="datetime-local"></label>
+<label class="wide">المصدر<input name="source_ref" value="developer/telecom/TELECOM-SERVICE-CODES.md"></label>
+<label class="wide">ملاحظات<textarea name="notes"></textarea></label>
+</div><div class="form-actions" style="margin-top:10px"><button class="mt-btn" type="submit">حفظ</button><button id="cancelBtn" class="mt-btn secondary" type="button">إلغاء</button></div></form></section>
+<section id="list" class="grid" style="margin-top:14px"></section>
+</main>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');const $=id=>document.getElementById(id);let rows=[];
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function op(v){return ({mobilis:'Mobilis',djezzy:'Djezzy',ooredoo:'Ooredoo'})[v]||v}
+function cls(v){return ['confirmed','available'].includes(v)?'good':['tested_partial','needs_test','planned'].includes(v)?'warn':['rejected_current','blocked','unavailable'].includes(v)?'bad':'muted'}
+function show(t,x,type=''){const b=$('message');b.hidden=false;b.className='mt-alert'+(type?' '+type:'');$('messageTitle').textContent=t;$('messageText').textContent=x}
+function card(r){const hay=[r.operator_key,r.sim_profile,r.purpose_key,r.title_ar,r.code_template,r.notes].filter(Boolean).join(' ').toLowerCase();return '<article class="mt-card card entry" data-id="'+r.ussd_uuid+'" data-search="'+esc(hay)+'"><div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">⌨️</div><div class="mt-row-copy"><h3>'+esc(r.title_ar)+'</h3><div class="mt-meta">'+esc(op(r.operator_key))+' · '+esc(r.sim_profile)+' · '+esc(r.purpose_key)+'</div></div></div><button class="mt-btn secondary edit" type="button">تعديل</button></div><div class="code">'+esc(r.code_template)+'</div><div class="chips" style="margin-top:8px"><span class="chip '+cls(r.knowledge_status)+'">'+esc(r.knowledge_status)+'</span><span class="chip '+cls(r.implementation_status)+'">'+esc(r.implementation_status)+'</span><span class="chip '+(r.requires_pin?'warn':'muted')+'">'+(r.requires_pin?'PIN مطلوب':'بدون PIN')+'</span></div><div class="meta"><div><small>Method</small><strong>'+esc(r.method)+'</strong></div><div><small>Profile</small><strong>'+esc(r.sim_profile)+'</strong></div><div><small>Purpose</small><strong>'+esc(r.purpose_key)+'</strong></div></div>'+(r.notes?'<div class="mt-meta" style="margin-top:8px">'+esc(r.notes)+'</div>':'')+'</article>'}
+function render(){const q=$('search').value.trim().toLowerCase();const f=rows.filter(r=>!q||[r.operator_key,r.sim_profile,r.purpose_key,r.title_ar,r.code_template,r.notes].filter(Boolean).join(' ').toLowerCase().includes(q));$('list').innerHTML=f.length?f.map(card).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد أكواد مطابقة.</div></div>';document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openEdit(b.closest('.entry').dataset.id))}
+async function load(){const {data,error}=await supabase.rpc('mytool_admin_ussd_codes_list');if(error){show('تعذر التحميل',error.message,'danger');rows=[]}else rows=Array.isArray(data)?data:[];render()}
+function openAdd(){const f=$('form');f.reset();f.elements.ussd_uuid.value='';f.elements.sim_profile.value='any';f.elements.method.value='ussd';f.elements.knowledge_status.value='unknown';f.elements.implementation_status.value='planned';f.elements.requires_pin.value='false';f.elements.sort_order.value='100';$('editor').hidden=false}
+function openEdit(id){const r=rows.find(x=>x.ussd_uuid===id);if(!r)return;const f=$('form');Object.entries(r).forEach(([k,v])=>{if(!f.elements[k])return;if(k==='requires_pin')f.elements[k].value=v?'true':'false';else if(k==='last_verified_at')f.elements[k].value=v?new Date(v).toISOString().slice(0,16):'';else f.elements[k].value=v??''});$('editor').hidden=false;$('editor').scrollIntoView({behavior:'smooth'})}
+$('form').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,fd=new FormData(f);const args={p_ussd_uuid:fd.get('ussd_uuid')||null,p_operator_key:fd.get('operator_key'),p_sim_profile:fd.get('sim_profile'),p_purpose_key:fd.get('purpose_key'),p_title_ar:fd.get('title_ar'),p_method:fd.get('method'),p_code_template:fd.get('code_template'),p_requires_pin:fd.get('requires_pin')==='true',p_knowledge_status:fd.get('knowledge_status'),p_implementation_status:fd.get('implementation_status'),p_notes:fd.get('notes')||null,p_source_ref:fd.get('source_ref')||null,p_sort_order:Number(fd.get('sort_order')||100),p_last_verified_at:fd.get('last_verified_at')?new Date(String(fd.get('last_verified_at'))).toISOString():null};const {error}=await supabase.rpc('mytool_admin_ussd_code_save',args);if(error){show('تعذر الحفظ',error.message,'danger');return}$('editor').hidden=true;show('تم الحفظ','تحدث جدول أكواد USSD.');await load()}
+$('addBtn').onclick=openAdd;$('cancelBtn').onclick=()=>{$('editor').hidden=true};$('refreshBtn').onclick=load;$('search').oninput=render;load();
+</script><script src="../ui/template-v1.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="access-admin"></script></body></html>
