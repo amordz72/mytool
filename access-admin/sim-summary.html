@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f5f9fc">
+<title>ملخص الشرائح — MyTool</title>
+<link rel="stylesheet" href="../ui/template-v1.css">
+<link rel="stylesheet" href="../mytool-bottom-nav.css">
+<style>
+[hidden]{display:none!important}
+.summary-actions,.summary-badges{display:flex;gap:8px;flex-wrap:wrap}
+.summary-grid{display:grid;gap:11px;margin-top:12px}
+.summary-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+.summary-stats .mt-card{padding:11px;text-align:center}.summary-stats strong{display:block;font-size:20px}.summary-stats span{font-size:11px;color:#6b7f93}
+.sim-report-card{padding:14px}
+.sim-title{font-size:18px;font-weight:900}
+.sim-sub{font-size:12px;color:#6b7f93;margin-top:3px}
+.info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:11px}
+.info-grid div{background:#f8fbfd;border-radius:10px;padding:8px;min-width:0}
+.info-grid small{display:block;color:#6b7f93;font-size:10px;margin-bottom:3px}
+.info-grid strong{display:block;font-size:12px;word-break:break-word}
+.mono{direction:ltr;text-align:left;font-family:monospace}
+.badge{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}
+.badge.good{background:#e8f7ef;color:#17764a}.badge.warn{background:#fff4df;color:#9a6200}.badge.bad{background:#ffe8e8;color:#a32929}.badge.muted{background:#edf2f6;color:#65778a}
+.section-head{margin-top:18px}
+@media(max-width:720px){.summary-stats{grid-template-columns:1fr 1fr}.info-grid{grid-template-columns:1fr 1fr}.summary-actions .mt-btn{flex:1}}
+@media print{
+  .mt-topbar,.mt-page-action,.summary-actions,.mt-search,#filters,.mytool-bottom-nav{display:none!important}
+  body{background:#fff!important}.mt-shell{max-width:none!important;padding:0!important}
+  .sim-report-card{break-inside:avoid;box-shadow:none!important;border:1px solid #ddd!important}
+}
+</style>
+<script src="../auth-guard.js?v=20260919-personal-persist1" data-access="admin"></script>
+</head>
+<body class="mt-app" data-mytool-app="access-admin">
+<main class="mt-shell">
+<header class="mt-topbar">
+  <div class="mt-brand"><div class="mt-brand-mark">M</div><div class="mt-brand-copy"><strong>MyTool</strong><small>إدارة النظام</small></div></div>
+  <div class="mt-user"><div class="mt-user-copy"><strong>مدير النظام</strong><small>SIM Inventory Report</small></div><div class="mt-avatar">A</div></div>
+</header>
+
+<section class="mt-page-head">
+  <div class="mt-page-title"><div class="mt-page-icon">📋</div><div class="mt-page-copy"><h1>ملخص الشرائح</h1><p>كل شريحة بهويتها ICCID، رقمها، المودم وUSB الحالي، وحالة PIN.</p></div></div>
+  <button id="refreshBtn" class="mt-btn secondary mt-page-action" type="button">تحديث</button>
+</section>
+
+<div class="summary-actions">
+  <a class="mt-btn secondary" href="devices.html">USB والمودمات</a>
+  <a class="mt-btn secondary" href="../flexy/sims.html">إدارة الشرائح / PIN</a>
+  <button id="copyBtn" class="mt-btn secondary" type="button">نسخ التقرير</button>
+  <button id="printBtn" class="mt-btn secondary" type="button">طباعة / PDF</button>
+</div>
+
+<div class="summary-stats">
+  <div class="mt-card"><strong id="totalCount">0</strong><span>كل الشرائح</span></div>
+  <div class="mt-card"><strong id="connectedCount">0</strong><span>مركبة الآن</span></div>
+  <div class="mt-card"><strong id="readyCount">0</strong><span>مكتملة البيانات</span></div>
+  <div class="mt-card"><strong id="needsCount">0</strong><span>تحتاج استكمال</span></div>
+</div>
+
+<label class="mt-search">
+  <span class="mt-search-icon">⌕</span>
+  <input id="search" placeholder="ابحث: الرقم، ICCID، IMSI، IMEI، Station، USB..." autocomplete="off">
+</label>
+
+<div id="message" class="mt-alert" hidden><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3 id="messageTitle"></h3><p id="messageText"></p></div></div>
+
+<div class="mt-section-head section-head"><div class="mt-section-copy"><h2>المركبة الآن</h2><p>الشريحة تعرف بهويتها ICCID/IMSI، والمودم هو مكان تركيبها الحالي فقط.</p></div><span id="connectedBadge" class="mt-chip">0</span></div>
+<section id="connectedList" class="summary-grid"></section>
+
+<div class="mt-section-head section-head"><div class="mt-section-copy"><h2>غير مركبة / تحتاج استكمال</h2><p>السجلات المحفوظة تبقى موجودة حتى لو نُقلت الشريحة أو نُزع المودم.</p></div><span id="otherBadge" class="mt-chip">0</span></div>
+<section id="otherList" class="summary-grid"></section>
+</main>
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
+const $=id=>document.getElementById(id);
+let rows=[];
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function simLabel(v){return ({'mobilis-sama':'Mobilis SAMA','mobilis-arsselli':'Mobilis Arsselli','unknown':'غير مصنفة','mobilis':'Mobilis','djezzy':'Djezzy','ooredoo':'Ooredoo'})[String(v||'').toLowerCase()]||v||'غير مصنفة';}
+function sourceLabel(v){return ({modem:'HiLink',ussd:'USSD',manual:'يدوي'})[v]||v||'—';}
+function fmt(v){if(!v)return '—';try{return new Date(v).toLocaleString('ar-DZ')}catch{return String(v)}}
+function show(title,text,type=''){const b=$('message');b.hidden=false;b.className='mt-alert'+(type?' '+type:'');$('messageTitle').textContent=title;$('messageText').textContent=text;clearTimeout(show.t);show.t=setTimeout(()=>b.hidden=true,4500)}
+async function requireAdmin(){const {data}=await supabase.auth.getSession();if(!data.session)throw new Error('جلسة الإدارة غير متاحة.');}
+function complete(r){return !!(r.iccid&&r.msisdn&&r.sim_type!=='unknown'&&r.has_pin)}
+function usbIps(r){return Array.isArray(r.usb_ipv4_addresses)?r.usb_ipv4_addresses.join(', '):'—'}
+function card(r){
+  const title=r.msisdn||r.iccid||r.imsi||'شريحة بدون رقم';
+  const badges=[
+    '<span class="badge '+(r.connected?'good':'muted')+'">'+(r.connected?'مركبة الآن':'غير مركبة')+'</span>',
+    '<span class="badge '+(r.has_pin?'good':'warn')+'">'+(r.has_pin?'PIN محفوظ':'PIN ناقص')+'</span>',
+    '<span class="badge '+(complete(r)?'good':'warn')+'">'+(complete(r)?'البيانات مكتملة':'تحتاج استكمال')+'</span>'
+  ];
+  if(r.phone_discovery_status==='running'||r.phone_discovery_status==='queued')badges.push('<span class="badge warn">جاري اكتشاف الرقم</span>');
+  if(r.phone_discovery_status==='review'||r.phone_discovery_status==='failed')badges.push('<span class="badge bad">اكتشاف الرقم يحتاج مراجعة</span>');
+  const search=[title,r.iccid,r.imsi,r.msisdn,r.sim_type,r.owner_name,r.modem_imei,r.modem_serial_number,r.modem_ip,r.station_name,r.usb_name,r.usb_pnp_instance_id,r.usb_interface_alias,usbIps(r)].filter(Boolean).join(' ').toLowerCase();
+  return '<article class="mt-card sim-report-card sim-entry" data-search="'+esc(search)+'">'+
+    '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">📶</div><div class="mt-row-copy"><div class="sim-title" dir="ltr">'+esc(title)+'</div><div class="sim-sub">'+esc(simLabel(r.sim_type))+(r.owner_name?' · '+esc(r.owner_name):'')+'</div></div></div></div>'+
+    '<div class="summary-badges" style="margin-top:9px">'+badges.join('')+'</div>'+
+    '<div class="info-grid">'+
+      '<div><small>رقم الهاتف</small><strong class="mono">'+esc(r.msisdn||'—')+'</strong></div>'+
+      '<div><small>مصدر الرقم</small><strong>'+esc(sourceLabel(r.msisdn_source))+'</strong></div>'+
+      '<div><small>نوع الشريحة</small><strong>'+esc(simLabel(r.sim_type))+'</strong></div>'+
+      '<div><small>ICCID — هوية الشريحة</small><strong class="mono">'+esc(r.iccid||'—')+'</strong></div>'+
+      '<div><small>IMSI</small><strong class="mono">'+esc(r.imsi||'—')+'</strong></div>'+
+      '<div><small>PIN</small><strong>'+(r.has_pin?'محفوظ بأمان':'غير محفوظ')+'</strong></div>'+
+      '<div><small>المودم</small><strong>'+esc(r.modem_name||'—')+'</strong></div>'+
+      '<div><small>IMEI</small><strong class="mono">'+esc(r.modem_imei||'—')+'</strong></div>'+
+      '<div><small>Serial</small><strong class="mono">'+esc(r.modem_serial_number||'—')+'</strong></div>'+
+      '<div><small>HiLink IP</small><strong class="mono">'+esc(r.modem_ip||'—')+'</strong></div>'+
+      '<div><small>Station</small><strong>'+esc(r.station_name||'—')+'</strong></div>'+
+      '<div><small>Station</small><strong>'+(r.station_online?'ONLINE':'OFFLINE')+'</strong></div>'+
+      '<div><small>USB Windows</small><strong>'+esc(r.usb_name||'—')+'</strong></div>'+
+      '<div><small>Windows Adapter</small><strong>'+esc(r.usb_interface_alias||'—')+'</strong></div>'+
+      '<div><small>USB IPv4</small><strong class="mono">'+esc(usbIps(r))+'</strong></div>'+
+      '<div><small>VID / PID</small><strong class="mono">'+esc((r.usb_vid||'—')+' / '+(r.usb_pid||'—'))+'</strong></div>'+
+      '<div><small>PNP ID</small><strong class="mono">'+esc(r.usb_pnp_instance_id||'—')+'</strong></div>'+
+      '<div><small>آخر ظهور للشريحة</small><strong>'+esc(fmt(r.sim_last_seen_at))+'</strong></div>'+
+    '</div>'+
+  '</article>';
+}
+function applySearch(){
+  const q=$('search').value.trim().toLowerCase();
+  document.querySelectorAll('.sim-entry').forEach(el=>{el.hidden=!!q&&!(el.dataset.search||'').includes(q)});
+}
+function render(){
+  const connected=rows.filter(r=>r.connected),other=rows.filter(r=>!r.connected);
+  $('totalCount').textContent=rows.length;$('connectedCount').textContent=connected.length;
+  $('readyCount').textContent=rows.filter(complete).length;$('needsCount').textContent=rows.filter(r=>!complete(r)).length;
+  $('connectedBadge').textContent=connected.length;$('otherBadge').textContent=other.length;
+  $('connectedList').innerHTML=connected.length?connected.map(card).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد شرائح مركبة الآن.</div></div>';
+  $('otherList').innerHTML=other.length?other.map(card).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد شرائح أخرى.</div></div>';
+  applySearch();
+}
+function reportText(){
+  const lines=['ملخص الشرائح — MyTool',new Date().toLocaleString('ar-DZ'),''];
+  rows.forEach((r,i)=>{
+    lines.push(
+      (i+1)+'. '+(r.msisdn||'بدون رقم')+' — '+simLabel(r.sim_type),
+      'ICCID: '+(r.iccid||'—'),
+      'IMSI: '+(r.imsi||'—'),
+      'PIN: '+(r.has_pin?'محفوظ':'غير محفوظ'),
+      'Modem: '+(r.modem_name||'—')+' / IMEI '+(r.modem_imei||'—')+' / '+(r.modem_ip||'—'),
+      'USB: '+(r.usb_name||'—')+' / '+(r.usb_interface_alias||'—')+' / '+usbIps(r),
+      'Station: '+(r.station_name||'—')+' / '+(r.station_online?'ONLINE':'OFFLINE'),
+      ''
+    );
+  });
+  return lines.join('\n');
+}
+async function load(){
+  try{
+    await requireAdmin();
+    const {data,error}=await supabase.rpc('station_connect_admin_sim_summary');
+    if(error)throw error;
+    rows=Array.isArray(data)?data:[];render();
+  }catch(e){rows=[];render();show('تعذر تحميل ملخص الشرائح',e?.message||'خطأ غير متوقع','danger')}
+}
+$('search').addEventListener('input',applySearch);
+$('refreshBtn').addEventListener('click',load);
+$('printBtn').addEventListener('click',()=>window.print());
+$('copyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(reportText());show('تم نسخ التقرير','تم نسخ ملخص الشرائح بدون إظهار قيمة PIN.')}catch{show('تعذر النسخ','يمكن استعمال طباعة / PDF بدلًا من ذلك.','danger')}});
+load();
+</script>
+<script src="../ui/template-v1.js"></script>
+<script src="../mytool-bottom-nav.js" data-root="../" data-app="access-admin"></script>
+</body>
+</html>
