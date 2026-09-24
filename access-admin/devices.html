@@ -57,13 +57,16 @@
   <div class="mt-card"><strong id="usbCount">0</strong><span>USB موجود الآن</span></div>
   <div class="mt-card"><strong id="deviceCount">0</strong><span>HiLink Modem</span></div>
   <div class="mt-card"><strong id="stationCount">0</strong><span>Stations</span></div>
-  <div class="mt-card"><strong id="linkedSimCount">0</strong><span>شرائح مربوطة</span></div>
+  <div class="mt-card"><strong id="unknownCount">0</strong><span>تحتاج تعريف</span></div>
 </div>
 
 <div id="pageMessage" class="mt-alert" hidden><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3 id="messageTitle"></h3><p id="messageText"></p></div></div>
 
-<div class="mt-section-head"><div class="mt-section-copy"><h2>USB الموجود فعليًا في Windows</h2><p>هذه القائمة تأتي من PnP/Network Adapter في الكمبيوتر، وليس من IP محفوظ.</p></div></div>
+<div class="mt-section-head"><div class="mt-section-copy"><h2>USB المعروفة والمقروءة</h2><p>الرقم USB 001/002… هو الرقم الثابت عندنا. اسم Windows يبقى معلومة تقنية فقط.</p></div></div>
 <section id="usbList" class="device-grid"><div class="mt-card"><div class="mt-meta">جاري كشف USB…</div></div></section>
+
+<div class="mt-section-head" style="margin-top:18px"><div class="mt-section-copy"><h2>USB تحتاج اكتشاف / تعريف</h2><p>تظهر هنا فقط الأجهزة الموجودة الآن التي لم نقرأ IMEI/Serial لها بعد. لا نعطيها رقم USB ثابت قبل التحقق.</p></div></div>
+<section id="unknownUsbList" class="device-grid"></section>
 
 <div class="mt-section-head" style="margin-top:18px"><div class="mt-section-copy"><h2>مودمات HiLink والشرائح</h2><p>الهوية المقروءة من المودم: IMEI/Serial ثم ICCID/IMSI للشريحة.</p></div></div>
 <section id="deviceList" class="device-grid"><div class="mt-card"><div class="mt-meta">جاري تحميل المودمات…</div></div></section>
@@ -159,33 +162,56 @@ function simSetup(likely,operator,usbLabel){
   '</div>';
 }
 
-function usbCard(item){
+function matchForUsb(item){
+  const ips=Array.isArray(item.ipv4_addresses)?item.ipv4_addresses:[];
+  const matches=devices.filter(d=>d._station?.station_uuid===item.station_uuid&&ips.some(ip=>sameSubnet24(ip,d.modem_ip)));
+  return matches.length===1?matches[0]:null;
+}
+
+function usbCard(item,likely){
   const ips=Array.isArray(item.ipv4_addresses)?item.ipv4_addresses:[];
   const station=stations.find(s=>s.station_uuid===item.station_uuid);
-  const matches=devices.filter(d=>d._station?.station_uuid===item.station_uuid&&ips.some(ip=>sameSubnet24(ip,d.modem_ip)));
-  const likely=matches.length===1?matches[0]:null;
   const center=likely?centerForModem(likely.modem_uuid):null;
   const operator=operatorFromImsi(likely?.imsi);
-  const title=item.friendly_name||item.adapter_name||'USB device';
+  const usbTitle=center?.usb_label?'USB '+center.usb_label:'USB معروف';
   const ids=[
-    item.vid||item.pid?'VID: '+(item.vid||'—')+' · PID: '+(item.pid||'—'):'',
-    item.interface_alias?'Windows: '+item.interface_alias+(item.interface_index?' · #'+item.interface_index:''):'',
+    likely?.device_name?'المودم: '+likely.device_name:'',
+    likely?.imei?'IMEI: '+likely.imei:'',
+    likely?.serial_number?'Serial: '+likely.serial_number:'',
+    likely?.modem_ip?'HiLink: '+likely.modem_ip:'',
+    item.interface_alias?'Windows Adapter: '+item.interface_alias+(item.interface_index?' · #'+item.interface_index:''):'',
     ips.length?'IPv4 محلي: '+ips.join(', '):'',
-    item.location?'USB: '+item.location:'',
-    likely?'قراءة HiLink الحالية: '+likely.modem_ip+' · IMEI '+(likely.imei||'—'):'',
-    matches.length>1?'أكثر من HiLink مرشح على نفس الشبكة — لن نستعملها للتعريف':''
+    'Windows: '+(item.friendly_name||item.adapter_name||'USB network device')
   ].filter(Boolean);
-  const search=[title,item.manufacturer,item.device_class,item.pnp_instance_id,item.vid,item.pid,item.interface_alias,ips.join(' '),station?.computer_name,likely?.modem_ip,likely?.imei,likely?.iccid,likely?.imsi,likely?.msisdn,operator,center?.usb_label].filter(Boolean).join(' ').toLowerCase();
+  const search=[usbTitle,item.friendly_name,item.manufacturer,item.pnp_instance_id,item.interface_alias,ips.join(' '),station?.computer_name,likely?.imei,likely?.serial_number,likely?.iccid,likely?.imsi,likely?.msisdn,operator,center?.usb_label].filter(Boolean).join(' ').toLowerCase();
   return '<article class="mt-card usb-entry" data-search="'+esc(search)+'">'+
     '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">🔌</div><div class="mt-row-copy">'+
-      '<h3>'+esc(title)+(center?.usb_label?' · USB '+esc(center.usb_label):'')+'</h3><div class="mt-meta">Station: '+esc(item.station_name||station?.computer_name||'—')+
-      '<br>'+esc(item.manufacturer||'—')+' · '+esc(item.device_class||'USB')+
-      (likely?'<br><strong>المتعامل: '+esc(operatorLabel(operator))+'</strong>':'')+
-      '</div></div></div>'+
+      '<h3>'+esc(usbTitle)+' — '+esc(operatorLabel(operator))+'</h3>'+
+      '<div class="mt-meta">Station: '+esc(item.station_name||station?.computer_name||'—')+
+      '<br>'+esc(likely?.device_name||'HiLink')+' · '+esc(item.interface_alias||'Windows USB')+'</div></div></div>'+
       '<span class="mt-chip '+(item.present?'success':'muted')+'">'+(item.present?'موجود الآن':'غير موجود')+'</span></div>'+
     (ids.length?'<div class="mt-meta device-id" style="margin-top:9px">'+ids.map(esc).join('<br>')+'</div>':'')+
-    '<div class="mt-meta device-id" style="margin-top:7px">PNP: '+esc(item.pnp_instance_id||'—')+'</div>'+
-    (item.present&&matches.length===1?simSetup(likely,operator,center?.usb_label):'')+
+    simSetup(likely,operator,center?.usb_label)+
+  '</article>';
+}
+
+function unknownUsbCard(item){
+  const ips=Array.isArray(item.ipv4_addresses)?item.ipv4_addresses:[];
+  const station=stations.find(s=>s.station_uuid===item.station_uuid);
+  const title='USB جديدة — تحتاج قراءة الهوية';
+  const search=[title,item.friendly_name,item.manufacturer,item.pnp_instance_id,item.vid,item.pid,item.interface_alias,ips.join(' '),station?.computer_name].filter(Boolean).join(' ').toLowerCase();
+  return '<article class="mt-card usb-entry" data-search="'+esc(search)+'">'+
+    '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">🔎</div><div class="mt-row-copy">'+
+      '<h3>'+title+'</h3><div class="mt-meta">'+esc(item.friendly_name||item.adapter_name||'Windows USB')+
+      '<br>Station: '+esc(item.station_name||station?.computer_name||'—')+'</div></div></div>'+
+      '<span class="mt-chip muted">غير معرّفة</span></div>'+
+    '<div class="mt-meta device-id" style="margin-top:9px">'+
+      (item.interface_alias?'Windows Adapter: '+esc(item.interface_alias)+'<br>':'')+
+      (ips.length?'IPv4 محلي: '+esc(ips.join(', '))+'<br>':'')+
+      'VID/PID: '+esc((item.vid||'—')+' / '+(item.pid||'—'))+
+      '<br>PNP: '+esc(item.pnp_instance_id||'—')+
+    '</div>'+
+    '<div class="mt-meta" style="margin-top:8px">لن نعطيها USB 00X ولن نحفظ SIM/PIN حتى تنجح قراءة IMEI/Serial وICCID/IMSI.</div>'+
   '</article>';
 }
 
@@ -216,11 +242,29 @@ function card(item){
 }
 
 function render(){
-  $('usbCount').textContent=String(usbDevices.filter(d=>d.present).length);
+  const present=usbDevices.filter(d=>d.present);
+  const known=present
+    .map(item=>({item,likely:matchForUsb(item)}))
+    .filter(x=>x.likely)
+    .sort((a,b)=>{
+      const ca=centerForModem(a.likely.modem_uuid),cb=centerForModem(b.likely.modem_uuid);
+      return Number(ca?.usb_number||999999)-Number(cb?.usb_number||999999);
+    });
+  const unknown=present.filter(item=>!matchForUsb(item));
+
+  $('usbCount').textContent=String(present.length);
   $('deviceCount').textContent=String(devices.length);
   $('stationCount').textContent=String(stations.filter(s=>String(s.status||'').toLowerCase()==='approved').length);
-  $('linkedSimCount').textContent=String(devices.filter(d=>d.sim_uuid||d.msisdn).length);
-  $('usbList').innerHTML=usbDevices.length?usbDevices.map(usbCard).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد قراءة USB بعد. يلزم Agent حديث.</div></div>';
+  $('unknownCount').textContent=String(unknown.length);
+
+  $('usbList').innerHTML=known.length
+    ? known.map(x=>usbCard(x.item,x.likely)).join('')
+    : '<div class="mt-card"><div class="mt-meta">لا توجد USB معروفة ومقروءة حاليًا.</div></div>';
+
+  $('unknownUsbList').innerHTML=unknown.length
+    ? unknown.map(unknownUsbCard).join('')
+    : '<div class="mt-card"><div class="mt-meta">لا توجد USB جديدة تحتاج تعريف حاليًا.</div></div>';
+
   $('deviceList').innerHTML=devices.length?devices.map(card).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد مودمات HiLink مسجلة.</div></div>';
   applySearch();
 }
