@@ -99,7 +99,6 @@ function numberRequirement(operator){
     r.operator_key===operator &&
     r.purpose_key==='phone_number' &&
     ['ussd','service_code'].includes(r.method) &&
-    r.knowledge_status==='confirmed' &&
     r.code_template &&
     !String(r.code_template).includes('{')
   )||null;
@@ -160,16 +159,22 @@ function simSetup(likely,operator,usbLabel){
   const ready=known&&likely.has_pin;
   let discover='';
   const lookup=numberRequirement(operator);
-  if(!known&&lookup){
+  if(!known&&lookup?.method==='ussd'&&lookup.knowledge_status==='confirmed'&&lookup.implementation_status==='available'){
     discover='<div style="width:100%"><label style="display:grid;gap:5px;font-size:11px;font-weight:800;color:#65778a">كود الاستعلام عن الرقم'+
       '<input class="manual-lookup-code" dir="ltr" value="'+esc(lookup.code_template)+'" autocomplete="off"></label>'+
       '<div class="sim-setup-actions"><button class="mt-btn manual-lookup" type="button" data-sim="'+esc(likely.sim_uuid)+'">إرسال الاستعلام</button>'+
       (operator==='mobilis'?'<button class="mt-btn secondary discover-msisdn" type="button" data-sim="'+esc(likely.sim_uuid)+'">اكتشاف تلقائي</button>':'')+
-      '</div><div class="mt-meta" style="margin-top:5px">الكود مأخوذ من جدول متطلبات البرنامج. أي كود غير مسجل كاستعلام مؤكد يُرفض.</div></div>';
-  }else if(!known&&operator==='ooredoo'){
-    discover='<span class="mt-chip muted">كود معرفة الرقم موجود لكنه ما زال يحتاج اختبارًا قبل الإرسال من هذه الشاشة</span>';
+      '</div><div class="mt-meta" style="margin-top:5px">الكود مأخوذ من جدول أكواد USSD المركزي.</div></div>';
+  }else if(!known&&lookup?.method==='service_code'){
+    discover='<div style="width:100%"><label style="display:grid;gap:5px;font-size:11px;font-weight:800;color:#65778a">كود معرفة الرقم'+
+      '<input dir="ltr" value="'+esc(lookup.code_template)+'" readonly></label>'+
+      '<div class="mt-alert" style="margin-top:8px"><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3>Service Code وليس USSD</h3><p>'+esc(operatorLabel(operator))+' يستعمل '+esc(lookup.code_template)+' فقط. Agent الحالي لا ينفذ Service Code عبر HiLink USSD، لذلك لن نضيف * أو # ولن نعيد إرساله من هذا الزر.</p></div></div></div>';
+  }else if(!known&&lookup){
+    discover='<div style="width:100%"><label style="display:grid;gap:5px;font-size:11px;font-weight:800;color:#65778a">كود معرفة الرقم'+
+      '<input dir="ltr" value="'+esc(lookup.code_template)+'" readonly></label>'+
+      '<div class="mt-meta" style="margin-top:5px">الكود محفوظ لكن حالته '+esc(lookup.knowledge_status)+' / '+esc(lookup.implementation_status)+'، لذلك لا ننفذه آليًا بعد.</div></div>';
   }else if(!known){
-    discover='<span class="mt-chip muted">لا توجد طريقة رقم مؤكدة لهذا المتعامل في جدول المتطلبات</span>';
+    discover='<span class="mt-chip muted">لا توجد طريقة رقم مسجلة لهذا المتعامل.</span>';
   }
   return '<div class="sim-setup" data-sim="'+esc(likely.sim_uuid)+'">'+
     '<div class="operator-line">المتعامل: '+esc(operatorLabel(operator))+
