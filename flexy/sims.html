@@ -4,17 +4,41 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
 <title>الشرائح والأرصدة — Flexy</title>
-<link rel="stylesheet" href="app.css?v=20260923-admin-split-1">
+<link rel="stylesheet" href="app.css?v=20260924-sim-binding-1">
 <script src="../auth-guard.js?v=20260923-admin-split-1" data-access="admin"></script>
 <style>
-.sim-grid{display:grid;gap:10px}.sim-card{border:1px solid var(--fx-line);border-radius:16px;padding:14px;background:#fff}.sim-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.sim-name{font-size:18px;font-weight:900}.sim-phone{font-size:13px;color:var(--fx-muted);margin-top:3px}.sim-balance{font-size:26px;font-weight:900;margin-top:12px}.sim-rule{font-size:12px;color:var(--fx-muted);margin-top:6px;line-height:1.6}.sim-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:12px}.sim-details div{background:#f8fbfd;border-radius:12px;padding:9px}.sim-details small{display:block;color:var(--fx-muted);font-size:10px;margin-bottom:4px}.sim-details strong{font-size:12px}.state{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}.state.ready{background:var(--fx-green-soft);color:var(--fx-green)}.state.warn{background:var(--fx-orange-soft);color:var(--fx-orange)}.state.bad{background:var(--fx-red-soft);color:var(--fx-red)}
-@media(max-width:560px){.sim-details{grid-template-columns:1fr 1fr}.sim-balance{font-size:23px}}
+.sim-grid{display:grid;gap:10px}
+.sim-card{border:1px solid var(--fx-line);border-radius:16px;padding:14px;background:#fff}
+.sim-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.sim-name{font-size:18px;font-weight:900}.sim-phone{font-size:13px;color:var(--fx-muted);margin-top:3px}
+.sim-balance{font-size:26px;font-weight:900;margin-top:12px}
+.sim-rule{font-size:12px;color:var(--fx-muted);margin-top:6px;line-height:1.6}
+.sim-details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:12px}
+.sim-details div{background:#f8fbfd;border-radius:12px;padding:9px;min-width:0}
+.sim-details small{display:block;color:var(--fx-muted);font-size:10px;margin-bottom:4px}
+.sim-details strong{display:block;font-size:12px;word-break:break-word}
+.sim-badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.state{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}
+.state.ready{background:var(--fx-green-soft);color:var(--fx-green)}
+.state.warn{background:var(--fx-orange-soft);color:var(--fx-orange)}
+.state.bad{background:var(--fx-red-soft);color:var(--fx-red)}
+.sim-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sim-edit{margin-top:12px;padding:12px;border:1px solid var(--fx-line);border-radius:14px;background:#f8fbfd}
+.sim-edit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sim-edit label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--fx-muted)}
+.sim-edit input,.sim-edit select{width:100%;padding:10px;border:1px solid var(--fx-line);border-radius:10px;background:#fff;font:inherit;color:inherit}
+.sim-id{font-family:monospace;direction:ltr;text-align:left}
+@media(max-width:720px){.sim-details{grid-template-columns:1fr 1fr}.sim-edit-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.sim-balance{font-size:23px}}
 </style>
 </head>
 <body data-mytool-app="flexy">
 <main class="fx-wrap">
   <div class="fx-top">
-    <div><h1 class="fx-title">الشرائح والأرصدة</h1><p class="fx-sub">متابعة رصيد كل شريحة تشغيلية من مكان واحد، بدون الرجوع إلى صفحة المحطات.</p></div>
+    <div>
+      <h1 class="fx-title">الشرائح والأرصدة</h1>
+      <p class="fx-sub">هوية الشريحة بـICCID/IMSI والـPIN يتبع الشريحة نفسها. المودم هو مكان تركيبها الحالي فقط.</p>
+    </div>
     <button id="refreshBtn" class="fx-btn secondary" type="button">تحديث</button>
   </div>
   <nav class="fx-tabs">
@@ -25,40 +49,164 @@
     <a class="fx-tab" href="admin.html">الإدارة</a>
   </nav>
   <div id="message" class="fx-message" hidden></div>
+
   <section class="fx-card">
-    <div class="fx-section-title"><div><h2>الشرائح التشغيلية</h2><div class="fx-meta">الرصيد التشغيلي = آخر Baseline ناجح مع العمليات المؤكدة بعده.</div></div><span id="count" class="fx-pill">0</span></div>
+    <div class="fx-section-title">
+      <div>
+        <h2>الشرائح المسجلة</h2>
+        <div class="fx-meta">تظهر هنا الشريحة ومكان تركيبها الآن. إذا نُقلت إلى مودم آخر يتغيّر الربط تلقائيًا عند قراءة Agent لها.</div>
+      </div>
+      <span id="count" class="fx-pill">0</span>
+    </div>
     <div id="list" class="sim-grid"><div class="fx-empty">جاري التحميل…</div></div>
   </section>
+
+  <section class="fx-card">
+    <div class="fx-section-title">
+      <div><h2>إدارة تقنية</h2><div class="fx-meta">لرؤية المحطات والمودمات نفسها بدون خلطها مع مخزون الشرائح.</div></div>
+      <a class="fx-link" href="../access-admin/stations.html">فتح المحطات ←</a>
+    </div>
+  </section>
+
   <section class="fx-card">
     <div class="fx-section-title"><h2>تغذية SAMA</h2><a class="fx-link" href="sim-feeding.html">فتح إدارة التغذية ←</a></div>
     <div class="fx-meta">بطاقات التغذية منفصلة عن بطاقات تميز المخصصة للبيع للعملاء.</div>
   </section>
 </main>
+
 <script type="module">
 import {rpc,escapeHtml,money,fmtDate} from './api.js';
 const list=document.getElementById('list'),msg=document.getElementById('message'),count=document.getElementById('count');
-function label(type){return ({'mobilis-sama':'SAMA','mobilis-arsselli':'Arsselli GTS','mobilis':'Mobilis','djezzy':'Djezzy','ooredoo':'Ooredoo','pixx':'PixX'})[String(type||'').toLowerCase()]||type||'شريحة'}
-function state(row){
- if(row.balance_state==='uninitialized')return ['يحتاج قراءة أولى','bad'];
- if(row.reconciliation_due)return ['مطابقة مستحقة','warn'];
- return ['جاهز','ready'];
+let rows=[];
+
+function label(type){
+  return ({
+    'mobilis-sama':'SAMA',
+    'mobilis-arsselli':'Arsselli GTS',
+    'unknown':'غير مصنفة',
+    'mobilis':'Mobilis',
+    'djezzy':'Djezzy',
+    'ooredoo':'Ooredoo',
+    'pixx':'PixX'
+  })[String(type||'').toLowerCase()]||type||'شريحة';
 }
-function rule(type){return type==='mobilis-sama'?'النجاح يخصم قيمة العرض + 10 دج':type==='mobilis-arsselli'?'النجاح يخصم قيمة المبلغ فقط':'يُحسب من آخر قراءة وعمليات المصدر المؤكدة'}
-function show(t,bad=false){msg.hidden=false;msg.textContent=t;msg.className='fx-message '+(bad?'bad':'ok')}
-function render(rows){
- count.textContent=String(rows.length);
- if(!rows.length){list.innerHTML='<div class="fx-empty">لا توجد شرائح مسجلة.</div>';return}
- list.innerHTML=rows.map(row=>{
-   const [st,cls]=state(row),op=row.operational_balance==null?'—':money(row.operational_balance)+' دج';
-   return '<article class="sim-card"><div class="sim-head"><div><div class="sim-name">'+escapeHtml(label(row.sim_type))+'</div><div class="sim-phone" dir="ltr">'+escapeHtml(row.msisdn||'—')+'</div></div><span class="state '+cls+'">'+escapeHtml(st)+'</span></div><div class="sim-balance">'+escapeHtml(op)+'</div><div class="sim-rule">'+escapeHtml(rule(row.sim_type))+'</div><div class="sim-details"><div><small>آخر مرجع شبكة</small><strong>'+escapeHtml(fmtDate(row.baseline_checked_at))+'</strong></div><div><small>المستهلك منذ المرجع</small><strong>'+escapeHtml(money(row.confirmed_outflow))+' دج</strong></div><div><small>عمليات مؤكدة</small><strong>'+escapeHtml(row.confirmed_execution_count||0)+'</strong></div></div></article>';
- }).join('');
+function state(row){
+  if(row.sim_type==='unknown')return ['يحتاج تعريف','bad'];
+  if(row.balance_state==='uninitialized')return ['يحتاج قراءة أولى','bad'];
+  if(row.reconciliation_due)return ['مطابقة مستحقة','warn'];
+  return ['جاهز','ready'];
+}
+function connection(row){
+  if(!row.connected)return ['غير مركبة','warn'];
+  const seen=row.modem_last_seen_at?new Date(row.modem_last_seen_at).getTime():0;
+  const online=seen&&Date.now()-seen<120000;
+  return online?['مركبة الآن','ready']:['مركبة · غير متصلة','warn'];
+}
+function rule(type){
+  return type==='mobilis-sama'
+    ?'النجاح يخصم قيمة العرض + 10 دج'
+    :type==='mobilis-arsselli'
+      ?'النجاح يخصم قيمة المبلغ فقط'
+      :type==='unknown'
+        ?'عرّف نوع الشريحة وPIN قبل السماح بالتنفيذ.'
+        :'يُحسب من آخر قراءة وعمليات المصدر المؤكدة';
+}
+function show(t,bad=false){
+  msg.hidden=false;msg.textContent=t;msg.className='fx-message '+(bad?'bad':'ok');
+  clearTimeout(show.timer);show.timer=setTimeout(()=>msg.hidden=true,4000);
+}
+function modemLabel(row){
+  const parts=[row.modem_name,row.modem_ip].filter(Boolean);
+  return parts.length?parts.join(' · '):'—';
+}
+function render(data){
+  rows=data;
+  count.textContent=String(rows.length);
+  if(!rows.length){list.innerHTML='<div class="fx-empty">لا توجد شرائح مسجلة.</div>';return}
+  list.innerHTML=rows.map(row=>{
+    const [st,cls]=state(row);
+    const [cn,ccls]=connection(row);
+    const op=row.operational_balance==null?'—':money(row.operational_balance)+' دج';
+    const currentType=String(row.sim_type||'unknown');
+    return '<article class="sim-card" data-id="'+escapeHtml(row.sim_uuid)+'">'+
+      '<div class="sim-head"><div><div class="sim-name">'+escapeHtml(label(currentType))+'</div>'+
+      '<div class="sim-phone" dir="ltr">'+escapeHtml(row.msisdn||'بدون رقم')+'</div></div>'+
+      '<div class="sim-badges"><span class="state '+ccls+'">'+escapeHtml(cn)+'</span><span class="state '+cls+'">'+escapeHtml(st)+'</span></div></div>'+
+      '<div class="sim-balance">'+escapeHtml(op)+'</div>'+
+      '<div class="sim-rule">'+escapeHtml(rule(currentType))+'</div>'+
+      '<div class="sim-details">'+
+        '<div><small>المحطة الحالية</small><strong>'+escapeHtml(row.station_name||'—')+'</strong></div>'+
+        '<div><small>المودم الحالي</small><strong>'+escapeHtml(modemLabel(row))+'</strong></div>'+
+        '<div><small>ICCID — هوية الشريحة</small><strong class="sim-id">'+escapeHtml(row.iccid||'—')+'</strong></div>'+
+        '<div><small>IMEI — هوية المودم</small><strong class="sim-id">'+escapeHtml(row.modem_imei||'—')+'</strong></div>'+
+        '<div><small>آخر ظهور للشريحة</small><strong>'+escapeHtml(row.sim_last_seen_at?new Date(row.sim_last_seen_at).toLocaleString('ar-DZ'):'—')+'</strong></div>'+
+        '<div><small>PIN</small><strong>'+(row.has_pin?'محفوظ':'غير محفوظ')+'</strong></div>'+
+        '<div><small>آخر مرجع شبكة</small><strong>'+escapeHtml(fmtDate(row.baseline_checked_at))+'</strong></div>'+
+        '<div><small>عمليات مؤكدة</small><strong>'+escapeHtml(row.confirmed_execution_count||0)+'</strong></div>'+
+      '</div>'+
+      '<div class="sim-actions"><button class="fx-btn secondary edit-sim" type="button">'+(row.needs_setup?'تعريف الشريحة / PIN':'تعديل بيانات / PIN')+'</button></div>'+
+      '<form class="sim-edit" hidden>'+
+        '<div class="sim-edit-grid">'+
+          '<label>نوع الشريحة<select name="sim_type">'+
+            '<option value="" '+(currentType==='unknown'?'selected':'')+'>غير مصنفة</option>'+
+            '<option value="mobilis-sama" '+(currentType==='mobilis-sama'?'selected':'')+'>SAMA</option>'+
+            '<option value="mobilis-arsselli" '+(currentType==='mobilis-arsselli'?'selected':'')+'>Arsselli GTS</option>'+
+          '</select></label>'+
+          '<label>رقم الشريحة<input name="msisdn" inputmode="numeric" placeholder="06xxxxxxxx" value="'+escapeHtml(row.msisdn||'')+'"></label>'+
+          '<label>PIN<input name="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="'+(row.has_pin?'اتركه فارغًا للإبقاء على PIN الحالي':'أدخل PIN')+'"></label>'+
+        '</div>'+
+        '<div class="sim-actions"><button class="fx-btn save-sim" type="submit">حفظ</button><button class="fx-btn secondary cancel-sim" type="button">إلغاء</button></div>'+
+        '<div class="fx-meta">ICCID ثابت للشريحة ولا يتغير عند نقلها بين المودمات.</div>'+
+      '</form>'+
+    '</article>';
+  }).join('');
+  bind();
+}
+function bind(){
+  document.querySelectorAll('.edit-sim').forEach(btn=>btn.addEventListener('click',()=>{
+    const card=btn.closest('.sim-card'),form=card.querySelector('.sim-edit');
+    form.hidden=!form.hidden;
+  }));
+  document.querySelectorAll('.cancel-sim').forEach(btn=>btn.addEventListener('click',()=>{
+    btn.closest('.sim-edit').hidden=true;
+  }));
+  document.querySelectorAll('.sim-edit').forEach(form=>form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const card=form.closest('.sim-card');
+    const button=form.querySelector('.save-sim');
+    const msisdn=String(new FormData(form).get('msisdn')||'').replace(/\D/g,'');
+    const simType=String(new FormData(form).get('sim_type')||'');
+    const pin=String(new FormData(form).get('pin')||'').trim();
+    if(msisdn&&!/^0[5-7][0-9]{8}$/.test(msisdn)){show('رقم الشريحة غير صالح.',true);return}
+    if(pin&&!/^[0-9]{4,8}$/.test(pin)){show('PIN يجب أن يكون من 4 إلى 8 أرقام.',true);return}
+    button.disabled=true;button.textContent='جاري الحفظ…';
+    try{
+      await rpc('station_connect_admin_update_sim',{
+        p_sim_uuid:card.dataset.id,
+        p_msisdn:msisdn||null,
+        p_sim_type:simType||null,
+        p_service_pin:pin||null
+      });
+      show('تم حفظ بيانات الشريحة. الـPIN أصبح تابعًا للشريحة نفسها.');
+      await load();
+    }catch(error){show(String(error?.message||error),true)}
+    finally{button.disabled=false;button.textContent='حفظ'}
+  }));
 }
 async function load(){
- list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';msg.hidden=true;
- try{const rows=await rpc('station_connect_admin_sim_operational_balances');render(Array.isArray(rows)?rows:[])}
- catch(e){render([]);show(String(e?.message||e),true)}
+  list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';msg.hidden=true;
+  try{
+    const [inventory,balances]=await Promise.all([
+      rpc('station_connect_admin_sim_inventory'),
+      rpc('station_connect_admin_sim_operational_balances')
+    ]);
+    const balanceMap=new Map((Array.isArray(balances)?balances:[]).map(row=>[row.sim_uuid,row]));
+    const merged=(Array.isArray(inventory)?inventory:[]).map(row=>({...row,...(balanceMap.get(row.sim_uuid)||{})}));
+    render(merged);
+  }catch(e){render([]);show(String(e?.message||e),true)}
 }
-document.getElementById('refreshBtn').addEventListener('click',load);load();
+document.getElementById('refreshBtn').addEventListener('click',load);
+load();
 </script>
-<script src="flexy-nav.js?v=20260923-admin-split-1"></script>
+<script src="flexy-nav.js?v=20260924-sim-binding-1"></script>
 </body></html>
