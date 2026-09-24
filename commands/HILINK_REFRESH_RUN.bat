@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 title HiLink IP Manager - Refresh + Run
 cd /d "%~dp0"
 
@@ -20,9 +20,22 @@ where git >nul 2>&1 || goto git_missing
 where node >nul 2>&1 || goto node_missing
 where npm >nul 2>&1 || goto node_missing
 
-echo [1/5] Fetching latest main...
-git fetch origin main
-if errorlevel 1 goto error
+set "FETCH_OK=0"
+for /L %%R in (1,1,3) do (
+  echo [1/5] Fetching latest main... attempt %%R/3
+  git fetch origin main
+  if not errorlevel 1 (
+    set "FETCH_OK=1"
+    goto fetch_done
+  )
+  if %%R LSS 3 (
+    echo GitHub is not reachable yet. Retrying in 5 seconds...
+    timeout /t 5 /nobreak >nul
+  )
+)
+
+:fetch_done
+if "%FETCH_OK%"=="0" goto github_offline
 
 echo [2/5] Switching to main...
 git switch main >nul 2>&1
@@ -54,6 +67,24 @@ if not exist "node_modules" (
 )
 
 echo [5/5] Starting HiLink IP Manager...
+echo.
+call npm run dev
+if errorlevel 1 goto error
+exit /b 0
+
+:github_offline
+echo.
+echo WARNING: Could not connect to github.com:443.
+echo The update was NOT downloaded.
+echo.
+if not exist "node_modules" (
+  echo The local app cannot start because dependencies are not installed.
+  echo Restore Internet access, then run this file again.
+  pause
+  exit /b 1
+)
+echo Starting the CURRENT LOCAL VERSION so you can keep working offline.
+echo Run this file again when Internet/GitHub access returns to get the update.
 echo.
 call npm run dev
 if errorlevel 1 goto error
