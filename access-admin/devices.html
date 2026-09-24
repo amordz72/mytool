@@ -110,6 +110,11 @@ function phoneCandidates(raw){
     .filter(v=>/^0[5-7]\d{8}$/.test(v));
   return [...new Set(values)];
 }
+function versionAtLeast(value,minimum){
+  const a=String(value||'').split('.').map(n=>Number(n)||0),b=String(minimum||'').split('.').map(n=>Number(n)||0);
+  for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x>y)return true;if(x<y)return false}
+  return true;
+}
 function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
 async function requireAdmin(){
@@ -153,7 +158,7 @@ function sameSubnet24(a,b){
   const x=String(a||'').split('.'),y=String(b||'').split('.');
   return x.length===4&&y.length===4&&x.slice(0,3).join('.')===y.slice(0,3).join('.');
 }
-function simSetup(likely,operator,usbLabel){
+function simSetup(likely,operator,usbLabel,agentVersion){
   if(!likely?.sim_uuid)return '<div class="sim-setup"><div class="mt-meta">لم تُقرأ هوية الشريحة من HiLink بعد. لا نسجل PIN قبل ظهور ICCID/IMSI.</div></div>';
   const known=!!likely.msisdn;
   const ready=known&&likely.has_pin;
@@ -166,9 +171,13 @@ function simSetup(likely,operator,usbLabel){
       (operator==='mobilis'?'<button class="mt-btn secondary discover-msisdn" type="button" data-sim="'+esc(likely.sim_uuid)+'">اكتشاف تلقائي</button>':'')+
       '</div><div class="mt-meta" style="margin-top:5px">الكود مأخوذ من جدول أكواد USSD المركزي.</div></div>';
   }else if(!known&&lookup?.method==='service_code'){
+    const canDial=versionAtLeast(agentVersion,'0.4.11')&&lookup.implementation_status==='available';
     discover='<div style="width:100%"><label style="display:grid;gap:5px;font-size:11px;font-weight:800;color:#65778a">كود معرفة الرقم'+
-      '<input dir="ltr" value="'+esc(lookup.code_template)+'" readonly></label>'+
-      '<div class="mt-alert" style="margin-top:8px"><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3>Service Code وليس USSD</h3><p>'+esc(operatorLabel(operator))+' يستعمل '+esc(lookup.code_template)+' فقط. Agent الحالي لا ينفذ Service Code عبر HiLink USSD، لذلك لن نضيف * أو # ولن نعيد إرساله من هذا الزر.</p></div></div></div>';
+      '<input class="manual-lookup-code" dir="ltr" value="'+esc(lookup.code_template)+'" readonly></label>'+
+      (canDial
+        ? '<div class="sim-setup-actions"><button class="mt-btn manual-lookup" type="button" data-sim="'+esc(likely.sim_uuid)+'">تنفيذ Service Code '+esc(lookup.code_template)+'</button></div><div class="mt-meta" style="margin-top:5px">يُرسل '+esc(lookup.code_template)+' كما هو. Agent يستعمل مسار Windows/AT منفصل، وليس HiLink USSD.</div>'
+        : '<div class="mt-alert" style="margin-top:8px"><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3>يلزم Agent 0.4.11</h3><p>الكود يبقى '+esc(lookup.code_template)+' فقط. حدّث Agent لتفعيل مسار Service Code المنفصل.</p></div></div>')+
+      '</div>';
   }else if(!known&&lookup){
     discover='<div style="width:100%"><label style="display:grid;gap:5px;font-size:11px;font-weight:800;color:#65778a">كود معرفة الرقم'+
       '<input dir="ltr" value="'+esc(lookup.code_template)+'" readonly></label>'+
@@ -220,7 +229,7 @@ function usbCard(item,likely){
       '<br>'+esc(likely?.device_name||'HiLink')+' · '+esc(item.interface_alias||'Windows USB')+'</div></div></div>'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><span class="mt-chip">HiLink IP: '+esc(likely?.modem_ip||'—')+'</span><span class="mt-chip '+(item.present?'success':'muted')+'">'+(item.present?'موجود الآن':'غير موجود')+'</span></div></div>'+
     (ids.length?'<div class="mt-meta device-id" style="margin-top:9px">'+ids.map(esc).join('<br>')+'</div>':'')+
-    simSetup(likely,operator,center?.usb_label)+
+    simSetup(likely,operator,center?.usb_label,station?.agent_version)+
   '</article>';
 }
 
