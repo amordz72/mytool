@@ -99,7 +99,7 @@ function renderMetrics(){
 function haystack(p){
   const a=accountsFor(p.id),c=contacts(p);
   return normalize([
-    p.display_name,...(p.aliases||[]),...c.phones,...c.emails,
+    p.mt_number,p.mytool_username,p.display_name,...(p.aliases||[]),...c.phones,...c.emails,
     ...a.flatMap(s=>[s.username,s.display_name,s.first_name,s.last_name,s.phone,s.email,s.external_account_id,platformLabel(s.platform_key)])
   ].filter(Boolean).join(' '));
 }
@@ -130,7 +130,7 @@ function renderList(){
   $('customers').innerHTML=chunk.map(p=>{
     const a=accountsFor(p.id),pks=platformKeysFor(p.id),t=totals(p.id),names=knownNames(p),activity=lastActivity(p.id);
     return '<article class="customer-card'+(Number(selectedPartyId)===Number(p.id)?' selected':'')+'" data-party-card="'+p.id+'">'+
-      '<div class="customer-top"><div><div class="customer-name">'+esc(p.display_name)+'</div><div class="customer-id">Customer #'+p.id+' · هوية مركزية</div></div>'+
+      '<div class="customer-top"><div><div class="customer-name">'+esc(p.display_name)+'</div><div class="customer-id">'+esc('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · @'+esc(p.mytool_username):' · بدون Username')+'</div></div>'+
       '<div class="badges"><span class="badge ok">مؤكد</span><span class="badge platform">'+pks.length+' منصة</span><span class="badge">'+a.length+' حساب</span></div></div>'+
       '<div class="customer-summary">'+
         '<div class="mini"><b>'+esc(p.primary_phone||'—')+'</b><small>الهاتف الأساسي</small></div>'+
@@ -151,8 +151,8 @@ function chips(values,empty='لا توجد بيانات'){
 function renderDetail(id){
   const p=partyBy(id);if(!p)return;
   const a=accountsFor(id),names=knownNames(p),c=contacts(p),pks=platformKeysFor(id),t=totals(id);
-  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+masterRef(p.id)+' · هوية ماستر ثابتة';
-  $('editName').value=p.display_name||'';$('editPhone').value=p.primary_phone||'';$('editEmail').value=p.primary_email||'';
+  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · @'+p.mytool_username:' · بدون Username');
+  $('editName').value=p.display_name||'';$('editUsername').value=p.mytool_username||'';$('editPhone').value=p.primary_phone||'';$('editEmail').value=p.primary_email||'';
   const learned=identityRules.filter(r=>Number(r.party_id)===Number(id)&&r.status==='approved');
   $('detailNames').innerHTML=chips(names)+
     (learned.length?'<div class="muted" style="width:100%;margin-top:6px">أسماء متعلمة: '+learned.map(r=>esc((r.source_kind==='whatsapp'?'WhatsApp · ':'')+r.identity_value)).join(' · ')+'</div>':'');
@@ -183,14 +183,22 @@ function renderAccount(s){
 }
 async function saveIdentity(){
   const p=partyBy(selectedPartyId);if(!p)return;
-  const phone=$('editPhone').value.trim(),email=$('editEmail').value.trim();
+  const name=$('editName').value.trim(),username=$('editUsername').value.trim().replace(/\s+/g,' '),phone=$('editPhone').value.trim(),email=$('editEmail').value.trim();
+  if(name.length<2)return msg('الاسم الرئيسي قصير جدًا.','error');
+  if(username&&(!/\p{L}/u.test(username)||username.length<2||username.length>60))return msg('Username يجب أن يحتوي حرفًا واحدًا على الأقل، ويمكن أن يحتوي حروفًا وأرقامًا ومسافات.','error');
   $('saveIdentity').disabled=true;
-  const r=await adminRpc('admin_customer_update_canonical','workspace_admin_update_canonical_party',{
-    p_party_id:p.id,p_display_name:p.display_name,p_phone:phone||null,p_email:email||null
+  const r=await adminRpc('admin_customer_update_identity_v2','workspace_admin_update_identity_v2',{
+    p_party_id:p.id,p_display_name:name,p_username:username||null,p_phone:phone||null,p_email:email||null
   });
   $('saveIdentity').disabled=false;
-  if(r.error)return msg('تعذر حفظ بيانات العميل: '+(r.error.message||r.error),'error');
-  await load();selectedPartyId=p.id;renderDetail(p.id);msg('تم تحديث الهاتف/البريد. اسم الماستر بقي ثابتًا.','ok');
+  if(r.error){
+    const e=String(r.error.message||r.error);
+    if(e.includes('MYTOOL_USERNAME_ALREADY_USED'))return msg('اسم المستخدم هذا مستعمل لشخص آخر.','error');
+    if(e.includes('PHONE_ALREADY_USED'))return msg('رقم الهاتف هذا مربوط بشخص آخر.','error');
+    if(e.includes('MYTOOL_USERNAME_MUST_CONTAIN_LETTER'))return msg('اسم المستخدم لا يمكن أن يكون أرقامًا فقط.','error');
+    return msg('تعذر حفظ هوية العميل: '+e,'error');
+  }
+  await load();selectedPartyId=p.id;renderDetail(p.id);msg('تم تحديث هوية MyTool. Username والهاتف وMT مفاتيح مستقلة؛ حسابات المنصات لم تتغير.','ok');
 }
 
 $('refreshBtn').onclick=()=>load().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));
