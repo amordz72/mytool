@@ -64,7 +64,7 @@
   <section class="fx-card">
     <div class="fx-section-title">
       <div><h2>إدارة تقنية</h2><div class="fx-meta">لكشف أجهزة USB الموجودة فعليًا في Windows وربطها بمودمات HiLink والشرائح.</div></div>
-      <a class="fx-link" href="../access-admin/devices.html">كشف USB والمودمات ←</a>
+      <div class="sim-actions"><a class="fx-link" href="../access-admin/devices.html">كشف USB والمودمات ←</a><a class="fx-link" href="../access-admin/program-requirements.html">متطلبات البرنامج ←</a></div>
     </div>
   </section>
 
@@ -119,6 +119,12 @@ function modemLabel(row){
   const parts=[row.modem_name,row.modem_ip].filter(Boolean);
   return parts.length?parts.join(' · '):'—';
 }
+function discoveryLabel(row){
+  if(row.msisdn)return null;
+  if(row.discovery_status==='running'||row.discovery_status==='queued')return ['جاري اكتشاف الرقم','warn'];
+  if(row.discovery_status==='review'||row.discovery_status==='failed')return ['الاكتشاف يحتاج مراجعة','bad'];
+  return ['سيُكتشف الرقم تلقائيًا','warn'];
+}
 function render(data){
   rows=data;
   count.textContent=String(rows.length);
@@ -126,12 +132,13 @@ function render(data){
   list.innerHTML=rows.map(row=>{
     const [st,cls]=state(row);
     const [cn,ccls]=connection(row);
+    const discovery=discoveryLabel(row);
     const op=row.operational_balance==null?'—':money(row.operational_balance)+' دج';
     const currentType=String(row.sim_type||'unknown');
     return '<article class="sim-card" data-id="'+escapeHtml(row.sim_uuid)+'">'+
       '<div class="sim-head"><div><div class="sim-name">'+escapeHtml(label(currentType))+'</div>'+
       '<div class="sim-phone" dir="ltr">'+escapeHtml(row.msisdn||'بدون رقم')+'</div></div>'+
-      '<div class="sim-badges"><span class="state '+ccls+'">'+escapeHtml(cn)+'</span><span class="state '+cls+'">'+escapeHtml(st)+'</span></div></div>'+
+      '<div class="sim-badges"><span class="state '+ccls+'">'+escapeHtml(cn)+'</span><span class="state '+cls+'">'+escapeHtml(st)+'</span>'+(discovery?'<span class="state '+discovery[1]+'">'+escapeHtml(discovery[0])+'</span>':'')+'</div></div>'+
       '<div class="sim-balance">'+escapeHtml(op)+'</div>'+
       '<div class="sim-rule">'+escapeHtml(rule(currentType))+'</div>'+
       '<div class="sim-details">'+
@@ -144,7 +151,7 @@ function render(data){
         '<div><small>آخر مرجع شبكة</small><strong>'+escapeHtml(fmtDate(row.baseline_checked_at))+'</strong></div>'+
         '<div><small>عمليات مؤكدة</small><strong>'+escapeHtml(row.confirmed_execution_count||0)+'</strong></div>'+
       '</div>'+
-      '<div class="sim-actions"><button class="fx-btn secondary edit-sim" type="button">'+(row.needs_setup?'تعريف الشريحة / PIN':'تعديل بيانات / PIN')+'</button></div>'+
+      '<div class="sim-actions"><button class="fx-btn secondary edit-sim" type="button">'+(row.needs_setup?'تعريف الشريحة / PIN':'تعديل بيانات / PIN')+'</button>'+(!row.msisdn?'<button class="fx-btn secondary discover-number" type="button">اكتشف الرقم الآن</button>':'')+'</div>'+
       '<form class="sim-edit" hidden>'+
         '<div class="sim-edit-grid">'+
           '<label>نوع الشريحة<select name="sim_type">'+
@@ -169,6 +176,17 @@ function bind(){
   }));
   document.querySelectorAll('.cancel-sim').forEach(btn=>btn.addEventListener('click',()=>{
     btn.closest('.sim-edit').hidden=true;
+  }));
+  document.querySelectorAll('.discover-number').forEach(btn=>btn.addEventListener('click',async()=>{
+    const card=btn.closest('.sim-card');btn.disabled=true;btn.textContent='جاري الإرسال…';
+    try{
+      const result=await rpc('station_connect_admin_retry_sim_phone_discovery',{p_sim_uuid:card.dataset.id});
+      const row=Array.isArray(result)?result[0]:result;
+      if(row?.queued)show('بدأ اكتشاف رقم الشريحة تلقائيًا.');
+      else show('لم يبدأ الاستعلام: '+String(row?.state||'غير متاح'),true);
+      setTimeout(load,2500);
+    }catch(error){show(String(error?.message||error),true)}
+    finally{btn.disabled=false;btn.textContent='اكتشف الرقم الآن'}
   }));
   document.querySelectorAll('.sim-edit').forEach(form=>form.addEventListener('submit',async e=>{
     e.preventDefault();
@@ -196,12 +214,19 @@ function bind(){
 async function load(){
   list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';msg.hidden=true;
   try{
-    const [inventory,balances]=await Promise.all([
+    const [inventory,balances,discoveries]=await Promise.all([
       rpc('station_connect_admin_sim_inventory'),
-      rpc('station_connect_admin_sim_operational_balances')
+      rpc('station_connect_admin_sim_operational_balances'),
+      rpc('station_connect_admin_sim_phone_discovery_state')
     ]);
     const balanceMap=new Map((Array.isArray(balances)?balances:[]).map(row=>[row.sim_uuid,row]));
-    const merged=(Array.isArray(inventory)?inventory:[]).map(row=>({...row,...(balanceMap.get(row.sim_uuid)||{})}));
+    const discoveryMap=new Map((Array.isArray(discoveries)?discoveries:[]).map(row=>[row.sim_uuid,row]));
+    const merged=(Array.isArray(inventory)?inventory:[]).map(row=>({
+      ...row,
+      ...(balanceMap.get(row.sim_uuid)||{}),
+      discovery_status:discoveryMap.get(row.sim_uuid)?.status||null,
+      discovery_code:discoveryMap.get(row.sim_uuid)?.result_code||null
+    }));
     render(merged);
   }catch(e){render([]);show(String(e?.message||e),true)}
 }
