@@ -34,6 +34,7 @@
 </section>
 
 <div class="device-actions">
+  <a class="mt-btn" href="usb-sim-center.html">مركز USB والشرائح</a>
   <a class="mt-btn secondary" href="stations.html">المحطات</a>
   <a class="mt-btn secondary" href="sims.html">سجل الشرائح</a>
   <a class="mt-btn secondary" href="program-requirements.html">متطلبات البرنامج</a>
@@ -119,7 +120,7 @@ function usbCard(item){
     item.interface_alias?'Windows: '+item.interface_alias+(item.interface_index?' · #'+item.interface_index:''):'',
     ips.length?'IPv4 محلي: '+ips.join(', '):'',
     item.location?'USB: '+item.location:'',
-    likely?'شبكة HiLink المطابقة: '+likely.modem_ip+(likely.imei?' · IMEI '+likely.imei:''):''
+    likely?'مرشح HiLink من نفس الشبكة فقط: '+likely.modem_ip+' · غير معتمد كربط':''
   ].filter(Boolean);
   const search=[title,item.manufacturer,item.device_class,item.pnp_instance_id,item.vid,item.pid,item.interface_alias,ips.join(' '),station?.computer_name,likely?.modem_ip,likely?.imei].filter(Boolean).join(' ').toLowerCase();
   return '<article class="mt-card usb-entry" data-search="'+esc(search)+'">'+
