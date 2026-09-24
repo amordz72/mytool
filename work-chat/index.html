@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>محادثة العمل — MyTool</title>
+<link rel="stylesheet" href="../ui/template-v1.css">
+<style>
+[hidden]{display:none!important}
+body{background:#eef3f7}
+.chat-app{max-width:1180px;margin:auto;padding:10px}
+.chat-top{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.chat-title h1{margin:0;font-size:22px}.chat-title p{margin:4px 0 0;color:#6a7d8e;font-size:12px}
+.tabs{display:flex;gap:8px}.tab{border:1px solid #cfdde8;background:#fff;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#1d8ac0;color:#fff;border-color:#1d8ac0}
+.layout{display:grid;grid-template-columns:300px 1fr;gap:10px;min-height:72vh}
+.panel{background:#fff;border:1px solid #dce7ef;border-radius:18px;overflow:hidden}
+.thread-head,.main-head{padding:13px;border-bottom:1px solid #e7eef4}
+.thread-list{max-height:66vh;overflow:auto}
+.thread{padding:12px 13px;border-bottom:1px solid #edf2f6;cursor:pointer}.thread.active{background:#eaf6fc}.thread strong{display:block;font-size:14px}.thread small{display:block;color:#708292;margin-top:4px}
+.badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#edf7fc;color:#257ca6;font-size:10px;font-weight:800}
+.main{display:flex;flex-direction:column}
+.messages{flex:1;padding:14px;background:linear-gradient(#f8fbfd,#eef4f7);overflow:auto;min-height:420px;max-height:62vh}
+.msg{max-width:min(78%,680px);padding:10px 12px;border-radius:15px;margin:8px 0;box-shadow:0 1px 2px rgba(0,0,0,.05);white-space:pre-wrap;word-break:break-word}
+.msg.omar{margin-right:auto;background:#dcf8c6;border-bottom-right-radius:4px}
+.msg.assistant{margin-left:auto;background:#fff;border-bottom-left-radius:4px}
+.msg.system,.msg.windows{margin-inline:auto;background:#fff3cd}
+.meta{font-size:10px;color:#708292;margin-bottom:5px}
+.cmd-box{margin-top:8px;padding:9px;border:1px solid #c9dce8;border-radius:10px;background:#f8fbfd;direction:ltr;text-align:left}
+.cmd-box code{display:block;white-space:pre-wrap}
+.cmd-actions{display:flex;gap:6px;margin-top:8px;direction:rtl}
+button,input,select,textarea{font:inherit}
+.btn{border:0;border-radius:11px;padding:10px 12px;font-weight:800;cursor:pointer}.btn.primary{background:#1d8ac0;color:#fff}.btn.secondary{background:#fff;border:1px solid #cddce7;color:#24546c}.btn.danger{background:#fff;border:1px solid #f0b9b9;color:#a83838}
+.composer{padding:10px;border-top:1px solid #e1eaf0;background:#fff}
+.composer textarea{width:100%;min-height:74px;resize:vertical;border:1px solid #cfdde8;border-radius:12px;padding:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.row>*{flex:1;min-width:120px}
+.field{border:1px solid #cfdde8;border-radius:11px;padding:9px;background:#fff}
+.command-fields{display:grid;grid-template-columns:140px 1fr;gap:8px;margin-top:8px}
+.command-fields .wide{grid-column:1/-1}
+.command-fields textarea{min-height:90px;direction:ltr;text-align:left}
+.commands-view{background:#fff;border:1px solid #dce7ef;border-radius:18px;padding:12px}
+.command-card{border:1px solid #dce7ef;border-radius:14px;padding:12px;margin:9px 0}.command-card h3{margin:0 0 5px;font-size:15px}.command-card pre{direction:ltr;text-align:left;white-space:pre-wrap;background:#f6f9fb;padding:9px;border-radius:10px;overflow:auto}.muted{color:#6c7f8e;font-size:11px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.thread-list{max-height:170px}.messages{max-height:58vh}.msg{max-width:90%}.command-fields{grid-template-columns:1fr}.chat-top{align-items:flex-start;flex-direction:column}.tabs{width:100%}.tab{flex:1}}
+</style>
+<script src="../auth-guard.js?v=20260918-real-local-1" data-access="admin"></script>
+</head>
+<body>
+<div class="chat-app">
+  <div class="chat-top">
+    <div class="chat-title">
+      <h1>💬 محادثة العمل</h1>
+      <p>بديل عملي عن إرسال الأوامر لنفسك في واتساب. لا تحفظ كلمات مرور أو PIN أو Tokens هنا.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-view="chat">المحادثات</button>
+      <button class="tab" data-view="commands">الأوامر</button>
+      <a class="btn secondary" href="../">الرئيسية</a>
+    </div>
+  </div>
+
+  <section id="chatView" class="layout">
+    <aside class="panel">
+      <div class="thread-head">
+        <button id="newThreadBtn" class="btn primary" type="button">+ محادثة جديدة</button>
+        <div id="newThreadBox" hidden style="margin-top:9px">
+          <input id="threadTitle" class="field" style="width:100%" placeholder="عنوان المحادثة">
+          <div class="row">
+            <select id="threadProject" class="field">
+              <option value="mytool|MyTool">MyTool</option>
+              <option value="station-connect|Station Connect">Station Connect</option>
+              <option value="station-services|Station Services">Station Services</option>
+              <option value="developer|Developer">Developer</option>
+              <option value="general|عام">عام</option>
+            </select>
+            <input id="replyLocation" class="field" value="MyTool / ChatGPT" placeholder="مكان الرد">
+          </div>
+          <button id="createThreadBtn" class="btn primary" style="width:100%;margin-top:8px" type="button">إنشاء</button>
+        </div>
+      </div>
+      <div id="threadList" class="thread-list"></div>
+    </aside>
+
+    <section class="panel main">
+      <div class="main-head">
+        <strong id="currentTitle">اختر محادثة</strong>
+        <div id="currentMeta" class="muted"></div>
+      </div>
+      <div id="messages" class="messages"></div>
+      <div class="composer">
+        <div class="row">
+          <select id="messageKind" class="field">
+            <option value="message">رسالة</option>
+            <option value="result">نتيجة CMD</option>
+            <option value="command">أمر</option>
+            <option value="note">ملاحظة</option>
+          </select>
+        </div>
+        <textarea id="messageBody" placeholder="اكتب الرسالة أو النتيجة هنا..."></textarea>
+        <div id="commandFields" class="command-fields" hidden>
+          <select id="shell" class="field">
+            <option value="cmd">CMD</option><option value="powershell">PowerShell</option><option value="git">Git</option><option value="bash">Bash</option><option value="other">Other</option>
+          </select>
+          <input id="workdir" class="field" placeholder="مجلد التشغيل مثال C:\project">
+          <textarea id="commandText" class="field wide" placeholder="الأمر"></textarea>
+        </div>
+        <div class="row">
+          <button id="sendBtn" class="btn primary" type="button">إرسال</button>
+          <button id="refreshBtn" class="btn secondary" type="button">تحديث</button>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section id="commandsView" class="commands-view" hidden>
+    <div class="row">
+      <select id="commandProjectFilter" class="field"><option value="">كل المشاريع</option></select>
+      <button id="reloadCommandsBtn" class="btn secondary" type="button">تحديث</button>
+    </div>
+    <div id="commandsList"></div>
+  </section>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
+const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let threads=[], currentThread=null;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=d=>{try{return new Date(d).toLocaleString('ar-DZ',{dateStyle:'short',timeStyle:'short'})}catch{return d||''}};
+
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===btn));
+  const isChat=btn.dataset.view==='chat';$('chatView').hidden=!isChat;$('commandsView').hidden=isChat;
+  if(!isChat)loadCommands();
+}));
+
+$('newThreadBtn').onclick=()=>{$('newThreadBox').hidden=!$('newThreadBox').hidden};
+$('messageKind').onchange=()=>{$('commandFields').hidden=$('messageKind').value!=='command'};
+$('refreshBtn').onclick=()=>currentThread&&loadMessages(currentThread.id);
+$('reloadCommandsBtn').onclick=loadCommands;
+
+async function loadThreads(){
+  const {data,error}=await supabase.from('mytool_work_chat_threads').select('*').eq('status','active').order('last_message_at',{ascending:false});
+  if(error){$('threadList').innerHTML='<div class="thread">تعذر تحميل المحادثات.</div>';return}
+  threads=data||[];
+  $('threadList').innerHTML=threads.map(t=>`<div class="thread ${currentThread?.id===t.id?'active':''}" data-id="${t.id}">
+    <strong>${esc(t.title)}</strong>
+    <small><span class="badge">${esc(t.project_label)}</span> · الرد: ${esc(t.reply_location)}</small>
+  </div>`).join('')||'<div class="thread">لا توجد محادثات.</div>';
+  document.querySelectorAll('.thread[data-id]').forEach(el=>el.onclick=()=>selectThread(Number(el.dataset.id)));
+  if(!currentThread&&threads[0])selectThread(threads[0].id);
+  fillProjectFilter();
+}
+async function selectThread(id){
+  currentThread=threads.find(x=>x.id===id)||null;
+  if(!currentThread)return;
+  localStorage.setItem('mytool.workchat.thread',String(id));
+  $('currentTitle').textContent=currentThread.title;
+  $('currentMeta').textContent=currentThread.project_label+' · مكان الرد: '+currentThread.reply_location;
+  await loadThreads();
+  await loadMessages(id);
+}
+async function loadMessages(threadId){
+  const {data,error}=await supabase.from('mytool_work_chat_messages').select('*').eq('thread_id',threadId).order('created_at',{ascending:true});
+  if(error){$('messages').textContent='تعذر تحميل الرسائل.';return}
+  const rows=data||[];
+  $('messages').innerHTML=rows.map(m=>{
+    const command=m.message_kind==='command'&&m.command_text
+      ?`<div class="cmd-box"><div><b>${esc((m.shell||'cmd').toUpperCase())}</b> · ${esc(m.workdir||'بدون مجلد محدد')}</div><code>${esc(m.command_text)}</code><div class="cmd-actions"><button class="btn secondary copyCmd" data-cmd="${esc(m.command_text)}">نسخ الأمر</button></div></div>`:'';
+    return `<div class="msg ${esc(m.sender_type)}"><div class="meta">${esc(m.sender_label)} · ${esc(m.project_label||currentThread.project_label)} · ${esc(m.source_label)} · ${fmt(m.created_at)}</div>${esc(m.body)}${command}</div>`;
+  }).join('')||'<div class="muted">ابدأ أول رسالة في هذه المحادثة.</div>';
+  document.querySelectorAll('.copyCmd').forEach(b=>b.onclick=async()=>{await navigator.clipboard.writeText(b.dataset.cmd||'');b.textContent='تم النسخ'});
+  $('messages').scrollTop=$('messages').scrollHeight;
+}
+async function createThread(){
+  const title=$('threadTitle').value.trim(); if(!title)return;
+  const [project_key,project_label]=$('threadProject').value.split('|');
+  const {data,error}=await supabase.from('mytool_work_chat_threads').insert({
+    title,project_key,project_label,reply_location:$('replyLocation').value.trim()||'MyTool / ChatGPT'
+  }).select().single();
+  if(error){alert('تعذر إنشاء المحادثة');return}
+  $('threadTitle').value='';$('newThreadBox').hidden=true;currentThread=data;await loadThreads();await selectThread(data.id);
+}
+$('createThreadBtn').onclick=createThread;
+
+async function sendMessage(){
+  if(!currentThread)return alert('اختر محادثة أولًا');
+  const kind=$('messageKind').value;
+  const body=$('messageBody').value.trim();
+  const commandText=$('commandText').value.trim();
+  if(kind==='command'&&!commandText)return alert('اكتب الأمر');
+  if(kind!=='command'&&!body)return;
+  let commandId=null;
+  if(kind==='command'){
+    const {data:cmd,error:cmdErr}=await supabase.from('mytool_command_log').insert({
+      project_key:currentThread.project_key,project_label:currentThread.project_label,
+      title:body||'أمر جديد',shell:$('shell').value,workdir:$('workdir').value.trim()||null,
+      command_text:commandText,note:body||'',created_source:'mytool'
+    }).select('id').single();
+    if(cmdErr)return alert('تعذر حفظ الأمر');
+    commandId=cmd.id;
+  }
+  const payload={
+    thread_id:currentThread.id,sender_type:'omar',sender_label:'عمر',message_kind:kind,
+    body,project_key:currentThread.project_key,project_label:currentThread.project_label,
+    workdir:kind==='command'?($('workdir').value.trim()||null):null,
+    shell:kind==='command'?$('shell').value:null,
+    command_text:kind==='command'?commandText:null,command_id:commandId,source_label:'MyTool'
+  };
+  const {error}=await supabase.from('mytool_work_chat_messages').insert(payload);
+  if(error)return alert('تعذر إرسال الرسالة');
+  await supabase.from('mytool_work_chat_threads').update({last_message_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',currentThread.id);
+  $('messageBody').value='';$('commandText').value='';$('workdir').value='';$('messageKind').value='message';$('commandFields').hidden=true;
+  await loadMessages(currentThread.id);await loadThreads();
+}
+$('sendBtn').onclick=sendMessage;
+$('messageBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&$('messageKind').value!=='command'){e.preventDefault();sendMessage()}});
+
+function fillProjectFilter(){
+  const map=new Map(threads.map(t=>[t.project_key,t.project_label]));
+  $('commandProjectFilter').innerHTML='<option value="">كل المشاريع</option>'+[...map].map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join('');
+}
+$('commandProjectFilter').onchange=loadCommands;
+async function loadCommands(){
+  let q=supabase.from('mytool_command_log').select('*').order('is_pinned',{ascending:false}).order('created_at',{ascending:false}).limit(100);
+  const p=$('commandProjectFilter').value;if(p)q=q.eq('project_key',p);
+  const {data,error}=await q;if(error){$('commandsList').textContent='تعذر تحميل الأوامر';return}
+  $('commandsList').innerHTML=(data||[]).map(c=>`<div class="command-card">
+    <div><span class="badge">${esc(c.project_label)}</span> <span class="muted">${fmt(c.created_at)}</span></div>
+    <h3>${esc(c.title)}</h3><div class="muted">${esc((c.shell||'cmd').toUpperCase())} · ${esc(c.workdir||'بدون مجلد محدد')} · النتيجة: ${esc(c.result_status)}</div>
+    <pre>${esc(c.command_text)}</pre>
+    <div class="row"><button class="btn secondary copyLogCmd" data-id="${c.id}">نسخ</button><button class="btn secondary markCmd" data-id="${c.id}" data-state="success">نجح</button><button class="btn danger markCmd" data-id="${c.id}" data-state="failed">فشل</button></div>
+    ${c.result_note?'<div class="muted">'+esc(c.result_note)+'</div>':''}
+  </div>`).join('')||'<div class="muted">لا توجد أوامر.</div>';
+  document.querySelectorAll('.copyLogCmd').forEach(b=>b.onclick=async()=>{const c=(data||[]).find(x=>x.id===Number(b.dataset.id));if(c){await navigator.clipboard.writeText(c.command_text);b.textContent='تم النسخ'}});
+  document.querySelectorAll('.markCmd').forEach(b=>b.onclick=async()=>{const note=prompt('ملاحظة النتيجة (اختياري)')||'';await supabase.from('mytool_command_log').update({result_status:b.dataset.state,result_note:note,executed_at:new Date().toISOString(),status:'done',updated_at:new Date().toISOString()}).eq('id',Number(b.dataset.id));loadCommands()});
+}
+await loadThreads();
+const saved=Number(localStorage.getItem('mytool.workchat.thread')||0);if(saved&&threads.some(t=>t.id===saved))await selectThread(saved);
+setInterval(()=>{if(currentThread&&!document.hidden)loadMessages(currentThread.id)},8000);
+</script>
+</body>
+</html>
