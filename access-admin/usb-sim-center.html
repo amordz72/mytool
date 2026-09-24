@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f5f9fc">
+<title>مركز USB والشرائح — MyTool</title>
+<link rel="stylesheet" href="../ui/template-v1.css">
+<link rel="stylesheet" href="../mytool-bottom-nav.css">
+<style>
+[hidden]{display:none!important}
+.center-actions,.chips{display:flex;gap:8px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+.stats .mt-card{padding:11px;text-align:center}.stats strong{display:block;font-size:20px}.stats span{font-size:11px;color:#6b7f93}
+.usb-grid{display:grid;gap:11px}
+.usb-card{padding:15px}
+.usb-code{font-size:25px;font-weight:950;letter-spacing:1px}
+.usb-code small{font-size:11px;color:#6b7f93;font-weight:800;margin-inline-start:5px}
+.info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px}
+.info div{background:#f8fbfd;border-radius:10px;padding:8px;min-width:0}
+.info small{display:block;color:#6b7f93;font-size:10px;margin-bottom:3px}.info strong{display:block;font-size:12px;word-break:break-word}
+.mono{direction:ltr;text-align:left;font-family:monospace}
+.chip{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}
+.chip.good{background:#e8f7ef;color:#17764a}.chip.warn{background:#fff4df;color:#9a6200}.chip.muted{background:#edf2f6;color:#65778a}
+.history{margin-top:12px;border-top:1px solid #e2eaf0;padding-top:10px}
+.history-item{padding:8px 0;border-bottom:1px dashed #e2eaf0}.history-item:last-child{border-bottom:0}
+.history-item strong{font-size:12px}.history-item small{display:block;color:#6b7f93;margin-top:3px}
+.notice{margin-top:10px;padding:10px;border-radius:12px;background:#fff7e8;color:#7c590d;font-size:12px;line-height:1.6}
+@media(max-width:720px){.stats{grid-template-columns:1fr 1fr}.info{grid-template-columns:1fr 1fr}.center-actions .mt-btn{flex:1}}
+</style>
+<script src="../auth-guard.js?v=20260919-personal-persist1" data-access="admin"></script>
+</head>
+<body class="mt-app" data-mytool-app="access-admin">
+<main class="mt-shell">
+<header class="mt-topbar">
+  <div class="mt-brand"><div class="mt-brand-mark">M</div><div class="mt-brand-copy"><strong>MyTool</strong><small>إدارة النظام</small></div></div>
+  <div class="mt-user"><div class="mt-user-copy"><strong>مدير النظام</strong><small>USB + SIM Central Brain</small></div><div class="mt-avatar">A</div></div>
+</header>
+
+<section class="mt-page-head">
+  <div class="mt-page-title"><div class="mt-page-icon">🧠</div><div class="mt-page-copy"><h1>مركز USB والشرائح</h1><p>USB له رقم ثابت مثل 001، والشريحة تعرف بـICCID. الاكتشاف يسجل «شوهدت على USB» ولا ينشئ ربطًا إداريًا دائمًا وحده.</p></div></div>
+  <button id="refreshBtn" class="mt-btn secondary mt-page-action" type="button">تحديث</button>
+</section>
+
+<div class="center-actions">
+  <a class="mt-btn secondary" href="devices.html">كشف Windows USB</a>
+  <a class="mt-btn secondary" href="sim-summary.html">تقرير الشرائح</a>
+  <a class="mt-btn secondary" href="../flexy/sims.html">إدارة الشرائح / PIN</a>
+</div>
+
+<div class="stats">
+  <div class="mt-card"><strong id="usbCount">0</strong><span>USB معرّفة</span></div>
+  <div class="mt-card"><strong id="onlineCount">0</strong><span>USB ظاهرة الآن</span></div>
+  <div class="mt-card"><strong id="simCount">0</strong><span>شرائح شوهدت</span></div>
+  <div class="mt-card"><strong id="pendingCount">0</strong><span>Windows USB غير مثبتة</span></div>
+</div>
+
+<label class="mt-search">
+  <span class="mt-search-icon">⌕</span>
+  <input id="search" placeholder="ابحث: USB 001، رقم، ICCID، IMEI، Station..." autocomplete="off">
+</label>
+
+<div id="message" class="mt-alert" hidden><div class="mt-alert-icon">ℹ️</div><div class="mt-alert-copy"><h3 id="messageTitle"></h3><p id="messageText"></p></div></div>
+
+<div class="mt-section-head" style="margin-top:18px"><div class="mt-section-copy"><h2>USB المعرّفة</h2><p>الرقم ثابت على جسم المودم بعد قراءة IMEI/Serial، ولا يعتمد على Ethernet أو IP.</p></div></div>
+<section id="usbList" class="usb-grid"><div class="mt-card"><div class="mt-meta">جاري التحميل…</div></div></section>
+
+<div class="mt-section-head" style="margin-top:18px"><div class="mt-section-copy"><h2>اكتشاف Windows غير المثبت</h2><p>هذه ملاحظات PnP فقط. لا نعطيها ربطًا دائمًا حتى نقرأ هوية المودم الحقيقية.</p></div></div>
+<section id="pendingList" class="usb-grid"></section>
+</main>
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
+const $=id=>document.getElementById(id);
+let center=[],windowsUsb=[];
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function simLabel(v){return ({'mobilis-sama':'Mobilis SAMA','mobilis-arsselli':'Mobilis Arsselli','unknown':'غير مصنفة','mobilis':'Mobilis','djezzy':'Djezzy','ooredoo':'Ooredoo'})[String(v||'').toLowerCase()]||v||'غير مصنفة';}
+function fmt(v){if(!v)return '—';try{return new Date(v).toLocaleString('ar-DZ')}catch{return String(v)}}
+function show(title,text,type=''){const b=$('message');b.hidden=false;b.className='mt-alert'+(type?' '+type:'');$('messageTitle').textContent=title;$('messageText').textContent=text}
+async function requireAdmin(){const {data}=await supabase.auth.getSession();if(!data.session)throw new Error('جلسة الإدارة غير متاحة.');}
+function currentFresh(r){const t=r.modem_last_seen_at?new Date(r.modem_last_seen_at).getTime():0;return !!(t&&Date.now()-t<120000)}
+function historyHtml(items){
+  const rows=Array.isArray(items)?items:[];
+  if(!rows.length)return '<div class="mt-meta">لم تسجل أي شريحة على هذا USB بعد.</div>';
+  return rows.map((h,i)=>'<div class="history-item"><strong>'+(i===0?'آخر شريحة شوهدت: ':'شوهدت سابقًا: ')+esc(h.msisdn||h.iccid||h.imsi||'شريحة')+' · '+esc(simLabel(h.sim_type))+'</strong><small>ICCID: <span dir="ltr">'+esc(h.iccid||'—')+'</span> · من '+esc(fmt(h.first_seen_at))+' إلى '+esc(fmt(h.last_seen_at))+'</small></div>').join('');
+}
+function card(r){
+  const fresh=currentFresh(r);
+  const current=r.current_sim_uuid?(r.current_msisdn||r.current_iccid||r.current_imsi||'شريحة'):'لا توجد شريحة مقروءة الآن';
+  const search=['usb '+r.usb_label,r.usb_label,r.imei,r.serial_number,r.device_name,r.modem_ip,r.station_name,current,r.current_iccid,r.current_imsi,r.current_msisdn,JSON.stringify(r.sim_history||[])].filter(Boolean).join(' ').toLowerCase();
+  return '<article class="mt-card usb-card usb-entry" data-search="'+esc(search)+'">'+
+    '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">🔌</div><div class="mt-row-copy"><div class="usb-code">USB '+esc(r.usb_label)+' <small>'+esc(r.device_name||'HiLink')+'</small></div><div class="mt-meta">'+esc(r.station_name||'—')+' · '+esc(r.modem_ip||'—')+'</div></div></div><span class="chip '+(fresh?'good':'muted')+'">'+(fresh?'ظاهر الآن':'غير ظاهر')+'</span></div>'+
+    '<div class="chips" style="margin-top:9px"><span class="chip '+(r.current_sim_uuid?'good':'muted')+'">'+(r.current_sim_uuid?'شوهدت شريحة الآن':'بدون شريحة مقروءة')+'</span>'+(r.current_has_pin?'<span class="chip good">PIN محفوظ للشريحة</span>':'')+'</div>'+
+    '<div class="info">'+
+      '<div><small>IMEI — هوية USB</small><strong class="mono">'+esc(r.imei||'—')+'</strong></div>'+
+      '<div><small>Serial</small><strong class="mono">'+esc(r.serial_number||'—')+'</strong></div>'+
+      '<div><small>HiLink IP الحالي</small><strong class="mono">'+esc(r.modem_ip||'—')+'</strong></div>'+
+      '<div><small>الشريحة المشاهدة الآن</small><strong class="mono">'+esc(current)+'</strong></div>'+
+      '<div><small>ICCID</small><strong class="mono">'+esc(r.current_iccid||'—')+'</strong></div>'+
+      '<div><small>نوع الشريحة</small><strong>'+esc(simLabel(r.current_sim_type))+'</strong></div>'+
+    '</div>'+
+    '<div class="notice">هذا «رصد» تلقائي فقط: البرنامج يقول إن هذه الشريحة شوهدت على USB '+esc(r.usb_label)+'. لا يعتبرها ربطًا إداريًا دائمًا بدون تأكيد.</div>'+
+    '<div class="history"><strong>سجل الشرائح على USB '+esc(r.usb_label)+'</strong>'+historyHtml(r.sim_history)+'</div>'+
+  '</article>';
+}
+function pendingCard(r){
+  const ips=Array.isArray(r.ipv4_addresses)?r.ipv4_addresses.join(', '):'—';
+  const search=[r.friendly_name,r.pnp_instance_id,r.vid,r.pid,r.interface_alias,ips].filter(Boolean).join(' ').toLowerCase();
+  return '<article class="mt-card usb-entry" data-search="'+esc(search)+'"><div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">🔎</div><div class="mt-row-copy"><h3>'+esc(r.friendly_name||'USB modem candidate')+'</h3><div class="mt-meta">'+esc(r.interface_alias||'Windows PnP')+' · '+esc(ips)+'</div></div></div><span class="chip warn">غير مثبت</span></div><div class="mt-meta mono" style="margin-top:8px">'+esc(r.pnp_instance_id||'—')+'</div></article>';
+}
+function applySearch(){
+  const q=$('search').value.trim().toLowerCase();
+  document.querySelectorAll('.usb-entry').forEach(el=>el.hidden=!!q&&!(el.dataset.search||'').includes(q));
+}
+function render(){
+  const knownSubnets=new Set(center.map(r=>String(r.modem_ip||'').split('.').slice(0,3).join('.')).filter(Boolean));
+  const pending=windowsUsb.filter(u=>{
+    if(!u.present)return false;
+    const ips=Array.isArray(u.ipv4_addresses)?u.ipv4_addresses:[];
+    return !ips.some(ip=>knownSubnets.has(String(ip).split('.').slice(0,3).join('.')));
+  });
+  const uniqueSims=new Set();
+  center.forEach(r=>(Array.isArray(r.sim_history)?r.sim_history:[]).forEach(h=>h.sim_uuid&&uniqueSims.add(h.sim_uuid)));
+  $('usbCount').textContent=center.length;
+  $('onlineCount').textContent=center.filter(currentFresh).length;
+  $('simCount').textContent=uniqueSims.size;
+  $('pendingCount').textContent=pending.length;
+  $('usbList').innerHTML=center.length?center.map(card).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد USB معرّفة بعد.</div></div>';
+  $('pendingList').innerHTML=pending.length?pending.map(pendingCard).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد USB جديدة غير مثبتة حاليًا.</div></div>';
+  applySearch();
+}
+async function load(){
+  try{
+    await requireAdmin();
+    const [a,b]=await Promise.all([supabase.rpc('station_connect_admin_usb_sim_center'),supabase.rpc('station_connect_admin_usb_devices')]);
+    if(a.error)throw a.error;if(b.error)throw b.error;
+    center=Array.isArray(a.data)?a.data:[];windowsUsb=Array.isArray(b.data)?b.data:[];
+    render();
+  }catch(e){center=[];windowsUsb=[];render();show('تعذر تحميل المركز',e?.message||'خطأ غير متوقع','danger')}
+}
+$('search').addEventListener('input',applySearch);$('refreshBtn').addEventListener('click',load);load();
+</script>
+<script src="../ui/template-v1.js"></script>
+<script src="../mytool-bottom-nav.js" data-root="../" data-app="access-admin"></script>
+</body>
+</html>
