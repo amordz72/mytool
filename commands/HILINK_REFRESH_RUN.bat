@@ -19,7 +19,10 @@ if errorlevel 1 goto error
 
 echo [2/5] Switching to main...
 git switch main >nul 2>&1
-if errorlevel 1 goto local_changes
+if errorlevel 1 (
+  git switch -c main --track origin/main
+  if errorlevel 1 goto local_changes
+)
 
 for /f %%i in ('git rev-parse HEAD') do set "BEFORE=%%i"
 
