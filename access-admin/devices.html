@@ -17,7 +17,14 @@
 .device-summary .mt-card{padding:12px;text-align:center}
 .device-summary strong{display:block;font-size:20px}
 .device-summary span{font-size:11px;color:#6b7f93}
-@media(max-width:680px){.device-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.device-summary .mt-card{padding:9px 5px}.device-summary strong{font-size:18px}.device-actions .mt-btn{flex:1}}
+.sim-setup{margin-top:11px;padding:11px;border:1px solid #dce7ef;border-radius:14px;background:#f8fbfd}
+.sim-setup-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.sim-setup label{display:grid;gap:5px;font-size:11px;font-weight:800;color:#65778a}
+.sim-setup input{width:100%;padding:10px;border:1px solid #d5e1e9;border-radius:10px;background:#fff;font:inherit}
+.sim-setup-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.sim-setup-actions .mt-btn{flex:1}
+.operator-line{font-weight:850;margin-top:6px}
+@media(max-width:680px){.device-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.device-summary .mt-card{padding:9px 5px}.device-summary strong{font-size:18px}.device-actions .mt-btn{flex:1}.sim-setup-row{grid-template-columns:1fr}}
 </style>
 <script src="../auth-guard.js?v=20260919-personal-persist1" data-access="admin"></script>
 </head>
@@ -67,13 +74,23 @@
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
 const $=id=>document.getElementById(id);
-let stations=[],devices=[],usbDevices=[];
+let stations=[],devices=[],usbDevices=[],usbCenter=[];
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function msg(title,text,type=''){const box=$('pageMessage');box.className='mt-alert'+(type?' '+type:'');$('messageTitle').textContent=title;$('messageText').textContent=text;box.hidden=false;}
 function clearMsg(){$('pageMessage').hidden=true;}
 function kindLabel(v){const x=String(v||'').toLowerCase();if(x==='mobilis-sama')return 'Mobilis SAMA';if(x==='mobilis-arsselli')return 'Mobilis Arsselli';return v||'غير محدد';}
 function stationStatus(row){if(String(row.status||'').toLowerCase()!=='approved')return 'غير معتمد';return row.online?'ONLINE':'OFFLINE';}
+function operatorFromImsi(imsi){
+  const v=String(imsi||'').replace(/\D/g,'');
+  if(v.startsWith('60301'))return 'mobilis';
+  if(v.startsWith('60302'))return 'djezzy';
+  if(v.startsWith('60303'))return 'ooredoo';
+  return 'unknown';
+}
+function operatorLabel(v){return ({mobilis:'Mobilis',djezzy:'Djezzy',ooredoo:'Ooredoo',unknown:'غير معروف'})[v]||v||'غير معروف';}
+function centerForModem(modemUuid){return usbCenter.find(x=>x.modem_uuid===modemUuid)||null;}
+function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
 async function requireAdmin(){
   const {data}=await supabase.auth.getSession();
@@ -84,14 +101,17 @@ async function load(){
   const btn=$('refreshBtn');btn.disabled=true;clearMsg();
   try{
     await requireAdmin();
-    const [stationResult,usbResult]=await Promise.all([
+    const [stationResult,usbResult,centerResult]=await Promise.all([
       supabase.rpc('station_connect_admin_list'),
-      supabase.rpc('station_connect_admin_usb_devices')
+      supabase.rpc('station_connect_admin_usb_devices'),
+      supabase.rpc('station_connect_admin_usb_sim_center')
     ]);
     if(stationResult.error)throw stationResult.error;
     if(usbResult.error)throw usbResult.error;
+    if(centerResult.error)throw centerResult.error;
     stations=Array.isArray(stationResult.data)?stationResult.data:[];
     usbDevices=Array.isArray(usbResult.data)?usbResult.data:[];
+    usbCenter=Array.isArray(centerResult.data)?centerResult.data:[];
     const groups=await Promise.all(stations.map(async station=>{
       if(String(station.status||'').toLowerCase()!=='approved')return [];
       const hardware=await supabase.rpc('station_connect_admin_hardware',{p_station_uuid:station.station_uuid});
@@ -101,7 +121,7 @@ async function load(){
     devices=groups.flat();
     render();
   }catch(e){
-    stations=[];devices=[];usbDevices=[];render();
+    stations=[];devices=[];usbDevices=[];usbCenter=[];render();
     msg('تعذر تحميل سجل الأجهزة',e?.message||'حدث خطأ غير متوقع.','danger');
   }finally{btn.disabled=false;}
 }
@@ -110,26 +130,62 @@ function sameSubnet24(a,b){
   const x=String(a||'').split('.'),y=String(b||'').split('.');
   return x.length===4&&y.length===4&&x.slice(0,3).join('.')===y.slice(0,3).join('.');
 }
+function simSetup(likely,operator,usbLabel){
+  if(!likely?.sim_uuid)return '<div class="sim-setup"><div class="mt-meta">لم تُقرأ هوية الشريحة من HiLink بعد. لا نسجل PIN قبل ظهور ICCID/IMSI.</div></div>';
+  const known=!!likely.msisdn;
+  const ready=known&&likely.has_pin;
+  let discover='';
+  if(!known&&operator==='mobilis'){
+    discover='<button class="mt-btn discover-msisdn" type="button" data-sim="'+esc(likely.sim_uuid)+'">اكتشف رقم الشريحة (*101#)</button>';
+  }else if(!known&&operator==='djezzy'){
+    discover='<span class="mt-chip muted">معرفة رقم Djezzy مسجلة، التنفيذ من هذا المسار لم يُفعّل بعد</span>';
+  }else if(!known&&operator==='ooredoo'){
+    discover='<span class="mt-chip muted">معرفة رقم Ooredoo ما زالت تحتاج اختبارًا</span>';
+  }else if(!known){
+    discover='<span class="mt-chip muted">لا توجد طريقة رقم مفعلة لهذا المتعامل</span>';
+  }
+  return '<div class="sim-setup" data-sim="'+esc(likely.sim_uuid)+'">'+
+    '<div class="operator-line">المتعامل: '+esc(operatorLabel(operator))+
+      (usbLabel?' · USB '+esc(usbLabel):'')+
+      ' · الرقم: <span dir="ltr">'+esc(likely.msisdn||'غير معروف')+'</span></div>'+
+    '<div class="mt-meta" style="margin-top:5px">ICCID: <span dir="ltr">'+esc(likely.iccid||'—')+'</span> · IMSI: <span dir="ltr">'+esc(likely.imsi||'—')+'</span></div>'+
+    (ready?'<div class="mt-chip success" style="margin-top:8px">الشريحة معرّفة: الرقم وPIN محفوظان</div>':'')+
+    '<div class="sim-setup-row"><label>PIN الخدمة<input class="service-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="'+(likely.has_pin?'محفوظ — اكتب فقط للتغيير':'أدخل PIN')+'"></label>'+
+    '<label>حالة الرقم<input value="'+esc(likely.msisdn||'يُكتشف من الشبكة')+'" readonly></label></div>'+
+    '<div class="sim-setup-actions">'+discover+
+      '<button class="mt-btn secondary save-sim-pin" type="button" data-sim="'+esc(likely.sim_uuid)+'" data-has-pin="'+(likely.has_pin?'1':'0')+'">حفظ بيانات الشريحة</button>'+
+    '</div>'+
+    '<div class="mt-meta" style="margin-top:7px">الحفظ يخص الشريحة ICCID نفسها، وليس USB. نقلها إلى USB آخر لا يغيّر رقمها أو PIN.</div>'+
+  '</div>';
+}
+
 function usbCard(item){
   const ips=Array.isArray(item.ipv4_addresses)?item.ipv4_addresses:[];
   const station=stations.find(s=>s.station_uuid===item.station_uuid);
-  const likely=devices.find(d=>d._station?.station_uuid===item.station_uuid&&ips.some(ip=>sameSubnet24(ip,d.modem_ip)));
+  const matches=devices.filter(d=>d._station?.station_uuid===item.station_uuid&&ips.some(ip=>sameSubnet24(ip,d.modem_ip)));
+  const likely=matches.length===1?matches[0]:null;
+  const center=likely?centerForModem(likely.modem_uuid):null;
+  const operator=operatorFromImsi(likely?.imsi);
   const title=item.friendly_name||item.adapter_name||'USB device';
   const ids=[
     item.vid||item.pid?'VID: '+(item.vid||'—')+' · PID: '+(item.pid||'—'):'',
     item.interface_alias?'Windows: '+item.interface_alias+(item.interface_index?' · #'+item.interface_index:''):'',
     ips.length?'IPv4 محلي: '+ips.join(', '):'',
     item.location?'USB: '+item.location:'',
-    likely?'مرشح HiLink من نفس الشبكة فقط: '+likely.modem_ip+' · غير معتمد كربط':''
+    likely?'قراءة HiLink الحالية: '+likely.modem_ip+' · IMEI '+(likely.imei||'—'):'',
+    matches.length>1?'أكثر من HiLink مرشح على نفس الشبكة — لن نستعملها للتعريف':''
   ].filter(Boolean);
-  const search=[title,item.manufacturer,item.device_class,item.pnp_instance_id,item.vid,item.pid,item.interface_alias,ips.join(' '),station?.computer_name,likely?.modem_ip,likely?.imei].filter(Boolean).join(' ').toLowerCase();
+  const search=[title,item.manufacturer,item.device_class,item.pnp_instance_id,item.vid,item.pid,item.interface_alias,ips.join(' '),station?.computer_name,likely?.modem_ip,likely?.imei,likely?.iccid,likely?.imsi,likely?.msisdn,operator,center?.usb_label].filter(Boolean).join(' ').toLowerCase();
   return '<article class="mt-card usb-entry" data-search="'+esc(search)+'">'+
     '<div class="mt-row"><div class="mt-row-main"><div class="mt-thumb">🔌</div><div class="mt-row-copy">'+
-      '<h3>'+esc(title)+'</h3><div class="mt-meta">Station: '+esc(item.station_name||station?.computer_name||'—')+
-      '<br>'+esc(item.manufacturer||'—')+' · '+esc(item.device_class||'USB')+'</div></div></div>'+
+      '<h3>'+esc(title)+(center?.usb_label?' · USB '+esc(center.usb_label):'')+'</h3><div class="mt-meta">Station: '+esc(item.station_name||station?.computer_name||'—')+
+      '<br>'+esc(item.manufacturer||'—')+' · '+esc(item.device_class||'USB')+
+      (likely?'<br><strong>المتعامل: '+esc(operatorLabel(operator))+'</strong>':'')+
+      '</div></div></div>'+
       '<span class="mt-chip '+(item.present?'success':'muted')+'">'+(item.present?'موجود الآن':'غير موجود')+'</span></div>'+
     (ids.length?'<div class="mt-meta device-id" style="margin-top:9px">'+ids.map(esc).join('<br>')+'</div>':'')+
     '<div class="mt-meta device-id" style="margin-top:7px">PNP: '+esc(item.pnp_instance_id||'—')+'</div>'+
+    (item.present&&matches.length===1?simSetup(likely,operator,center?.usb_label):'')+
   '</article>';
 }
 
@@ -164,7 +220,7 @@ function render(){
   $('deviceCount').textContent=String(devices.length);
   $('stationCount').textContent=String(stations.filter(s=>String(s.status||'').toLowerCase()==='approved').length);
   $('linkedSimCount').textContent=String(devices.filter(d=>d.sim_uuid||d.msisdn).length);
-  $('usbList').innerHTML=usbDevices.length?usbDevices.map(usbCard).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد قراءة USB بعد. يلزم Agent 0.4.7 أو أحدث.</div></div>';
+  $('usbList').innerHTML=usbDevices.length?usbDevices.map(usbCard).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد قراءة USB بعد. يلزم Agent حديث.</div></div>';
   $('deviceList').innerHTML=devices.length?devices.map(card).join(''):'<div class="mt-card"><div class="mt-meta">لا توجد مودمات HiLink مسجلة.</div></div>';
   applySearch();
 }
@@ -175,6 +231,55 @@ function applySearch(){
   $('emptyState').hidden=visible!==0;
 }
 
+async function waitForNumber(simUuid){
+  for(let i=0;i<18;i++){
+    await delay(1700);
+    const {data,error}=await supabase.rpc('station_connect_admin_sim_inventory');
+    if(error)throw error;
+    const row=(Array.isArray(data)?data:[]).find(x=>x.sim_uuid===simUuid);
+    if(row?.msisdn)return row.msisdn;
+  }
+  return null;
+}
+document.addEventListener('click',async event=>{
+  const discover=event.target.closest('.discover-msisdn');
+  if(discover){
+    const simUuid=discover.dataset.sim;discover.disabled=true;discover.textContent='جاري اكتشاف الرقم…';clearMsg();
+    try{
+      const {data,error}=await supabase.rpc('station_connect_admin_retry_sim_phone_discovery',{p_sim_uuid:simUuid});
+      if(error)throw error;
+      const result=Array.isArray(data)?data[0]:data;
+      if(!result?.queued&&result?.state!=='already_running')throw new Error('لم يبدأ الاستعلام: '+String(result?.state||'غير متاح'));
+      const number=await waitForNumber(simUuid);
+      if(number){msg('تم اكتشاف الرقم','رقم الشريحة: '+number+' — أدخل PIN ثم اضغط حفظ.');await load();}
+      else{msg('الاستعلام ما زال قيد المراجعة','لم يصل رقم مؤكد بعد. يمكنك الضغط على تحديث بعد قليل.');}
+    }catch(error){msg('تعذر اكتشاف الرقم',error?.message||'خطأ غير متوقع','danger')}
+    finally{discover.disabled=false;discover.textContent='اكتشف رقم الشريحة (*101#)'}
+    return;
+  }
+
+  const save=event.target.closest('.save-sim-pin');
+  if(save){
+    const panel=save.closest('.sim-setup');
+    const pin=(panel?.querySelector('.service-pin')?.value||'').trim();
+    const hasPin=save.dataset.hasPin==='1';
+    if(!pin&&!hasPin){msg('PIN مطلوب','أدخل PIN الخدمة لهذه الشريحة ثم احفظ.','danger');return}
+    if(pin&&!/^\d{4,8}$/.test(pin)){msg('PIN غير صالح','PIN يجب أن يكون من 4 إلى 8 أرقام.','danger');return}
+    save.disabled=true;clearMsg();
+    try{
+      const {error}=await supabase.rpc('station_connect_admin_update_sim',{
+        p_sim_uuid:save.dataset.sim,
+        p_msisdn:null,
+        p_sim_type:null,
+        p_service_pin:pin||null
+      });
+      if(error)throw error;
+      msg('تم حفظ الشريحة','حُفظ PIN على هوية الشريحة نفسها ICCID. لا يرتبط بالـUSB.');
+      await load();
+    }catch(error){msg('تعذر حفظ الشريحة',error?.message||'خطأ غير متوقع','danger')}
+    finally{save.disabled=false}
+  }
+});
 $('deviceSearch').addEventListener('input',applySearch);
 $('refreshBtn').addEventListener('click',load);
 load();
