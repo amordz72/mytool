@@ -22,12 +22,12 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 .card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.card-actions button,.card-actions a{width:auto}
 .detail-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.detail-title{font-size:21px;font-weight:900}.identity-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:900;margin-top:5px}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.panel{border:1px solid var(--line);border-radius:14px;padding:11px;background:#fafafa}.panel h3{margin:0 0 8px;font-size:14px}.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{padding:5px 8px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:11px;word-break:break-word}
-.edit-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:7px;align-items:end}.edit-grid button{width:auto}
+.edit-grid{display:grid;grid-template-columns:1.5fr 1.2fr 1fr 1fr auto;gap:7px;align-items:end}.edit-grid button{width:auto}
 .platform-group{margin-top:10px}.platform-group-head{display:flex;justify-content:space-between;align-items:center;gap:7px;margin-bottom:7px}.platform-group-head h3{font-size:14px;margin:0}.account-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.account{border:1px solid var(--line);border-radius:13px;padding:10px;background:#fff}.account-title{font-weight:900}.username{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;direction:ltr;text-align:right;font-size:12px;color:#334155;word-break:break-all;margin-top:3px}.account-meta{font-size:11px;color:var(--muted);line-height:1.7;margin-top:7px}.money-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}.money{background:#f8fafc;border-radius:9px;padding:7px}.money small{display:block;font-size:9px;color:var(--muted)}.money b{display:block;font-size:12px;margin-top:2px}.empty{text-align:center;padding:18px;border:1px dashed var(--line);border-radius:13px;color:var(--muted)}
 .pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:10px}.pagination button{width:auto;min-width:80px}
 @media(max-width:760px){.page{padding:8px 8px 108px}.registry-head,.detail-head{display:block}.registry-actions{margin-top:9px}.metrics{grid-template-columns:1fr 1fr}.filters,.edit-grid{grid-template-columns:1fr}.detail-grid,.account-grid{grid-template-columns:1fr}.customer-summary{grid-template-columns:1fr 1fr}.count{padding:0}.card{padding:11px}}
 </style>
-<script src="shop-routes.js?v=20260923-master-feeds1"></script>
+<script src="shop-routes.js?v=20260923-customer-registry1"></script>
 <script src="shop-shell.js?v=20260921-fixed-bottom-1"></script>
 </head>
 <body data-screen="customers">
@@ -40,15 +40,15 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
     <div class="registry-head">
       <div>
         <h1>👥 سجل العملاء المركزي</h1>
-        <div class="muted">كل شخص أو محل له هوية MyTool واحدة. حسابات المنصات والأسماء والأرقام تبقى مصادر مرتبطة بهذه الهوية ولا تُدمج لمجرد تشابه الاسم.</div>
+        <div class="muted">كل شخص له هوية MyTool واحدة. الاسم يمكن أن يتكرر، لكن Username MyTool والهاتف (إذا وُجد) ورقم MT مفاتيح مستقلة وفريدة.</div>
       </div>
       <div class="registry-actions">
-        <a class="btn" href="customer-master-feed.html?v=20260923-1">⊕ تغذية ماستر العملاء</a>
-        <a class="btn secondary" href="customer-links.html?v=20260923-master-name-lock2">⇆ صيانة الربط والمصادر</a>
+        <a class="btn" href="customer-links.html?v=20260923-person-identity-only1#sourceImport">⬆ تحيين من ملفات المنصات</a>
+        <a class="btn secondary" href="customer-links.html?v=20260923-person-identity-only1">⇆ إدارة الربط</a>
         <button id="refreshBtn" class="btn secondary" type="button">تحديث</button>
       </div>
     </div>
-    <div class="safety"><b>ماستر العملاء هو المرجع</b>لكل عميل معرف CUST ثابت واسم ماستر ثابت في واجهات العمل. أسماء المنصات تبقى مصادر مرتبطة ولا تستبدل اسم الماستر. التغذية والربط تتم من صفحة «تغذية ماستر العملاء».</div>
+    <div class="safety"><b>تحكم الهوية مفعّل</b>يمكن وجود شخصين بنفس الاسم. لا يمكن تكرار Username MyTool، ولا الهاتف الأساسي بين شخصين نشطين، ورقم MT دائم وفريد. Username المنصات الخارجية يبقى بيانات مصدر وليس Username MyTool.</div>
     <div class="metrics">
       <div class="metric"><small>عملاء موحدون</small><b id="mCustomers">0</b></div>
       <div class="metric"><small>متعدد المنصات</small><b id="mMulti">0</b></div>
@@ -72,12 +72,13 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
     <div class="panel" style="margin-top:10px">
       <h3>الهوية الرئيسية</h3>
       <div class="edit-grid">
-        <div class="field"><label>اسم الماستر الثابت</label><input id="editName" readonly></div>
-        <div class="field"><label>الهاتف الأساسي</label><input id="editPhone" inputmode="tel"></div>
+        <div class="field"><label>الاسم الرئيسي</label><input id="editName"></div>
+        <div class="field"><label>Username MyTool — فريد</label><input id="editUsername" autocomplete="off" placeholder="مثال: أسامة 301 أو oussama301"></div>
+        <div class="field"><label>الهاتف الأساسي — فريد إن وُجد</label><input id="editPhone" inputmode="tel"></div>
         <div class="field"><label>البريد الأساسي</label><input id="editEmail" inputmode="email"></div>
         <button id="saveIdentity" class="btn" type="button">حفظ</button>
       </div>
-      <div class="muted" style="margin-top:7px">اسم الماستر ثابت في هذه الشاشة. يمكن تحديث الهاتف والبريد فقط؛ أسماء المنصات لا تستبدل اسم الماستر.</div>
+      <div class="muted" style="margin-top:7px">Username MyTool يمكن أن يحتوي حروفًا وأرقامًا ومسافات، لكنه لا يكون أرقامًا فقط ولا يُفرض عليه رقم MT. حسابات المنصات الخارجية لا تتغير.</div>
     </div>
 
     <div class="detail-grid">
@@ -95,7 +96,7 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 
   <section class="card">
     <div class="filters">
-      <div class="field"><label>بحث</label><input id="search" placeholder="اسم، alias، username، هاتف، بريد…"></div>
+      <div class="field"><label>بحث</label><input id="search" placeholder="Username MyTool، MT، هاتف، اسم…"></div>
       <div class="field"><label>المنصة</label><select id="platformFilter"><option value="all">كل المنصات</option></select></div>
       <div class="field"><label>النوع</label><select id="kindFilter"><option value="all">كل العملاء</option><option value="multi">متعدد المنصات</option><option value="single">منصة واحدة</option><option value="no_source">بدون حساب منصة</option></select></div>
       <div id="count" class="count">—</div>
@@ -104,6 +105,6 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
     <div class="pagination"><button id="prevPage" class="btn secondary" type="button">السابق</button><span id="pageText" class="muted"></span><button id="nextPage" class="btn secondary" type="button">التالي</button></div>
   </section>
 </div>
-<script type="module" src="customers.js?v=20260923-master-id2"></script>
+<script type="module" src="customers.js?v=20260925-identity-keys1"></script>
 </body>
 </html>
