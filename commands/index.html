@@ -27,25 +27,25 @@
   </div>
 
   <section class="card recommended">
-    <span class="badge">الموصى به</span>
-    <h2>HiLink — Stable + Build بضغطة واحدة</h2>
-    <p>ضع الملف داخل مجلد مشروع HiLink القديم ثم شغله. يجلب <code>stable-v0.5-main-sync</code>، ينظف الكود القديم، ينفذ <code>npm ci</code>، يبني Setup وPortable، ثم يفتح <code>release</code>.</p>
+    <span class="badge">الموصى به الآن</span>
+    <h2>HiLink — تحديث وتشغيل بضغطة واحدة</h2>
+    <p>حمّل الملف وضعه داخل مجلد <code>hilink-ip-manager</code>. بعد ذلك كل مرة تضغط عليه فقط: ينتقل إلى <code>main</code>، يجلب آخر تحديث من GitHub، يثبت الاعتماديات فقط عند الحاجة، ثم يشغل البرنامج مباشرة.</p>
+    <a class="download" href="HILINK_UPDATE_AND_RUN.bat" download>تحميل HILINK_UPDATE_AND_RUN.bat</a>
+  </section>
+
+  <section class="card">
+    <h2>HiLink — تحديث وبناء EXE بضغطة واحدة</h2>
+    <p>نفس التحديث الآمن، ثم يبني Setup وPortable ويفتح مجلد <code>release</code>. استعمله عندما تريد نسخة تثبيت جديدة.</p>
+    <a class="download" href="HILINK_UPDATE_AND_BUILD.bat" download>تحميل HILINK_UPDATE_AND_BUILD.bat</a>
+  </section>
+
+  <section class="card">
+    <h2>HiLink — Stable القديم</h2>
+    <p>الأوامر القديمة بقيت للرجوع فقط. لا تستعملها للتحديث اليومي لأنها تعتمد فرع Stable قديم وقد تحذف تعديلات محلية.</p>
     <a class="download" href="HILINK_STABLE_BUILD.bat" download>تحميل HILINK_STABLE_BUILD.bat</a>
   </section>
 
-  <section class="card">
-    <h2>HiLink — تحديث Stable فقط</h2>
-    <p>لما تريد فقط جعل نفس مجلد المشروع مطابقًا لآخر Stable بدون Build.</p>
-    <a class="download" href="HILINK_GET_STABLE.bat" download>تحميل HILINK_GET_STABLE.bat</a>
-  </section>
-
-  <section class="card">
-    <h2>HiLink — Build فقط</h2>
-    <p>إذا كان السورس عندك جاهز وتريد فقط تثبيت الاعتماديات وبناء نسخة Windows.</p>
-    <a class="download" href="HILINK_BUILD.bat" download>تحميل HILINK_BUILD.bat</a>
-  </section>
-
-  <div class="note"><strong>تنبيه:</strong> ملف Stable يحذف التعديلات المحلية غير المحفوظة داخل مشروع HiLink قبل إرجاعه للحالة المستقرة. استعمله عندما تكون متأكدًا أنك لا تحتاج تغييرات محلية غير مرفوعة.</div>
+  <div class="note"><strong>مهم:</strong> ملف التحديث الجديد لا يحذف تعديلاتك المحلية. إذا وجد تعارضًا يتوقف بأمان ويطلب المراجعة بدل استعمال <code>reset --hard</code>.</div>
 </main>
 </body>
 </html>
