@@ -3,6 +3,13 @@ setlocal EnableExtensions
 title HiLink IP Manager - Refresh + Run
 cd /d "%~dp0"
 
+net session >nul 2>&1
+if not "%errorlevel%"=="0" (
+  echo Requesting Administrator permission...
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+  exit /b
+)
+
 echo ==========================================
 echo   HiLink IP Manager - REFRESH + RUN
 echo ==========================================
