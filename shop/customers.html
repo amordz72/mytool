@@ -27,6 +27,18 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 .pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:10px}.pagination button{width:auto;min-width:80px}
 /* Customer UI template v1 — layout/density only; existing MyTool colors stay authoritative. */
 .customer-workspace{display:grid;grid-template-columns:minmax(0,1fr);gap:11px;align-items:start}
+#listCard{order:1}#detailCard{order:2}
+#listCard .filters{grid-template-columns:minmax(220px,2fr) repeat(3,minmax(130px,1fr)) auto}
+#listCard .count{align-self:center;padding:0}
+@media(min-width:761px){
+  #customers.list{display:table;width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  #customers .customer-card{display:table-row;border:0;border-radius:0;box-shadow:none}
+  #customers .customer-top{display:table-cell;vertical-align:middle;padding:10px 12px;border-bottom:1px solid var(--line)}
+  #customers .customer-summary{display:table-cell;vertical-align:middle;padding:8px 10px;border-bottom:1px solid var(--line)}
+  #customers .customer-summary .mini{display:inline-block;min-width:92px;margin-inline-start:6px;padding:5px 7px}
+  #customers .names-line,#customers .card-actions,#customers>.badges{display:none}
+  #customers .customer-card:hover .customer-top,#customers .customer-card:hover .customer-summary{background:var(--surface-soft)}
+}
 #listCard{min-width:0}.filters{position:relative}.customer-card{transition:border-color .15s ease,box-shadow .15s ease,transform .1s ease}
 .customer-card:active{transform:scale(.995)}
 @media(min-width:900px){
@@ -36,6 +48,21 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
   .customer-workspace:has(#detailCard:not([hidden])) #listCard{grid-column:2;grid-row:1}
 }
 @media(max-width:760px){
+#registryCard{padding:10px;margin-bottom:8px}
+#registryCard .safety{display:none}
+#registryCard .metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+#registryCard .metric{padding:7px 5px;text-align:center}
+#registryCard .metric b{font-size:16px}
+#registryCard .metric small{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#registryCard .registry-actions{grid-template-columns:1fr 1fr 44px}
+#registryCard #refreshBtn{font-size:0;padding:0}
+#registryCard #refreshBtn::after{content:"↻";font-size:20px}
+#listCard{padding:9px}
+#listCard .filters{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#listCard .filters .field:first-child{grid-column:1/-1}
+#listCard .filters .field label{font-size:10px;margin-bottom:3px}
+#listCard input,#listCard select{min-height:42px;padding:8px 9px}
+#listCard .count{grid-column:1/-1;padding:2px 2px 0}
 #detailCard{display:none!important}
 body.mobile-detail #detailCard{display:block!important}
 body.mobile-detail #registryCard,body.mobile-detail #listCard{display:none!important}
@@ -49,7 +76,7 @@ body:not(.mobile-detail) #registryCard,body:not(.mobile-detail) #listCard{displa
 .customer-card .customer-summary,.customer-card .names-line,.customer-card .card-actions,.customer-card>.badges{display:none}
 .customer-card .customer-top>.badges{display:flex;flex-wrap:nowrap;align-items:center}.customer-card .customer-top>.badges .badge{display:none}.customer-card .customer-top>.badges .mobile-debt{display:inline-flex;font-size:12px;padding:5px 8px;background:#fff1f2;color:#b42318;min-width:92px;justify-content:center}
 .list{gap:0;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:#fff}
-.pagination{position:sticky;bottom:72px;z-index:8;background:rgba(244,247,251,.96);padding:7px;border:1px solid var(--line);border-radius:13px;backdrop-filter:blur(8px)}
+.pagination{position:sticky;bottom:72px;z-index:8;background:rgba(244,247,251,.96);padding:6px;border:1px solid var(--line);border-radius:13px;backdrop-filter:blur(8px)}.pagination .btn{min-height:40px;padding:7px 12px}
 body.mobile-detail #registryCard,body.mobile-detail #listCard{display:none}
 body.mobile-detail #detailCard{display:block!important;margin-top:0}
 body.mobile-detail #detailCard .detail-head{display:flex;flex-direction:column}
