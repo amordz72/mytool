@@ -385,7 +385,7 @@ function updateSourceVisibilityButton(){
   b.textContent=showingAll?'إخفاء الحسابات السليمة':'عرض كل حسابات المصادر';
 }
 function renderAll(){
-  renderMetrics();renderIdentityReviews();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();updateSourceVisibilityButton();
+  renderMetrics();renderIdentityReviews();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();updateSourceVisibilityButton();renderEmptyMasterBuild();
 }
 async function identify(){
   const now=Date.now();
