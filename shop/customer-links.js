@@ -788,6 +788,7 @@ function estimateImportChanges(item){
 }
 function importStatusText(item){
   if(item.status==='ready'&&item.reuseBatchId)return 'ملف معروف — جاهز لإضافة الجدد';
+  if(item.status==='ready'&&item.bootstrapExisting)return 'جاهز لبناء Master';
   if(item.status==='ready')return 'جاهز للاعتماد';
   if(item.status==='resume')return 'استيراد غير مكتمل — جاهز للاستئناف';
   if(item.status==='duplicate')return 'مكرر مكتمل — سيُتجاهل';
@@ -987,9 +988,14 @@ async function approveBuildImports(){
   if(importBusy)return;
   const eligible=importQueue.filter(x=>x.status==='ready'||x.status==='resume');
   if(!eligible.length)return msg('لا يوجد ملف سليم جاهز للبناء.','warn');
+  if(parties.length===0){
+    const seedPlatforms=[...new Set(eligible.map(x=>x.platform).filter(Boolean))];
+    if(seedPlatforms.length>1)return msg('الـMaster فارغ. اعتمد ملف منصة أساسية واحدة أولًا، ثم أضف باقي المنصات للمراجعة والربط.','warn');
+  }
   const newRows=eligible.reduce((n,item)=>n+(item.bootstrapExisting?sources.filter(s=>s.platform_key===item.platform&&s.link_status!=='linked').length:Number(item.diff?.newCount||0)),0);
   if(!newRows)return msg('لا توجد حسابات جديدة أو حسابات غير مربوطة لبناء الـMaster.','info');
-  const ok=await askConfirm('إضافة الجدد فقط','سيتم تسجيل حسابات المصادر الجديدة فقط. لن يتم تعديل العملاء الموجودين ولن يتم دمج أو إنشاء Master تلقائيًا. بعد التسجيل ستظهر الحسابات الجديدة للمراجعة وإنشاء العميل أو ربطه.','متابعة');
+  const seedText=parties.length===0?' الـMaster فارغ: هذه المنصة ستصبح قاعدة البناء وسيُنشأ عميل Master لكل حساب غير مربوط فيها.':'';
+  const ok=await askConfirm('إضافة الجدد فقط','سيتم تسجيل حسابات المصادر الجديدة فقط ولن تتغير الحسابات الموجودة.'+seedText+' بعد وجود Master، أي منصة أخرى تبقى للمراجعة ولا يحدث دمج تلقائي.','متابعة');
   if(!ok)return;
   importBusy=true;renderImportQueue();
   let done=0,failed=0,totalInserted=0,totalCreated=0;
