@@ -16,7 +16,7 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 .registry-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.registry-actions{display:flex;gap:7px;flex-wrap:wrap}.btn{border:0;border-radius:11px;padding:10px 13px;font:inherit;font-weight:900;cursor:pointer;background:var(--main);color:#fff;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.btn.secondary{background:#fff;color:var(--main);border:1px solid #99d5cf}.btn.warnbtn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}.btn:disabled{opacity:.5;cursor:not-allowed}
 .safety{margin-top:10px;padding:10px 12px;border:1px solid #a7f3d0;background:#ecfdf5;border-radius:13px;font-size:12px;line-height:1.65;color:#065f46}.safety b{display:block;font-size:13px;margin-bottom:2px}
 .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.metric{border:1px solid var(--line);background:#f8fafc;border-radius:13px;padding:9px}.metric small{display:block;color:var(--muted);font-size:10px}.metric b{display:block;font-size:19px;margin-top:3px}
-.filters{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end}.field label{display:block;font-size:11px;font-weight:900;margin-bottom:5px}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff;color:var(--text);font:inherit}.count{white-space:nowrap;color:var(--muted);font-size:12px;padding-bottom:10px}
+.filters{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end}.field label{display:block;font-size:11px;font-weight:900;margin-bottom:5px}.field-status{font-size:12px;line-height:1.45;margin-top:6px;min-height:18px;padding:5px 8px;border-radius:8px}.field-status:empty{padding:0;min-height:0}.field-status.error{background:#fff1f2;color:#b42318}.field-status.ok{background:#ecfdf5;color:#047857}.field-status.info{background:#f8fafc;color:var(--muted)}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff;color:var(--text);font:inherit}.count{white-space:nowrap;color:var(--muted);font-size:12px;padding-bottom:10px}
 .list{display:grid;gap:9px}.customer-card{border:1px solid var(--line);border-radius:16px;padding:12px;background:#fff}.customer-card.selected{border-color:#5eead4;box-shadow:0 0 0 2px rgba(20,184,166,.12)}.customer-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.customer-name{font-weight:900;font-size:16px}.customer-id{font-size:11px;color:var(--muted);margin-top:2px}.badges{display:flex;gap:5px;flex-wrap:wrap}.badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;background:#f1f5f9}.badge.ok{background:#dcfce7;color:#166534}.badge.platform{background:#e0f2fe;color:#075985}.badge.warn{background:#fef3c7;color:#92400e}
 .customer-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.mini{padding:8px;border-radius:10px;background:#f8fafc}.mini b{display:block;font-size:13px;word-break:break-word}.mini small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.names-line{font-size:11px;color:#475569;line-height:1.65;margin-top:8px}
 .card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.card-actions button,.card-actions a{width:auto}
@@ -73,7 +73,7 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
       <h3>الهوية الرئيسية</h3>
       <div class="edit-grid">
         <div class="field"><label>الاسم الرئيسي</label><input id="editName"></div>
-        <div class="field"><label>Username MyTool — فريد</label><input id="editUsername" autocomplete="off" placeholder="مثال: أسامة 301 أو oussama301"><div id="usernameStatus" class="muted" style="margin-top:5px;min-height:20px"></div></div>
+        <div class="field"><label>Username MyTool — فريد</label><input id="editUsername" autocomplete="off" placeholder="مثال: أسامة 301 أو oussama301"><div id="usernameStatus" class="field-status"></div></div>
         <div class="field"><label>الهاتف الأساسي — فريد إن وُجد</label><input id="editPhone" inputmode="tel"></div>
         <div class="field"><label>البريد الأساسي</label><input id="editEmail" inputmode="email"></div>
         <button id="saveIdentity" class="btn" type="button">حفظ</button>
@@ -105,6 +105,6 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
     <div class="pagination"><button id="prevPage" class="btn secondary" type="button">السابق</button><span id="pageText" class="muted"></span><button id="nextPage" class="btn secondary" type="button">التالي</button></div>
   </section>
 </div>
-<script type="module" src="customers.js?v=20260925-identity-keys1"></script>
+<script type="module" src="customers.js?v=20260925-field-error1"></script>
 </body>
 </html>
