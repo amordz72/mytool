@@ -8,7 +8,7 @@ const money=v=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(n
 const PAGE_SIZE=20;
 const WORKER_TOKEN='mytool_shop_worker_token',WORKER_EXPIRES='mytool_shop_worker_expires_at',WORKSPACE_ROLE='mytool_workspace_role',ADMIN_EXPIRES='mytool_admin_expires_at';
 
-let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null;
+let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null,usernameCheckTimer=null,usernameCheckSeq=0;
 
 function msg(text,kind='info'){$('message').textContent=text;$('message').className='message '+kind}
 function normalize(v){return String(v??'').toLowerCase().normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim()}
@@ -153,6 +153,7 @@ function renderDetail(id){
   const a=accountsFor(id),names=knownNames(p),c=contacts(p),pks=platformKeysFor(id),t=totals(id);
   $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · '+p.mytool_username:' · بدون Username');
   $('editName').value=p.display_name||'';$('editUsername').value=p.mytool_username||'';$('editPhone').value=p.primary_phone||'';$('editEmail').value=p.primary_email||'';
+  setUsernameStatus(p.mytool_username?'اسم المستخدم الحالي محفوظ.':'اكتب Username وسيتم التحقق تلقائيًا بعد توقف الكتابة.','info');
   const learned=identityRules.filter(r=>Number(r.party_id)===Number(id)&&r.status==='approved');
   $('detailNames').innerHTML=chips(names)+
     (learned.length?'<div class="muted" style="width:100%;margin-top:6px">أسماء متعلمة: '+learned.map(r=>esc((r.source_kind==='whatsapp'?'WhatsApp · ':'')+r.identity_value)).join(' · ')+'</div>':'');
@@ -181,11 +182,40 @@ function renderAccount(s){
     '</div>'+
     '<div class="money-row"><div class="money"><small>الرصيد</small><b>'+money(s.balance_amount)+'</b></div><div class="money"><small>الدين</small><b>'+money(s.debt_amount)+'</b></div><div class="money"><small>الربح</small><b>'+money(s.profit_amount)+'</b></div></div></div>';
 }
+function setUsernameStatus(text,kind='info'){
+  const el=$('usernameStatus');if(!el)return;
+  el.textContent=text||'';
+  el.style.color=kind==='error'?'#b42318':kind==='ok'?'#047857':'';
+  el.style.fontWeight=kind==='error'||kind==='ok'?'800':'';
+}
+async function checkUsernameAvailability(){
+  const p=partyBy(selectedPartyId);if(!p)return true;
+  const username=$('editUsername').value.trim().replace(/\s+/g,' ');
+  const seq=++usernameCheckSeq;
+  if(!username){setUsernameStatus('بدون Username حاليًا.','info');return true}
+  if(!/\p{L}/u.test(username)||username.length<2||username.length>60){
+    setUsernameStatus('غير صالح: يجب أن يحتوي حرفًا واحدًا على الأقل وألا يكون أرقامًا فقط.','error');return false;
+  }
+  setUsernameStatus('جاري التحقق…','info');
+  const r=await adminRpc('admin_check_mytool_username','workspace_admin_check_mytool_username',{p_party_id:p.id,p_username:username});
+  if(seq!==usernameCheckSeq)return false;
+  if(r.error){setUsernameStatus('تعذر التحقق الآن؛ سيتم التحقق عند الحفظ.','error');return false}
+  if(r.data?.available){setUsernameStatus('متاح ✓','ok');return true}
+  if(r.data?.reason==='taken'){setUsernameStatus('محجوز لشخص آخر ✕','error');return false}
+  setUsernameStatus('Username غير صالح.','error');return false;
+}
+function scheduleUsernameCheck(){
+  clearTimeout(usernameCheckTimer);
+  setUsernameStatus('…','info');
+  usernameCheckTimer=setTimeout(()=>checkUsernameAvailability(),650);
+}
+
 async function saveIdentity(){
   const p=partyBy(selectedPartyId);if(!p)return;
   const name=$('editName').value.trim(),username=$('editUsername').value.trim().replace(/\s+/g,' '),phone=$('editPhone').value.trim(),email=$('editEmail').value.trim();
   if(name.length<2)return msg('الاسم الرئيسي قصير جدًا.','error');
   if(username&&(!/\p{L}/u.test(username)||username.length<2||username.length>60))return msg('Username يجب أن يحتوي حرفًا واحدًا على الأقل، ويمكن أن يحتوي حروفًا وأرقامًا ومسافات.','error');
+  if(username&&!(await checkUsernameAvailability()))return msg('راجع Username: قد يكون محجوزًا أو غير صالح.','error');
   $('saveIdentity').disabled=true;
   const r=await adminRpc('admin_customer_update_identity_v2','workspace_admin_update_identity_v2',{
     p_party_id:p.id,p_display_name:name,p_username:username||null,p_phone:phone||null,p_email:email||null
@@ -203,6 +233,8 @@ async function saveIdentity(){
 
 $('refreshBtn').onclick=()=>load().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));
 $('search').oninput=()=>{page=1;renderList()};
+$('editUsername').oninput=scheduleUsernameCheck;
+$('editUsername').onblur=()=>{clearTimeout(usernameCheckTimer);checkUsernameAvailability()};
 $('platformFilter').onchange=()=>{page=1;renderList()};
 $('kindFilter').onchange=()=>{page=1;renderList()};
 $('prevPage').onclick=()=>{page--;renderList();scrollTo({top:$('customers').offsetTop-80,behavior:'smooth'})};
