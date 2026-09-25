@@ -1089,7 +1089,7 @@ async function approveImports(){
   );
   if(!ok)return;
   importBusy=true;renderImportQueue();
-  let done=0,failed=0,skipped=0,totalProcessed=0,totalUpdated=0,totalInserted=0,totalMissing=0;
+  let done=0,failed=0,skipped=0,totalProcessed=0,totalUpdated=0,totalInserted=0,totalMissing=0,totalAutoLinked=0;
   try{
     for(const item of importQueue){
       if(!eligible.includes(item)){
@@ -1099,6 +1099,9 @@ async function approveImports(){
       try{
         const r=await processImportItem(item);
         if(r?.skipped){skipped++;continue}
+        const linked=await autoLinkExact(item.platform);
+        if(linked?.error)throw new Error(linked.error);
+        totalAutoLinked+=Number(linked?.linked||0);
         done++;totalProcessed+=Number(r.processed||0);totalUpdated+=Number(r.updated||0);totalInserted+=Number(r.inserted||0);totalMissing+=Number(r.newlyMissing||0);
       }catch(error){
         failed++;item.status='error';item.error=safeError(error);renderImportQueue();
@@ -1109,7 +1112,7 @@ async function approveImports(){
       await load();
     }
     $('sourceFile').value='';
-    msg('انتهى الاعتماد: ملفات ناجحة '+done+' · مكررة/متجاهلة '+skipped+' · فشلت '+failed+' · حسابات معالجة '+totalProcessed+' · جديدة '+totalInserted+' · محدثة '+totalUpdated+' · لم تظهر في آخر Snapshot '+totalMissing+'.',failed?'warn':'ok');
+    msg('انتهى التحيين: ملفات ناجحة '+done+' · مكررة/متجاهلة '+skipped+' · فشلت '+failed+' · حسابات معالجة '+totalProcessed+' · جديدة '+totalInserted+' · محدثة '+totalUpdated+' · ربط تلقائي مباشر '+totalAutoLinked+' · لم تظهر في آخر Snapshot '+totalMissing+'.',failed?'warn':'ok');
   }catch(error){
     msg('اكتملت بعض الملفات لكن تعذر إنهاء المراجعة: '+safeError(error),'warn');
   }finally{
