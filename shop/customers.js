@@ -143,7 +143,8 @@ function renderList(){
       '<div class="card-actions"><button class="btn secondary" data-open-party="'+p.id+'" type="button">فتح ملف العميل</button></div>'+
       '</article>';
   }).join('');
-  document.querySelectorAll('[data-open-party]').forEach(b=>b.onclick=()=>{selectedPartyId=Number(b.dataset.openParty);renderDetail(selectedPartyId);renderList();});
+  document.querySelectorAll('[data-party-card]').forEach(card=>card.onclick=e=>{if(e.target.closest('button,a,input,select'))return;selectedPartyId=Number(card.dataset.partyCard);renderDetail(selectedPartyId);renderList();});
+  document.querySelectorAll('[data-open-party]').forEach(b=>b.onclick=e=>{e.stopPropagation();selectedPartyId=Number(b.dataset.openParty);renderDetail(selectedPartyId);renderList();});
 }
 function chips(values,empty='لا توجد بيانات'){
   return values.length?values.map(v=>'<span class="chip">'+esc(v)+'</span>').join(''):'<span class="muted">'+esc(empty)+'</span>';
