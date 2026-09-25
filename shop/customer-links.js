@@ -1006,7 +1006,7 @@ async function createManual(){
   if(!navigator.onLine)return msg('إنشاء العميل يحتاج اتصالًا.','warn');
   const name=$('manualName').value.trim(),phone=$('manualPhone').value.trim()||null,email=$('manualEmail').value.trim()||null;
   if(!name)return msg('اكتب اسم العميل.','error');
-  const {error}=await adminRpc('admin_customer_create_canonical','workspace_admin_create_canonical_party_v2',{
+  const {error}=await adminRpc('admin_customer_create_or_discover','workspace_admin_customer_create_or_discover',{
     p_display_name:name,p_phone:phone,p_email:email,p_party_type:'shop'
   });
   if(error)return msg('تعذر إنشاء العميل: '+safeError(error),'error');

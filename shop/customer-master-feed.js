@@ -205,9 +205,13 @@ async function createMaster(){
   const exact=parties.find(p=>norm(p.display_name)===norm(name));
   if(exact)throw new Error('يوجد عميل بنفس الاسم في الماستر. اختره من القائمة بدل إنشاء نسخة.');
   const params={p_display_name:name,p_phone:$('newMasterPhone').value.trim()||null,p_email:$('newMasterEmail').value.trim()||null,p_party_type:'shop'};
-  const {data,error}=await adminRpc('admin_customer_create_canonical','workspace_admin_create_canonical_party_v2',params);
+  const {data,error}=await adminRpc('admin_customer_create_or_discover','workspace_admin_customer_create_or_discover',params);
   if(error)throw error;
-  return Number(data);
+  if(data?.decision==='existing')return Number(data.party_id);
+  if(data?.decision==='created')return Number(data.party_id);
+  if(data?.decision==='review')throw new Error('وجدنا هوية مشابهة تحتاج مراجعة قبل إنشاء MT جديد.');
+  if(data?.decision==='conflict')throw new Error('بيانات الهوية تشير إلى أكثر من MT. راجعها قبل الإنشاء.');
+  throw new Error('تعذر تحديد هوية العميل.');
 }
 async function linkOne(sourceId,targetId){
   const {data,error}=await adminRpc('admin_customer_link_source_account_safe','workspace_admin_link_source_account_safe',{
