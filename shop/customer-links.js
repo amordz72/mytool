@@ -1032,8 +1032,7 @@ async function approveBuildImports(){
   const ok=await askConfirm('إضافة الجدد فقط','سيتم تسجيل حسابات المصادر الجديدة فقط ولن تتغير الحسابات الموجودة.'+seedText+' بعد وجود Master، أي منصة أخرى تبقى للمراجعة ولا يحدث دمج تلقائي.','متابعة');
   if(!ok)return;
   importBusy=true;renderImportQueue();
-  let done=0,failed=0,totalInserted=0,totalCreated=0;
-  let masterSeeded=parties.length>0;
+  let done=0,failed=0,totalInserted=0,totalCreated=0,totalMatched=0;
   try{
     for(const item of eligible){
       try{
@@ -1055,18 +1054,16 @@ async function approveBuildImports(){
           if(error)throw error;
           totalInserted+=Number(data?.inserted||0);
         }
-        if(!masterSeeded){
-          const seeded=await autoBootstrap(item.platform);
-          if(seeded?.error)throw new Error(seeded.error);
-          totalCreated+=Number(seeded?.created||0);
-          masterSeeded=true;
-        }
+        const seeded=await autoBootstrap(item.platform);
+        if(seeded?.error)throw new Error(seeded.error);
+        totalCreated+=Number(seeded?.created||0);
+        totalMatched+=Number(seeded?.matched||0);
         item.status='done';done++;
       }catch(error){failed++;item.status='error';item.error=safeError(error)}
       renderImportQueue();
     }
     await load();
-    msg('انتهى بناء «إضافة الجدد فقط»: ملفات '+done+' · حسابات مصدر جديدة '+totalInserted+' · عملاء Master أُنشئوا '+totalCreated+' · فشل '+failed+'. المنصات التالية تبقى للمراجعة والربط ولا تُدمج تلقائيًا.',failed?'warn':'ok');
+    msg('انتهى بناء العملاء: ملفات '+done+' · حسابات مصدر جديدة '+totalInserted+' · Master جديد '+totalCreated+' · ربط تلقائي مباشر '+totalMatched+' · فشل '+failed+'. التطابق الدقيق username أو الهاتف أو البريد يُربط مباشرة، وغير المطابق يصبح Master جديدًا.',failed?'warn':'ok');
   }finally{importBusy=false;renderImportQueue();renderConnectivity()}
 }
 function setImportMode(mode){
@@ -1075,7 +1072,7 @@ function setImportMode(mode){
   $('importMode').value=importMode;
   $('buildMethodField').hidden=importMode!=='build';
   $('importModeTitle').textContent=importMode==='build'?'بناء العملاء':'تحيين بيانات منصة';
-  $('importModeHelp').textContent=importMode==='build'?'يبني قائمة العملاء بطريقة مقصودة. إذا كان Master فارغًا تصبح أول منصة تعتمدها هي قاعدة البناء ويُنشأ عميل لكل حساب غير مربوط. بعد ذلك لا يوجد دمج تلقائي؛ الحسابات من المنصات الأخرى تبقى للمراجعة والربط.':'يحدّث بيانات حسابات المنصة فقط. لا ينشئ party_id ولا يغيّر هوية العميل. الحساب الجديد يظهر كتنبيه/غير مسجل.';
+  $('importModeHelp').textContent=importMode==='build'?'يبني الـMaster من الحسابات غير المربوطة. أي تطابق دقيق في username أو الهاتف أو البريد مع أي منصة يربط مباشرة بنفس Master. غير المطابق ينشئ Master جديدًا، والاسم يبقى من أول مصدر أنشأه.':'يحدّث بيانات المنصة فقط. إذا ظهر حساب جديد وتطابق بدقة مع Master موجود يُربط مباشرة؛ غير المطابق يبقى غير مربوط ولا ينشئ Master من مسار التحيين.';
   $('approveImportsBtn').textContent=importMode==='build'?'اعتماد البناء':'اعتماد التحيين';
 }
 
