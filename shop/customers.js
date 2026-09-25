@@ -201,7 +201,14 @@ function renderList(){
       '<div class="card-actions"><button class="btn secondary" data-open-party="'+p.id+'" type="button">فتح ملف العميل</button></div>'+
       '</article>';
   }).join('');
-  document.querySelectorAll('[data-party-card]').forEach(card=>card.onclick=e=>{if(e.target.closest('button,a,input,select'))return;selectedPartyId=Number(card.dataset.partyCard);renderDetail(selectedPartyId);renderList();});
+  document.querySelectorAll('[data-party-card]').forEach(card=>{
+    let holdTimer=null,held=false;
+    const open=()=>{selectedPartyId=Number(card.dataset.partyCard);renderDetail(selectedPartyId);renderList()};
+    card.onclick=e=>{if(e.target.closest('button,a,input,select')||held)return;open()};
+    card.onpointerdown=e=>{if(e.target.closest('button,a,input,select'))return;held=false;holdTimer=setTimeout(()=>{held=true;open()},550)};
+    const cancel=()=>{if(holdTimer){clearTimeout(holdTimer);holdTimer=null}};
+    card.onpointerup=cancel;card.onpointercancel=cancel;card.onpointerleave=cancel;
+  });
   document.querySelectorAll('[data-open-party]').forEach(b=>b.onclick=e=>{e.stopPropagation();selectedPartyId=Number(b.dataset.openParty);renderDetail(selectedPartyId);renderList();});
   document.querySelectorAll('[data-row-menu]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=Number(b.dataset.rowMenu);openMenuPartyId=Number(openMenuPartyId)===id?null:id;renderList();});
   document.querySelectorAll('[data-edit-party]').forEach(b=>b.onclick=e=>{e.stopPropagation();openMenuPartyId=null;selectedPartyId=Number(b.dataset.editParty);renderDetail(selectedPartyId);renderList();});

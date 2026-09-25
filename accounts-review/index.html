@@ -25,9 +25,13 @@
 
   <section class="panel accounts-import-panel">
     <div class="accounts-import-copy">
-      <h2>تحديث ملفات الحسابات</h2>
-      <p>اختر ملفات تهنى باي وهني روحك ووفرلي معًا. البرنامج يكتشف صيغة كل ملف تلقائيًا ويحفظ آخر البيانات محليًا على هذا الجهاز.</p>
-      <small>لا تحتاج الدخول إلى كل منصة داخل MyTool ولا إعادة الرفع في كل صفحة. ارفع مرة، ثم أعد الرفع فقط عندما تريد تحديث الأرقام.</small>
+      <h2>استيراد حسابات المنصات</h2>
+      <p><b>اختر الغرض قبل الملف:</b> الهوية للعقل المركزي للأسماء، أو المالي لتحديث الدين/الرصيد فقط.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn" type="button" id="identityImportBtn">👤 هويات وحسابات</button>
+        <button class="btn secondary" type="button" id="financialImportBtn">💰 تحديث مالي جزئي</button>
+      </div>
+      <small id="importPurposeHint">الهويات: الاسم وUsername والهاتف والإيميل. لا تستخدم هذا المسار لمجرد تحديث الدين.</small>
     </div>
     <button class="btn accounts-import-btn" type="button" @click="pickFile">📂 اختيار عدة ملفات</button>
   </section>
@@ -187,7 +191,10 @@
   </dialog>
 </main>
 <script type="module" src="./app.js?v=20260921-total-default1"></script>
-<script type="module" src="./supabase-sync.js?v=20260923-username-identity1"></script>
+<script type="module" src="./supabase-sync.js?v=20260925-purpose-split1"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{const i=document.getElementById('identityImportBtn'),f=document.getElementById('financialImportBtn'),h=document.getElementById('importPurposeHint');function set(p){localStorage.setItem('mytool_accounts_import_purpose',p);localStorage.setItem('mytool_accounts_financial_mode','partial');i.classList.toggle('secondary',p!=='identity');f.classList.toggle('secondary',p!=='financial');h.textContent=p==='financial'?'مالي جزئي: يحدّث الدين/الرصيد/الربح للحسابات الموجودة في الملف فقط. الغائبون لا يتغيرون ولا تُعدّل الهوية.':'الهويات: الاسم وUsername والهاتف والإيميل للعقل المركزي. لا تستخدمه لمجرد تحديث الدين.'}i.onclick=()=>set('identity');f.onclick=()=>set('financial');set(localStorage.getItem('mytool_accounts_import_purpose')==='financial'?'financial':'identity')});
+</script>
 <script src="./accounts-advanced.js?v=20260923-simple2" defer></script>
 <script src="./selection.js?v=20260920-share4" defer></script>
 <script src="./accounts-identities.js?v=20260916-links1" defer></script>
