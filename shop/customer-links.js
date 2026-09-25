@@ -508,7 +508,16 @@ async function autoBootstrap(platform=null){
   const {data,error}=await adminRpc('admin_customer_auto_bootstrap_sources','workspace_admin_auto_bootstrap_sources',{p_platform_key:platform});
   if(error){
     console.warn('customer auto bootstrap skipped:', safeError(error));
-    return {created:0,skipped:0,error:safeError(error)};
+    return {created:0,matched:0,skipped:0,error:safeError(error)};
+  }
+  return data;
+}
+async function autoLinkExact(platform=null){
+  if(!navigator.onLine)return null;
+  const {data,error}=await adminRpc('admin_customer_auto_link_exact_sources','workspace_admin_auto_link_exact_sources',{p_platform_key:platform});
+  if(error){
+    console.warn('customer exact auto-link skipped:',safeError(error));
+    return {linked:0,unmatched:0,error:safeError(error)};
   }
   return data;
 }
