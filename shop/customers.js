@@ -5,7 +5,8 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number(v||0);
 const money=v=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(num(v))+' دج';
-const PAGE_SIZE=10; // exactly 10 customer rows per page
+const PAGE_SIZE=10;
+let openMenuPartyId=null; // exactly 10 customer rows per page
 const WORKER_TOKEN='mytool_shop_worker_token',WORKER_EXPIRES='mytool_shop_worker_expires_at',WORKSPACE_ROLE='mytool_workspace_role',ADMIN_EXPIRES='mytool_admin_expires_at';
 
 let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null,usernameCheckTimer=null,usernameCheckSeq=0;
@@ -136,7 +137,8 @@ function renderList(){
     const a=accountsFor(p.id),pks=platformKeysFor(p.id),t=totals(p.id),names=knownNames(p),activity=lastActivity(p.id);
     return '<article class="customer-card'+(Number(selectedPartyId)===Number(p.id)?' selected':'')+'" data-party-card="'+p.id+'">'+
       '<div class="customer-top"><div><div class="customer-name">'+esc(p.display_name)+'</div><div class="customer-id">'+esc('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · '+esc(p.mytool_username):' · بدون Username')+'</div></div>'+
-      '<div class="badges"><span class="badge ok">مؤكد</span><span class="badge platform">'+pks.length+' منصة</span><span class="badge">'+a.length+' حساب</span><span class="badge mobile-debt">'+money(t.debt)+'</span></div></div>'+
+      '<div class="badges"><span class="badge ok">مؤكد</span><span class="badge platform">'+pks.length+' منصة</span><span class="badge">'+a.length+' حساب</span><span class="badge mobile-debt">'+money(t.debt)+'</span><button class="row-menu-btn" data-row-menu="'+p.id+'" type="button" aria-label="خيارات العميل">⋮</button></div></div>'+
+      '<div class="row-menu'+(Number(openMenuPartyId)===Number(p.id)?' open':'')+'" data-menu-panel="'+p.id+'"><button type="button" data-edit-party="'+p.id+'">تعديل البيانات</button><button type="button" data-active-party="'+p.id+'" data-next-active="'+(p.active===false?'true':'false')+'">'+(p.active===false?'إعادة إظهار العميل':'إخفاء العميل')+'</button></div>'+
       '<div class="customer-summary">'+
         '<div class="mini"><b>'+esc(p.primary_phone||'—')+'</b><small>الهاتف الأساسي</small></div>'+
         '<div class="mini"><b>'+money(t.debt)+'</b><small>ديون المصادر</small></div>'+
@@ -150,6 +152,9 @@ function renderList(){
   }).join('');
   document.querySelectorAll('[data-party-card]').forEach(card=>card.onclick=e=>{if(e.target.closest('button,a,input,select'))return;selectedPartyId=Number(card.dataset.partyCard);renderDetail(selectedPartyId);renderList();});
   document.querySelectorAll('[data-open-party]').forEach(b=>b.onclick=e=>{e.stopPropagation();selectedPartyId=Number(b.dataset.openParty);renderDetail(selectedPartyId);renderList();});
+  document.querySelectorAll('[data-row-menu]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=Number(b.dataset.rowMenu);openMenuPartyId=Number(openMenuPartyId)===id?null:id;renderList();});
+  document.querySelectorAll('[data-edit-party]').forEach(b=>b.onclick=e=>{e.stopPropagation();openMenuPartyId=null;selectedPartyId=Number(b.dataset.editParty);renderDetail(selectedPartyId);renderList();});
+  document.querySelectorAll('[data-active-party]').forEach(b=>b.onclick=async e=>{e.stopPropagation();const id=Number(b.dataset.activeParty),next=b.dataset.nextActive==='true';openMenuPartyId=null;const r=await adminRpc('admin_customer_set_party_active','workspace_admin_set_party_active',{p_party_id:id,p_active:next});if(r.error)return msg('تعذر تغيير حالة العميل: '+(r.error.message||r.error),'error');await load();msg(next?'تم إظهار العميل.':'تم إخفاء العميل.','ok');});
 }
 function chips(values,empty='لا توجد بيانات'){
   return values.length?values.map(v=>'<span class="chip">'+esc(v)+'</span>').join(''):'<span class="muted">'+esc(empty)+'</span>';
