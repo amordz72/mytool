@@ -62,6 +62,58 @@ async function identify(){
   if(data?.session&&adminExp>now){mode='owner';ShopShell.mountRoleNavigation({role:'admin',permissions:{can_record_money:true}},'customers');return}
   throw new Error('NO_SESSION');
 }
+const ARABIC_USERNAME_MAP={
+  'ا':'a','أ':'a','إ':'a','آ':'a','ب':'b','ت':'t','ث':'th','ج':'j','ح':'h','خ':'kh','د':'d','ذ':'dh','ر':'r','ز':'z','س':'s','ش':'sh','ص':'s','ض':'d','ط':'t','ظ':'z','ع':'a','غ':'gh','ف':'f','ق':'q','ك':'k','ل':'l','م':'m','ن':'n','ه':'h','ة':'h','و':'w','ؤ':'w','ي':'y','ى':'a','ئ':'y'
+};
+function usernameSlug(value){
+  const raw=String(value??'').trim().toLowerCase();
+  let out='';
+  for(const ch of raw){
+    if(/[a-z0-9]/.test(ch))out+=ch;
+    else if(ARABIC_USERNAME_MAP[ch])out+=ARABIC_USERNAME_MAP[ch];
+    else if(/[\\s._-]/.test(ch))out+='.';
+  }
+  return out.replace(/\\.+/g,'.').replace(/^\\.|\\.$/g,'').slice(0,42);
+}
+function usernameCandidates(p){
+  const a=accountsFor(p.id);
+  const fromSources=a.map(s=>String(s.username||'').trim().toLowerCase()).filter(v=>/^[a-z][a-z0-9._-]{1,59}$/.test(v));
+  const bases=uniq([...fromSources,usernameSlug(p.display_name),...knownNames(p).map(usernameSlug)]).filter(v=>/^[a-z][a-z0-9._-]{1,59}$/.test(v));
+  return bases.length?bases:['user'+String(p.mt_number||p.id)];
+}
+async function fillMissingUsernames(){
+  const missing=parties.filter(p=>!String(p.mytool_username||'').trim());
+  let created=0,failed=0;
+  for(const p of missing){
+    let saved=false;
+    for(const base of usernameCandidates(p)){
+      for(let n=0;n<30;n++){
+        const candidate=(n?base+(n+1):base).slice(0,60);
+        const check=await adminRpc('admin_check_mytool_username','workspace_admin_check_mytool_username',{p_party_id:p.id,p_username:candidate});
+        if(check.error)break;
+        if(!check.data?.available)continue;
+        const r=await adminRpc('admin_customer_update_identity_v2','workspace_admin_update_identity_v2',{
+          p_party_id:p.id,p_display_name:p.display_name,p_username:candidate,p_phone:p.primary_phone||null,p_email:p.primary_email||null
+        });
+        if(!r.error){p.mytool_username=candidate;created++;saved=true;break}
+        if(!String(r.error.message||r.error).includes('MYTOOL_USERNAME_ALREADY_USED'))break;
+      }
+      if(saved)break;
+    }
+    if(!saved)failed++;
+  }
+  return {created,failed,total:missing.length};
+}
+async function refreshCustomers(){
+  const btn=$('refreshBtn');if(btn)btn.disabled=true;
+  try{
+    await load();
+    const result=await fillMissingUsernames();
+    if(result.created)await load();
+    msg(result.total===0?'التحديث مكتمل: كل العملاء لديهم Username.':'التحديث مكتمل: أُنشئ '+result.created+' Username'+(result.failed?' · تعذر '+result.failed:'')+'.','ok');
+  }finally{if(btn)btn.disabled=false}
+}
+
 async function load(){
   msg('جاري تحميل سجل العملاء…');
   const [linking,plist,partyList]=await Promise.all([
@@ -249,7 +301,7 @@ async function saveIdentity(){
   await load();selectedPartyId=p.id;renderDetail(p.id);msg('تم تحديث هوية MyTool. Username والهاتف وMT مفاتيح مستقلة؛ حسابات المنصات لم تتغير.','ok');
 }
 
-$('refreshBtn').onclick=()=>load().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));
+$('refreshBtn').onclick=()=>refreshCustomers().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));
 $('search').oninput=()=>{page=1;renderList()};
 $('editUsername').oninput=scheduleUsernameCheck;
 $('editUsername').onblur=()=>{clearTimeout(usernameCheckTimer);checkUsernameAvailability()};
