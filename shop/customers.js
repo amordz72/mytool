@@ -185,8 +185,8 @@ function renderAccount(s){
 function setUsernameStatus(text,kind='info'){
   const el=$('usernameStatus');if(!el)return;
   el.textContent=text||'';
-  el.style.color=kind==='error'?'#b42318':kind==='ok'?'#047857':'';
-  el.style.fontWeight=kind==='error'||kind==='ok'?'800':'';
+  el.className='field-status '+(text?kind:'');
+  $('editUsername')?.setAttribute('aria-invalid',kind==='error'?'true':'false');
 }
 async function checkUsernameAvailability(){
   const p=partyBy(selectedPartyId);if(!p)return true;
@@ -215,7 +215,7 @@ async function saveIdentity(){
   const name=$('editName').value.trim(),username=$('editUsername').value.trim().replace(/\s+/g,' '),phone=$('editPhone').value.trim(),email=$('editEmail').value.trim();
   if(name.length<2)return msg('الاسم الرئيسي قصير جدًا.','error');
   if(username&&(!/\p{L}/u.test(username)||username.length<2||username.length>60))return msg('Username يجب أن يحتوي حرفًا واحدًا على الأقل، ويمكن أن يحتوي حروفًا وأرقامًا ومسافات.','error');
-  if(username&&!(await checkUsernameAvailability()))return msg('راجع Username: قد يكون محجوزًا أو غير صالح.','error');
+  if(username&&!(await checkUsernameAvailability())){ $('editUsername').focus(); return; }
   $('saveIdentity').disabled=true;
   const r=await adminRpc('admin_customer_update_identity_v2','workspace_admin_update_identity_v2',{
     p_party_id:p.id,p_display_name:name,p_username:username||null,p_phone:phone||null,p_email:email||null
