@@ -877,8 +877,12 @@ async function evaluateImportItem(item){
     item.status=item.platform?'ready':'review';
   }
   item.diff=estimateImportChanges(item);
+  const platformUnlinked=sources.filter(s=>s.platform_key===item.platform&&s.link_status!=='linked').length;
   if(importMode==='build'&&item.status==='duplicate'&&Number(item.diff?.newCount||0)>0){
     item.reuseBatchId=Number(item.serverPreview?.batch_id||0)||null;
+    item.status='ready';
+  }else if(importMode==='build'&&item.status==='duplicate'&&parties.length===0&&platformUnlinked>0){
+    item.bootstrapExisting=true;
     item.status='ready';
   }
 }
@@ -983,12 +987,13 @@ async function approveBuildImports(){
   if(importBusy)return;
   const eligible=importQueue.filter(x=>x.status==='ready'||x.status==='resume');
   if(!eligible.length)return msg('لا يوجد ملف سليم جاهز للبناء.','warn');
-  const newRows=eligible.reduce((n,item)=>n+Number(item.diff?.newCount||0),0);
-  if(!newRows)return msg('لا توجد حسابات جديدة لإضافتها إلى البناء. الموجود لن يتغير.','info');
+  const newRows=eligible.reduce((n,item)=>n+(item.bootstrapExisting?sources.filter(s=>s.platform_key===item.platform&&s.link_status!=='linked').length:Number(item.diff?.newCount||0)),0);
+  if(!newRows)return msg('لا توجد حسابات جديدة أو حسابات غير مربوطة لبناء الـMaster.','info');
   const ok=await askConfirm('إضافة الجدد فقط','سيتم تسجيل حسابات المصادر الجديدة فقط. لن يتم تعديل العملاء الموجودين ولن يتم دمج أو إنشاء Master تلقائيًا. بعد التسجيل ستظهر الحسابات الجديدة للمراجعة وإنشاء العميل أو ربطه.','متابعة');
   if(!ok)return;
   importBusy=true;renderImportQueue();
-  let done=0,failed=0,totalInserted=0;
+  let done=0,failed=0,totalInserted=0,totalCreated=0;
+  let masterSeeded=parties.length>0;
   try{
     for(const item of eligible){
       try{
@@ -1001,6 +1006,7 @@ async function approveBuildImports(){
             batchId=Number(registration?.batch_id||0);
           }
         }
+        if(!batchId&&item.bootstrapExisting)batchId=Number(item.serverPreview?.batch_id||0);
         if(!batchId)throw new Error('IMPORT_BATCH_REQUIRED');
         const onlyNew=(item.parsed.accounts||[]).filter(a=>!previewMatch(item.platform,a).source);
         for(let i=0;i<onlyNew.length;i+=150){
@@ -1009,12 +1015,18 @@ async function approveBuildImports(){
           if(error)throw error;
           totalInserted+=Number(data?.inserted||0);
         }
+        if(!masterSeeded){
+          const seeded=await autoBootstrap(item.platform);
+          if(seeded?.error)throw new Error(seeded.error);
+          totalCreated+=Number(seeded?.created||0);
+          masterSeeded=true;
+        }
         item.status='done';done++;
       }catch(error){failed++;item.status='error';item.error=safeError(error)}
       renderImportQueue();
     }
     await load();
-    msg('انتهى بناء «إضافة الجدد فقط»: ملفات '+done+' · حسابات مصدر جديدة '+totalInserted+' · فشل '+failed+'. لم يُنشأ أو يُعدّل Master تلقائيًا.',failed?'warn':'ok');
+    msg('انتهى بناء «إضافة الجدد فقط»: ملفات '+done+' · حسابات مصدر جديدة '+totalInserted+' · عملاء Master أُنشئوا '+totalCreated+' · فشل '+failed+'. المنصات التالية تبقى للمراجعة والربط ولا تُدمج تلقائيًا.',failed?'warn':'ok');
   }finally{importBusy=false;renderImportQueue();renderConnectivity()}
 }
 function setImportMode(mode){
@@ -1023,7 +1035,7 @@ function setImportMode(mode){
   $('importMode').value=importMode;
   $('buildMethodField').hidden=importMode!=='build';
   $('importModeTitle').textContent=importMode==='build'?'بناء العملاء':'تحيين بيانات منصة';
-  $('importModeHelp').textContent=importMode==='build'?'يبني قائمة العملاء بطريقة مقصودة. «إضافة الجدد فقط» لا يغيّر الموجود، ولا ينشئ Master تلقائيًا قبل المراجعة.':'يحدّث بيانات حسابات المنصة فقط. لا ينشئ party_id ولا يغيّر هوية العميل. الحساب الجديد يظهر كتنبيه/غير مسجل.';
+  $('importModeHelp').textContent=importMode==='build'?'يبني قائمة العملاء بطريقة مقصودة. إذا كان Master فارغًا تصبح أول منصة تعتمدها هي قاعدة البناء ويُنشأ عميل لكل حساب غير مربوط. بعد ذلك لا يوجد دمج تلقائي؛ الحسابات من المنصات الأخرى تبقى للمراجعة والربط.':'يحدّث بيانات حسابات المنصة فقط. لا ينشئ party_id ولا يغيّر هوية العميل. الحساب الجديد يظهر كتنبيه/غير مسجل.';
   $('approveImportsBtn').textContent=importMode==='build'?'اعتماد البناء':'اعتماد التحيين';
 }
 
