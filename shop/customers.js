@@ -9,7 +9,7 @@ const PAGE_SIZE=10;
 let openMenuPartyId=null; // exactly 10 customer rows per page
 const WORKER_TOKEN='mytool_shop_worker_token',WORKER_EXPIRES='mytool_shop_worker_expires_at',WORKSPACE_ROLE='mytool_workspace_role',ADMIN_EXPIRES='mytool_admin_expires_at';
 
-let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null,usernameCheckTimer=null,usernameCheckSeq=0;
+let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null,usernameCheckTimer=null,usernameCheckSeq=0,customerFilter='all';
 
 function msg(text,kind='info'){$('message').textContent=text;$('message').className='message '+kind}
 function normalize(v){return String(v??'').toLowerCase().normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim()}
@@ -135,22 +135,23 @@ async function load(){
     if(!rules.error)identityRules=rules.data||[];
   }
   if(isMobile()){selectedPartyId=null;setMobileDetail(false);history.replaceState(null,'',location.pathname);}
-  renderFilters();renderMetrics();renderList();
+  renderMetrics();renderList();
   if(!isMobile()&&selectedPartyId&&partyBy(selectedPartyId))renderDetail(selectedPartyId);
   msg('سجل العملاء محدث. كل عميل معروض كهوية مركزية واحدة.','ok');
 }
-function renderFilters(){
-  const current=$('platformFilter').value||'all';
-  $('platformFilter').innerHTML='<option value="all">كل المنصات</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
-  if(current==='all'||platforms.some(p=>p.platform_key===current))$('platformFilter').value=current;
-}
 function renderMetrics(){
   const multi=parties.filter(p=>platformKeysFor(p.id).length>1).length;
-  const unlinked=sources.filter(s=>!s.linked_party_id).length;
-  $('mCustomers').textContent=parties.length;
-  $('mMulti').textContent=multi;
-  $('mAccounts').textContent=sources.length;
-  $('mUnlinked').textContent=unlinked;
+  const activeParties=parties.filter(p=>p.active!==false);
+  const linkedCustomers=activeParties.filter(p=>accountsFor(p.id).length>0).length;
+  const unlinkedCustomers=activeParties.filter(p=>accountsFor(p.id).length===0).length;
+  $('mCustomers').textContent=activeParties.length;
+  $('mMulti').textContent=activeParties.filter(p=>platformKeysFor(p.id).length>1).length;
+  $('mAccounts').textContent=linkedCustomers;
+  $('mUnlinked').textContent=unlinkedCustomers;
+  document.querySelectorAll('[data-customer-filter]').forEach(btn=>{
+    const on=btn.dataset.customerFilter===customerFilter;
+    btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');
+  });
 }
 function haystack(p){
   const a=accountsFor(p.id),c=contacts(p);
@@ -160,16 +161,14 @@ function haystack(p){
   ].filter(Boolean).join(' '));
 }
 function filtered(){
-  const q=normalize($('search').value),pf=$('platformFilter').value,kf=$('kindFilter').value,af=$('activeFilter')?.value||'active';
+  const q=normalize($('search').value);
   return parties.filter(p=>{
-    const pks=platformKeysFor(p.id);
-    if(af==='active'&&p.active===false)return false;
-    if(af==='hidden'&&p.active!==false)return false;
+    const pks=platformKeysFor(p.id),accountCount=accountsFor(p.id).length;
+    if(p.active===false)return false;
     if(q&&!haystack(p).includes(q))return false;
-    if(pf!=='all'&&!pks.includes(pf))return false;
-    if(kf==='multi'&&pks.length<2)return false;
-    if(kf==='single'&&pks.length!==1)return false;
-    if(kf==='no_source'&&accountsFor(p.id).length!==0)return false;
+    if(customerFilter==='multi'&&pks.length<2)return false;
+    if(customerFilter==='accounts'&&accountCount===0)return false;
+    if(customerFilter==='unlinked'&&accountCount!==0)return false;
     return true;
   }).sort((a,b)=>{
     const ad=totals(a.id).debt,bd=totals(b.id).debt;
@@ -305,9 +304,9 @@ $('refreshBtn').onclick=()=>refreshCustomers().catch(e=>msg('تعذر التحد
 $('search').oninput=()=>{page=1;renderList()};
 $('editUsername').oninput=scheduleUsernameCheck;
 $('editUsername').onblur=()=>{clearTimeout(usernameCheckTimer);checkUsernameAvailability()};
-$('platformFilter').onchange=()=>{page=1;renderList()};
-$('kindFilter').onchange=()=>{page=1;renderList()};
-$('activeFilter').onchange=()=>{page=1;renderList()};
+document.querySelectorAll('[data-customer-filter]').forEach(btn=>btn.onclick=()=>{
+  customerFilter=btn.dataset.customerFilter||'all';page=1;renderMetrics();renderList();
+});
 $('prevPage').onclick=()=>{page--;renderList();scrollTo({top:$('customers').offsetTop-80,behavior:'smooth'})};
 $('nextPage').onclick=()=>{page++;renderList();scrollTo({top:$('customers').offsetTop-80,behavior:'smooth'})};
 $('closeDetail').onclick=()=>{selectedPartyId=null;$('detailCard').hidden=true;setMobileDetail(false);history.replaceState(null,'',location.pathname);renderList();if(isMobile())scrollTo({top:0,behavior:'auto'})};
