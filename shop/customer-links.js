@@ -787,6 +787,7 @@ function estimateImportChanges(item){
   return out;
 }
 function importStatusText(item){
+  if(item.status==='ready'&&item.reuseBatchId)return 'ملف معروف — جاهز لإضافة الجدد';
   if(item.status==='ready')return 'جاهز للاعتماد';
   if(item.status==='resume')return 'استيراد غير مكتمل — جاهز للاستئناف';
   if(item.status==='duplicate')return 'مكرر مكتمل — سيُتجاهل';
@@ -876,6 +877,10 @@ async function evaluateImportItem(item){
     item.status=item.platform?'ready':'review';
   }
   item.diff=estimateImportChanges(item);
+  if(importMode==='build'&&item.status==='duplicate'&&Number(item.diff?.newCount||0)>0){
+    item.reuseBatchId=Number(item.serverPreview?.batch_id||0)||null;
+    item.status='ready';
+  }
 }
 async function previewImports(){
   if(!navigator.onLine)return msg('معاينة الاستيراد تحتاج اتصالًا.','warn');
@@ -987,9 +992,15 @@ async function approveBuildImports(){
   try{
     for(const item of eligible){
       try{
-        const registration=await registerSourceImport(item.platform,item.file,item.hash);
-        if(registration?.status==='same_platform'){item.status='skipped';continue}
-        const batchId=Number(registration?.batch_id||0);
+        let batchId=Number(item.reuseBatchId||0);
+        if(!batchId){
+          const registration=await registerSourceImport(item.platform,item.file,item.hash);
+          if(registration?.status==='same_platform'){
+            batchId=Number(registration.batch_id||0);
+          }else{
+            batchId=Number(registration?.batch_id||0);
+          }
+        }
         if(!batchId)throw new Error('IMPORT_BATCH_REQUIRED');
         const onlyNew=(item.parsed.accounts||[]).filter(a=>!previewMatch(item.platform,a).source);
         for(let i=0;i<onlyNew.length;i+=150){
