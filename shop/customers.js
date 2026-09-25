@@ -310,7 +310,19 @@ async function saveIdentity(){
   await load();selectedPartyId=p.id;renderDetail(p.id);msg('تم تحديث هوية MyTool. Username والهاتف وMT مفاتيح مستقلة؛ حسابات المنصات لم تتغير.','ok');
 }
 
-async function startNextGeneration(){\n  const btn=$('startV2Btn');if(!btn)return;\n  const next=activeGeneration+1;\n  if(!confirm('سيتم إغلاق V'+activeGeneration+' وبدء V'+next+' فارغة. لن يتم حذف العملاء أو العمليات القديمة. متابعة؟'))return;\n  btn.disabled=true;\n  const r=await adminRpc('admin_customer_start_next_generation','workspace_admin_customer_start_next_generation');\n  if(r.error){btn.disabled=false;return msg('تعذر بدء V'+next+': '+(r.error.message||r.error),'error')}\n  selectedPartyId=null;page=1;customerFilter='all';await load();\n  msg('تم بدء V'+next+' بنجاح. V'+(next-1)+' محفوظة في الأرشيف. الآن ارفع أول ملف منصة لبناء القائمة الجديدة.','ok');\n}\n\n$('refreshBtn').onclick=()=>refreshCustomers().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));\n$('startV2Btn').onclick=()=>startNextGeneration().catch(e=>msg('تعذر بدء النسخة الجديدة: '+(e.message||e),'error'));
+async function startNextGeneration(){
+  const btn=$('startV2Btn');if(!btn)return;
+  const next=activeGeneration+1;
+  if(!confirm('سيتم إغلاق V'+activeGeneration+' وبدء V'+next+' فارغة. لن يتم حذف العملاء أو العمليات القديمة. متابعة؟'))return;
+  btn.disabled=true;
+  const r=await adminRpc('admin_customer_start_next_generation','workspace_admin_customer_start_next_generation');
+  if(r.error){btn.disabled=false;return msg('تعذر بدء V'+next+': '+(r.error.message||r.error),'error')}
+  selectedPartyId=null;page=1;customerFilter='all';await load();
+  msg('تم بدء V'+next+' بنجاح. V'+(next-1)+' محفوظة في الأرشيف. الآن ارفع أول ملف منصة لبناء القائمة الجديدة.','ok');
+}
+
+$('refreshBtn').onclick=()=>refreshCustomers().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));
+$('startV2Btn').onclick=()=>startNextGeneration().catch(e=>msg('تعذر بدء النسخة الجديدة: '+(e.message||e),'error'));
 $('search').oninput=()=>{page=1;renderList()};
 $('editUsername').oninput=scheduleUsernameCheck;
 $('editUsername').onblur=()=>{clearTimeout(usernameCheckTimer);checkUsernameAvailability()};
