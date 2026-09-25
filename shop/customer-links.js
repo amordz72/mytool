@@ -384,6 +384,31 @@ function updateSourceVisibilityButton(){
   const showingAll=$('statusFilter').value==='all';
   b.textContent=showingAll?'إخفاء الحسابات السليمة':'عرض كل حسابات المصادر';
 }
+function renderEmptyMasterBuild(){
+  const box=$('emptyMasterBuild');if(!box)return;
+  const unlinked=sources.filter(s=>s.link_status!=='linked');
+  if(parties.length||!unlinked.length){box.hidden=true;box.innerHTML='';return}
+  const counts={};
+  unlinked.forEach(s=>counts[s.platform_key]=(counts[s.platform_key]||0)+1);
+  const options=Object.entries(counts).map(([key,count])=>'<option value="'+esc(key)+'">'+esc(platformLabel(key))+' · '+count+'</option>').join('');
+  box.hidden=false;
+  box.innerHTML='<b>Master فارغ</b><div class="meta">اختر منصة الأساس. سيُنشأ عميل واحد لكل حساب غير مربوط فيها فقط.</div><div class="field"><label>منصة الأساس</label><select id="masterSeedPlatform">'+options+'</select></div><button id="buildMasterFromSourcesBtn" class="btn" type="button">بناء Master من هذه المنصة</button>';
+  $('buildMasterFromSourcesBtn').onclick=buildMasterFromExistingSources;
+}
+async function buildMasterFromExistingSources(){
+  if(!navigator.onLine)return msg('بناء Master يحتاج اتصالًا.','warn');
+  if(parties.length)return msg('الـMaster موجود بالفعل. استخدم الربط والمراجعة.','info');
+  const platform=$('masterSeedPlatform')?.value||'';
+  if(!platform)return msg('اختر منصة الأساس أولًا.','warn');
+  const count=sources.filter(s=>s.platform_key===platform&&s.link_status!=='linked').length;
+  if(!count)return msg('لا توجد حسابات غير مربوطة في هذه المنصة.','info');
+  const ok=await askConfirm('بناء Master','سيتم إنشاء '+count+' عميل Master من «'+platformLabel(platform)+'». بقية المنصات لن تندمج تلقائيًا.','إنشاء العملاء');
+  if(!ok)return;
+  const result=await autoBootstrap(platform);
+  if(result?.error)return msg('تعذر بناء Master: '+result.error,'error');
+  await load();
+  msg('تم إنشاء '+Number(result?.created||0)+' عميل Master.','ok');
+}
 function renderAll(){
   renderMetrics();renderIdentityReviews();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();updateSourceVisibilityButton();renderEmptyMasterBuild();
 }
