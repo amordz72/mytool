@@ -9,7 +9,7 @@ const PAGE_SIZE=10;
 let openMenuPartyId=null; // exactly 10 customer rows per page
 const WORKER_TOKEN='mytool_shop_worker_token',WORKER_EXPIRES='mytool_shop_worker_expires_at',WORKSPACE_ROLE='mytool_workspace_role',ADMIN_EXPIRES='mytool_admin_expires_at';
 
-let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null,usernameCheckTimer=null,usernameCheckSeq=0,customerFilter='all',activeGeneration=1;
+let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null,usernameCheckTimer=null,usernameCheckSeq=0,customerFilter='all';
 
 function msg(text,kind='info'){$('message').textContent=text;$('message').className='message '+kind}
 function normalize(v){return String(v??'').toLowerCase().normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim()}
@@ -116,8 +116,6 @@ async function refreshCustomers(){
 
 async function load(){
   msg('جاري تحميل سجل العملاء…');
-  const gen=await adminRpc('admin_customer_active_generation','workspace_admin_customer_active_generation');
-  if(!gen.error&&gen.data?.generation){activeGeneration=Number(gen.data.generation);if($('generationLabel'))$('generationLabel').textContent='V'+activeGeneration;if($('startV2Btn')){$('startV2Btn').hidden=activeGeneration>=2;$('startV2Btn').textContent='بدء V'+(activeGeneration+1);}}
   const [linking,plist,partyList]=await Promise.all([
     adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
     adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms'),
@@ -143,7 +141,7 @@ async function load(){
 }
 function renderMetrics(){
   const multi=parties.filter(p=>platformKeysFor(p.id).length>1).length;
-  const activeParties=parties.filter(p=>p.active!==false);
+  const activeParties=parties;
   const linkedCustomers=activeParties.filter(p=>accountsFor(p.id).length>0).length;
   const unlinkedCustomers=activeParties.filter(p=>accountsFor(p.id).length===0).length;
   $('mCustomers').textContent=activeParties.length;
@@ -155,11 +153,10 @@ function renderMetrics(){
     btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');
   });
 }
-function mtLabel(p){return 'MT-'+String(p.mt_number||'').padStart(5,'0')}
 function haystack(p){
   const a=accountsFor(p.id),c=contacts(p);
   return normalize([
-    p.mt_number,mtLabel(p),p.mytool_username,p.display_name,...(p.aliases||[]),...c.phones,...c.emails,
+    p.mytool_username,p.display_name,...(p.aliases||[]),...c.phones,...c.emails,
     ...a.flatMap(s=>[s.username,s.display_name,s.first_name,s.last_name,s.phone,s.email,s.external_account_id,platformLabel(s.platform_key)])
   ].filter(Boolean).join(' '));
 }
@@ -167,7 +164,6 @@ function filtered(){
   const q=normalize($('search').value);
   return parties.filter(p=>{
     const pks=platformKeysFor(p.id),accountCount=accountsFor(p.id).length;
-    if(p.active===false)return false;
     if(q&&!haystack(p).includes(q))return false;
     if(customerFilter==='multi'&&pks.length<2)return false;
     if(customerFilter==='accounts'&&accountCount===0)return false;
@@ -190,9 +186,8 @@ function renderList(){
   $('customers').innerHTML=chunk.map(p=>{
     const a=accountsFor(p.id),pks=platformKeysFor(p.id),t=totals(p.id),names=knownNames(p),activity=lastActivity(p.id);
     return '<article class="customer-card'+(Number(selectedPartyId)===Number(p.id)?' selected':'')+'" data-party-card="'+p.id+'">'+
-      '<div class="customer-top"><div><div class="customer-name">'+esc(p.display_name)+'</div><div class="customer-id">'+esc(mtLabel(p))+(p.mytool_username?' · '+esc(p.mytool_username):' · بدون Username')+'</div></div>'+
+      '<div class="customer-top"><div><div class="customer-name">'+esc(p.display_name)+'</div><div class="customer-id">'+(p.mytool_username?esc(p.mytool_username):'بدون Username')+'</div></div>'+
       '<div class="badges"><span class="badge ok">مؤكد</span><span class="badge platform">'+pks.length+' منصة</span><span class="badge">'+a.length+' حساب</span><span class="badge mobile-debt">'+money(t.debt)+'</span><button class="row-menu-btn" data-row-menu="'+p.id+'" type="button" aria-label="خيارات العميل">⋮</button></div></div>'+
-      '<div class="row-menu'+(Number(openMenuPartyId)===Number(p.id)?' open':'')+'" data-menu-panel="'+p.id+'"><button type="button" data-edit-party="'+p.id+'">تعديل البيانات</button><button type="button" data-active-party="'+p.id+'" data-next-active="'+(p.active===false?'true':'false')+'">'+(p.active===false?'إعادة إظهار العميل':'إخفاء العميل')+'</button></div>'+
       '<div class="customer-summary">'+
         '<div class="mini"><b>'+esc(p.primary_phone||'—')+'</b><small>الهاتف الأساسي</small></div>'+
         '<div class="mini"><b>'+money(t.debt)+'</b><small>ديون المصادر</small></div>'+
@@ -215,7 +210,6 @@ function renderList(){
   document.querySelectorAll('[data-open-party]').forEach(b=>b.onclick=e=>{e.stopPropagation();selectedPartyId=Number(b.dataset.openParty);renderDetail(selectedPartyId);renderList();});
   document.querySelectorAll('[data-row-menu]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=Number(b.dataset.rowMenu);openMenuPartyId=Number(openMenuPartyId)===id?null:id;renderList();});
   document.querySelectorAll('[data-edit-party]').forEach(b=>b.onclick=e=>{e.stopPropagation();openMenuPartyId=null;selectedPartyId=Number(b.dataset.editParty);renderDetail(selectedPartyId);renderList();});
-  document.querySelectorAll('[data-active-party]').forEach(b=>b.onclick=async e=>{e.stopPropagation();const id=Number(b.dataset.activeParty),next=b.dataset.nextActive==='true';openMenuPartyId=null;const r=await adminRpc('admin_customer_set_party_active','workspace_admin_set_party_active',{p_party_id:id,p_active:next});if(r.error)return msg('تعذر تغيير حالة العميل: '+(r.error.message||r.error),'error');await load();msg(next?'تم إظهار العميل.':'تم إخفاء العميل.','ok');});
 }
 function chips(values,empty='لا توجد بيانات'){
   return values.length?values.map(v=>'<span class="chip">'+esc(v)+'</span>').join(''):'<span class="muted">'+esc(empty)+'</span>';
@@ -230,7 +224,7 @@ function renderDetail(id){
   const p=partyBy(id);if(!p)return;
   setMobileDetail(true);
   const a=accountsFor(id),names=knownNames(p),c=contacts(p),pks=platformKeysFor(id),t=totals(id);
-  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+mtLabel(p)+(p.mytool_username?' · '+p.mytool_username:' · بدون Username');
+  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+(p.mytool_username||'بدون Username');
   $('editName').value=p.display_name||'';$('editUsername').value=p.mytool_username||'';$('editPhone').value=p.primary_phone||'';$('editEmail').value=p.primary_email||'';
   setUsernameStatus(p.mytool_username?'اسم المستخدم الحالي محفوظ.':'اكتب Username وسيتم التحقق تلقائيًا بعد توقف الكتابة.','info');
   const learned=identityRules.filter(r=>Number(r.party_id)===Number(id)&&r.status==='approved');
@@ -307,22 +301,10 @@ async function saveIdentity(){
     if(e.includes('MYTOOL_USERNAME_MUST_CONTAIN_LETTER'))return msg('اسم المستخدم لا يمكن أن يكون أرقامًا فقط.','error');
     return msg('تعذر حفظ هوية العميل: '+e,'error');
   }
-  await load();selectedPartyId=p.id;renderDetail(p.id);msg('تم تحديث هوية MyTool. Username والهاتف وMT مفاتيح مستقلة؛ حسابات المنصات لم تتغير.','ok');
-}
-
-async function startNextGeneration(){
-  const btn=$('startV2Btn');if(!btn)return;
-  const next=activeGeneration+1;
-  if(!confirm('سيتم إغلاق V'+activeGeneration+' وبدء V'+next+' فارغة. لن يتم حذف العملاء أو العمليات القديمة. متابعة؟'))return;
-  btn.disabled=true;
-  const r=await adminRpc('admin_customer_start_next_generation','workspace_admin_customer_start_next_generation');
-  if(r.error){btn.disabled=false;return msg('تعذر بدء V'+next+': '+(r.error.message||r.error),'error')}
-  selectedPartyId=null;page=1;customerFilter='all';await load();
-  msg('تم بدء V'+next+' بنجاح. V'+(next-1)+' محفوظة في الأرشيف. الآن ارفع أول ملف منصة لبناء القائمة الجديدة.','ok');
+  await load();selectedPartyId=p.id;renderDetail(p.id);msg('تم تحديث هوية MyTool. حسابات المنصات لم تتغير.','ok');
 }
 
 $('refreshBtn').onclick=()=>refreshCustomers().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));
-$('startV2Btn').onclick=()=>startNextGeneration().catch(e=>msg('تعذر بدء النسخة الجديدة: '+(e.message||e),'error'));
 $('search').oninput=()=>{page=1;renderList()};
 $('editUsername').oninput=scheduleUsernameCheck;
 $('editUsername').onblur=()=>{clearTimeout(usernameCheckTimer);checkUsernameAvailability()};

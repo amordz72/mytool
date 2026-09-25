@@ -9,9 +9,12 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=v=>String(v??'').trim().toLowerCase();
 
-let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformSignatures=[],identityReviews=[],importQueue=[],page=1;
+let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformSignatures=[],identityReviews=[],usageContexts=[],importQueue=[],page=1;
+const USAGE_CONTEXTS=[['flexy','فليكسي'],['games','ألعاب'],['repair','تصليح'],['supplier','مورد']];
 let adminMode='none',workspaceToken='';
 let importBusy=false;
+let importMode='build';
+let discoveredNewAccounts=0;
 let confirmResolve=null;
 const selectedSources=new Set();
 let currentPageIds=[];
@@ -185,12 +188,15 @@ function renderMetrics(){
   const registered=sources.filter(x=>x.link_status==='linked').length;
   const conflict=sources.filter(x=>x.link_status==='conflict').length;
   const crossPlatform=crossPlatformPartyCount();
+  discoveredNewAccounts=unlinked;
 
   $('mSources').textContent=total;
   $('mUnlinked').textContent=unlinked;
   $('mPending').textContent=pending;
   $('mLinked').textContent=registered;
   $('mConflict').textContent=conflict;
+  const alert=$('newAccountsAlert');
+  if(alert){alert.hidden=unlinked===0;alert.textContent=unlinked?('اكتشفنا '+unlinked+' حساب جديد/غير مسجل. لم يُنشأ أي عميل تلقائيًا. راجعها من «بناء العملاء».'):'';}
   if($('mCrossPlatform'))$('mCrossPlatform').textContent=crossPlatform;
 
   const summary=$('metricsSummary');
@@ -307,7 +313,7 @@ function renderSuggestions(){
   $('suggestionCount').textContent=active.length;
   $('suggestionsCard').hidden=false;
   if(!active.length){
-    $('suggestions').innerHTML='<div class="empty">لا توجد اقتراحات معلقة. استخدم «اقتراح روابط ذكية» بعد تحديث المصادر.</div>';
+    $('suggestions').innerHTML='<div class="empty">لا توجد اقتراحات ربط معلقة للمراجعة.</div>';
     return;
   }
   $('suggestions').innerHTML=active.map(s=>{
@@ -353,18 +359,25 @@ function partyMatrix(p){
     return '<div class="platform-slot"><b>'+esc(pl.display_name)+'</b>'+rows.map(s=>esc(s.display_name||s.username)+' · '+esc(s.username)).join('<br>')+'</div>';
   }).join('')+'</div>';
 }
+function usageContextControls(p){return '<div class="badges" style="margin-top:8px">'+USAGE_CONTEXTS.map(([key,label])=>{const row=usageContexts.find(x=>Number(x.party_id)===Number(p.id)&&x.context_key===key);const on=!!row?.visible;return '<button type="button" class="btn '+(on?'':'secondary')+'" style="width:auto;padding:6px 9px" data-usage-party="'+p.id+'" data-usage-key="'+key+'" data-usage-visible="'+(on?'1':'0')+'">'+esc(label)+(on?' ✓':'')+'</button>'}).join('')+'</div>'}
+async function toggleUsageContext(partyId,key,current){
+ const {error}=await adminRpc('admin_customer_set_usage_context','workspace_admin_set_customer_usage_context',{p_party_id:partyId,p_context_key:key,p_visible:!current});
+ if(error)return msg('تعذر تعديل مكان الاستخدام: '+safeError(error),'error');
+ await load();msg('تم تحديث مكان ظهور العميل.','ok');
+}
 function renderParties(){
   if(!parties.length){
     $('parties').innerHTML='<div class="empty">لا يوجد عميل موحد بعد. أنشئ واحدًا يدويًا أو من حساب مصدر.</div>';
     return;
   }
   $('parties').innerHTML=parties.map(p=>'<div class="party-card"><div><b>#'+p.id+' · '+esc(p.display_name)+'</b></div>'+
-    partyMatrix(p)+
+    partyMatrix(p)+usageContextControls(p)+
     '<div class="party-edit"><div class="field"><label>اسم الماستر الثابت</label><input data-party-name="'+p.id+'" value="'+esc(p.display_name)+'" readonly></div>'+
     '<div class="field"><label>الهاتف</label><input data-party-phone="'+p.id+'" value="'+esc(p.primary_phone||'')+'" inputmode="tel"></div>'+
     '<div class="field"><label>البريد</label><input data-party-email="'+p.id+'" value="'+esc(p.primary_email||'')+'" inputmode="email"></div>'+
     '<button class="btn secondary" data-party-save="'+p.id+'" type="button">حفظ</button></div></div>').join('');
   document.querySelectorAll('[data-party-save]').forEach(b=>b.onclick=()=>saveParty(Number(b.dataset.partySave)));
+  document.querySelectorAll('[data-usage-party]').forEach(b=>b.onclick=()=>toggleUsageContext(Number(b.dataset.usageParty),b.dataset.usageKey,b.dataset.usageVisible==='1'));
 }
 function updateSourceVisibilityButton(){
   const b=$('showAllSourcesBtn');if(!b)return;
@@ -417,20 +430,22 @@ async function load(){
     return;
   }
   msg('جاري تحميل دليل الربط…');
-  const [a,b,c,d,e]=await Promise.all([
+  const [a,b,c,d,e,f]=await Promise.all([
     adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
     adminRpc('admin_customer_list_link_suggestions','workspace_admin_list_link_suggestions',{p_status:null}),
     adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms'),
     adminRpc('admin_customer_list_identity_reviews','workspace_admin_list_identity_reviews'),
-    adminRpc('admin_customer_list_schema_signatures','workspace_admin_list_schema_signatures')
+    adminRpc('admin_customer_list_schema_signatures','workspace_admin_list_schema_signatures'),
+    adminRpc('admin_customer_list_usage_contexts','workspace_admin_list_customer_usage_contexts')
   ]);
-  if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;if(d.error)throw d.error;if(e.error)throw e.error;
+  if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;if(d.error)throw d.error;if(e.error)throw e.error;if(f.error)console.warn('usage contexts unavailable:',safeError(f.error));
   sources=Array.isArray(a.data?.sources)?a.data.sources:[];
   parties=Array.isArray(a.data?.parties)?a.data.parties:[];
   suggestions=Array.isArray(b.data)?b.data:[];
   platforms=Array.isArray(c.data)?c.data:[];
   identityReviews=Array.isArray(d.data)?d.data:[];
   platformSignatures=Array.isArray(e.data)?e.data:[];
+  usageContexts=Array.isArray(f.data)?f.data:[];
   renderPlatformControls();saveCache();renderAll();
   msg('تم تحديث دليل العملاء والروابط.','ok');
 }
@@ -443,9 +458,9 @@ async function mergeSelectedSources(){
   const names=selected.slice(0,4).map(s=>s.display_name||s.username).join('، ');
   const more=selected.length>4?' +'+(selected.length-4)+' أخرى':'';
   const ok=await askConfirm(
-    'دمج '+selected.length+' حساب',
-    'سيتم اعتبار الحسابات المحددة لنفس العميل. '+names+more+'. يمكن تعديل الروابط لاحقًا من سجل الربط.',
-    'دمج المحدد'
+    'ربط '+selected.length+' حساب بعميل واحد',
+    'هذا قرار يدوي بأن الحسابات المحددة تخص نفس العميل. '+names+more+'. لن يحدث أي دمج تلقائي لهويات Master.',
+    'تأكيد الربط'
   );
   if(!ok)return;
 
@@ -460,7 +475,7 @@ async function mergeSelectedSources(){
   selectedSources.clear();
   await generateSuggestions({silent:true});
   await load();
-  msg('تم دمج '+Number(data?.selected||ids.length)+' حساب تحت «'+(data?.target_party_name||'العميل الموحد')+'».','ok');
+  msg('تم ربط '+Number(data?.selected||ids.length)+' حساب بالعميل «'+(data?.target_party_name||'Master')+'».','ok');
 }
 
 async function autoBootstrap(platform=null){
@@ -540,12 +555,12 @@ async function reviewSuggestion(id,action){
     await load();
     return msg('الحسابان مربوطان بعميلين مختلفين. راجع الربط من البطاقات قبل الدمج.','warn');
   }
-  await load();msg(action==='approve'?'تمت الموافقة على الربط.':'تم رفض الاقتراح.','ok');
+  await load();msg(action==='approve'?'تم اعتماد اقتراح الربط يدويًا.':'تم رفض اقتراح الربط.','ok');
 }
 async function generateSuggestions({silent=false}={}){
   if(!navigator.onLine)return null;
   if($('smartBtn'))$('smartBtn').disabled=true;
-  if(!silent)msg('جاري إعادة فحص الروابط…');
+  if(!silent)msg('جاري البحث عن اقتراحات للمراجعة…');
   const {data,error}=await adminRpc('admin_customer_generate_link_suggestions','workspace_admin_generate_link_suggestions');
   if($('smartBtn'))$('smartBtn').disabled=false;
   if(error){
@@ -554,7 +569,7 @@ async function generateSuggestions({silent=false}={}){
   }
   if(!silent){
     await load();
-    msg('تم الفحص: '+Number(data?.pending||0)+' بانتظار الموافقة، '+Number(data?.conflicts||0)+' تعارض.','ok');
+    msg('تم الفحص: '+Number(data?.pending||0)+' اقتراح للمراجعة، '+Number(data?.conflicts||0)+' تعارض. لا يوجد دمج تلقائي من الواجهة.','ok');
   }
   return data;
 }
@@ -958,7 +973,51 @@ async function processImportItem(item){
   }
   item.result=result;item.status='done';renderImportQueue();return result;
 }
+async function approveBuildImports(){
+  if(!navigator.onLine)return msg('اعتماد البناء يحتاج اتصالًا.','warn');
+  if(importBusy)return;
+  const eligible=importQueue.filter(x=>x.status==='ready'||x.status==='resume');
+  if(!eligible.length)return msg('لا يوجد ملف سليم جاهز للبناء.','warn');
+  const newRows=eligible.reduce((n,item)=>n+Number(item.diff?.newCount||0),0);
+  if(!newRows)return msg('لا توجد حسابات جديدة لإضافتها إلى البناء. الموجود لن يتغير.','info');
+  const ok=await askConfirm('إضافة الجدد فقط','سيتم تسجيل حسابات المصادر الجديدة فقط. لن يتم تعديل العملاء الموجودين ولن يتم دمج أو إنشاء Master تلقائيًا. بعد التسجيل ستظهر الحسابات الجديدة للمراجعة وإنشاء العميل أو ربطه.','متابعة');
+  if(!ok)return;
+  importBusy=true;renderImportQueue();
+  let done=0,failed=0,totalInserted=0;
+  try{
+    for(const item of eligible){
+      try{
+        const registration=await registerSourceImport(item.platform,item.file,item.hash);
+        if(registration?.status==='same_platform'){item.status='skipped';continue}
+        const batchId=Number(registration?.batch_id||0);
+        if(!batchId)throw new Error('IMPORT_BATCH_REQUIRED');
+        const onlyNew=(item.parsed.accounts||[]).filter(a=>!previewMatch(item.platform,a).source);
+        for(let i=0;i<onlyNew.length;i+=150){
+          const chunk=onlyNew.slice(i,i+150);
+          const {data,error}=await adminRpc('admin_customer_upsert_source_snapshot_chunk','workspace_admin_upsert_source_snapshot_chunk',{p_platform_key:item.platform,p_batch_id:batchId,p_accounts:chunk});
+          if(error)throw error;
+          totalInserted+=Number(data?.inserted||0);
+        }
+        item.status='done';done++;
+      }catch(error){failed++;item.status='error';item.error=safeError(error)}
+      renderImportQueue();
+    }
+    await load();
+    msg('انتهى بناء «إضافة الجدد فقط»: ملفات '+done+' · حسابات مصدر جديدة '+totalInserted+' · فشل '+failed+'. لم يُنشأ أو يُعدّل Master تلقائيًا.',failed?'warn':'ok');
+  }finally{importBusy=false;renderImportQueue();renderConnectivity()}
+}
+function setImportMode(mode){
+  importMode=mode==='update'?'update':'build';
+  $('sourceImport').dataset.importMode=importMode;
+  $('importMode').value=importMode;
+  $('buildMethodField').hidden=importMode!=='build';
+  $('importModeTitle').textContent=importMode==='build'?'بناء العملاء':'تحيين بيانات منصة';
+  $('importModeHelp').textContent=importMode==='build'?'يبني قائمة العملاء بطريقة مقصودة. «إضافة الجدد فقط» لا يغيّر الموجود، ولا ينشئ Master تلقائيًا قبل المراجعة.':'يحدّث بيانات حسابات المنصة فقط. لا ينشئ party_id ولا يغيّر هوية العميل. الحساب الجديد يظهر كتنبيه/غير مسجل.';
+  $('approveImportsBtn').textContent=importMode==='build'?'اعتماد البناء':'اعتماد التحيين';
+}
+
 async function approveImports(){
+  if(importMode==='build')return approveBuildImports();
   if(!navigator.onLine)return msg('الاعتماد يحتاج اتصالًا.','warn');
   if(importBusy)return;
   const eligible=importQueue.filter(x=>x.status==='ready'||x.status==='resume');
@@ -1024,6 +1083,7 @@ $('mergeSelected').onclick=mergeSelectedSources;
 $('manualSave').onclick=createManual;
 $('newPlatformBtn').onclick=addPlatform;
 $('importBtn').onclick=previewImports;
+$('importMode').onchange=()=>setImportMode($('importMode').value);
 $('approveImportsBtn').onclick=approveImports;
 $('clearImportsBtn').onclick=clearImportQueue;
 $('smartBtn').onclick=generateSuggestions;
@@ -1042,8 +1102,9 @@ window.addEventListener('offline',()=>{renderConnectivity();msg('انقطع ال
 
 (async()=>{
   try{
+    const requestedMode=location.hash==='#sourceUpdate'?'update':'build';setImportMode(requestedMode);
     await identify();
-    if(navigator.onLine)await generateSuggestions({silent:true});
+    // الاقتراحات تُعرض للمراجعة فقط؛ لا نشغّل فحصًا ذكيًا تلقائيًا عند فتح الصفحة.
     await load();
   }catch(error){
     if(!navigator.onLine&&loadCache())return;

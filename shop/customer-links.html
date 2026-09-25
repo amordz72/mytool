@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#0f766e">
-<title>صيانة ربط العملاء — MyTool</title>
+<title>بناء وربط العملاء — MyTool</title>
 <link rel="stylesheet" href="shop-common.css?v=20260918-customer-links-1">
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e7eb;--main:#0f766e;--main2:#14b8a6;--danger:#b91c1c;--warn:#9a3412}
@@ -57,7 +57,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   <div id="message" class="message info">جاري تحميل إدارة ربط العملاء…</div>
 
   <section class="card">
-    <div class="section-head"><div><h1>صيانة ربط العملاء</h1><div class="muted">كل حساب منصة يُسجل أولًا كهوية داخل MyTool. هذا لا يعني أنه مطابق لحساب في منصة أخرى. «مجمّع بين منصات» يظهر فقط عندما نفس العميل لديه حسابات من منصتين مختلفتين أو أكثر.</div></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn" href="customer-master-feed.html?v=20260923-1" style="width:auto;text-decoration:none">⊕ تغذية ماستر العملاء</a><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div></div>
+    <div class="section-head"><div><h1>بناء وربط العملاء</h1><div class="muted">حساب المنصة هو مصدر مستقل. الحساب الجديد لا يصبح عميل Master تلقائيًا: راجعه ثم أنشئ Master جديدًا أو اربطه بعميل موجود.</div></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn" href="customer-master-feed.html?v=20260923-1" style="width:auto;text-decoration:none">⊕ بناء العملاء</a><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div></div>
     <details id="linkingMetricsDrawer" class="metrics-drawer">
       <summary><span>ملخص الربط</span><b id="metricsSummary">جاري الحساب…</b></summary>
       <div class="metrics metrics-compact">
@@ -71,8 +71,8 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
     </details>
   </section>
 
-  <section id="sourceImport" class="card">
-    <div class="section-head"><div><h2>تحميل / تحديث المصادر</h2><div class="muted">يمكن اختيار عدة ملفات دفعة واحدة. المعاينة لا تكتب أي بيانات: يحدد MyTool المنصة، يفحص بصمة SHA-256، ويوقف المكرر أو المتعارض قبل الاعتماد.</div></div></div>
+  <section id="sourceImport" class="card" data-import-mode="build">
+    <div class="section-head"><div><h2 id="importModeTitle">بناء العملاء</h2><div id="importModeHelp" class="muted">هذا المسار يبني الـMaster فقط. الوضع الافتراضي «إضافة الجدد فقط»: الموجود لا يتغير، والجديد يُراجع قبل إنشاء العميل.</div></div></div><div class="toolbar" style="margin-bottom:9px"><div class="field"><label>المهمة</label><select id="importMode"><option value="build">بناء العملاء</option><option value="update">تحيين بيانات منصة</option></select></div><div id="buildMethodField" class="field"><label>طريقة البناء</label><select id="buildMethod"><option value="add_only">إضافة الجدد فقط</option></select></div></div>
     <div class="toolbar">
       <div class="field"><label>اقتراح منصة للملفات غير المعروفة</label><select id="importPlatform"><option value="">لا تخمّن — راجع كل ملف</option></select><div class="platform-add"><input id="newPlatformName" placeholder="اسم منصة جديدة"><button id="newPlatformBtn" class="btn secondary" type="button">إضافة</button></div></div>
       <div class="field"><label>CSV / XLSX — يمكنك اختيار عدة ملفات</label><input id="sourceFile" class="file-input" type="file" multiple accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
@@ -84,10 +84,11 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
       <div class="section-head"><div><h2>مراجعة قبل الاعتماد</h2><div id="importPreviewSummary" class="muted"></div></div></div>
       <div id="importPreviewList" class="import-preview-list"></div>
       <div class="actions" style="margin-top:10px">
-        <button id="approveImportsBtn" class="btn" type="button">اعتماد الملفات السليمة</button>
+        <button id="approveImportsBtn" class="btn" type="button">اعتماد البناء</button>
         <button id="clearImportsBtn" class="btn secondary" type="button">مسح المعاينة</button>
       </div>
     </div>
+    <div id="newAccountsAlert" class="message warn" hidden></div>
     <div id="offlineNote" class="offline-note" hidden>أنت Offline: القائمة المحفوظة متاحة، لكن الربط والاستيراد يحتاجان اتصالًا.</div>
   </section>
 
@@ -109,7 +110,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </section>
 
   <section id="suggestionsCard" class="card">
-    <div class="section-head"><div><h2>اقتراحات الدمج</h2><div class="muted">الهاتف/البريد/المستخدم المتطابق بين منصات معروفة يُدمج تلقائيًا. هنا تظهر الحالات الأضعف أو المتغيرة للمراجعة.</div></div><span id="suggestionCount" class="badge pending_review">0</span></div>
+    <div class="section-head"><div><h2>اقتراحات الربط للمراجعة</h2><div class="muted">التشابه في الهاتف أو البريد أو المستخدم هو ترشيح للمراجعة فقط. لا نعتمد عليه لإنشاء أو دمج Master تلقائيًا.</div></div><span id="suggestionCount" class="badge pending_review">0</span></div>
     <div id="suggestions" class="list"></div>
   </section>
 
@@ -126,16 +127,16 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
       <span id="selectedCount" class="bulk-count">0 محدد</span>
     </div>
     <div id="bulkBar" class="bulk-bar" hidden>
-      <div class="bulk-count">دمج الحسابات المحددة</div>
+      <div class="bulk-count">ربط الحسابات المحددة بعميل واحد</div>
       <div class="field"><label>الاسم الذي سيبقى</label><select id="bulkTarget"><option value="">أول حساب محدد</option></select></div>
-      <button id="mergeSelected" class="btn" type="button">دمج المحدد</button>
+      <button id="mergeSelected" class="btn" type="button">ربط المحدد</button>
     </div>
     <div id="sources" class="list" style="margin-top:10px"></div>
     <div class="pagination"><button id="prevPage" class="btn secondary" type="button">السابق</button><span id="pageText" class="muted"></span><button id="nextPage" class="btn secondary" type="button">التالي</button></div>
   </section>
 
   <section class="card">
-    <div class="section-head"><div><h2>العملاء الموحدون</h2><div class="muted">يمكن تعديل الاسم والهاتف والبريد بدون تغيير حسابات المنصات المرتبطة.</div></div></div>
+    <div class="section-head"><div><h2>Master العملاء</h2><div class="muted">هوية العميل ثابتة، وحسابات المنصات روابط مستقلة. الظهور في كل واجهة يُدار حسب مكان الاستخدام.</div></div></div>
     <div id="parties" class="party-grid"></div>
   </section>
 </div>
@@ -148,6 +149,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260923-snapshot1"></script>
+<script type="module" src="customer-links.js?v=20260925-master-review1"></script>
 </body>
 </html>

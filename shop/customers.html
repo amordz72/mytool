@@ -101,16 +101,15 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
     <div class="registry-head">
       <div>
         <h1>👥 سجل العملاء المركزي</h1>
-        <div class="muted">كل شخص له هوية MyTool واحدة. الاسم يمكن أن يتكرر، لكن Username MyTool والهاتف (إذا وُجد) ورقم MT مفاتيح مستقلة وفريدة.</div>
+        <div class="muted">Master واحد للهوية. الظهور يُحدد حسب مكان الاستخدام، وحسابات المنصات تبقى مستقلة عن هوية العميل.</div>
       </div>
       <div class="registry-actions">
-        <a class="btn" href="customer-links.html?v=20260923-person-identity-only1#sourceImport">⬆ تحيين من ملفات المنصات</a>
+        <a class="btn" href="customer-links.html?v=20260925-master-uses1#sourceImport">＋ بناء العملاء</a>\n        <a class="btn secondary" href="customer-links.html?v=20260925-master-uses1#sourceUpdate">↻ تحيين بيانات منصة</a>
         <a class="btn secondary" href="customer-links.html?v=20260923-person-identity-only1">⇆ إدارة الربط</a>
         <button id="refreshBtn" class="btn secondary" type="button">تحديث</button>
-        <button id="startV2Btn" class="btn warnbtn" type="button">بدء V2</button>
       </div>
     </div>
-    <div class="safety"><b><span id="generationLabel">V1</span> · تحكم الهوية مفعّل</b>يمكن وجود شخصين بنفس الاسم. لا يمكن تكرار Username MyTool، ولا الهاتف الأساسي بين شخصين نشطين، ورقم MT دائم وفريد. Username المنصات الخارجية يبقى بيانات مصدر وليس Username MyTool.</div>
+    <div class="safety"><b>Master الهوية ثابت</b>لا توجد نسخ V1/V2. عدم ظهور العميل في واجهة لا يعني حذفه؛ الظهور يُدار حسب الاستخدام مثل فليكسي، ألعاب، تصليح أو مورد.</div>
     <div class="metrics" aria-label="فلاتر العملاء">
       <button class="metric metric-filter active" type="button" data-customer-filter="all" aria-pressed="true"><small>عملاء موحدون</small><b id="mCustomers">0</b></button>
       <button class="metric metric-filter" type="button" data-customer-filter="multi" aria-pressed="false"><small>متعدد المنصات</small><b id="mMulti">0</b></button>
@@ -128,7 +127,7 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
       </div>
       <div class="registry-actions">
         <a id="detailLinkAdmin" class="btn secondary" href="customer-links.html?v=20260923-person-identity-only1">إدارة الحسابات المرتبطة</a>
-        <button id="toggleArchive" class="btn secondary" type="button">إخفاء العميل</button><button id="closeDetail" class="btn secondary" type="button">إغلاق</button>
+        <button id="closeDetail" class="btn secondary" type="button">إغلاق</button>
       </div>
     </div>
 
@@ -141,7 +140,7 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
         <div class="field"><label>البريد الأساسي</label><input id="editEmail" inputmode="email"></div>
         <button id="saveIdentity" class="btn" type="button">حفظ</button>
       </div>
-      <div class="muted" style="margin-top:7px">Username MyTool يمكن أن يحتوي حروفًا وأرقامًا ومسافات، لكنه لا يكون أرقامًا فقط ولا يُفرض عليه رقم MT. حسابات المنصات الخارجية لا تتغير.</div>
+      <div class="muted" style="margin-top:7px">Username MyTool يمكن أن يحتوي حروفًا وأرقامًا ومسافات، لكنه لا يكون أرقامًا فقط وهو مستقل عن حسابات المنصات. حسابات المنصات الخارجية لا تتغير.</div>
     </div>
 
     <div class="detail-grid">
@@ -159,7 +158,7 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
 
   <section id="listCard" class="card">
     <div class="filters">
-      <div class="field"><label>بحث</label><input id="search" placeholder="Username MyTool، MT، هاتف، اسم…"></div>
+      <div class="field"><label>بحث</label><input id="search" placeholder="Username MyTool، هاتف، اسم…"></div>
       <div id="count" class="count">—</div>
     </div>
     <div id="customers" class="list" style="margin-top:10px"></div>
@@ -167,6 +166,6 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
   </section>
   </div>
 </div>
-<script type="module" src="customers.js?v=20260925-generation4"></script>
+<script type="module" src="customers.js?v=20260925-master-clean1"></script>
 </body>
 </html>

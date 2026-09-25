@@ -28,6 +28,8 @@
 .sim-edit label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--fx-muted)}
 .sim-edit input,.sim-edit select{width:100%;padding:10px;border:1px solid var(--fx-line);border-radius:10px;background:#fff;font:inherit;color:inherit}
 .sim-id{font-family:monospace;direction:ltr;text-align:left}
+.type-grid{display:grid;gap:8px;margin-top:12px}.type-row{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;align-items:center;padding:10px;background:#f8fbfd;border-radius:12px}.type-row small{display:block;color:var(--fx-muted)}.type-form{margin-top:12px}.type-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.type-form label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--fx-muted)}.type-form input,.type-form select{width:100%;padding:10px;border:1px solid var(--fx-line);border-radius:10px;background:#fff;font:inherit}
+@media(max-width:720px){.type-row{grid-template-columns:1fr 1fr}.type-form-grid{grid-template-columns:1fr}}
 @media(max-width:720px){.sim-details{grid-template-columns:1fr 1fr}.sim-edit-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.sim-balance{font-size:23px}}
 </style>
@@ -63,6 +65,27 @@
 
   <section class="fx-card">
     <div class="fx-section-title">
+      <div><h2>أنواع الشرائح SimType</h2><div class="fx-meta">النوع هو بروفايل تشغيل. كود معرفة الرقم تابع للنوع ويمكن تعديله من هنا.</div></div>
+      <button id="newTypeBtn" class="fx-btn secondary" type="button">إضافة SimType</button>
+    </div>
+    <div id="typeList" class="type-grid"></div>
+    <form id="typeForm" class="sim-edit type-form" hidden>
+      <div class="type-form-grid">
+        <label>SimType<input name="sim_type" dir="ltr" placeholder="mobilis-sama" required></label>
+        <label>الاسم الظاهر<input name="display_name" placeholder="SAMA" required></label>
+        <label>المتعامل<select name="operator_key"><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option><option value="unknown">غير معروف</option></select></label>
+        <label>طريقة قراءة الرقم<select name="phone_lookup_method"><option value="ussd">USSD</option><option value="service_code">Service Code</option><option value="">بدون</option></select></label>
+        <label>كود معرفة الرقم<input name="phone_lookup_code" dir="ltr" placeholder="*101#"></label>
+        <label>الترتيب<input name="sort_order" type="number" min="0" value="100"></label>
+        <label>الحالة<select name="enabled"><option value="true">مفعل</option><option value="false">موقوف</option></select></label>
+        <label style="grid-column:span 2">ملاحظات<input name="notes"></label>
+      </div>
+      <div class="sim-actions"><button class="fx-btn" type="submit">حفظ SimType</button><button id="cancelTypeBtn" class="fx-btn secondary" type="button">إلغاء</button></div>
+    </form>
+  </section>
+
+  <section class="fx-card">
+    <div class="fx-section-title">
       <div><h2>إدارة تقنية</h2><div class="fx-meta">لكشف أجهزة USB الموجودة فعليًا في Windows وربطها بمودمات HiLink والشرائح.</div></div>
       <div class="sim-actions"><a class="fx-link" href="../access-admin/usb-sim-center.html">مركز USB والشرائح ←</a><a class="fx-link" href="../access-admin/devices.html">كشف Windows USB ←</a><a class="fx-link" href="../access-admin/sim-summary.html">ملخص الشرائح ←</a><a class="fx-link" href="../access-admin/program-requirements.html">متطلبات البرنامج ←</a></div>
     </div>
@@ -76,10 +99,11 @@
 
 <script type="module">
 import {rpc,escapeHtml,money,fmtDate} from './api.js';
-const list=document.getElementById('list'),msg=document.getElementById('message'),count=document.getElementById('count');
-let rows=[];
+const list=document.getElementById('list'),msg=document.getElementById('message'),count=document.getElementById('count'),typeList=document.getElementById('typeList'),typeForm=document.getElementById('typeForm');
+let rows=[],simTypes=[];
 
 function label(type){
+  const managed=simTypes.find(x=>x.sim_type===type);if(managed)return managed.display_name;
   return ({
     'mobilis-sama':'SAMA',
     'mobilis-arsselli':'Arsselli GTS',
@@ -91,6 +115,7 @@ function label(type){
   })[String(type||'').toLowerCase()]||type||'شريحة';
 }
 function state(row){
+  if(!row.flexy_approved)return ['غير معتمدة','bad'];
   if(row.sim_type==='unknown')return ['يحتاج تعريف','bad'];
   if(row.balance_state==='uninitialized')return ['يحتاج قراءة أولى','bad'];
   if(row.reconciliation_due)return ['مطابقة مستحقة','warn'];
@@ -108,7 +133,7 @@ function rule(type){
     :type==='mobilis-arsselli'
       ?'النجاح يخصم قيمة المبلغ فقط'
       :type==='unknown'
-        ?'عرّف نوع الشريحة وPIN قبل السماح بالتنفيذ.'
+        ?'اختر نوع الشريحة وPIN ثم اعتمدها للفليكسي.'
         :'يُحسب من آخر قراءة وعمليات المصدر المؤكدة';
 }
 function show(t,bad=false){
@@ -124,6 +149,25 @@ function discoveryLabel(row){
   if(row.discovery_status==='running'||row.discovery_status==='queued')return ['جاري اكتشاف الرقم','warn'];
   if(row.discovery_status==='review'||row.discovery_status==='failed')return ['الاكتشاف يحتاج مراجعة','bad'];
   return ['سيُكتشف الرقم تلقائيًا','warn'];
+}
+function renderTypes(){
+  if(!simTypes.length){typeList.innerHTML='<div class="fx-empty">لا توجد أنواع شرائح.</div>';return}
+  typeList.innerHTML=simTypes.map(t=>'<div class="type-row"><div><strong>'+escapeHtml(t.display_name)+'</strong><small dir="ltr">'+escapeHtml(t.sim_type)+'</small></div><div><small>المتعامل</small><strong>'+escapeHtml(t.operator_key)+'</strong></div><div><small>قراءة الرقم</small><strong dir="ltr">'+escapeHtml(t.phone_lookup_code||'—')+'</strong></div><button class="fx-btn secondary edit-type" type="button" data-type="'+escapeHtml(t.sim_type)+'">تعديل</button></div>').join('');
+  document.querySelectorAll('.edit-type').forEach(btn=>btn.addEventListener('click',()=>openType(btn.dataset.type)));
+}
+function openType(key=''){
+  const t=simTypes.find(x=>x.sim_type===key);
+  typeForm.hidden=false;typeForm.reset();
+  typeForm.elements.sim_type.value=t?.sim_type||'';
+  typeForm.elements.sim_type.readOnly=!!t;
+  typeForm.elements.display_name.value=t?.display_name||'';
+  typeForm.elements.operator_key.value=t?.operator_key||'mobilis';
+  typeForm.elements.phone_lookup_method.value=t?.phone_lookup_method||'ussd';
+  typeForm.elements.phone_lookup_code.value=t?.phone_lookup_code||'';
+  typeForm.elements.sort_order.value=t?.sort_order??100;
+  typeForm.elements.enabled.value=String(t?.enabled??true);
+  typeForm.elements.notes.value=t?.notes||'';
+  typeForm.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function render(data){
   rows=data;
@@ -151,13 +195,12 @@ function render(data){
         '<div><small>آخر مرجع شبكة</small><strong>'+escapeHtml(fmtDate(row.baseline_checked_at))+'</strong></div>'+
         '<div><small>عمليات مؤكدة</small><strong>'+escapeHtml(row.confirmed_execution_count||0)+'</strong></div>'+
       '</div>'+
-      '<div class="sim-actions"><button class="fx-btn secondary edit-sim" type="button">'+(row.needs_setup?'تعريف الشريحة / PIN':'تعديل بيانات / PIN')+'</button>'+(!row.msisdn?'<button class="fx-btn secondary discover-number" type="button">اكتشف الرقم الآن</button>':'')+'</div>'+
+      '<div class="sim-actions"><button class="fx-btn secondary edit-sim" type="button">'+(row.flexy_approved?'تعديل بيانات / PIN':'بيانات الاعتماد')+'</button>'+(!row.flexy_approved?'<button class="fx-btn approve-sim" type="button">اعتماد الشريحة</button>':'<button class="fx-btn secondary revoke-sim" type="button">إلغاء الاعتماد</button>')+(!row.msisdn?'<button class="fx-btn secondary discover-number" type="button">اكتشف الرقم الآن</button>':'')+'</div>'+
       '<form class="sim-edit" hidden>'+
         '<div class="sim-edit-grid">'+
           '<label>نوع الشريحة<select name="sim_type">'+
             '<option value="" '+(currentType==='unknown'?'selected':'')+'>غير مصنفة</option>'+
-            '<option value="mobilis-sama" '+(currentType==='mobilis-sama'?'selected':'')+'>SAMA</option>'+
-            '<option value="mobilis-arsselli" '+(currentType==='mobilis-arsselli'?'selected':'')+'>Arsselli GTS</option>'+
+            simTypes.filter(x=>x.enabled).map(x=>'<option value="'+escapeHtml(x.sim_type)+'" '+(currentType===x.sim_type?'selected':'')+'>'+escapeHtml(x.display_name)+'</option>').join('')+
           '</select></label>'+
           '<label>رقم الشريحة<input name="msisdn" inputmode="numeric" placeholder="06xxxxxxxx" value="'+escapeHtml(row.msisdn||'')+'"></label>'+
           '<label>PIN<input name="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="'+(row.has_pin?'اتركه فارغًا للإبقاء على PIN الحالي':'أدخل PIN')+'"></label>'+
@@ -170,6 +213,30 @@ function render(data){
   bind();
 }
 function bind(){
+  document.querySelectorAll('.approve-sim').forEach(btn=>btn.addEventListener('click',async()=>{
+    const card=btn.closest('.sim-card');
+    const row=rows.find(x=>String(x.sim_uuid)===String(card.dataset.id));
+    if(!row||row.sim_type==='unknown'||!row.has_pin){
+      const form=card.querySelector('.sim-edit');form.hidden=false;
+      show('اختر نوع الشريحة واحفظ PIN أولًا، ثم اضغط اعتماد.',true);return;
+    }
+    btn.disabled=true;btn.textContent='جاري الاعتماد…';
+    try{
+      await rpc('station_connect_admin_set_sim_flexy_approval',{p_sim_uuid:card.dataset.id,p_approved:true});
+      show('تم اعتماد الشريحة للفليكسي.');await load();
+    }catch(error){show(String(error?.message||error),true)}
+    finally{btn.disabled=false;btn.textContent='اعتماد الشريحة'}
+  }));
+  document.querySelectorAll('.revoke-sim').forEach(btn=>btn.addEventListener('click',async()=>{
+    const card=btn.closest('.sim-card');
+    if(!confirm('إلغاء اعتماد هذه الشريحة؟ لن تُختار لتنفيذ فليكسي.'))return;
+    btn.disabled=true;
+    try{
+      await rpc('station_connect_admin_set_sim_flexy_approval',{p_sim_uuid:card.dataset.id,p_approved:false});
+      show('تم إلغاء اعتماد الشريحة.');await load();
+    }catch(error){show(String(error?.message||error),true)}
+    finally{btn.disabled=false}
+  }));
   document.querySelectorAll('.edit-sim').forEach(btn=>btn.addEventListener('click',()=>{
     const card=btn.closest('.sim-card'),form=card.querySelector('.sim-edit');
     form.hidden=!form.hidden;
@@ -214,11 +281,13 @@ function bind(){
 async function load(){
   list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';msg.hidden=true;
   try{
-    const [inventory,balances,discoveries]=await Promise.all([
+    const [inventory,balances,discoveries,types]=await Promise.all([
       rpc('station_connect_admin_sim_inventory'),
       rpc('station_connect_admin_sim_operational_balances'),
-      rpc('station_connect_admin_sim_phone_discovery_state')
+      rpc('station_connect_admin_sim_phone_discovery_state'),
+      rpc('station_connect_admin_sim_types')
     ]);
+    simTypes=Array.isArray(types)?types:[];renderTypes();
     const balanceMap=new Map((Array.isArray(balances)?balances:[]).map(row=>[row.sim_uuid,row]));
     const discoveryMap=new Map((Array.isArray(discoveries)?discoveries:[]).map(row=>[row.sim_uuid,row]));
     const merged=(Array.isArray(inventory)?inventory:[]).map(row=>({
@@ -230,6 +299,27 @@ async function load(){
     render(merged);
   }catch(e){render([]);show(String(e?.message||e),true)}
 }
+document.getElementById('newTypeBtn').addEventListener('click',()=>openType());
+document.getElementById('cancelTypeBtn').addEventListener('click',()=>{typeForm.hidden=true});
+typeForm.addEventListener('submit',async e=>{
+  e.preventDefault();const fd=new FormData(typeForm),button=typeForm.querySelector('button[type="submit"]');
+  const method=String(fd.get('phone_lookup_method')||''),code=String(fd.get('phone_lookup_code')||'').trim();
+  if((method&&!code)||(!method&&code)){show('طريقة قراءة الرقم والكود يجب أن يكونا معًا.',true);return}
+  button.disabled=true;button.textContent='جاري الحفظ…';
+  try{
+    await rpc('station_connect_admin_save_sim_type',{
+      p_sim_type:String(fd.get('sim_type')||'').trim().toLowerCase(),
+      p_display_name:String(fd.get('display_name')||'').trim(),
+      p_operator_key:String(fd.get('operator_key')||''),
+      p_phone_lookup_method:method||null,p_phone_lookup_code:code||null,
+      p_enabled:String(fd.get('enabled'))==='true',
+      p_sort_order:Number(fd.get('sort_order')||100),
+      p_notes:String(fd.get('notes')||'').trim()||null
+    });
+    typeForm.hidden=true;show('تم حفظ SimType.');await load();
+  }catch(error){show(String(error?.message||error),true)}
+  finally{button.disabled=false;button.textContent='حفظ SimType'}
+});
 document.getElementById('refreshBtn').addEventListener('click',load);
 load();
 </script>
