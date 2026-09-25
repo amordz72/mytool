@@ -33,6 +33,13 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 .customer-card .names-line,.customer-card .card-actions{display:none}.customer-card>.badges{margin-top:5px!important}.customer-card>.badges .badge{padding:3px 6px;font-size:9px}
 .customer-card .customer-top>.badges .badge:not(.platform){display:none}
 .pagination{position:sticky;bottom:72px;z-index:8;background:rgba(244,247,251,.96);padding:7px;border:1px solid var(--line);border-radius:13px;backdrop-filter:blur(8px)}
+body.mobile-detail #registryCard,body.mobile-detail #listCard{display:none}
+body.mobile-detail #detailCard{display:block!important;margin-top:0}
+body.mobile-detail #detailCard .detail-head{display:flex;flex-direction:column}
+body.mobile-detail #detailCard #closeDetail{order:-1;width:100%;margin-bottom:6px}
+body.mobile-detail #detailCard #closeDetail::before{content:"← "}
+body.mobile-detail #detailCard #closeDetail{font-size:0}
+body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى العملاء";font-size:14px}
 }
 </style>
 <script src="shop-routes.js?v=20260923-customer-registry1"></script>
@@ -113,6 +120,6 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
     <div class="pagination"><button id="prevPage" class="btn secondary" type="button">السابق</button><span id="pageText" class="muted"></span><button id="nextPage" class="btn secondary" type="button">التالي</button></div>
   </section>
 </div>
-<script type="module" src="customers.js?v=20260925-mobile-list-detail2"></script>
+<script type="module" src="customers.js?v=20260925-mobile-list-detail-final1"></script>
 </body>
 </html>
