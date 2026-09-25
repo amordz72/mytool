@@ -66,9 +66,7 @@ async function load(){
   const [linking,plist,partyList]=await Promise.all([
     adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
     adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms'),
-    mode==='local'
-      ? adminRpc('admin_customer_list_canonical_parties','workspace_admin_list_canonical_parties')
-      : Promise.resolve({data:null,error:null})
+    adminRpc('admin_customer_list_canonical_parties','workspace_admin_list_canonical_parties')
   ]);
   if(linking.error)throw linking.error;
   if(plist.error)throw plist.error;
