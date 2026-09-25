@@ -4,7 +4,7 @@
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=value=>String(value??'').trim().replace(/\s+/g,' ').toLocaleLowerCase('ar');
   const mtCode=row=>row?.mt_number?('MT-'+String(row.mt_number).padStart(5,'0')):'';
-  const selectedLabel=row=>row?.mytool_username?('@'+String(row.mytool_username)+' · '+String(row.display_name||'')):(row?.mt_number?(mtCode(row)+' · '+String(row.display_name||'')):String(row?.display_name||''));
+  const selectedLabel=row=>row?.mytool_username?(String(row.mytool_username)+' · '+String(row.display_name||'')):(row?.mt_number?(mtCode(row)+' · '+String(row.display_name||'')):String(row?.display_name||''));
   const shortHint=value=>{const v=String(value||'').trim();return v.length>72?v.slice(0,69)+'…':v};
   function create(options){
     const supabase=options.supabase,input=typeof options.input==='string'?document.getElementById(options.input):options.input,results=typeof options.results==='string'?document.getElementById(options.results):options.results;
@@ -15,7 +15,7 @@
     function badges(row){const bits=[];if(row.favorite)bits.push('<span class="mpp-badge favorite">★ مفضلة</span>');if(row.financial_open)bits.push('<span class="mpp-badge financial">له رصيد/دين</span>');if(!row.active)bits.push('<span class="mpp-badge inactive">غير نشط</span>');return bits.join('')}
     function rowHtml(row){
       const star=manageFavorites?'<button class="mpp-favorite-toggle'+(row.favorite?' on':'')+'" type="button" data-favorite-party="'+row.id+'" aria-label="'+(row.favorite?'إزالة من المفضلة':'إضافة إلى المفضلة')+'">'+(row.favorite?'★':'☆')+'</button>':'';
-      const code=mtCode(row),hint=shortHint(row.identity_hint),username=row.mytool_username?('@'+row.mytool_username):'';
+      const code=mtCode(row),hint=shortHint(row.identity_hint),username=row.mytool_username?(row.mytool_username):'';
       return '<div class="mpp-row">'+star+'<button class="mpp-item" type="button" data-party-id="'+row.id+'"><span class="mpp-main"><span class="mpp-id">'+esc([username,code].filter(Boolean).join(' · '))+'</span><span class="mpp-name">'+esc(row.display_name)+'</span>'+(hint?'<span class="mpp-hint">'+esc(hint)+'</span>':'')+'</span><span class="mpp-tags">'+badges(row)+'</span></button></div>';
     }
     async function createMissing(name){
