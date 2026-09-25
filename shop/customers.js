@@ -163,7 +163,7 @@ function renderDetail(id){
   $('detailFinancial').innerHTML=chips(['الرصيد: '+money(t.balance),'الدين: '+money(t.debt),'الربح: '+money(t.profit)]);
   $('detailAccounts').innerHTML=pks.map(k=>renderPlatformGroup(k,a.filter(x=>x.platform_key===k))).join('')+(a.length?'':'<div class="empty" style="margin-top:10px">هذا العميل لا يملك حساب منصة مرتبطًا حاليًا.</div>');
   history.replaceState(null,'',location.pathname+'?party='+p.id);
-  setTimeout(()=>$('detailCard').scrollIntoView({behavior:'smooth',block:'start'}),20);
+  setTimeout(()=>{if(isMobile())scrollTo({top:0,behavior:'auto'});else $('detailCard').scrollIntoView({behavior:'smooth',block:'start'})},20);
 }
 function renderPlatformGroup(key,rows){
   const total=rows.reduce((x,s)=>({balance:x.balance+num(s.balance_amount),debt:x.debt+num(s.debt_amount),profit:x.profit+num(s.profit_amount)}),{balance:0,debt:0,profit:0});
@@ -240,7 +240,7 @@ $('platformFilter').onchange=()=>{page=1;renderList()};
 $('kindFilter').onchange=()=>{page=1;renderList()};
 $('prevPage').onclick=()=>{page--;renderList();scrollTo({top:$('customers').offsetTop-80,behavior:'smooth'})};
 $('nextPage').onclick=()=>{page++;renderList();scrollTo({top:$('customers').offsetTop-80,behavior:'smooth'})};
-$('closeDetail').onclick=()=>{selectedPartyId=null;$('detailCard').hidden=true;history.replaceState(null,'',location.pathname);renderList()};
+$('closeDetail').onclick=()=>{selectedPartyId=null;$('detailCard').hidden=true;setMobileDetail(false);history.replaceState(null,'',location.pathname);renderList();if(isMobile())scrollTo({top:0,behavior:'auto'})};
 $('saveIdentity').onclick=saveIdentity;
 
 (async()=>{
