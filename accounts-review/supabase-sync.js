@@ -50,7 +50,7 @@ async function rpc(ownerName,workspaceName,params={}){
   return{data:null,error:new Error('ADMIN_SESSION_REQUIRED')};
 }
 function displayName(r){return String(r?.store||[r?.first,r?.last].filter(Boolean).join(' ').trim()||r?.username||'').trim()}
-function rowPayload(r){
+function identityPayload(r){
   const username=String(r?.username||'').trim();
   if(!username)return null;
   return{
@@ -65,35 +65,34 @@ function rowPayload(r){
     source_updated_at:r?.sourceUpdatedAt||null,
     source_created_at:r?.sourceCreatedAt||null,
     active:r?.active!==false,
-    balance:Number(r?.balance)||0,
-    debt:Number(r?.debt)||0,
-    profit:Number(r?.profit)||0,
     raw_data:{
       username,
       display_name:displayName(r)||username,
       phone:String(r?.phone||'').trim()||null,
       email:String(r?.email||'').trim()||null,
-      balance:Number(r?.balance)||0,
-      debt:Number(r?.debt)||0,
-      profit:Number(r?.profit)||0,
       source_created_at:r?.sourceCreatedAt||null
     }
   };
+}
+function financialPayload(r){
+  const username=String(r?.username||'').trim();
+  if(!username)return null;
+  return{username,balance:Number(r?.balance)||0,debt:Number(r?.debt)||0,profit:Number(r?.profit)||0};
 }
 async function syncOne(source){
   if(!canSync())return null;
   const platform=sourcePlatform(source);
   if(!platform||!Array.isArray(source?.rows))return null;
-  const accounts=source.rows.map(rowPayload).filter(Boolean);
+  const purpose=importPurpose();
+  const accounts=source.rows.map(purpose==='financial'?financialPayload:identityPayload).filter(Boolean);
   if(!accounts.length)return null;
-  let total={processed:0,inserted:0,updated:0,unchanged:0,identity_reviews:0,identity_conflicts:0,stale_skipped:0};
+  let total={processed:0,inserted:0,updated:0,unchanged:0,identity_reviews:0,identity_conflicts:0,stale_skipped:0,unknown_accounts:0};
   status('Supabase: جاري حفظ نتائج '+source.name+'…','busy');
   for(let i=0;i<accounts.length;i+=150){
     const chunk=accounts.slice(i,i+150);
-    const purpose=importPurpose();
     const call=purpose==='financial'
       ? await rpc('admin_customer_financial_patch','workspace_admin_customer_financial_patch',{p_platform_key:platform,p_accounts:chunk,p_import_mode:financialImportMode()})
-      : await rpc('admin_customer_upsert_source_accounts','workspace_admin_upsert_source_accounts',{p_platform_key:platform,p_accounts:chunk});
+      : await rpc('admin_customer_upsert_source_identities','workspace_admin_customer_upsert_source_identities',{p_platform_key:platform,p_accounts:chunk});
     const {data,error}=call;
     if(error)throw error;
     for(const k of Object.keys(total))total[k]+=Number(data?.[k]||0);
