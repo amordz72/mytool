@@ -242,37 +242,5 @@ OFFLINE test
     <a href="server.html">مراجعة معمارية السيرفر ←</a>
   </div>
 </section>
-
-<section class="card">
-  <h2>Station → Modem → SIM</h2>
-  <p>الربط الحالي صار فعليًا داخل Supabase، وليس مجرد توثيق.</p>
-  <div class="flow">Station
-↓
-Modem
-- IMEI أولًا
-- Serial احتياط
-- HiLink IP
-↓
-SIM
-- ICCID إن توفر
-- IMSI إن توفر
-- رقم MSISDN من المودم أو يدوي
-- النوع
-- PIN مشفّر</div>
-  <div class="callout">PIN تابع للشريحة وليس للمودم. إذا انتقلت شريحة معروفة بـICCID/IMSI إلى مودم آخر، ينتقل نفس سجل الشريحة إلى المودم الجديد.</div>
-</section>
-
-<section class="card">
-  <h2>إدخال رقم الشريحة والـPIN</h2>
-  <p>من <strong>إدارة النظام ← المحطات</strong> يظهر كل مودم وكل شريحة بعد تشغيل Agent 0.3.0.</p>
-  <div class="table-wrap"><table><thead><tr><th>الحقل</th><th>المصدر</th><th>السلوك</th></tr></thead><tbody>
-    <tr><td>IMEI / Serial</td><td>HiLink</td><td>يقرأهما Agent تلقائيًا</td></tr>
-    <tr><td>ICCID / IMSI</td><td>HiLink إن توفرا</td><td>هوية ثابتة للشريحة</td></tr>
-    <tr><td>MSISDN</td><td>HiLink أو يدوي</td><td>10 أرقام وUnique، واليدوي لا يستبدل بلا سبب</td></tr>
-    <tr><td>SIM Type</td><td>الإدارة</td><td>حاليًا SAMA أو Arsselli</td></tr>
-    <tr><td>PIN</td><td>الإدارة</td><td>يحفظ في Supabase Vault مشفّرًا</td></tr>
-  </tbody></table></div>
-  <div class="callout">لم يعد هناك SAMA_PIN داخل .env. Agent يأخذ PIN فقط مع Job مصادق عليها عبر HTTPS.</div>
-</section>
 </main>
 <script src="nav.js"></script><script src="../mytool-bottom-nav.js" data-root="../" data-app="documentation"></script></body></html>

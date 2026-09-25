@@ -7,11 +7,6 @@
   const LAST_LOGIN_ALIASES=['آخر دخول','اخر دخول','تاريخ آخر دخول','تاريخ اخر دخول','last login','last_login','lastlogin','last seen','last activity','last_activity','derniere connexion','dernière connexion','date connexion','date de connexion'];
   let totalMode=false;
   let totalSortMode='debt';
-  let totalSearch='';
-  let totalFilter='all';
-  let totalPageSize=5;
-  let totalPage=1;
-  let totalDetailId='';
   let totalAutoEntered=false;
   let observer=null;
 
@@ -69,7 +64,7 @@
   }
 
   async function totalsData(){const sources=await dbAll('sources');const bySource=sources.map(s=>({id:s.id,name:s.name,count:(s.rows||[]).length,balance:(s.rows||[]).reduce((a,r)=>a+(Number(r.balance)||0),0),debt:(s.rows||[]).reduce((a,r)=>a+(Number(r.debt)||0),0),profit:(s.rows||[]).reduce((a,r)=>a+(Number(r.profit)||0),0),updatedAt:s.updatedAt})).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar'));return{rawSources:sources,sources:bySource,count:bySource.reduce((a,s)=>a+s.count,0),balance:bySource.reduce((a,s)=>a+s.balance,0),debt:bySource.reduce((a,s)=>a+s.debt,0),profit:bySource.reduce((a,s)=>a+s.profit,0)}}
-  function customerName(r){return [r?.first,r?.last].filter(Boolean).join(' ').trim()||r?.username||r?.email||r?.phone||r?.mobile||'بدون اسم'}
+  function customerName(r){return [r?.first,r?.last].filter(Boolean).join(' ').trim()||r?.store||r?.username||'بدون اسم'}
   function customerTotals(members){return{balance:members.reduce((a,x)=>a+(Number(x.row.balance)||0),0),debt:members.reduce((a,x)=>a+(Number(x.row.debt)||0),0),profit:members.reduce((a,x)=>a+(Number(x.row.profit)||0),0)}}
   function groupTotals(groups){return(groups||[]).reduce((out,g)=>{out.balance+=Number(g.balance)||0;out.debt+=Number(g.debt)||0;out.profit+=Number(g.profit)||0;return out},{balance:0,debt:0,profit:0})}
   function totalIntegrity(data,groups){const grouped=groupTotals(groups),delta={balance:grouped.balance-data.balance,debt:grouped.debt-data.debt,profit:grouped.profit-data.profit},eps=.009;return{ok:Math.abs(delta.balance)<eps&&Math.abs(delta.debt)<eps&&Math.abs(delta.profit)<eps,grouped,delta}}
@@ -81,48 +76,8 @@
     for(const source of sources){for(const row of (source.rows||[])){const key=core?core.rid(source.id,row):source.id+'::'+String(row.key);if(used.has(key))continue;const members=[{source,row}];groups.push({id:'single:'+key,name:customerName(row),shared:false,members,...customerTotals(members)})}}
     return groups.sort((a,b)=>{const av=Number(a[totalSortMode])||0,bv=Number(b[totalSortMode])||0;if(bv!==av)return bv-av;return String(a.name||'').localeCompare(String(b.name||''),'ar')})
   }
-
-  function groupSourceNames(g){return [...new Set((g.members||[]).map(x=>x.source?.name).filter(Boolean))]}
-  function groupNeedsReview(g){
-    return (g.members||[]).some(x=>{
-      const tokens=[x.row?.key,x.row?.username,x.row?.email,x.row?.phone,x.row?.mobile].map(normalize).filter(v=>v&&v.length>=3);
-      if(!tokens.length)return false;
-      return (x.source?.identityReviews||[]).some(review=>{
-        const raw=normalize(JSON.stringify(review||{}));
-        return tokens.some(token=>raw.includes(token));
-      });
-    });
-  }
-  function groupSearchText(g){
-    const bits=[g.name,...groupSourceNames(g)];
-    for(const x of (g.members||[]))bits.push(x.row?.username,x.row?.email,x.row?.phone,x.row?.mobile,x.row?.first,x.row?.last);
-    return normalize(bits.filter(Boolean).join(' '));
-  }
-  function groupMatches(g){
-    const q=normalize(totalSearch);
-    if(q&&!groupSearchText(g).includes(q))return false;
-    if(totalFilter==='debt'&&!(Number(g.debt)>0))return false;
-    if(totalFilter==='balance'&&!(Number(g.balance)>0))return false;
-    if(totalFilter==='review'&&!groupNeedsReview(g))return false;
-    return true;
-  }
-  function compactCustomerHtml(g){
-    const debt=Number(g.debt)||0,balance=Number(g.balance)||0,net=debt-balance,sources=groupSourceNames(g);
-    const money=net>0?'<span class="account-row-money debt">عليه '+displayNumber(net)+'</span>':net<0?'<span class="account-row-money balance">له '+displayNumber(Math.abs(net))+'</span>':'<span class="account-row-money zero">متوازن</span>';
-    const review=groupNeedsReview(g)?'<span class="account-row-review">مراجعة</span>':'';
-    return '<button type="button" class="account-compact-row" data-open-customer="'+escapeHtml(g.id)+'"><span class="account-row-main"><strong>'+escapeHtml(g.name)+'</strong><small>'+escapeHtml(sources.join('، ')||'—')+'</small></span><span class="account-row-side">'+review+money+'</span></button>';
-  }
-  function customerMemberHtml(x){
-    const contacts=[x.row?.username,x.row?.phone,x.row?.mobile,x.row?.email].filter(Boolean);
-    return '<div class="account-detail-member"><div><strong>'+escapeHtml(x.source?.name||'مصدر')+'</strong><small>'+escapeHtml(contacts.join(' · ')||'بدون بيانات اتصال')+'</small></div><div class="account-detail-money"><span class="metric debt">الدين <b>'+displayNumber(x.row?.debt)+'</b></span><span class="metric balance">الرصيد <b>'+displayNumber(x.row?.balance)+'</b></span><span class="metric profit">الأرباح <b>'+displayNumber(x.row?.profit)+'</b></span></div></div>';
-  }
-  function customerDetailHtml(g){
-    if(!g)return'';
-    const net=(Number(g.debt)||0)-(Number(g.balance)||0),sources=groupSourceNames(g);
-    const netText=net>0?'صافي مستحق '+displayNumber(net):net<0?'صافي رصيد '+displayNumber(Math.abs(net)):'الصافي 0';
-    return '<div class="account-detail-backdrop" data-account-detail-backdrop><section class="account-detail-sheet" role="dialog" aria-modal="true" aria-label="تفاصيل الحساب"><header><div><h3>'+escapeHtml(g.name)+'</h3><small>'+escapeHtml(sources.join('، ')||'—')+'</small></div><button type="button" class="account-detail-close" data-close-customer aria-label="إغلاق">×</button></header><div class="account-detail-summary"><span class="metric debt">الدين <b>'+displayNumber(g.debt)+'</b></span><span class="metric balance">الرصيد <b>'+displayNumber(g.balance)+'</b></span><span class="metric profit">الأرباح <b>'+displayNumber(g.profit)+'</b></span><strong>'+escapeHtml(netText)+'</strong></div><div class="account-detail-members">'+(g.members||[]).map(customerMemberHtml).join('')+'</div><footer><button type="button" data-copy-customer-report="'+escapeHtml(g.id)+'">نسخ التقرير</button><button type="button" data-share-customer-report="'+escapeHtml(g.id)+'">مشاركة</button></footer></section></div>';
-  }
-
+  function customerMemberHtml(x){return '<div class="accounts-customer-member"><div><div class="accounts-name-row"><strong>'+escapeHtml(customerName(x.row))+'</strong>'+netBadge(x.row.balance,x.row.debt)+'</div><small>'+escapeHtml(x.row.username||'—')+' · '+escapeHtml(x.source.name||'—')+'</small></div><div class="accounts-member-money"><span class="metric debt">دين <b>'+displayNumber(x.row.debt)+'</b></span><span class="metric balance">رصيد <b>'+displayNumber(x.row.balance)+'</b></span><span class="metric profit">أرباح <b>'+displayNumber(x.row.profit)+'</b></span></div></div>'}
+  function customerCardHtml(g){const sourceNames=[...new Set((g.members||[]).map(x=>x.source?.name).filter(Boolean))],members=g.shared?'<div class="accounts-customer-members">'+g.members.map(customerMemberHtml).join('')+'</div>':'';return '<article class="accounts-customer-card'+(g.shared?' is-shared':'')+'" data-customer-group="'+escapeHtml(g.id)+'"><header><div><div class="accounts-name-row"><strong>'+escapeHtml(g.name)+'</strong></div><div class="accounts-primary-money"><span class="accounts-debt-main">الدين الكلي <b>'+displayNumber(g.debt)+'</b></span>'+netBadge(g.balance,g.debt)+'</div><small>'+(g.shared?'مشترك في: '+sourceNames.map(escapeHtml).join('، '):'المصدر: '+sourceNames.map(escapeHtml).join('، '))+'</small></div><div class="accounts-card-actions">'+(g.shared?'<span class="shared-badge">مشترك</span>':'')+'<button type="button" data-copy-customer-report="'+escapeHtml(g.id)+'">نسخ تقرير</button><button type="button" class="share-report-btn" data-share-customer-report="'+escapeHtml(g.id)+'">مشاركة</button></div></header>'+members+'<footer><span class="metric balance">الرصيد المسجل <b>'+displayNumber(g.balance)+'</b></span><span class="metric profit">الأرباح <b>'+displayNumber(g.profit)+'</b></span></footer></article>'}
   function reportDate(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()}
   function customerReportText(g){const debtRows=(g.members||[]).filter(x=>(Number(x.row.debt)||0)>0),net=(Number(g.debt)||0)-(Number(g.balance)||0),lines=['تقرير حساب — '+g.name,'التاريخ: '+reportDate(),'','الديون الحالية:'];if(debtRows.length)debtRows.forEach(x=>lines.push('• '+(x.source?.name||'مصدر')+': '+displayNumber(x.row.debt)+' دج'));else lines.push('• لا يوجد دين حالي');lines.push('','إجمالي الدين: '+displayNumber(g.debt)+' دج','الرصيد المسجل داخل المنصات: '+displayNumber(g.balance)+' دج',net>=0?'الصافي المستحق: '+displayNumber(net)+' دج':'صافي رصيد لصالح الحساب: '+displayNumber(Math.abs(net))+' دج');return lines.join('\n')}
   function totalText(data,groups){
@@ -135,60 +90,23 @@
   }
   async function copyText(text){try{await navigator.clipboard.writeText(text);return true}catch{try{const a=document.createElement('textarea');a.value=text;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();const ok=document.execCommand('copy');a.remove();return ok}catch{return false}}}
   async function shareText(title,text){if(!navigator.share){const ok=await copyText(text);window.MyToolBottomNav?.toast(ok?'المشاركة غير متاحة؛ تم نسخ التقرير بدلًا منها':'تعذرت المشاركة والنسخ',!ok);return ok}try{await navigator.share({title,text});return true}catch(error){if(error?.name==='AbortError')return false;const ok=await copyText(text);window.MyToolBottomNav?.toast(ok?'تعذرت المشاركة؛ تم نسخ التقرير بدلًا منها':'تعذرت المشاركة والنسخ',!ok);return ok}}
-
   async function renderTotal(){
     const data=await totalsData(),groups=await customerGroups(data),integrity=totalIntegrity(data,groups),tabs=document.querySelector('.tabs');if(!tabs)return;
     let tab=document.getElementById('accountsTotalTab');if(!tab){tab=document.createElement('button');tab.id='accountsTotalTab';tab.type='button';tab.className='tab accounts-total-tab';tab.addEventListener('click',enterTotal);tabs.prepend(tab)}
     const tabHtml='الكل <small>('+groups.length+')</small>';if(tab.innerHTML!==tabHtml)tab.innerHTML=tabHtml;
     let panel=document.getElementById('accountsTotalPanel');if(!panel){panel=document.createElement('section');panel.id='accountsTotalPanel';panel.className='panel accounts-total-panel';tabs.closest('section.panel')?.insertAdjacentElement('afterend',panel)}
-
-    const filtered=groups.filter(groupMatches);
-    const reviewCount=groups.filter(groupNeedsReview).length;
-    const pageCount=Math.max(1,Math.ceil(filtered.length/totalPageSize));
-    if(totalPage>pageCount)totalPage=pageCount;
-    if(totalPage<1)totalPage=1;
-    const start=(totalPage-1)*totalPageSize,pageGroups=filtered.slice(start,start+totalPageSize);
-    if(totalDetailId&&!groups.some(g=>String(g.id)===String(totalDetailId)))totalDetailId='';
-    const detailGroup=totalDetailId?groups.find(g=>String(g.id)===String(totalDetailId)):null;
-    const fingerprint=JSON.stringify([totalSearch,totalFilter,totalPageSize,totalPage,totalDetailId,data.sources.map(s=>[s.id,s.count,s.balance,s.debt,s.profit]),groups.map(g=>[g.id,g.balance,g.debt,g.profit,g.members.length,groupNeedsReview(g)]),integrity.ok]);
-
-    const filterButton=(id,label,count)=>'<button type="button" class="account-filter'+(totalFilter===id?' active':'')+'" data-account-filter="'+id+'">'+label+(count==null?'':' <small>'+count+'</small>')+'</button>';
-    const debtCount=groups.filter(g=>Number(g.debt)>0).length,balanceCount=groups.filter(g=>Number(g.balance)>0).length;
-    const integrityHtml=integrity.ok?'':'<div class="accounts-total-integrity warn"><b>⚠ يوجد فرق في التجميع</b><span>افتح الدمج والمراجعة قبل اعتماد الأرقام المجمعة.</span></div>';
-    const pager=filtered.length?'<div class="account-pager"><button type="button" data-page-prev '+(totalPage<=1?'disabled':'')+'>السابق</button><span>'+totalPage+' / '+pageCount+'</span><button type="button" data-page-next '+(totalPage>=pageCount?'disabled':'')+'>التالي</button><select data-page-size aria-label="عدد الحسابات في الصفحة"><option value="5" '+(totalPageSize===5?'selected':'')+'>5</option><option value="25" '+(totalPageSize===25?'selected':'')+'>25</option></select></div>':'';
-
-    if(panel.dataset.totalFingerprint!==fingerprint){
-      panel.dataset.totalFingerprint=fingerprint;
-      panel.innerHTML=
-        '<div class="accounts-simple-head"><div><h2>الحسابات</h2><div class="meta">المهم أولًا: الدين، الرصيد، والحسابات التي تحتاج مراجعة.</div></div><button type="button" class="accounts-update-btn" data-update-accounts>📋 لصق من منصة</button></div>'+
-        '<div class="summary accounts-total-summary simple"><div class="stat debt"><span>إجمالي الديون</span><strong>'+displayNumber(data.debt)+'</strong></div><div class="stat balance"><span>إجمالي الأرصدة</span><strong>'+displayNumber(data.balance)+'</strong></div><div class="stat review"><span>يحتاج مراجعة</span><strong>'+reviewCount+'</strong></div></div>'+
-        '<div class="accounts-find"><input type="search" data-account-search value="'+escapeHtml(totalSearch)+'" placeholder="ابحث بالاسم أو المستخدم أو الهاتف…" aria-label="بحث في الحسابات"><div class="account-filters">'+filterButton('all','الكل',groups.length)+filterButton('debt','عليه دين',debtCount)+filterButton('balance','له رصيد',balanceCount)+filterButton('review','يحتاج مراجعة',reviewCount)+'</div></div>'+
-        integrityHtml+
-        '<div class="accounts-list-meta"><span>'+filtered.length+' حساب</span><span>مرتبة حسب الدين</span></div>'+
-        '<div class="accounts-compact-list">'+(pageGroups.length?pageGroups.map(compactCustomerHtml).join(''):'<div class="empty">لا توجد حسابات مطابقة.</div>')+'</div>'+
-        pager+
-        (detailGroup?customerDetailHtml(detailGroup):'');
-
-      panel.querySelector('[data-update-accounts]')?.addEventListener('click',()=>document.querySelector('input[type="file"][multiple]')?.click());
-      panel.querySelector('[data-account-search]')?.addEventListener('input',event=>{totalSearch=event.target.value||'';totalPage=1;renderTotal().then(()=>{const input=document.querySelector('[data-account-search]');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length)}})});
-      panel.querySelectorAll('[data-account-filter]').forEach(btn=>btn.addEventListener('click',()=>{totalFilter=btn.dataset.accountFilter||'all';totalPage=1;totalDetailId='';renderTotal()}));
-      panel.querySelectorAll('[data-open-customer]').forEach(btn=>btn.addEventListener('click',()=>{totalDetailId=btn.dataset.openCustomer||'';renderTotal()}));
-      panel.querySelector('[data-close-customer]')?.addEventListener('click',()=>{totalDetailId='';renderTotal()});
-      panel.querySelector('[data-account-detail-backdrop]')?.addEventListener('click',event=>{if(event.target===event.currentTarget){totalDetailId='';renderTotal()}});
-      panel.querySelector('[data-page-prev]')?.addEventListener('click',()=>{if(totalPage>1){totalPage--;totalDetailId='';renderTotal()}});
-      panel.querySelector('[data-page-next]')?.addEventListener('click',()=>{if(totalPage<pageCount){totalPage++;totalDetailId='';renderTotal()}});
-      panel.querySelector('[data-page-size]')?.addEventListener('change',event=>{totalPageSize=Number(event.target.value)===25?25:5;totalPage=1;totalDetailId='';renderTotal()});
-      panel.querySelectorAll('[data-copy-customer-report]').forEach(btn=>btn.addEventListener('click',async()=>{const g=groups.find(x=>String(x.id)===String(btn.dataset.copyCustomerReport));if(!g)return;const ok=await copyText(customerReportText(g));window.MyToolBottomNav?.toast(ok?'تم نسخ تقرير الحساب':'تعذر نسخ التقرير',!ok)}));
-      panel.querySelectorAll('[data-share-customer-report]').forEach(btn=>btn.addEventListener('click',()=>{const g=groups.find(x=>String(x.id)===String(btn.dataset.shareCustomerReport));if(!g)return;shareText('تقرير حساب — '+g.name,customerReportText(g))}));
-    }
+    const fingerprint=JSON.stringify([totalSortMode,data.sources.map(s=>[s.id,s.count,s.balance,s.debt,s.profit]),groups.map(g=>[g.id,g.balance,g.debt,g.profit,g.members.length]),integrity.ok,integrity.delta.balance,integrity.delta.debt,integrity.delta.profit]);
+    const integrityHtml=integrity.ok
+      ?'<div class="accounts-total-integrity ok"><b>✓ الإجمالي مطابق للمصادر</b><span>الربط يجمّع هوية العميل فقط؛ لا يضيف ولا يحذف من الدين أو الرصيد أو الأرباح.</span></div>'
+      :'<div class="accounts-total-integrity warn"><b>⚠ يوجد فرق بعد تجميع الحسابات</b><span>الدين '+displayNumber(integrity.grouped.debt)+' مقابل '+displayNumber(data.debt)+' · الرصيد '+displayNumber(integrity.grouped.balance)+' مقابل '+displayNumber(data.balance)+' · الأرباح '+displayNumber(integrity.grouped.profit)+' مقابل '+displayNumber(data.profit)+'. لا تعتمد التجميع قبل مراجعة الروابط.</span></div>';
+    if(panel.dataset.totalFingerprint!==fingerprint){panel.dataset.totalFingerprint=fingerprint;panel.innerHTML='<div class="accounts-all-head"><div><h2>المجموع الكلي</h2><div class="meta">كل العملاء؛ الحسابات المشتركة تظهر كعميل واحد وباقي العملاء يظهرون أيضًا.</div></div><div class="accounts-all-actions"><button type="button" class="accounts-share-total" data-share-total>📤 مشاركة الكل</button><button type="button" class="accounts-all-sort sort-'+totalSortMode+'" data-total-sort>ترتيب: '+sortLabel()+' ↓</button></div></div><div class="summary accounts-total-summary"><div class="stat debt"><span>إجمالي الديون</span><strong>'+displayNumber(data.debt)+'</strong></div><div class="stat balance"><span>إجمالي الأرصدة</span><strong>'+displayNumber(data.balance)+'</strong></div><div class="stat profit"><span>إجمالي الأرباح</span><strong>'+displayNumber(data.profit)+'</strong></div></div>'+integrityHtml+'<div class="accounts-customers-list">'+(groups.length?groups.map(customerCardHtml).join(''):'<div class="empty">لا توجد حسابات.</div>')+'</div>';panel.querySelector('[data-total-sort]')?.addEventListener('click',()=>{totalSortMode=totalSortMode==='debt'?'balance':totalSortMode==='balance'?'profit':'debt';renderTotal();});panel.querySelector('[data-share-total]')?.addEventListener('click',()=>shareText('المجموع الكلي — مراجعة الحسابات',totalText(data,groups)));panel.querySelectorAll('[data-copy-customer-report]').forEach(btn=>btn.addEventListener('click',async()=>{const g=groups.find(x=>String(x.id)===String(btn.dataset.copyCustomerReport));if(!g)return;const ok=await copyText(customerReportText(g));window.MyToolBottomNav?.toast(ok?'تم نسخ تقرير الحساب':'تعذر نسخ التقرير',!ok)}));panel.querySelectorAll('[data-share-customer-report]').forEach(btn=>btn.addEventListener('click',()=>{const g=groups.find(x=>String(x.id)===String(btn.dataset.shareCustomerReport));if(!g)return;shareText('تقرير حساب — '+g.name,customerReportText(g))}));}
     panel.hidden=!(totalMode&&document.getElementById('accountsTotalTab')?.classList.contains('active'));
   }
-  function hideForTotal(){const app=document.getElementById('app'),tabsPanel=document.querySelector('.tabs')?.closest('section.panel'),total=document.getElementById('accountsTotalPanel');if(!app||!tabsPanel||!total)return;for(const el of [...app.children]){if(el===tabsPanel||el===total||el.classList?.contains('msg'))continue;if(el.tagName==='SECTION'&&!el.dataset.accountsTotalHidden){el.dataset.accountsTotalHidden=el.hidden?'1':'0';el.hidden=true}}}
-
+  function hideForTotal(){const app=document.getElementById('app'),tabsPanel=document.querySelector('.tabs')?.closest('section.panel'),total=document.getElementById('accountsTotalPanel');if(!app||!tabsPanel||!total)return;for(const el of [...app.children]){if(el===tabsPanel||el===total||el.classList?.contains('hero')||el.classList?.contains('msg'))continue;if(el.tagName==='SECTION'&&!el.dataset.accountsTotalHidden){el.dataset.accountsTotalHidden=el.hidden?'1':'0';el.hidden=true}}}
   function restoreAfterTotal(){document.querySelectorAll('[data-accounts-total-hidden]').forEach(el=>{el.hidden=el.dataset.accountsTotalHidden==='1';delete el.dataset.accountsTotalHidden})}
-  async function enterTotal(){totalAutoEntered=true;totalMode=true;document.body.classList.add('accounts-total-active');window.dispatchEvent(new Event('accounts-total-selected'));const shared=document.getElementById('accountsSharedPanel');if(shared){shared.hidden=true;shared.style.display='none'}document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.remove('active'));document.getElementById('accountsTotalTab')?.classList.add('active');const total=document.getElementById('accountsTotalPanel');if(total){total.hidden=false;total.style.removeProperty('display')}await renderTotal();hideForTotal();const data=await totalsData(),groups=await customerGroups(data);window.MyToolBottomNav?.setActions([{slot:2,icon:'📂',label:'ملفات',title:'اختيار عدة ملفات وتحديث المصادر تلقائيًا',onClick:()=>document.querySelector('input[type="file"][multiple]')?.click()},{slot:4,icon:'📋',label:'نسخ الكلي',title:'نسخ التقرير الكامل مع تفاصيل الحسابات',onClick:async()=>{const ok=await copyText(totalText(data,groups));window.MyToolBottomNav?.toast(ok?'تم نسخ التقرير الكامل':'تعذر النسخ',!ok)}},{icon:'📤',label:'مشاركة الكل',title:'مشاركة التقرير الكامل مع تفاصيل الحسابات',overflow:true,onClick:()=>shareText('المجموع الكلي — مراجعة الحسابات',totalText(data,groups))}])}
-  function exitTotal(){const wasActive=totalMode;totalMode=false;document.body.classList.remove('accounts-total-active');const total=document.getElementById('accountsTotalPanel');if(total){total.hidden=true;total.style.display='none'}document.getElementById('accountsTotalTab')?.classList.remove('active');restoreAfterTotal();if(wasActive)setTimeout(()=>window.dispatchEvent(new Event('accounts-total-exit')),60)}
-  async function ensureTotal(){try{const sources=await dbAll('sources');const tabs=document.querySelector('.tabs');if(!tabs)return;if(!sources.length){document.getElementById('accountsTotalTab')?.remove();document.getElementById('accountsTotalPanel')?.remove();return}await renderTotal();if(!totalAutoEntered){await enterTotal();return}if(totalMode)hideForTotal()}catch(_e){}
+  async function enterTotal(){totalAutoEntered=true;totalMode=true;window.dispatchEvent(new Event('accounts-total-selected'));const shared=document.getElementById('accountsSharedPanel');if(shared){shared.hidden=true;shared.style.display='none'}document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.remove('active'));document.getElementById('accountsTotalTab')?.classList.add('active');const total=document.getElementById('accountsTotalPanel');if(total){total.hidden=false;total.style.removeProperty('display')}await renderTotal();hideForTotal();const data=await totalsData(),groups=await customerGroups(data);window.MyToolBottomNav?.setActions([{slot:2,icon:'📂',label:'ملفات',title:'اختيار عدة ملفات وتحديث المصادر تلقائيًا',onClick:()=>document.querySelector('input[type="file"][multiple]')?.click()},{slot:4,icon:'📋',label:'نسخ الكلي',title:'نسخ التقرير الكامل مع تفاصيل الحسابات',onClick:async()=>{const ok=await copyText(totalText(data,groups));window.MyToolBottomNav?.toast(ok?'تم نسخ التقرير الكامل':'تعذر النسخ',!ok)}},{icon:'📤',label:'مشاركة الكل',title:'مشاركة التقرير الكامل مع تفاصيل الحسابات',overflow:true,onClick:()=>shareText('المجموع الكلي — مراجعة الحسابات',totalText(data,groups))}])}
+  function exitTotal(){const wasActive=totalMode;totalMode=false;const total=document.getElementById('accountsTotalPanel');if(total){total.hidden=true;total.style.display='none'}document.getElementById('accountsTotalTab')?.classList.remove('active');restoreAfterTotal();if(wasActive)setTimeout(()=>window.dispatchEvent(new Event('accounts-total-exit')),60)}
+  async function ensureTotal(){try{const sources=await dbAll('sources');const tabs=document.querySelector('.tabs');if(!tabs)return;if(!sources.length){document.getElementById('accountsTotalTab')?.remove();document.getElementById('accountsTotalPanel')?.remove();return}await renderTotal();if(totalMode)hideForTotal()}catch(_e){}
   }
 
   function bind(){

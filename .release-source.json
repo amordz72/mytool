@@ -1,9 +1,1 @@
-{
-  "source_repository": "amordz72/mytool-dev",
-  "source_commit": "f84b2e077e024ba436c6745424d8bb407d24f397",
-  "released_paths": [
-    "flexy/index.html"
-  ],
-  "release_kind": "controlled-safety-release",
-  "note": "Financial request idempotency v2 RPC dispatch"
-}
+{"source_repository":"amordz72/mytool-dev","source_commit":"5b1226b6803880fd83dd57ca32182a61d4ce3394","released_at":"2026-09-25T13:45:49Z"}

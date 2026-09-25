@@ -1,0 +1,2 @@
+/* Source fragment mirrored from deployed pricing-access.js. */
+(function(){'use strict';if(document.body?.dataset?.screen!=='stock'||localStorage.getItem('mytool_shop_worker_token')||document.querySelector('script[data-stock-admin-actions]'))return;const script=document.createElement('script');script.src='stock-admin-actions.js?v=20260913-2045';script.defer=true;script.dataset.stockAdminActions='1';document.head.appendChild(script)})();

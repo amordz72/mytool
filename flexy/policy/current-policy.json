@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "policy_id": "mytool-flexy-current",
-  "updated_at": "2026-09-21",
+  "updated_at": "2026-09-22",
   "authority": {
     "repository": "amordz72/mytool-dev",
     "path": "flexy/policy",
@@ -50,8 +50,8 @@
       "physical_sim_present",
       "resource_online",
       "secret_available",
-      "fresh_balance",
-      "sufficient_balance"
+      "successful_balance_baseline_present",
+      "operational_balance_sufficient"
     ],
     "order_by": [
       "policy_priority",
@@ -104,5 +104,33 @@
     "thin_transport": true,
     "business_routing_logic": false,
     "secrets_in_git": false
+  },
+  "balance_policy": {
+    "baseline_required": true,
+    "baseline_expires_by_age": false,
+    "lookup_before_every_execution": false,
+    "operational_balance_model": "network_baseline + confirmed_inflows - confirmed_outflows",
+    "reconciliation": {
+      "amount_threshold_dzd_default": 20000,
+      "threshold_is_configurable": true,
+      "time_trigger_blocks_execution": false,
+      "triggers": [
+        "cumulative_amount_threshold",
+        "network_or_sim_recovery",
+        "ambiguous_financial_result",
+        "known_external_recharge_or_adjustment",
+        "scheduled_background_check"
+      ]
+    },
+    "mobilis_arsselli": {
+      "successful_execution_outflow": "amount",
+      "fixed_execution_fee_dzd": 0
+    },
+    "mobilis_sama": {
+      "successful_execution_outflow": "offer_amount + fixed_execution_fee",
+      "fixed_execution_fee_dzd": 10
+    },
+    "failed_execution_outflow": 0,
+    "review_execution_finalizes_outflow": false
   }
 }

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OADP v1 — بروتوكول عمر ↔ الذكاء الاصطناعي</title>
+<style>
+:root{
+  --bg:#f4f5f7;--card:#fff;--text:#171717;--muted:#666;--line:#d8dbe0;
+  --dark:#18181b;--soft:#f1f2f4;--warn:#fff8e1;--danger:#fff0f0;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.65}
+main{max-width:920px;margin:auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px;margin:12px 0}
+h1{font-size:24px;margin:0 0 8px}h2{font-size:19px;margin:0 0 8px}
+.small{font-size:13px}.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label.field{display:block;font-weight:700;margin:7px 0 4px}
+input[type=text],input[type=email],textarea,select{
+ width:100%;font:inherit;padding:10px;border:1px solid #bfc3c9;border-radius:9px;background:#fff
+}
+.topline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-block;border:1px solid #bbb;border-radius:999px;padding:3px 9px;font-size:12px;background:#fafafa}
+.risk-normal{background:#f3f4f6}.risk-important{background:var(--warn)}.risk-critical{background:var(--danger);border-color:#d88}
+.question{border-right:5px solid #222}
+.option{display:block;border:1px solid #cfd2d7;border-radius:10px;padding:10px;margin:8px 0;cursor:pointer}
+.option:has(input:checked){border:2px solid #111;background:#f3f3f3}
+.option input{transform:scale(1.2);margin-left:7px}
+.rec{font-size:12px;font-weight:700;margin-right:6px}
+.ai-box{background:#f7f7f8;border-radius:9px;padding:9px;margin:8px 0}
+.critical-note{background:var(--danger);border:1px solid #e6b5b5;padding:9px;border-radius:9px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 14px;cursor:pointer}
+.primary{background:#18181b;color:#fff}.secondary{background:#e5e7eb;color:#111}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;background:#111;color:#fff;padding:13px;border-radius:10px;min-height:74px;user-select:text;-webkit-user-select:text}
+#progress{font-weight:700}
+.compact .help,.compact .ai-reason,.compact .unselected{display:none!important}
+.compact .card{margin:7px 0;padding:12px}
+.compact .option{padding:7px;margin:5px 0}
+@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:9px}h1{font-size:21px}}
+@media print{
+ body{background:#fff}main{max-width:none;padding:0}.actions,.help{display:none!important}
+ .card{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<main id="page">
+<section class="card">
+  <div class="topline">
+    <span class="chip"><b>OADP/1</b></span>
+    <span class="chip">عمر ↔ AI</span>
+    <span class="chip" id="progress">0/0</span>
+  </div>
+  <h1>بروتوكول عمر–الذكاء للقرارات</h1>
+  <p class="muted help">الذكاء يحدد توصيته افتراضيًا في القرارات العادية. عمر يغيّر الاستثناء فقط. القرارات الحرجة لا تُحدد مسبقًا وتحتاج اختيار عمر الصريح.</p>
+  <div class="grid">
+    <div><label class="field">المشروع</label><input id="project" type="text" value="MyTool"></div>
+    <div><label class="field">Batch ID</label><input id="batch" type="text" value="OADP-DEMO-001"></div>
+    <div><label class="field">البريد الإلكتروني — اختياري</label><input id="email" type="email" placeholder="اختياري"></div>
+    <div><label class="field">نسخة البروتوكول</label><input type="text" value="OADP/1" disabled></div>
+  </div>
+  <label class="field">السياق المختصر</label>
+  <textarea id="context" rows="2">دفعة تجريبية للتأكد من طريقة التواصل الجديدة.</textarea>
+</section>
+
+<section class="card help">
+  <h2>القواعد</h2>
+  <div>• <b>عادي:</b> يمكن تحديد توصية الذكاء مسبقًا.</div>
+  <div>• <b>مهم:</b> يمكن تحديد توصية الذكاء، مع إبرازها بوضوح.</div>
+  <div>• <b>حرج:</b> لا يوجد اختيار مسبق؛ يظهر رأي الذكاء فقط، وعمر يختار بنفسه.</div>
+  <div>• إذا كانت الصورة غير واضحة أو السؤال غير ظاهر كاملًا، لا يتم تخمين الإجابة.</div>
+</section>
+
+<div id="questions"></div>
+
+<section class="card">
+  <label class="field">ملاحظة عامة من عمر — اختيارية</label>
+  <textarea id="general" rows="3"></textarea>
+
+  <div class="actions" style="margin-top:10px">
+    <button class="primary" type="button" id="copyCode">نسخ كود الإجابة</button>
+    <button class="secondary" type="button" id="shareCode">مشاركة كود الإجابة</button>
+    <button class="secondary" type="button" id="copyFull">نسخ الملخص الكامل</button>
+    <button class="secondary" type="button" id="compactBtn">وضع الصورة الطويلة</button>
+    <button class="secondary" type="button" id="resetBtn">إرجاع توصيات الذكاء</button>
+  </div>
+  <p class="small muted" id="status">الحفظ محلي على الجهاز فقط — لا توجد قاعدة بيانات.</p>
+
+  <label class="field">كود الإجابة المختصر</label>
+  <pre id="code"></pre>
+
+  <label class="field">الملخص الكامل</label>
+  <pre id="full"></pre>
+</section>
+</main>
+
+<script>
+const protocolVersion = "OADP/1";
+
+/*
+  لكل دفعة جديدة: غيّر فقط هذا المصفوفة.
+  risk: normal | important | critical
+  confidence: 0..100
+  recommended: رقم الخيار أو null
+  critical => لا يتم التحديد المسبق حتى لو وُجد recommended.
+*/
+const questionPack = [
+  {
+    id:"COMM-001",
+    risk:"normal",
+    confidence:96,
+    text:"في القرارات العادية القابلة للتراجع، من يختار الافتراضي؟",
+    recommended:"2",
+    reason:"يقلل كثرة الأسئلة ويحافظ على حق عمر في تغيير الاستثناء.",
+    options:[
+      ["1","عمر يختار كل مرة من الصفر"],
+      ["2","الذكاء يختار الأفضل مبدئيًا، وعمر يغيّر فقط ما لا يناسبه"],
+      ["3","لا يوجد اختيار افتراضي"]
+    ]
+  },
+  {
+    id:"COMM-002",
+    risk:"critical",
+    confidence:99,
+    text:"في قرار استراتيجي أو أمني أو مالي غير قابل للعكس، هل يحدد الذكاء الخيار مسبقًا؟",
+    recommended:"2",
+    reason:"القرار الحرج يجب أن يبقى بيد عمر حتى لو كانت توصية الذكاء قوية.",
+    options:[
+      ["1","نعم، يحدد الذكاء تلقائيًا"],
+      ["2","لا، يعرض الذكاء توصيته فقط وعمر يختار صراحة"],
+      ["3","يُنفذ بدون عرض السؤال"]
+    ]
+  },
+  {
+    id:"COMM-003",
+    risk:"normal",
+    confidence:98,
+    text:"ما وسيلة إعادة الإجابات للذكاء؟",
+    recommended:"3",
+    reason:"وجود مسارين يقلل التعطيل: صورة طويلة عند السرعة، وكود عند الحاجة للدقة.",
+    options:[
+      ["1","صورة طويلة فقط"],
+      ["2","كود/نص فقط"],
+      ["3","الصورة الطويلة أو كود الإجابة؛ الطريقتان معتمدتان"]
+    ]
+  },
+  {
+    id:"COMM-004",
+    risk:"normal",
+    confidence:97,
+    text:"هل يحتاج نموذج OADP إلى قاعدة بيانات؟",
+    recommended:"1",
+    reason:"الغرض هو التواصل لا التخزين التشغيلي؛ LocalStorage والملف يكفيان حاليًا.",
+    options:[
+      ["1","لا، يعمل محليًا بدون قاعدة بيانات"],
+      ["2","نعم، Supabase إلزامي"],
+      ["3","نعم، Firebase إلزامي"]
+    ]
+  }
+];
+
+const root = document.getElementById("questions");
+const riskLabel={normal:"عادي",important:"مهم",critical:"حرج"};
+const riskClass={normal:"risk-normal",important:"risk-important",critical:"risk-critical"};
+
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+
+function render(){
+  root.innerHTML="";
+  questionPack.forEach((q,i)=>{
+    const preselect = q.risk !== "critical" ? q.recommended : null;
+    const s=document.createElement("section");
+    s.className="card question";
+    s.dataset.qid=q.id;
+    s.innerHTML=`
+      <div class="topline">
+        <span class="chip"><b>${esc(q.id)}</b></span>
+        <span class="chip ${riskClass[q.risk]}">الخطورة: ${riskLabel[q.risk]}</span>
+        <span class="chip">ثقة الذكاء: ${q.confidence}%</span>
+      </div>
+      <h2>${i+1}) ${esc(q.text)}</h2>
+      <div class="ai-box">
+        <b>توصية الذكاء:</b> ${q.recommended ? `[${q.recommended}]` : "لا توجد"}
+        <div class="small muted ai-reason">${esc(q.reason || "")}</div>
+      </div>
+      ${q.risk==="critical" ? '<div class="critical-note"><b>NEEDS-OMAR:</b> سؤال حرج — لا يوجد اختيار محدد مسبقًا.</div>' : ""}
+      <div class="opts"></div>
+      <label class="field">ملاحظة عمر — اختيارية</label>
+      <textarea rows="2" data-note="${esc(q.id)}" placeholder="اكتب فقط إذا عندك استثناء أو توضيح"></textarea>
+    `;
+    const holder=s.querySelector(".opts");
+    q.options.forEach(([v,t])=>{
+      const lab=document.createElement("label");
+      lab.className="option";
+      if(preselect && v!==preselect) lab.classList.add("unselected");
+      lab.innerHTML=`<input type="radio" name="q_${esc(q.id)}" value="${esc(v)}" ${v===preselect?"checked":""}>
+        <b>${esc(v)}</b> — ${esc(t)}
+        ${v===q.recommended?'<span class="rec">★ توصية الذكاء</span>':""}`;
+      holder.appendChild(lab);
+    });
+    root.appendChild(s);
+  });
+}
+
+function storageKey(){return "oadp:v1:"+document.getElementById("batch").value.trim()}
+
+function collect(){
+  const d={
+    version:protocolVersion,
+    project:project.value.trim(),
+    batch:batch.value.trim(),
+    email:email.value.trim(),
+    context:context.value.trim(),
+    general:general.value.trim(),
+    answers:{}
+  };
+  questionPack.forEach(q=>{
+    const r=document.querySelector(`input[name="q_${q.id}"]:checked`);
+    const n=document.querySelector(`[data-note="${q.id}"]`);
+    d.answers[q.id]={value:r?.value||"",note:n?.value.trim()||""};
+  });
+  return d;
+}
+
+function hash32(str){
+  let h=2166136261;
+  for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}
+  return (h>>>0).toString(16).toUpperCase().padStart(8,"0");
+}
+
+function save(){localStorage.setItem(storageKey(),JSON.stringify(collect()))}
+
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem(storageKey())||"null");
+    if(!d)return;
+    project.value=d.project||project.value;
+    email.value=d.email||"";
+    context.value=d.context||"";
+    general.value=d.general||"";
+    questionPack.forEach(q=>{
+      const a=d.answers?.[q.id];if(!a)return;
+      const r=document.querySelector(`input[name="q_${q.id}"][value="${a.value}"]`);
+      if(r)r.checked=true;
+      const n=document.querySelector(`[data-note="${q.id}"]`);
+      if(n)n.value=a.note||"";
+    });
+  }catch(e){}
+}
+
+function makeCode(){
+  const d=collect();
+  const parts=[d.version,`BATCH=${d.batch||"NONE"}`];
+  questionPack.forEach(q=>{
+    const a=d.answers[q.id];
+    parts.push(`${q.id}=${a.value||"?"}`);
+  });
+  const core=parts.join("|");
+  return core+`|CHK=${hash32(core)}`;
+}
+
+function makeFull(){
+  const d=collect();
+  const L=[
+    `${d.version} — OMAR ↔ AI`,
+    `BATCH: ${d.batch||"-"}`,
+    `PROJECT: ${d.project||"-"}`,
+    d.email?`EMAIL: ${d.email}`:"",
+    d.context?`CONTEXT: ${d.context}`:"",
+    ""
+  ].filter(Boolean);
+  questionPack.forEach((q,i)=>{
+    const a=d.answers[q.id];
+    let state="UNANSWERED";
+    if(a.value){
+      state = a.value===q.recommended ? "AI-DEFAULT/APPROVED" : "CHANGED-BY-OMAR";
+      if(q.risk==="critical") state="OMAR-EXPLICIT";
+    } else if(q.risk==="critical") state="NEEDS-OMAR";
+    L.push(`${i+1}) ${q.id} [${riskLabel[q.risk]}] = ${a.value?`[${a.value}]`:"[?]"} — ${state}`);
+    if(a.note)L.push(`   NOTE: ${a.note}`);
+  });
+  if(d.general)L.push("",`GENERAL: ${d.general}`);
+  L.push("",`CODE: ${makeCode()}`);
+  return L.join("\n");
+}
+
+function refresh(){
+  const answered=questionPack.filter(q=>collect().answers[q.id].value).length;
+  progress.textContent=`${answered}/${questionPack.length}`;
+  code.textContent=makeCode();
+  full.textContent=makeFull();
+  save();
+}
+
+document.addEventListener("change",refresh);
+document.addEventListener("input",()=>save());
+
+function selectTextElement(el){
+  try{
+    const range=document.createRange();
+    range.selectNodeContents(el);
+    const sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    el.scrollIntoView({behavior:"smooth",block:"center"});
+  }catch(e){}
+}
+
+async function copyTextRobust(text, fallbackEl){
+  // 1) Clipboard API: works best on HTTPS/secure contexts.
+  if(navigator.clipboard && window.isSecureContext){
+    try{
+      await navigator.clipboard.writeText(text);
+      return "clipboard";
+    }catch(e){}
+  }
+
+  // 2) Legacy fallback: often works for local file:// pages on Android browsers.
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=text;
+    ta.setAttribute("readonly","");
+    ta.style.position="fixed";
+    ta.style.opacity="0";
+    ta.style.left="-9999px";
+    ta.style.top="0";
+    ta.style.fontSize="16px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0,ta.value.length);
+    const ok=document.execCommand("copy");
+    ta.remove();
+    if(ok) return "legacy";
+  }catch(e){}
+
+  // 3) Last resort: select the visible text so Omar only needs long-press > Copy.
+  if(fallbackEl) selectTextElement(fallbackEl);
+  return "manual";
+}
+
+copyCode.onclick=async()=>{
+  const t=makeCode();
+  code.textContent=t;
+  const method=await copyTextRobust(t,code);
+  if(method==="clipboard"||method==="legacy"){
+    status.textContent="تم نسخ كود الإجابة — الصقه في المحادثة.";
+  }else{
+    status.textContent="الهاتف منع النسخ التلقائي. تم تحديد الكود؛ اضغط مطولًا عليه ثم اختر «نسخ».";
+  }
+};
+
+copyFull.onclick=async()=>{
+  const t=makeFull();
+  full.textContent=t;
+  const method=await copyTextRobust(t,full);
+  if(method==="clipboard"||method==="legacy"){
+    status.textContent="تم نسخ الملخص الكامل.";
+  }else{
+    status.textContent="الهاتف منع النسخ التلقائي. تم تحديد الملخص؛ اضغط مطولًا ثم «نسخ».";
+  }
+};
+
+shareCode.onclick=async()=>{
+  const t=makeCode();
+  code.textContent=t;
+  if(navigator.share){
+    try{
+      await navigator.share({
+        title:"OADP — كود الإجابة",
+        text:t
+      });
+      status.textContent="تم فتح قائمة المشاركة.";
+      return;
+    }catch(e){
+      if(e && e.name==="AbortError"){
+        status.textContent="تم إلغاء المشاركة.";
+        return;
+      }
+    }
+  }
+  const method=await copyTextRobust(t,code);
+  if(method==="clipboard"||method==="legacy"){
+    status.textContent="المشاركة غير مدعومة هنا، لذلك تم نسخ الكود بدلًا منها.";
+  }else{
+    status.textContent="المشاركة والنسخ التلقائي غير متاحين. تم تحديد الكود للنسخ اليدوي.";
+  }
+};
+
+compactBtn.onclick=()=>{
+  page.classList.toggle("compact");
+  compactBtn.textContent=page.classList.contains("compact")?"إظهار التفاصيل":"وضع الصورة الطويلة";
+};
+
+resetBtn.onclick=()=>{
+  questionPack.forEach(q=>{
+    document.querySelectorAll(`input[name="q_${q.id}"]`).forEach(r=>r.checked=false);
+    if(q.risk!=="critical" && q.recommended){
+      const r=document.querySelector(`input[name="q_${q.id}"][value="${q.recommended}"]`);
+      if(r)r.checked=true;
+    }
+    const n=document.querySelector(`[data-note="${q.id}"]`); if(n)n.value="";
+  });
+  general.value="";
+  refresh();
+};
+
+render();load();refresh();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-/* Keep exactly one quick-pricing button inside the inventory warning. v2 */
+/* Keep exactly one quick-pricing button inside the inventory warning. */
 (function(){
 'use strict';
 if(document.body?.dataset?.screen!=='inventory')return;
