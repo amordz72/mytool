@@ -87,7 +87,7 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
       </div>
       <div class="registry-actions">
         <a id="detailLinkAdmin" class="btn secondary" href="customer-links.html?v=20260923-person-identity-only1">إدارة الحسابات المرتبطة</a>
-        <button id="closeDetail" class="btn secondary" type="button">إغلاق</button>
+        <button id="toggleArchive" class="btn secondary" type="button">إخفاء العميل</button><button id="closeDetail" class="btn secondary" type="button">إغلاق</button>
       </div>
     </div>
 
@@ -120,13 +120,13 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
     <div class="filters">
       <div class="field"><label>بحث</label><input id="search" placeholder="Username MyTool، MT، هاتف، اسم…"></div>
       <div class="field"><label>المنصة</label><select id="platformFilter"><option value="all">كل المنصات</option></select></div>
-      <div class="field"><label>النوع</label><select id="kindFilter"><option value="all">كل العملاء</option><option value="multi">متعدد المنصات</option><option value="single">منصة واحدة</option><option value="no_source">بدون حساب منصة</option></select></div>
+      <div class="field"><label>النوع</label><select id="kindFilter"><option value="all">كل العملاء</option><option value="multi">متعدد المنصات</option><option value="single">منصة واحدة</option><option value="no_source">بدون حساب منصة</option></select></div><div class="field"><label>الحالة</label><select id="activeFilter"><option value="active">النشطون</option><option value="hidden">المخفيون</option><option value="all">الكل</option></select></div>
       <div id="count" class="count">—</div>
     </div>
     <div id="customers" class="list" style="margin-top:10px"></div>
     <div class="pagination"><button id="prevPage" class="btn secondary" type="button">السابق</button><span id="pageText" class="muted"></span><button id="nextPage" class="btn secondary" type="button">التالي</button></div>
   </section>
 </div>
-<script type="module" src="customers.js?v=20260925-table-only2"></script>
+<script type="module" src="customers.js?v=20260925-archive1"></script>
 </body>
 </html>

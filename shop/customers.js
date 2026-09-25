@@ -63,13 +63,15 @@ async function identify(){
 }
 async function load(){
   msg('جاري تحميل سجل العملاء…');
-  const [linking,plist]=await Promise.all([
+  const [linking,plist,partyList]=await Promise.all([
     adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
-    adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms')
+    adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms'),
+    adminRpc('admin_customer_list_canonical_parties','workspace_admin_list_canonical_parties')
   ]);
   if(linking.error)throw linking.error;
   if(plist.error)throw plist.error;
-  parties=Array.isArray(linking.data?.parties)?linking.data.parties:[];
+  if(partyList.error)throw partyList.error;
+  parties=Array.isArray(partyList.data)?partyList.data:[];
   sources=Array.isArray(linking.data?.sources)?linking.data.sources:[];
   platforms=Array.isArray(plist.data)?plist.data:[];
   identityRules=[];
@@ -105,9 +107,11 @@ function haystack(p){
   ].filter(Boolean).join(' '));
 }
 function filtered(){
-  const q=normalize($('search').value),pf=$('platformFilter').value,kf=$('kindFilter').value;
+  const q=normalize($('search').value),pf=$('platformFilter').value,kf=$('kindFilter').value,af=$('activeFilter')?.value||'active';
   return parties.filter(p=>{
     const pks=platformKeysFor(p.id);
+    if(af==='active'&&p.active===false)return false;
+    if(af==='hidden'&&p.active!==false)return false;
     if(q&&!haystack(p).includes(q))return false;
     if(pf!=='all'&&!pks.includes(pf))return false;
     if(kf==='multi'&&pks.length<2)return false;
@@ -246,6 +250,7 @@ $('editUsername').oninput=scheduleUsernameCheck;
 $('editUsername').onblur=()=>{clearTimeout(usernameCheckTimer);checkUsernameAvailability()};
 $('platformFilter').onchange=()=>{page=1;renderList()};
 $('kindFilter').onchange=()=>{page=1;renderList()};
+$('activeFilter').onchange=()=>{page=1;renderList()};
 $('prevPage').onclick=()=>{page--;renderList();scrollTo({top:$('customers').offsetTop-80,behavior:'smooth'})};
 $('nextPage').onclick=()=>{page++;renderList();scrollTo({top:$('customers').offsetTop-80,behavior:'smooth'})};
 $('closeDetail').onclick=()=>{selectedPartyId=null;$('detailCard').hidden=true;setMobileDetail(false);history.replaceState(null,'',location.pathname);renderList();if(isMobile())scrollTo({top:0,behavior:'auto'})};
