@@ -116,6 +116,8 @@ async function refreshCustomers(){
 
 async function load(){
   msg('جاري تحميل سجل العملاء…');
+  const gen=await adminRpc('admin_customer_active_generation','workspace_admin_customer_active_generation');
+  if(!gen.error&&gen.data?.generation){activeGeneration=Number(gen.data.generation);if($('generationLabel'))$('generationLabel').textContent='V'+activeGeneration;if($('startV2Btn')){$('startV2Btn').hidden=activeGeneration>=2;$('startV2Btn').textContent='بدء V'+(activeGeneration+1);}}
   const [linking,plist,partyList]=await Promise.all([
     adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
     adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms'),
