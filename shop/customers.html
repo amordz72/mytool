@@ -26,6 +26,11 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 .platform-group{margin-top:10px}.platform-group-head{display:flex;justify-content:space-between;align-items:center;gap:7px;margin-bottom:7px}.platform-group-head h3{font-size:14px;margin:0}.account-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.account{border:1px solid var(--line);border-radius:13px;padding:10px;background:#fff}.account-title{font-weight:900}.username{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;direction:ltr;text-align:right;font-size:12px;color:#334155;word-break:break-all;margin-top:3px}.account-meta{font-size:11px;color:var(--muted);line-height:1.7;margin-top:7px}.money-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}.money{background:#f8fafc;border-radius:9px;padding:7px}.money small{display:block;font-size:9px;color:var(--muted)}.money b{display:block;font-size:12px;margin-top:2px}.empty{text-align:center;padding:18px;border:1px dashed var(--line);border-radius:13px;color:var(--muted)}
 .pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:10px}.pagination button{width:auto;min-width:80px}
 @media(max-width:760px){
+#detailCard{display:none!important}
+body.mobile-detail #detailCard{display:block!important}
+body.mobile-detail #registryCard,body.mobile-detail #listCard{display:none!important}
+body:not(.mobile-detail) #registryCard,body:not(.mobile-detail) #listCard{display:block}
+
 .page{padding:8px 8px 108px}.registry-head,.detail-head{display:block}.registry-actions{margin-top:9px}.metrics{grid-template-columns:1fr 1fr}.filters,.edit-grid{grid-template-columns:1fr}.detail-grid,.account-grid{grid-template-columns:1fr}.count{padding:0}.card{padding:11px}
 .customer-card{padding:10px}.customer-top{align-items:center}.customer-name{font-size:15px}.customer-id{font-size:10px}
 .customer-card{cursor:pointer;min-height:0;padding:0;border-radius:0;border-width:0 0 1px;background:#fff;box-shadow:none}.customer-card.selected{box-shadow:none;border-color:var(--line)}
@@ -122,6 +127,6 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
     <div class="pagination"><button id="prevPage" class="btn secondary" type="button">السابق</button><span id="pageText" class="muted"></span><button id="nextPage" class="btn secondary" type="button">التالي</button></div>
   </section>
 </div>
-<script type="module" src="customers.js?v=20260925-list-detail-separation1"></script>
+<script type="module" src="customers.js?v=20260925-table-only2"></script>
 </body>
 </html>

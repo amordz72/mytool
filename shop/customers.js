@@ -79,7 +79,7 @@ async function load(){
       .eq('status','approved').limit(5000);
     if(!rules.error)identityRules=rules.data||[];
   }
-  if(isMobile()){selectedPartyId=null;$('detailCard').hidden=true;setMobileDetail(false);history.replaceState(null,'',location.pathname);}
+  if(isMobile()){selectedPartyId=null;setMobileDetail(false);history.replaceState(null,'',location.pathname);}
   renderFilters();renderMetrics();renderList();
   if(!isMobile()&&selectedPartyId&&partyBy(selectedPartyId))renderDetail(selectedPartyId);
   msg('سجل العملاء محدث. كل عميل معروض كهوية مركزية واحدة.','ok');
@@ -152,7 +152,9 @@ function chips(values,empty='لا توجد بيانات'){
 }
 function isMobile(){return window.matchMedia('(max-width:760px)').matches}
 function setMobileDetail(open){
-  document.body.classList.toggle('mobile-detail',Boolean(open&&isMobile()));
+  if(!isMobile())return;
+  document.body.classList.toggle('mobile-detail',Boolean(open));
+  $('detailCard').hidden=!open;
 }
 function renderDetail(id){
   const p=partyBy(id);if(!p)return;
