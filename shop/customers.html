@@ -106,10 +106,10 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
       <div class="registry-actions">
         <a class="btn" href="customer-links.html?v=20260923-person-identity-only1#sourceImport">⬆ تحيين من ملفات المنصات</a>
         <a class="btn secondary" href="customer-links.html?v=20260923-person-identity-only1">⇆ إدارة الربط</a>
-        <button id="refreshBtn" class="btn secondary" type="button">تحديث</button>
+        <button id="refreshBtn" class="btn secondary" type="button">تحديث</button>\n        <button id="startV2Btn" class="btn warnbtn" type="button">بدء V2</button>
       </div>
     </div>
-    <div class="safety"><b>تحكم الهوية مفعّل</b>يمكن وجود شخصين بنفس الاسم. لا يمكن تكرار Username MyTool، ولا الهاتف الأساسي بين شخصين نشطين، ورقم MT دائم وفريد. Username المنصات الخارجية يبقى بيانات مصدر وليس Username MyTool.</div>
+    <div class="safety"><b><span id="generationLabel">V1</span> · تحكم الهوية مفعّل</b>يمكن وجود شخصين بنفس الاسم. لا يمكن تكرار Username MyTool، ولا الهاتف الأساسي بين شخصين نشطين، ورقم MT دائم وفريد. Username المنصات الخارجية يبقى بيانات مصدر وليس Username MyTool.</div>
     <div class="metrics" aria-label="فلاتر العملاء">
       <button class="metric metric-filter active" type="button" data-customer-filter="all" aria-pressed="true"><small>عملاء موحدون</small><b id="mCustomers">0</b></button>
       <button class="metric metric-filter" type="button" data-customer-filter="multi" aria-pressed="false"><small>متعدد المنصات</small><b id="mMulti">0</b></button>
@@ -166,6 +166,6 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
   </section>
   </div>
 </div>
-<script type="module" src="customers.js?v=20260925-rowmenu1"></script>
+<script type="module" src="customers.js?v=20260925-generation2"></script>
 </body>
 </html>
