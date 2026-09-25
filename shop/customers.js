@@ -150,8 +150,13 @@ function renderList(){
 function chips(values,empty='لا توجد بيانات'){
   return values.length?values.map(v=>'<span class="chip">'+esc(v)+'</span>').join(''):'<span class="muted">'+esc(empty)+'</span>';
 }
+function isMobile(){return window.matchMedia('(max-width:760px)').matches}
+function setMobileDetail(open){
+  document.body.classList.toggle('mobile-detail',Boolean(open&&isMobile()));
+}
 function renderDetail(id){
   const p=partyBy(id);if(!p)return;
+  setMobileDetail(true);
   const a=accountsFor(id),names=knownNames(p),c=contacts(p),pks=platformKeysFor(id),t=totals(id);
   $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · '+p.mytool_username:' · بدون Username');
   $('editName').value=p.display_name||'';$('editUsername').value=p.mytool_username||'';$('editPhone').value=p.primary_phone||'';$('editEmail').value=p.primary_email||'';
