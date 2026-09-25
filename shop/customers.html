@@ -56,9 +56,8 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 #registryCard .metric{padding:7px 5px;text-align:center}
 #registryCard .metric b{font-size:16px}
 #registryCard .metric small{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#registryCard .registry-actions{grid-template-columns:1fr 1fr 44px}
-#registryCard #refreshBtn{font-size:0;padding:0}
-#registryCard #refreshBtn::after{content:"↻";font-size:20px}
+#registryCard .registry-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#registryCard #refreshBtn{font-size:inherit;padding:8px 9px}
 #listCard{padding:9px}
 #listCard .filters{display:grid;grid-template-columns:1fr;gap:7px}
 #listCard .filters .field:first-child{grid-column:1/-1}
@@ -104,8 +103,9 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
         <div class="muted">Master واحد للهوية. الظهور يُحدد حسب مكان الاستخدام، وحسابات المنصات تبقى مستقلة عن هوية العميل.</div>
       </div>
       <div class="registry-actions">
-        <a class="btn" href="customer-links.html?v=20260925-master-uses1#sourceImport">＋ بناء العملاء</a>\n        <a class="btn secondary" href="customer-links.html?v=20260925-master-uses1#sourceUpdate">↻ تحيين بيانات منصة</a>
-        <a class="btn secondary" href="customer-links.html?v=20260923-person-identity-only1">⇆ إدارة الربط</a>
+        <a class="btn" href="customer-links.html?v=20260925-master-uses1#sourceImport">＋ بناء العملاء</a>
+        <a class="btn secondary" href="customer-links.html?v=20260925-master-uses1#sourceUpdate">↻ تحيين بيانات منصة</a>
+        <a class="btn secondary" href="customer-links.html?v=20260925-master-review1">⇆ إدارة الربط</a>
         <button id="refreshBtn" class="btn secondary" type="button">تحديث</button>
       </div>
     </div>
