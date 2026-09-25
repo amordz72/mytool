@@ -153,10 +153,11 @@ function renderMetrics(){
     btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');
   });
 }
+function mtLabel(p){return 'MT-'+String(p.mt_number||'').padStart(5,'0')}
 function haystack(p){
   const a=accountsFor(p.id),c=contacts(p);
   return normalize([
-    p.mt_number,p.mytool_username,p.display_name,...(p.aliases||[]),...c.phones,...c.emails,
+    p.mt_number,mtLabel(p),p.mytool_username,p.display_name,...(p.aliases||[]),...c.phones,...c.emails,
     ...a.flatMap(s=>[s.username,s.display_name,s.first_name,s.last_name,s.phone,s.email,s.external_account_id,platformLabel(s.platform_key)])
   ].filter(Boolean).join(' '));
 }
@@ -187,7 +188,7 @@ function renderList(){
   $('customers').innerHTML=chunk.map(p=>{
     const a=accountsFor(p.id),pks=platformKeysFor(p.id),t=totals(p.id),names=knownNames(p),activity=lastActivity(p.id);
     return '<article class="customer-card'+(Number(selectedPartyId)===Number(p.id)?' selected':'')+'" data-party-card="'+p.id+'">'+
-      '<div class="customer-top"><div><div class="customer-name">'+esc(p.display_name)+'</div><div class="customer-id">'+esc('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · '+esc(p.mytool_username):' · بدون Username')+'</div></div>'+
+      '<div class="customer-top"><div><div class="customer-name">'+esc(p.display_name)+'</div><div class="customer-id">'+esc(mtLabel(p))+(p.mytool_username?' · '+esc(p.mytool_username):' · بدون Username')+'</div></div>'+
       '<div class="badges"><span class="badge ok">مؤكد</span><span class="badge platform">'+pks.length+' منصة</span><span class="badge">'+a.length+' حساب</span><span class="badge mobile-debt">'+money(t.debt)+'</span><button class="row-menu-btn" data-row-menu="'+p.id+'" type="button" aria-label="خيارات العميل">⋮</button></div></div>'+
       '<div class="row-menu'+(Number(openMenuPartyId)===Number(p.id)?' open':'')+'" data-menu-panel="'+p.id+'"><button type="button" data-edit-party="'+p.id+'">تعديل البيانات</button><button type="button" data-active-party="'+p.id+'" data-next-active="'+(p.active===false?'true':'false')+'">'+(p.active===false?'إعادة إظهار العميل':'إخفاء العميل')+'</button></div>'+
       '<div class="customer-summary">'+
@@ -227,7 +228,7 @@ function renderDetail(id){
   const p=partyBy(id);if(!p)return;
   setMobileDetail(true);
   const a=accountsFor(id),names=knownNames(p),c=contacts(p),pks=platformKeysFor(id),t=totals(id);
-  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · '+p.mytool_username:' · بدون Username');
+  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+mtLabel(p)+(p.mytool_username?' · '+p.mytool_username:' · بدون Username');
   $('editName').value=p.display_name||'';$('editUsername').value=p.mytool_username||'';$('editPhone').value=p.primary_phone||'';$('editEmail').value=p.primary_email||'';
   setUsernameStatus(p.mytool_username?'اسم المستخدم الحالي محفوظ.':'اكتب Username وسيتم التحقق تلقائيًا بعد توقف الكتابة.','info');
   const learned=identityRules.filter(r=>Number(r.party_id)===Number(id)&&r.status==='approved');
