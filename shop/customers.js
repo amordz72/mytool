@@ -130,7 +130,7 @@ function renderList(){
   $('customers').innerHTML=chunk.map(p=>{
     const a=accountsFor(p.id),pks=platformKeysFor(p.id),t=totals(p.id),names=knownNames(p),activity=lastActivity(p.id);
     return '<article class="customer-card'+(Number(selectedPartyId)===Number(p.id)?' selected':'')+'" data-party-card="'+p.id+'">'+
-      '<div class="customer-top"><div><div class="customer-name">'+esc(p.display_name)+'</div><div class="customer-id">'+esc('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · @'+esc(p.mytool_username):' · بدون Username')+'</div></div>'+
+      '<div class="customer-top"><div><div class="customer-name">'+esc(p.display_name)+'</div><div class="customer-id">'+esc('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · '+esc(p.mytool_username):' · بدون Username')+'</div></div>'+
       '<div class="badges"><span class="badge ok">مؤكد</span><span class="badge platform">'+pks.length+' منصة</span><span class="badge">'+a.length+' حساب</span></div></div>'+
       '<div class="customer-summary">'+
         '<div class="mini"><b>'+esc(p.primary_phone||'—')+'</b><small>الهاتف الأساسي</small></div>'+
@@ -151,7 +151,7 @@ function chips(values,empty='لا توجد بيانات'){
 function renderDetail(id){
   const p=partyBy(id);if(!p)return;
   const a=accountsFor(id),names=knownNames(p),c=contacts(p),pks=platformKeysFor(id),t=totals(id);
-  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · @'+p.mytool_username:' · بدون Username');
+  $('detailCard').hidden=false;$('detailTitle').textContent=p.display_name;$('detailIdentity').textContent='✓ '+('MT-'+String(p.mt_number||'').padStart(5,'0'))+(p.mytool_username?' · '+p.mytool_username:' · بدون Username');
   $('editName').value=p.display_name||'';$('editUsername').value=p.mytool_username||'';$('editPhone').value=p.primary_phone||'';$('editEmail').value=p.primary_email||'';
   const learned=identityRules.filter(r=>Number(r.party_id)===Number(id)&&r.status==='approved');
   $('detailNames').innerHTML=chips(names)+
