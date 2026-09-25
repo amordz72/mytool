@@ -9,7 +9,7 @@ const PAGE_SIZE=10;
 let openMenuPartyId=null; // exactly 10 customer rows per page
 const WORKER_TOKEN='mytool_shop_worker_token',WORKER_EXPIRES='mytool_shop_worker_expires_at',WORKSPACE_ROLE='mytool_workspace_role',ADMIN_EXPIRES='mytool_admin_expires_at';
 
-let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null,usernameCheckTimer=null,usernameCheckSeq=0,customerFilter='all';
+let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null,usernameCheckTimer=null,usernameCheckSeq=0,customerFilter='all',activeGeneration=1;
 
 function msg(text,kind='info'){$('message').textContent=text;$('message').className='message '+kind}
 function normalize(v){return String(v??'').toLowerCase().normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim()}
@@ -308,7 +308,7 @@ async function saveIdentity(){
   await load();selectedPartyId=p.id;renderDetail(p.id);msg('تم تحديث هوية MyTool. Username والهاتف وMT مفاتيح مستقلة؛ حسابات المنصات لم تتغير.','ok');
 }
 
-$('refreshBtn').onclick=()=>refreshCustomers().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));
+async function startNextGeneration(){\n  const btn=$('startV2Btn');if(!btn)return;\n  const next=activeGeneration+1;\n  if(!confirm('سيتم إغلاق V'+activeGeneration+' وبدء V'+next+' فارغة. لن يتم حذف العملاء أو العمليات القديمة. متابعة؟'))return;\n  btn.disabled=true;\n  const r=await adminRpc('admin_customer_start_next_generation','workspace_admin_customer_start_next_generation');\n  if(r.error){btn.disabled=false;return msg('تعذر بدء V'+next+': '+(r.error.message||r.error),'error')}\n  selectedPartyId=null;page=1;customerFilter='all';await load();\n  msg('تم بدء V'+next+' بنجاح. V'+(next-1)+' محفوظة في الأرشيف. الآن ارفع أول ملف منصة لبناء القائمة الجديدة.','ok');\n}\n\n$('refreshBtn').onclick=()=>refreshCustomers().catch(e=>msg('تعذر التحديث: '+(e.message||e),'error'));\n$('startV2Btn').onclick=()=>startNextGeneration().catch(e=>msg('تعذر بدء النسخة الجديدة: '+(e.message||e),'error'));
 $('search').oninput=()=>{page=1;renderList()};
 $('editUsername').oninput=scheduleUsernameCheck;
 $('editUsername').onblur=()=>{clearTimeout(usernameCheckTimer);checkUsernameAvailability()};
