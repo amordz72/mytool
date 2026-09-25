@@ -14,6 +14,9 @@ const SOURCE_BY_PLATFORM={
   wafarly:{id:'builtin:wafarly',name:'وفرلي'}
 };
 let supabase=null,queue=Promise.resolve();
+const IMPORT_PURPOSE_KEY='mytool_accounts_import_purpose';
+function importPurpose(){return localStorage.getItem(IMPORT_PURPOSE_KEY)==='financial'?'financial':'identity'}
+function financialImportMode(){return localStorage.getItem('mytool_accounts_financial_mode')==='full_snapshot'?'full_snapshot':'partial'}
 
 function status(text,kind='ok'){
   const el=document.getElementById('accountsCloudStatus');
@@ -87,7 +90,11 @@ async function syncOne(source){
   status('Supabase: جاري حفظ نتائج '+source.name+'…','busy');
   for(let i=0;i<accounts.length;i+=150){
     const chunk=accounts.slice(i,i+150);
-    const {data,error}=await rpc('admin_customer_upsert_source_accounts','workspace_admin_upsert_source_accounts',{p_platform_key:platform,p_accounts:chunk});
+    const purpose=importPurpose();
+    const call=purpose==='financial'
+      ? await rpc('admin_customer_financial_patch','workspace_admin_customer_financial_patch',{p_platform_key:platform,p_accounts:chunk,p_import_mode:financialImportMode()})
+      : await rpc('admin_customer_upsert_source_accounts','workspace_admin_upsert_source_accounts',{p_platform_key:platform,p_accounts:chunk});
+    const {data,error}=call;
     if(error)throw error;
     for(const k of Object.keys(total))total[k]+=Number(data?.[k]||0);
   }
