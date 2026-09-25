@@ -53,7 +53,7 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
   <script>ShopShell.mountOperationTop('sharedOperationTop')</script>
   <div id="message" class="message info">جاري تحميل سجل العملاء…</div>
 
-  <section class="card">
+  <section id="registryCard" class="card">
     <div class="registry-head">
       <div>
         <h1>👥 سجل العملاء المركزي</h1>
@@ -111,7 +111,7 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
     <div id="detailAccounts"></div>
   </section>
 
-  <section class="card">
+  <section id="listCard" class="card">
     <div class="filters">
       <div class="field"><label>بحث</label><input id="search" placeholder="Username MyTool، MT، هاتف، اسم…"></div>
       <div class="field"><label>المنصة</label><select id="platformFilter"><option value="all">كل المنصات</option></select></div>
@@ -122,6 +122,6 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
     <div class="pagination"><button id="prevPage" class="btn secondary" type="button">السابق</button><span id="pageText" class="muted"></span><button id="nextPage" class="btn secondary" type="button">التالي</button></div>
   </section>
 </div>
-<script type="module" src="customers.js?v=20260925-mobile-table1"></script>
+<script type="module" src="customers.js?v=20260925-list-detail-separation1"></script>
 </body>
 </html>
