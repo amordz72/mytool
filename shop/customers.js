@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number(v||0);
 const money=v=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(num(v))+' دج';
-const PAGE_SIZE=20;
+const PAGE_SIZE=10;
 const WORKER_TOKEN='mytool_shop_worker_token',WORKER_EXPIRES='mytool_shop_worker_expires_at',WORKSPACE_ROLE='mytool_workspace_role',ADMIN_EXPIRES='mytool_admin_expires_at';
 
 let mode='none',workspaceToken='',parties=[],sources=[],platforms=[],identityRules=[],page=1,selectedPartyId=null,usernameCheckTimer=null,usernameCheckSeq=0;
