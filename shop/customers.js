@@ -66,12 +66,14 @@ async function load(){
   const [linking,plist,partyList]=await Promise.all([
     adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
     adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms'),
-    adminRpc('admin_customer_list_canonical_parties','workspace_admin_list_canonical_parties')
+    mode==='local'
+      ? adminRpc('admin_customer_list_canonical_parties','workspace_admin_list_canonical_parties')
+      : Promise.resolve({data:null,error:null})
   ]);
   if(linking.error)throw linking.error;
   if(plist.error)throw plist.error;
   if(partyList.error)throw partyList.error;
-  parties=Array.isArray(partyList.data)?partyList.data:[];
+  parties=Array.isArray(partyList.data)?partyList.data:(Array.isArray(linking.data?.parties)?linking.data.parties:[]);
   sources=Array.isArray(linking.data?.sources)?linking.data.sources:[];
   platforms=Array.isArray(plist.data)?plist.data:[];
   identityRules=[];
