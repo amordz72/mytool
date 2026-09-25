@@ -247,7 +247,7 @@ $('saveIdentity').onclick=saveIdentity;
   try{
     await identify();
     const requested=Number(new URLSearchParams(location.search).get('party')||0);
-    if(requested)selectedPartyId=requested;
+    if(requested&&!isMobile())selectedPartyId=requested;
     await load();
   }catch(e){
     msg(e?.message==='NO_SESSION'?'هذه الصفحة للإدارة. افتح MyTool بحساب الإدارة ثم ادخل من جديد.':'تعذر تشغيل سجل العملاء: '+(e.message||e),'error');
