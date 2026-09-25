@@ -1006,12 +1006,15 @@ async function createManual(){
   if(!navigator.onLine)return msg('إنشاء العميل يحتاج اتصالًا.','warn');
   const name=$('manualName').value.trim(),phone=$('manualPhone').value.trim()||null,email=$('manualEmail').value.trim()||null;
   if(!name)return msg('اكتب اسم العميل.','error');
-  const {error}=await adminRpc('admin_customer_create_or_discover','workspace_admin_customer_create_or_discover',{
-    p_display_name:name,p_phone:phone,p_email:email,p_party_type:'shop'
+  const {data,error}=await adminRpc('admin_customer_create_human_source','workspace_admin_customer_create_human_source',{
+    p_display_name:name,p_phone:phone,p_email:email,p_origin_kind:'manual',p_origin_ref:'customer-links',p_note:null,p_raw_data:{entry:'manual'}
   });
-  if(error)return msg('تعذر إنشاء العميل: '+safeError(error),'error');
+  if(error)return msg('تعذر حفظ العميل: '+safeError(error),'error');
+  if(data?.decision==='conflict'||data?.decision==='review'){
+    return msg('حُفظ المصدر البشري '+(data?.human_ref||'')+' ويحتاج مراجعة قبل إسناده إلى MT.','warn');
+  }
   $('manualName').value='';$('manualPhone').value='';$('manualEmail').value='';$('manualBox').hidden=true;
-  await load();msg('تم إنشاء العميل الموحد.','ok');
+  await load();msg('تم حفظ '+(data?.human_ref||'المصدر البشري')+' وربطه بـ MT.','ok');
 }
 
 $('toggleManual').onclick=()=>{$('manualBox').hidden=!$('manualBox').hidden};

@@ -204,8 +204,8 @@ async function createMaster(){
   if(name.length<2)throw new Error('اكتب اسم الماستر.');
   const exact=parties.find(p=>norm(p.display_name)===norm(name));
   if(exact)throw new Error('يوجد عميل بنفس الاسم في الماستر. اختره من القائمة بدل إنشاء نسخة.');
-  const params={p_display_name:name,p_phone:$('newMasterPhone').value.trim()||null,p_email:$('newMasterEmail').value.trim()||null,p_party_type:'shop'};
-  const {data,error}=await adminRpc('admin_customer_create_or_discover','workspace_admin_customer_create_or_discover',params);
+  const params={p_display_name:name,p_phone:$('newMasterPhone').value.trim()||null,p_email:$('newMasterEmail').value.trim()||null,p_origin_kind:'manual',p_origin_ref:'customer-master-feed',p_note:null,p_raw_data:{entry:'master-feed'}};
+  const {data,error}=await adminRpc('admin_customer_create_human_source','workspace_admin_customer_create_human_source',params);
   if(error)throw error;
   if(data?.decision==='existing')return Number(data.party_id);
   if(data?.decision==='created')return Number(data.party_id);
