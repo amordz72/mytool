@@ -79,8 +79,9 @@ async function load(){
       .eq('status','approved').limit(5000);
     if(!rules.error)identityRules=rules.data||[];
   }
+  if(isMobile()){selectedPartyId=null;$('detailCard').hidden=true;setMobileDetail(false);history.replaceState(null,'',location.pathname);}
   renderFilters();renderMetrics();renderList();
-  if(selectedPartyId&&partyBy(selectedPartyId))renderDetail(selectedPartyId);
+  if(!isMobile()&&selectedPartyId&&partyBy(selectedPartyId))renderDetail(selectedPartyId);
   msg('سجل العملاء محدث. كل عميل معروض كهوية مركزية واحدة.','ok');
 }
 function renderFilters(){
@@ -248,6 +249,7 @@ $('saveIdentity').onclick=saveIdentity;
     await identify();
     const requested=Number(new URLSearchParams(location.search).get('party')||0);
     if(requested&&!isMobile())selectedPartyId=requested;
+    else if(isMobile())selectedPartyId=null;
     await load();
   }catch(e){
     msg(e?.message==='NO_SESSION'?'هذه الصفحة للإدارة. افتح MyTool بحساب الإدارة ثم ادخل من جديد.':'تعذر تشغيل سجل العملاء: '+(e.message||e),'error');
