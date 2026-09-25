@@ -15,7 +15,7 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 .message{padding:10px 12px;border-radius:12px;margin-bottom:10px;font-size:12px;font-weight:800}.info{background:#eff6ff;color:#1d4ed8}.ok{background:#ecfdf5;color:#047857}.warn{background:#fff7ed;color:#9a3412}.error{background:#fff1f2;color:#b42318}
 .registry-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.registry-actions{display:flex;gap:7px;flex-wrap:wrap}.btn{border:0;border-radius:11px;padding:10px 13px;font:inherit;font-weight:900;cursor:pointer;background:var(--main);color:#fff;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.btn.secondary{background:#fff;color:var(--main);border:1px solid #99d5cf}.btn.warnbtn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}.btn:disabled{opacity:.5;cursor:not-allowed}
 .safety{margin-top:10px;padding:10px 12px;border:1px solid #a7f3d0;background:#ecfdf5;border-radius:13px;font-size:12px;line-height:1.65;color:#065f46}.safety b{display:block;font-size:13px;margin-bottom:2px}
-.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.metric{border:1px solid var(--line);background:#f8fafc;border-radius:13px;padding:9px}.metric small{display:block;color:var(--muted);font-size:10px}.metric b{display:block;font-size:19px;margin-top:3px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.metric{border:1px solid var(--line);background:#f8fafc;border-radius:13px;padding:9px;color:var(--text);font:inherit}.metric small{display:block;color:var(--muted);font-size:10px}.metric b{display:block;font-size:19px;margin-top:3px}.metric-filter{cursor:pointer;transition:.15s ease}.metric-filter.active{background:var(--main);border-color:var(--main);color:#fff;box-shadow:0 4px 12px rgba(15,118,110,.18)}.metric-filter.active small{color:#d5f5f1}.metric-filter:focus-visible{outline:3px solid #99d5cf;outline-offset:2px}
 .filters{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end}.field label{display:block;font-size:11px;font-weight:900;margin-bottom:5px}.field-status{font-size:12px;line-height:1.45;margin-top:6px;min-height:18px;padding:5px 8px;border-radius:8px}.field-status:empty{padding:0;min-height:0}.field-status.error{background:#fff1f2;color:#b42318}.field-status.ok{background:#ecfdf5;color:#047857}.field-status.info{background:#f8fafc;color:var(--muted)}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff;color:var(--text);font:inherit}.count{white-space:nowrap;color:var(--muted);font-size:12px;padding-bottom:10px}
 .list{display:grid;gap:9px}.customer-card{border:1px solid var(--line);border-radius:16px;padding:12px;background:#fff}.customer-card.selected{border-color:#5eead4;box-shadow:0 0 0 2px rgba(20,184,166,.12)}.customer-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.customer-name{font-weight:900;font-size:16px}.customer-id{font-size:11px;color:var(--muted);margin-top:2px}.badges{display:flex;gap:5px;flex-wrap:wrap}.badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;background:#f1f5f9}.badge.ok{background:#dcfce7;color:#166534}.badge.platform{background:#e0f2fe;color:#075985}.badge.warn{background:#fef3c7;color:#92400e}
 .customer-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.mini{padding:8px;border-radius:10px;background:#f8fafc}.mini b{display:block;font-size:13px;word-break:break-word}.mini small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.names-line{font-size:11px;color:#475569;line-height:1.65;margin-top:8px}
@@ -28,7 +28,7 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 /* Customer UI template v1 — layout/density only; existing MyTool colors stay authoritative. */
 .customer-workspace{display:grid;grid-template-columns:minmax(0,1fr);gap:11px;align-items:start}
 #listCard{order:1}#detailCard{order:2}
-#listCard .filters{grid-template-columns:minmax(220px,2fr) repeat(3,minmax(130px,1fr)) auto}
+#listCard .filters{grid-template-columns:minmax(220px,1fr) auto}
 #listCard .count{align-self:center;padding:0}
 @media(min-width:761px){
   #customers.list{display:table;width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -60,7 +60,7 @@ h1{margin:0;font-size:23px}h2{margin:0;font-size:17px}.muted{color:var(--muted);
 #registryCard #refreshBtn{font-size:0;padding:0}
 #registryCard #refreshBtn::after{content:"↻";font-size:20px}
 #listCard{padding:9px}
-#listCard .filters{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#listCard .filters{display:grid;grid-template-columns:1fr;gap:7px}
 #listCard .filters .field:first-child{grid-column:1/-1}
 #listCard .filters .field label{font-size:10px;margin-bottom:3px}
 #listCard input,#listCard select{min-height:42px;padding:8px 9px}
@@ -110,11 +110,11 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
       </div>
     </div>
     <div class="safety"><b>تحكم الهوية مفعّل</b>يمكن وجود شخصين بنفس الاسم. لا يمكن تكرار Username MyTool، ولا الهاتف الأساسي بين شخصين نشطين، ورقم MT دائم وفريد. Username المنصات الخارجية يبقى بيانات مصدر وليس Username MyTool.</div>
-    <div class="metrics">
-      <div class="metric"><small>عملاء موحدون</small><b id="mCustomers">0</b></div>
-      <div class="metric"><small>متعدد المنصات</small><b id="mMulti">0</b></div>
-      <div class="metric"><small>حسابات منصات</small><b id="mAccounts">0</b></div>
-      <div class="metric"><small>غير مربوط</small><b id="mUnlinked">0</b></div>
+    <div class="metrics" aria-label="فلاتر العملاء">
+      <button class="metric metric-filter active" type="button" data-customer-filter="all" aria-pressed="true"><small>عملاء موحدون</small><b id="mCustomers">0</b></button>
+      <button class="metric metric-filter" type="button" data-customer-filter="multi" aria-pressed="false"><small>متعدد المنصات</small><b id="mMulti">0</b></button>
+      <button class="metric metric-filter" type="button" data-customer-filter="accounts" aria-pressed="false"><small>حسابات منصات</small><b id="mAccounts">0</b></button>
+      <button class="metric metric-filter" type="button" data-customer-filter="unlinked" aria-pressed="false"><small>غير مربوط</small><b id="mUnlinked">0</b></button>
     </div>
   </section>
 
@@ -159,8 +159,6 @@ body.mobile-detail #detailCard #closeDetail::after{content:"رجوع إلى ال
   <section id="listCard" class="card">
     <div class="filters">
       <div class="field"><label>بحث</label><input id="search" placeholder="Username MyTool، MT، هاتف، اسم…"></div>
-      <div class="field"><label>المنصة</label><select id="platformFilter"><option value="all">كل المنصات</option></select></div>
-      <div class="field"><label>النوع</label><select id="kindFilter"><option value="all">كل العملاء</option><option value="multi">متعدد المنصات</option><option value="single">منصة واحدة</option><option value="no_source">بدون حساب منصة</option></select></div><div class="field"><label>الحالة</label><select id="activeFilter"><option value="active">النشطون</option><option value="hidden">المخفيون</option><option value="all">الكل</option></select></div>
       <div id="count" class="count">—</div>
     </div>
     <div id="customers" class="list" style="margin-top:10px"></div>
