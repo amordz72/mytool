@@ -300,8 +300,8 @@
   async function loadDigitalCustomers(){
     if(state.mode!=='admin')return
     const {data,error}=await supabase.from('money_party_directory')
-      .select('id,display_name,aliases,primary_phone,is_canonical,active,approval_status')
-      .eq('active',true).eq('approval_status','approved').order('display_name').limit(1000)
+      .select('id,display_name,aliases,primary_phone,is_canonical,active,approval_status,party_type')
+      .eq('active',true).eq('approval_status','approved').neq('party_type','system').order('display_name').limit(1000)
     if(error)return
     state.digitalCustomers=data||[]
     renderDigitalCustomerList()
