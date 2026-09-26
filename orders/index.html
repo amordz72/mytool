@@ -97,7 +97,7 @@ const SUPABASE_URL='https://wqyebqzbbpohbnznqdjj.supabase.co';
 const SUPABASE_KEY='sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj';
 const db=createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
-let catalog=[],parties=[],orders=[],customerSources=[],identityRules=[];
+let catalog=[],parties=[],orders=[],customerSources=[],identityRules=[],serviceLinks=[];
 let parseTimer=null,lastParsed=null,currentCustomerCandidate=null,incomingIntakeMeta=null;
 
 function show(text,bad=false,good=false){
@@ -175,7 +175,7 @@ function customerCandidateList(sender,limit=6){
   if(!sender)return [];
   const found=new Map();
   const add=(partyId,name,score,source=null,reason='اقتراح')=>{
-    const id=Number(partyId||0);if(!id)return;
+    const id=Number(partyId||0);if(!id||!partyHasService(id,$('service')?.value||''))return;
     const current=found.get(id);
     const item={party_id:id,party_name:name||partyBy(id)?.display_name||'عميل',score:Number(score||0),reason,
       platform_key:source?.platform_key||null,source_account_id:source?.id?Number(source.id):null};
@@ -193,14 +193,14 @@ function discoverCustomerCandidate(sender){
   const rule=approvedIdentityRule(sender);
   if(rule){
     const party=partyBy(rule.party_id);
-    if(party){
+    if(party&&partyHasService(party.id,$('service')?.value||'')){
       const source=customerSources.find(s=>Number(s.id)===Number(rule.source_account_id))
         ||customerSources.find(s=>Number(s.linked_party_id||0)===Number(rule.party_id));
       return {party_id:Number(rule.party_id),party_name:party.display_name,score:100,approved:true,reason:'قاعدة معتمدة',source};
     }
   }
   const ranked=customerSources
-    .filter(s=>Number(s.linked_party_id||0)>0)
+    .filter(s=>Number(s.linked_party_id||0)>0&&partyHasService(s.linked_party_id,$('service')?.value||''))
     .map(s=>({source:s,score:matchScore(sender,s)}))
     .filter(x=>x.score>=70)
     .sort((a,b)=>b.score-a.score);
@@ -336,9 +336,16 @@ async function requireSession(){
   return data.session;
 }
 
+function partyHasService(partyId,serviceCode){
+  const code=String(serviceCode||'').trim().toUpperCase();
+  if(!code)return true;
+  const row=serviceLinks.find(x=>Number(x.party_id)===Number(partyId)&&String(x.service_code||'').toUpperCase()===code);
+  return !!row?.enabled;
+}
 function renderPartyOptions(filter='',selected=''){
-  const q=norm(filter);
+  const q=norm(filter),serviceCode=$('service')?.value||'';
   const rows=parties.filter(p=>{
+    if(!partyHasService(p.id,serviceCode))return false;
     if(!q)return true;
     return norm([p.display_name,p.primary_phone,...(p.aliases||[])].join(' ')).includes(q);
   }).slice(0,120);
@@ -578,10 +585,16 @@ async function loadCatalog(){
 
 async function loadParties(){
   const {data,error}=await db.from('money_party_directory')
-    .select('id,display_name,aliases,primary_phone,is_canonical,active,approval_status')
-    .eq('active',true).eq('approval_status','approved').order('display_name').limit(1000);
+    .select('id,display_name,aliases,primary_phone,is_canonical,active,approval_status,party_type')
+    .eq('active',true).eq('approval_status','approved').neq('party_type','system').order('display_name').limit(1000);
   if(error)throw error;
   parties=data||[];
+  renderPartyOptions($('partySearch').value,$('party').value);
+}
+async function loadServiceLinks(){
+  const {data,error}=await db.rpc('admin_customer_list_service_links');
+  if(error)throw error;
+  serviceLinks=Array.isArray(data)?data:[];
   renderPartyOptions($('partySearch').value,$('party').value);
 }
 async function loadCustomerDiscovery(){
@@ -843,6 +856,15 @@ $('saveSaleBtn').onclick=()=>saveOrder(true);
 $('refreshBtn').onclick=()=>loadOrders().catch(e=>show(e.message,true));
 $('rawInput').addEventListener('input',()=>{syncDraftClear();clearTimeout(parseTimer);parseTimer=setTimeout(applyAnalysis,350)});
 $('partySearch').addEventListener('input',()=>renderPartyOptions($('partySearch').value,$('party').value));
+$('service').addEventListener('change',()=>{
+  const selected=$('party').value;
+  renderPartyOptions($('partySearch').value,selected);
+  if(selected&&!partyHasService(selected,$('service').value)){
+    $('party').value='';
+    renderCustomerCandidate(null);
+  }
+  if(lastParsed)renderSmartStrip(lastParsed);
+});
 $('party').onchange=()=>{if(lastParsed)renderSmartStrip(lastParsed)};
 $('statusFilter').onchange=renderOrders;
 $('assignmentFilter').onchange=renderOrders;
@@ -889,7 +911,7 @@ $('ordersList').addEventListener('click',async event=>{
   try{
     syncDraftClear();
     await requireSession();
-    await Promise.all([loadCatalog(),loadParties()]);
+    await Promise.all([loadCatalog(),loadParties(),loadServiceLinks()]);
     await loadCustomerDiscovery();
     consumeQuickIntake();
     await loadOrders();
