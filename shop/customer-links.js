@@ -9,7 +9,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=v=>String(v??'').trim().toLowerCase();
 
-let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformSignatures=[],identityReviews=[],customerServices=[],serviceLinks=[],importQueue=[],page=1;
+let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformRelations=[],platformSignatures=[],identityReviews=[],customerServices=[],serviceLinks=[],importQueue=[],page=1;
 let adminMode='none',workspaceToken='';
 let importBusy=false;
 let importMode='build';
@@ -39,6 +39,36 @@ function renderPlatformControls(){
   $('platformFilter').innerHTML='<option value="all">كل المنصات</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
   if(pf==='all'||platforms.some(p=>p.platform_key===pf))$('platformFilter').value=pf;
   if(importQueue.length)renderImportQueue();
+}
+function renderPlatformMaster(){
+  const box=$('platformMasterList');if(!box)return;
+  if(!platforms.length){box.innerHTML='<div class="empty">لا توجد منصات بعد.</div>';return}
+  box.innerHTML=platforms.map(p=>{
+    const r=platformRelations.find(x=>x.platform_key===p.platform_key)||{};
+    const flexy=!!r.flexy_shift_enabled,card=!!r.card_stock_enabled;
+    return '<div class="party-card"><div><b>'+esc(p.display_name)+'</b><div class="meta" dir="ltr">'+esc(p.platform_key)+'</div></div>'+
+      '<div class="badges" style="margin-top:8px">'+
+      '<button type="button" class="btn '+(flexy?'':'secondary')+'" style="width:auto;padding:6px 9px" data-platform-rel="flexy" data-platform-key="'+esc(p.platform_key)+'" data-platform-enabled="'+(flexy?'1':'0')+'">وردية Flexy'+(flexy?' ✓':'')+'</button>'+
+      '<button type="button" class="btn '+(card?'':'secondary')+'" style="width:auto;padding:6px 9px" data-platform-rel="cards" data-platform-key="'+esc(p.platform_key)+'" data-platform-enabled="'+(card?'1':'0')+'">مصدر بطاقات'+(card?' ✓':'')+'</button>'+
+      '</div><div class="party-edit"><div class="field"><label>الاسم الرسمي</label><input data-platform-name="'+esc(p.platform_key)+'" value="'+esc(p.display_name)+'"></div><div class="field"><label>المفتاح الثابت</label><input value="'+esc(p.platform_key)+'" readonly dir="ltr"></div><div></div><button class="btn secondary" data-platform-save="'+esc(p.platform_key)+'" type="button">حفظ الاسم</button></div></div>';
+  }).join('');
+  document.querySelectorAll('[data-platform-rel]').forEach(b=>b.onclick=()=>togglePlatformRelation(b.dataset.platformKey,b.dataset.platformRel,b.dataset.platformEnabled==='1'));
+  document.querySelectorAll('[data-platform-save]').forEach(b=>b.onclick=()=>savePlatformDisplayName(b.dataset.platformSave));
+}
+async function togglePlatformRelation(key,kind,current){
+  const owner=kind==='flexy'?'admin_platform_set_flexy_shift':'admin_platform_set_card_stock';
+  const workspace=kind==='flexy'?'workspace_admin_platform_set_flexy_shift':'workspace_admin_platform_set_card_stock';
+  const {error}=await adminRpc(owner,workspace,{p_platform_key:key,p_enabled:!current});
+  if(error)return msg('تعذر تعديل علاقة المنصة: '+safeError(error),'error');
+  await load();msg('تم تحديث علاقة المنصة.','ok');
+}
+async function savePlatformDisplayName(key){
+  const input=document.querySelector('[data-platform-name="'+CSS.escape(key)+'"]');
+  const name=input?.value.trim()||'';
+  if(!name)return msg('اكتب الاسم الرسمي للمنصة.','error');
+  const {error}=await adminRpc('admin_customer_register_platform','workspace_admin_register_platform',{p_platform_key:key,p_display_name:name});
+  if(error)return msg('تعذر حفظ اسم المنصة: '+safeError(error),'error');
+  await load();msg('تم تحديث الاسم الرسمي للمنصة.','ok');
 }
 async function sha256File(file){
   const bytes=await file.arrayBuffer();
@@ -104,7 +134,7 @@ async function adminRpc(ownerName,workspaceName,params={}){
   return supabase.rpc(ownerName,params);
 }
 function saveCache(){
-  const payload={saved_at:Date.now(),sources,parties,suggestions,platforms,platformSignatures,identityReviews,customerServices,serviceLinks};
+  const payload={saved_at:Date.now(),sources,parties,suggestions,platforms,platformRelations,platformSignatures,identityReviews,customerServices,serviceLinks};
   localStorage.setItem(CACHE,JSON.stringify(payload));
   localStorage.setItem(DIRECTORY_CACHE,JSON.stringify({
     saved_at:payload.saved_at,
@@ -119,7 +149,7 @@ function loadCache(){
   try{
     const v=JSON.parse(localStorage.getItem(CACHE)||'null');
     if(!v||!Array.isArray(v.sources)||!Array.isArray(v.parties))return false;
-    sources=v.sources;parties=v.parties;suggestions=Array.isArray(v.suggestions)?v.suggestions:[];platforms=Array.isArray(v.platforms)?v.platforms:[];platformSignatures=Array.isArray(v.platformSignatures)?v.platformSignatures:[];identityReviews=Array.isArray(v.identityReviews)?v.identityReviews:[];customerServices=Array.isArray(v.customerServices)?v.customerServices:[];serviceLinks=Array.isArray(v.serviceLinks)?v.serviceLinks:[];
+    sources=v.sources;parties=v.parties;suggestions=Array.isArray(v.suggestions)?v.suggestions:[];platforms=Array.isArray(v.platforms)?v.platforms:[];platformRelations=Array.isArray(v.platformRelations)?v.platformRelations:[];platformSignatures=Array.isArray(v.platformSignatures)?v.platformSignatures:[];identityReviews=Array.isArray(v.identityReviews)?v.identityReviews:[];customerServices=Array.isArray(v.customerServices)?v.customerServices:[];serviceLinks=Array.isArray(v.serviceLinks)?v.serviceLinks:[];
     renderPlatformControls();renderAll();
     const when=v.saved_at?new Date(v.saved_at).toLocaleString('ar-DZ'):'';
     msg('Offline — تعرض آخر نسخة محفوظة'+(when?' ('+when+')':'')+'.','warn');
@@ -549,7 +579,7 @@ async function buildMasterFromExistingSources(){
   msg('تم إنشاء '+Number(result?.created||0)+' عميل Master.'+(candidates?' وترك '+candidates+' حساب كمرشح ربط بسبب معرفة يدوية سابقة.':''),'ok');
 }
 function renderAll(){
-  renderMetrics();renderIdentityReviews();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();updateSourceVisibilityButton();renderEmptyMasterBuild();
+  renderMetrics();renderIdentityReviews();renderSuggestions();renderSources();renderParties();renderPlatformMaster();renderConnectivity();renderBulk();updateSourceVisibilityButton();renderEmptyMasterBuild();
 }
 async function identify(){
   const now=Date.now();
@@ -594,16 +624,17 @@ async function load(){
     return;
   }
   msg('جاري تحميل دليل الربط…');
-  const [a,b,c,d,e,f,g]=await Promise.all([
+  const [a,b,c,d,e,f,g,h]=await Promise.all([
     adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
     adminRpc('admin_customer_list_link_suggestions','workspace_admin_list_link_suggestions',{p_status:null}),
     adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms'),
     adminRpc('admin_customer_list_identity_reviews','workspace_admin_list_identity_reviews'),
     adminRpc('admin_customer_list_schema_signatures','workspace_admin_list_schema_signatures'),
     adminRpc('admin_customer_list_services','workspace_admin_list_customer_services'),
-    adminRpc('admin_customer_list_service_links','workspace_admin_list_customer_service_links')
+    adminRpc('admin_customer_list_service_links','workspace_admin_list_customer_service_links'),
+    adminRpc('admin_platform_relation_state','workspace_admin_platform_relation_state')
   ]);
-  if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;if(d.error)throw d.error;if(e.error)throw e.error;if(f.error)throw f.error;if(g.error)throw g.error;
+  if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;if(d.error)throw d.error;if(e.error)throw e.error;if(f.error)throw f.error;if(g.error)throw g.error;if(h.error)throw h.error;
   sources=Array.isArray(a.data?.sources)?a.data.sources:[];
   parties=(Array.isArray(a.data?.parties)?a.data.parties:[]).filter(p=>p.party_type!=='system');
   suggestions=Array.isArray(b.data)?b.data:[];
@@ -612,6 +643,7 @@ async function load(){
   platformSignatures=Array.isArray(e.data)?e.data:[];
   customerServices=Array.isArray(f.data)?f.data:[];
   serviceLinks=Array.isArray(g.data)?g.data:[];
+  platformRelations=Array.isArray(h.data)?h.data:[];
   renderPlatformControls();saveCache();renderAll();
   msg('تم تحديث دليل العملاء والروابط.','ok');
 }
