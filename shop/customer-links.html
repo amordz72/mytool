@@ -57,7 +57,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   <div id="message" class="message info">جاري تحميل إدارة ربط العملاء…</div>
 
   <section class="card">
-    <div class="section-head"><div><h1>بناء وربط العملاء</h1><div class="muted">حساب المنصة يبقى مصدرًا مستقلًا، لكن ربط الهوية مباشر: أي تطابق دقيق في username أو الهاتف أو البريد مع أي منصة يُربط بنفس Master تلقائيًا. غير المطابق ينشئ Master جديدًا، والاسم يبقى من أول مصدر أنشأه.</div></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn" href="customer-master-feed.html?v=20260923-1" style="width:auto;text-decoration:none">⊕ بناء العملاء</a><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div></div>
+    <div class="section-head"><div><h1>بناء وربط العملاء</h1><div class="muted">حساب المنصة يبقى مصدرًا مستقلًا. التطابق الدقيق الأصلي في username أو الهاتف أو البريد يتبع قاعدة الربط المباشر الحالية. ويمكن الربط يدويًا حتى بدون تطابق؛ هذا يثبت الحساب تحت الـMaster، لكن الهوية التي يتعلمها النظام من هذا القرار تُستخدم لاحقًا كمرشح للمراجعة فقط ولا تتحول إلى ربط تلقائي.</div></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn" href="customer-master-feed.html?v=20260923-1" style="width:auto;text-decoration:none">⊕ بناء العملاء</a><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div></div>
     <details id="linkingMetricsDrawer" class="metrics-drawer">
       <summary><span>ملخص الربط</span><b id="metricsSummary">جاري الحساب…</b></summary>
       <div class="metrics metrics-compact">
@@ -150,6 +150,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260926-exact-master2"></script>
+<script type="module" src="customer-links.js?v=20260926-manual-candidate1"></script>
 </body>
 </html>
