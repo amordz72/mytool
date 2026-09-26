@@ -132,6 +132,9 @@
           <div class="field"><label>كمية البيع</label><input id="saleQty" type="number" min="1" step="1" value="1" required></div>
           <div class="field"><label>سعر بيع الوحدة (دج)</label><input id="salePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="يُملأ من آخر بيع" required><div id="salePriceHint" class="hint">اختر المنتج لعرض آخر سعر بيع.</div></div>
         </div>
+        <div class="field"><label>الطرف</label><select id="salePartyMode"><option value="cash_anonymous">زبون نقدي — مجهول نهائي</option><option value="known">عميل معروف</option><option value="temporary">طرف مؤقت — نحدد صاحبه لاحقًا</option></select></div>
+        <div class="field hidden" id="saleKnownPartyWrap"><label>العميل المعروف</label><input id="saleKnownParty" list="saleKnownPartyList" autocomplete="off" placeholder="ابحث بالاسم أو MT"><datalist id="saleKnownPartyList"></datalist><div class="muted" style="margin-top:5px">اختر Master موجودًا؛ لا يُنشأ Master جديد من شاشة البيع.</div></div>
+        <div class="row hidden" id="saleTempPartyWrap"><div class="field"><label>اسم مؤقت</label><input id="saleTempPartyName" autocomplete="off" placeholder="اختياري"></div><div class="field"><label>هاتف مؤقت</label><input id="saleTempPartyPhone" inputmode="tel" dir="ltr" placeholder="اختياري"></div></div>
         <div class="field"><label>ملاحظة</label><textarea id="saleNotes" placeholder="اختياري"></textarea></div>
         <button class="btn" type="submit">تسجيل البيع</button>
       </form>
@@ -197,7 +200,7 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],digitalCustomers:[],digitalServices:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
+  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],digitalCustomers:[],digitalServices:[],operationParties:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
   const OPERATION_TYPES={
     product:{icon:'🛒',title:'منتج من المخزون',note:'بيع مرتبط بالمخزون الحالي.'},
@@ -320,6 +323,59 @@
       status:'approved',confidence:100,evidence:{method:'sale_manual_link',order_id:saleHandoff?.order_id||null}
     },{onConflict:'source_kind,identity_normalized'})
   }
+  function operationPartyLabel(p){
+    if(!p)return '';
+    const mt=p.mt_number!=null?'MT-'+String(p.mt_number).padStart(6,'0'):'Master #'+p.id;
+    return mt+' — '+p.display_name;
+  }
+  function operationPartyByTyped(value){
+    const raw=String(value||'').trim();
+    if(!raw)return null;
+    const exact=state.operationParties.filter(p=>!p.system_code&&operationPartyLabel(p)===raw);
+    if(exact.length===1)return exact[0];
+    const key=customerKey(raw);
+    const loose=state.operationParties.filter(p=>!p.system_code&&[
+      p.display_name,p.mytool_username,p.mt_number!=null?'MT-'+String(p.mt_number).padStart(6,'0'):''
+    ].some(v=>customerKey(v)===key));
+    return loose.length===1?loose[0]:null;
+  }
+  function renderOperationPartyLists(){
+    const rows=state.operationParties.filter(p=>!p.system_code);
+    const list=$('saleKnownPartyList');
+    if(list)list.innerHTML=rows.map(p=>'<option value="'+esc(operationPartyLabel(p))+'"></option>').join('');
+  }
+  async function loadOperationParties(){
+    const call=state.mode==='worker'
+      ? supabase.rpc('worker_operation_party_options',{p_session_token:state.workerToken})
+      : supabase.rpc('admin_operation_party_options');
+    const {data,error}=await call;
+    if(error)throw error;
+    state.operationParties=Array.isArray(data)?data:[];
+    renderOperationPartyLists();
+  }
+  function syncSalePartyMode(){
+    const mode=$('salePartyMode')?.value||'cash_anonymous';
+    $('saleKnownPartyWrap')?.classList.toggle('hidden',mode!=='known');
+    $('saleTempPartyWrap')?.classList.toggle('hidden',mode!=='temporary');
+  }
+  function salePartyPayload(){
+    const mode=$('salePartyMode')?.value||'cash_anonymous';
+    if(mode==='known'){
+      const party=operationPartyByTyped($('saleKnownParty')?.value||'');
+      if(!party)throw new Error('اختر عميلًا معروفًا من قائمة Master.');
+      return {p_party_id:Number(party.id),p_party_mode:'known',p_party_name:null,p_party_phone:null,p_party_email:null};
+    }
+    if(mode==='temporary'){
+      return {
+        p_party_id:null,p_party_mode:'temporary',
+        p_party_name:$('saleTempPartyName')?.value.trim()||null,
+        p_party_phone:$('saleTempPartyPhone')?.value.trim()||null,
+        p_party_email:null
+      };
+    }
+    return {p_party_id:null,p_party_mode:'cash_anonymous',p_party_name:null,p_party_phone:null,p_party_email:null};
+  }
+
   function serviceByTypedName(value){
     const key=customerKey(value);if(!key)return null
     const matches=state.digitalServices.filter(s=>{
@@ -675,12 +731,13 @@
     if(item&&item.is_verified&&Number(item.stock_quantity)<qty)return notify('لا توجد كمية كافية في هذا المخزن. المتاح: '+item.stock_quantity+'.','error')
     let initial=null
     if(item&&!item.is_verified){initial=Number($('saleInitialCount').value);if(!Number.isInteger(initial)||initial<qty)return notify('في أول بيع اكتب الكمية الموجودة فعليًا قبل البيع، ويجب ألا تقل عن كمية البيع.','error')}
+    let partyArgs;try{partyArgs=salePartyPayload()}catch(err){return notify(err.message,'error')}
     setBusy(true)
-    const args={p_product_id:product,p_quantity:qty,p_unit_price:price,p_branch_id:branch,p_initial_count:initial,p_notes:notes}
-    const r=state.mode==='worker'?await supabase.rpc('worker_create_branch_sale',{p_session_token:state.workerToken,...args}):await supabase.rpc('admin_create_branch_sale',args)
+    const args={p_product_id:product,p_quantity:qty,p_unit_price:price,p_branch_id:branch,p_initial_count:initial,p_notes:notes,...partyArgs}
+    const r=state.mode==='worker'?await supabase.rpc('worker_create_branch_sale_party',{p_session_token:state.workerToken,...args}):await supabase.rpc('admin_create_branch_sale_party',args)
     setBusy(false)
     if(r.error){const m=r.error.message||'';if(m.includes('INSUFFICIENT_BRANCH_STOCK'))return notify('لا توجد كمية كافية في هذا الفرع. إذا الواقع مختلف سجّل جردًا أولًا.','error');if(m.includes('INITIAL_COUNT_REQUIRED'))return notify('هذا أول بيع للمنتج في الفرع؛ يجب تسجيل الكمية الموجودة قبل البيع.','error');return notify('لم يتم حفظ البيع: '+m,'error')}
-    $('saleQty').value='1';$('salePrice').value=String(price);$('salePriceHint').className='hint ok';$('salePriceHint').textContent='آخر سعر بيع الآن: '+price+' دج. يمكنك تغييره.';$('saleNotes').value='';$('saleInitialCount').value=''
+    $('saleQty').value='1';$('salePrice').value=String(price);$('salePriceHint').className='hint ok';$('salePriceHint').textContent='آخر سعر بيع الآن: '+price+' دج. يمكنك تغييره.';$('saleNotes').value='';$('saleInitialCount').value='';$('salePartyMode').value='cash_anonymous';$('saleKnownParty').value='';$('saleTempPartyName').value='';$('saleTempPartyPhone').value='';syncSalePartyMode()
     await loadInventory(branch);notify('تم تسجيل البيع. رقم العملية: '+r.data,'ok')
   }
 
@@ -800,13 +857,15 @@
   }
 
   consumeSaleHandoff()
+  $('salePartyMode')?.addEventListener('change',syncSalePartyMode)
+  syncSalePartyMode()
 
   async function init(){
     try{
       await detectSession()
       if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}
       if(state.mode==='worker')await loadWorker();else await loadAdmin()
-      await Promise.all([loadDigitalCustomers(),loadDigitalServices()])
+      await Promise.all([loadDigitalCustomers(),loadDigitalServices(),loadOperationParties()])
       renderBase();applyScreenMode();await loadInventory(state.defaultBranchId)
       if(document.body.dataset.screen==='transfers'&&state.permissions.can_transfer)await loadTransfers()
       notify('العمليات جاهزة حسب الفرع.','ok')
