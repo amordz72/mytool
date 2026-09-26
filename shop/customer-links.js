@@ -406,8 +406,10 @@ async function buildMasterFromExistingSources(){
   if(!ok)return;
   const result=await autoBootstrap(platform);
   if(result?.error)return msg('تعذر بناء Master: '+result.error,'error');
+  await generateSuggestions({silent:true});
   await load();
-  msg('تم إنشاء '+Number(result?.created||0)+' عميل Master.','ok');
+  const candidates=Number(result?.candidate_skipped||0);
+  msg('تم إنشاء '+Number(result?.created||0)+' عميل Master.'+(candidates?' وترك '+candidates+' حساب كمرشح ربط بسبب معرفة يدوية سابقة.':''),'ok');
 }
 function renderAll(){
   renderMetrics();renderIdentityReviews();renderSuggestions();renderSources();renderParties();renderConnectivity();renderBulk();updateSourceVisibilityButton();renderEmptyMasterBuild();
@@ -508,7 +510,7 @@ async function autoBootstrap(platform=null){
   const {data,error}=await adminRpc('admin_customer_auto_bootstrap_sources','workspace_admin_auto_bootstrap_sources',{p_platform_key:platform});
   if(error){
     console.warn('customer auto bootstrap skipped:', safeError(error));
-    return {created:0,matched:0,skipped:0,error:safeError(error)};
+    return {created:0,matched:0,candidate_skipped:0,skipped:0,error:safeError(error)};
   }
   return data;
 }
@@ -1053,7 +1055,7 @@ async function approveBuildImports(){
   const ok=await askConfirm('إضافة الجدد فقط','سيتم تسجيل حسابات المصادر الجديدة فقط ولن تتغير الحسابات الموجودة.'+seedText+' بعد وجود Master، أي منصة أخرى تبقى للمراجعة ولا يحدث دمج تلقائي.','متابعة');
   if(!ok)return;
   importBusy=true;renderImportQueue();
-  let done=0,failed=0,totalInserted=0,totalCreated=0,totalMatched=0;
+  let done=0,failed=0,totalInserted=0,totalCreated=0,totalMatched=0,totalCandidates=0;
   try{
     for(const item of eligible){
       try{
@@ -1079,12 +1081,14 @@ async function approveBuildImports(){
         if(seeded?.error)throw new Error(seeded.error);
         totalCreated+=Number(seeded?.created||0);
         totalMatched+=Number(seeded?.matched||0);
+        totalCandidates+=Number(seeded?.candidate_skipped||0);
         item.status='done';done++;
       }catch(error){failed++;item.status='error';item.error=safeError(error)}
       renderImportQueue();
     }
+    if(done)await generateSuggestions({silent:true});
     await load();
-    msg('انتهى بناء العملاء: ملفات '+done+' · حسابات مصدر جديدة '+totalInserted+' · Master جديد '+totalCreated+' · ربط تلقائي مباشر '+totalMatched+' · فشل '+failed+'. التطابق الدقيق username أو الهاتف أو البريد يُربط مباشرة، وغير المطابق يصبح Master جديدًا.',failed?'warn':'ok');
+    msg('انتهى بناء العملاء: ملفات '+done+' · حسابات مصدر جديدة '+totalInserted+' · Master جديد '+totalCreated+' · ربط تلقائي مباشر '+totalMatched+' · مرشح من معرفة يدوية '+totalCandidates+' · فشل '+failed+'. التطابق الأصلي الدقيق يربط مباشرة؛ المطابقة المتعلّمة يدويًا تبقى للمراجعة ولا تنشئ Master جديدًا.',failed?'warn':'ok');
   }finally{importBusy=false;renderImportQueue();renderConnectivity()}
 }
 function setImportMode(mode){
@@ -1093,7 +1097,7 @@ function setImportMode(mode){
   $('importMode').value=importMode;
   $('buildMethodField').hidden=importMode!=='build';
   $('importModeTitle').textContent=importMode==='build'?'بناء العملاء':'تحيين بيانات منصة';
-  $('importModeHelp').textContent=importMode==='build'?'يبني الـMaster من الحسابات غير المربوطة. أي تطابق دقيق في username أو الهاتف أو البريد مع أي منصة يربط مباشرة بنفس Master. غير المطابق ينشئ Master جديدًا، والاسم يبقى من أول مصدر أنشأه.':'يحدّث بيانات المنصة فقط. إذا ظهر حساب جديد وتطابق بدقة مع Master موجود يُربط مباشرة؛ غير المطابق يبقى غير مربوط ولا ينشئ Master من مسار التحيين.';
+  $('importModeHelp').textContent=importMode==='build'?'يبني الـMaster من الحسابات غير المربوطة. التطابق الأصلي الدقيق يربط مباشرة. إذا كان التطابق ناتجًا فقط من معرفة ربط يدوي سابقة، يبقى الحساب مرشحًا للمراجعة ولا ينشئ Master جديدًا. غير المطابق تمامًا ينشئ Master جديدًا.':'يحدّث بيانات المنصة فقط. إذا ظهر حساب جديد وتطابق بدقة مع Master موجود يُربط مباشرة؛ وإذا طابق معرفة يدوية متعلّمة يظهر كمرشح للمراجعة فقط.';
   $('approveImportsBtn').textContent=importMode==='build'?'اعتماد البناء':'اعتماد التحيين';
 }
 
