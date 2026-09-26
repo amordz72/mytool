@@ -181,7 +181,8 @@ function render(data){
     const currentType=String(row.sim_type||'unknown');
     return '<article class="sim-card" data-id="'+escapeHtml(row.sim_uuid)+'">'+
       '<div class="sim-head"><div><div class="sim-name">'+escapeHtml(label(currentType))+'</div>'+
-      '<div class="sim-phone" dir="ltr">'+escapeHtml(row.msisdn||'بدون رقم')+'</div></div>'+
+      '<div class="sim-phone" dir="ltr">'+escapeHtml(row.msisdn||'بدون رقم')+'</div>'+
+      '<div class="sim-phone">صاحب الشريحة: <strong>'+escapeHtml(row.owner_name||'غير محدد')+'</strong></div></div>'+
       '<div class="sim-badges"><span class="state '+ccls+'">'+escapeHtml(cn)+'</span><span class="state '+cls+'">'+escapeHtml(st)+'</span>'+(discovery?'<span class="state '+discovery[1]+'">'+escapeHtml(discovery[0])+'</span>':'')+'</div></div>'+
       '<div class="sim-balance">'+escapeHtml(op)+'</div>'+
       '<div class="sim-rule">'+escapeHtml(rule(currentType))+'</div>'+
@@ -192,6 +193,7 @@ function render(data){
         '<div><small>IMEI — هوية المودم</small><strong class="sim-id">'+escapeHtml(row.modem_imei||'—')+'</strong></div>'+
         '<div><small>آخر ظهور للشريحة</small><strong>'+escapeHtml(row.sim_last_seen_at?new Date(row.sim_last_seen_at).toLocaleString('ar-DZ'):'—')+'</strong></div>'+
         '<div><small>PIN</small><strong>'+(row.has_pin?'محفوظ':'غير محفوظ')+'</strong></div>'+
+        '<div><small>صاحب الشريحة</small><strong>'+escapeHtml(row.owner_name||'—')+'</strong></div>'+
         '<div><small>آخر مرجع شبكة</small><strong>'+escapeHtml(fmtDate(row.baseline_checked_at))+'</strong></div>'+
         '<div><small>عمليات مؤكدة</small><strong>'+escapeHtml(row.confirmed_execution_count||0)+'</strong></div>'+
       '</div>'+
@@ -203,6 +205,7 @@ function render(data){
             simTypes.filter(x=>x.enabled).map(x=>'<option value="'+escapeHtml(x.sim_type)+'" '+(currentType===x.sim_type?'selected':'')+'>'+escapeHtml(x.display_name)+'</option>').join('')+
           '</select></label>'+
           '<label>رقم الشريحة<input name="msisdn" inputmode="numeric" placeholder="06xxxxxxxx" value="'+escapeHtml(row.msisdn||'')+'"></label>'+
+          '<label>صاحب الشريحة<input name="owner_name" autocomplete="off" placeholder="اسم صاحب الشريحة" value="'+escapeHtml(row.owner_name||'')+'"></label>'+
           '<label>PIN<input name="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="'+(row.has_pin?'اتركه فارغًا للإبقاء على PIN الحالي':'أدخل PIN')+'"></label>'+
         '</div>'+
         '<div class="sim-actions"><button class="fx-btn save-sim" type="submit">حفظ</button><button class="fx-btn secondary cancel-sim" type="button">إلغاء</button></div>'+
@@ -261,6 +264,7 @@ function bind(){
     const button=form.querySelector('.save-sim');
     const msisdn=String(new FormData(form).get('msisdn')||'').replace(/\D/g,'');
     const simType=String(new FormData(form).get('sim_type')||'');
+    const ownerName=String(new FormData(form).get('owner_name')||'').trim();
     const pin=String(new FormData(form).get('pin')||'').trim();
     if(msisdn&&!/^0[5-7][0-9]{8}$/.test(msisdn)){show('رقم الشريحة غير صالح.',true);return}
     if(pin&&!/^[0-9]{4,8}$/.test(pin)){show('PIN يجب أن يكون من 4 إلى 8 أرقام.',true);return}
@@ -270,9 +274,10 @@ function bind(){
         p_sim_uuid:card.dataset.id,
         p_msisdn:msisdn||null,
         p_sim_type:simType||null,
-        p_service_pin:pin||null
+        p_service_pin:pin||null,
+        p_owner_name:ownerName||null
       });
-      show('تم حفظ بيانات الشريحة. الـPIN أصبح تابعًا للشريحة نفسها.');
+      show('تم حفظ بيانات الشريحة وصاحبها. الـPIN يبقى تابعًا للشريحة نفسها.');
       await load();
     }catch(error){show(String(error?.message||error),true)}
     finally{button.disabled=false;button.textContent='حفظ'}
