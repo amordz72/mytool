@@ -16,6 +16,8 @@ let importBusy=false;
 let importMode='build';
 let discoveredNewAccounts=0;
 let confirmResolve=null;
+let partyPickerSourceId=null;
+const manualPartySelection=new Map();
 const selectedSources=new Set();
 let currentPageIds=[];
 
@@ -151,10 +153,127 @@ $('confirmCancel').onclick=()=>closeConfirm(false);
 $('confirmOk').onclick=()=>closeConfirm(true);
 $('confirmDialog').onclick=e=>{if(e.target===$('confirmDialog'))closeConfirm(false)};
 
-function partyOptions(selected){
-  const first='<option value="">اختر العميل الموحد…</option>';
-  return first+parties.map(p=>'<option value="'+p.id+'" '+(Number(selected)===Number(p.id)?'selected':'')+'>'+esc(p.display_name)+'</option>').join('');
+function searchNorm(v){
+  return String(v??'').normalize('NFKC').toLowerCase()
+    .replace(/[\u064B-\u065F\u0670]/g,'')
+    .replace(/[أإآٱ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
+    .replace(/[^a-z0-9_@+\.\-\u0600-\u06FF]+/g,' ')
+    .replace(/\s+/g,' ').trim();
 }
+function partyById(id){return parties.find(p=>Number(p.id)===Number(id))||null}
+function masterCode(p){
+  if(!p)return '';
+  const uid=String(p.mt_uid||'').trim();
+  if(uid)return uid;
+  if(p.mt_number!=null&&String(p.mt_number)!=='')return 'MT-'+String(p.mt_number).padStart(6,'0');
+  return 'Master #'+p.id;
+}
+function partyLinkedSources(partyId){
+  const id=Number(partyId||0);
+  return id?sources.filter(s=>Number(s.linked_party_id||0)===id):[];
+}
+function partySearchFields(p){
+  const values=[
+    p.id,p.mt_number,p.mt_uid,p.mytool_username,p.display_name,
+    ...(Array.isArray(p.aliases)?p.aliases:[]),
+    p.primary_phone,p.primary_email
+  ];
+  for(const a of (Array.isArray(p.identity_aliases)?p.identity_aliases:[])){
+    values.push(a?.type,a?.value,a?.normalized,a?.scope);
+  }
+  for(const s of partyLinkedSources(p.id)){
+    values.push(
+      s.platform_key,platformLabel(s.platform_key),
+      s.username,s.external_account_id,s.display_name,s.first_name,s.last_name,
+      s.phone,s.email
+    );
+  }
+  const code=masterCode(p);
+  if(code)values.push(code,code.replace(/[-\s]/g,''));
+  return values.filter(v=>v!==null&&v!==undefined&&String(v).trim()!=='').map(v=>String(v));
+}
+function partySearchBlob(p){return searchNorm(partySearchFields(p).join(' '))}
+function partyPickerRows(query){
+  const q=searchNorm(query);
+  const tokens=q?q.split(' ').filter(Boolean):[];
+  return parties.map(p=>{
+    const fields=partySearchFields(p);
+    const normalizedFields=fields.map(searchNorm);
+    const blob=normalizedFields.join(' ');
+    if(tokens.length&&!tokens.every(t=>blob.includes(t)))return null;
+    let score=0;
+    if(q){
+      if(normalizedFields.some(v=>v===q))score=120;
+      else if(normalizedFields.some(v=>v.startsWith(q)))score=95;
+      else if(searchNorm(p.display_name).includes(q))score=85;
+      else if(searchNorm(p.mytool_username).includes(q))score=80;
+      else score=60;
+    }
+    return {p,score};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score||String(a.p.display_name||'').localeCompare(String(b.p.display_name||''),'ar')).slice(0,80);
+}
+function partyChoiceMarkup(p){
+  if(!p){
+    return '<span class="party-choice-main"><b>اختيار العميل الموحد</b><small>ابحث بالاسم، MT، المستخدم، الهاتف، البريد أو حساب منصة</small></span><span class="party-choice-search" aria-hidden="true">⌕</span>';
+  }
+  const detail=[masterCode(p),p.mytool_username?('@'+p.mytool_username):'',p.primary_phone||''].filter(Boolean).join(' · ');
+  return '<span class="party-choice-main"><b>'+esc(p.display_name||('Master #'+p.id))+'</b><small>'+esc(detail)+'</small></span><span class="party-choice-search" aria-hidden="true">⌕</span>';
+}
+function partyResultMeta(p){
+  const base=[masterCode(p),p.mytool_username?('@'+p.mytool_username):'',p.primary_phone||'',p.primary_email||''].filter(Boolean);
+  const linked=partyLinkedSources(p.id).slice(0,4).map(s=>platformLabel(s.platform_key)+': '+(s.username||s.external_account_id||s.display_name||''));
+  return {base:base.join(' · '),linked:linked.join(' · ')};
+}
+function renderPartyPickerResults(){
+  const box=$('partyPickerResults');
+  if(!box)return;
+  const query=$('partyPickerSearch').value;
+  const rows=partyPickerRows(query);
+  const source=sources.find(s=>Number(s.id)===Number(partyPickerSourceId));
+  const chosen=Number(manualPartySelection.get(Number(partyPickerSourceId))||source?.linked_party_id||0);
+  if(!rows.length){
+    box.innerHTML='<div class="empty">لا يوجد Master يطابق البحث.</div>';
+    return;
+  }
+  box.innerHTML=rows.map(({p})=>{
+    const meta=partyResultMeta(p);
+    const selected=Number(p.id)===chosen;
+    return '<button type="button" class="party-picker-result'+(selected?' selected':'')+'" data-party-picker-result="'+p.id+'">'+
+      '<span class="party-result-check">'+(selected?'✓':'')+'</span>'+
+      '<span class="party-result-body"><b>'+esc(p.display_name||('Master #'+p.id))+'</b>'+
+      (meta.base?'<small>'+esc(meta.base)+'</small>':'')+
+      (meta.linked?'<small class="party-result-platforms">'+esc(meta.linked)+'</small>':'')+
+      '</span></button>';
+  }).join('');
+  box.querySelectorAll('[data-party-picker-result]').forEach(btn=>btn.onclick=()=>{
+    const id=Number(btn.dataset.partyPickerResult);
+    if(!id||!partyPickerSourceId)return;
+    manualPartySelection.set(Number(partyPickerSourceId),id);
+    const trigger=document.querySelector('[data-pick-party="'+partyPickerSourceId+'"]');
+    if(trigger)trigger.innerHTML=partyChoiceMarkup(partyById(id));
+    closePartyPicker();
+  });
+}
+function openPartyPicker(sourceId){
+  if(!parties.length)return msg('لا يوجد Master متاح للاختيار بعد.','warn');
+  partyPickerSourceId=Number(sourceId);
+  const source=sources.find(s=>Number(s.id)===partyPickerSourceId);
+  $('partyPickerContext').textContent=source
+    ? 'ربط «'+(source.display_name||source.username||('حساب #'+source.id))+'» مع Master موجود'
+    : 'اختر Master';
+  $('partyPickerSearch').value='';
+  $('partyPickerDialog').hidden=false;
+  renderPartyPickerResults();
+  requestAnimationFrame(()=>$('partyPickerSearch').focus());
+}
+function closePartyPicker(){
+  $('partyPickerDialog').hidden=true;
+  partyPickerSourceId=null;
+}
+$('partyPickerSearch').oninput=renderPartyPickerResults;
+$('partyPickerClose').onclick=closePartyPicker;
+$('partyPickerDialog').onclick=e=>{if(e.target===$('partyPickerDialog'))closePartyPicker()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('partyPickerDialog').hidden)closePartyPicker()});
 function contactLine(source){
   const parts=[];
   if(source.phone)parts.push('هاتف: '+esc(source.phone));
@@ -268,7 +387,9 @@ function renderSources(){
     const unlink=s.link_status==='linked'&&s.link_id
       ? '<button class="btn danger" data-unlink="'+s.link_id+'" data-source="'+s.id+'" type="button">إلغاء الربط</button>'
       : '';
-    const manualBox='<div class="link-controls" data-manual-link-box="'+s.id+'" hidden><div class="field"><label>اختر الـMaster — مسموح حتى بدون تطابق</label><select data-party-select="'+s.id+'">'+partyOptions(s.linked_party_id)+'</select><div class="meta">الربط اليدوي يثبت الحساب تحت هذا الـMaster، وما يتعلمه النظام منه يُستخدم لاحقًا كمرشح فقط.</div></div><button class="btn secondary" data-link="'+s.id+'" type="button">حفظ الربط اليدوي</button></div>';
+    const chosenPartyId=Number(manualPartySelection.get(Number(s.id))||s.linked_party_id||0);
+    const chosenParty=partyById(chosenPartyId);
+    const manualBox='<div class="link-controls" data-manual-link-box="'+s.id+'" hidden><div class="field manual-party-field"><label>اختر الـMaster — مسموح حتى بدون تطابق</label><button class="party-picker-trigger" data-pick-party="'+s.id+'" type="button">'+partyChoiceMarkup(chosenParty)+'</button><div class="meta">الربط اليدوي يثبت الحساب تحت هذا الـMaster، وما يتعلمه النظام منه يُستخدم لاحقًا كمرشح فقط.</div></div><button class="btn secondary manual-link-save" data-link="'+s.id+'" type="button">حفظ الربط اليدوي</button></div>';
     const primaryActions=s.link_status==='linked'
       ? '<div class="actions"><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">تغيير الربط يدويًا</button>'+unlink+'</div>'
       : '<div class="actions"><button class="btn" data-create-source="'+s.id+'" type="button">إنشاء كعميل جديد</button><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">ربط يدوي</button></div>';
@@ -293,6 +414,7 @@ function renderSources(){
     const box=document.querySelector('[data-manual-link-box="'+b.dataset.showManualLink+'"]');
     if(box)box.hidden=!box.hidden;
   });
+  document.querySelectorAll('[data-pick-party]').forEach(b=>b.onclick=()=>openPartyPicker(Number(b.dataset.pickParty)));
   document.querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>linkSource(Number(b.dataset.link)));
   document.querySelectorAll('[data-create-source]').forEach(b=>b.onclick=()=>createFromSource(Number(b.dataset.createSource)));
   document.querySelectorAll('[data-unlink]').forEach(b=>b.onclick=()=>unlinkSource(Number(b.dataset.unlink),Number(b.dataset.source)));
@@ -526,9 +648,9 @@ async function autoLinkExact(platform=null){
 
 async function linkSource(sourceId){
   if(!navigator.onLine)return msg('الربط يحتاج اتصالًا.','warn');
-  const sel=document.querySelector('[data-party-select="'+sourceId+'"]');
-  const partyId=Number(sel?.value||0);
-  if(!partyId)return msg('اختر العميل الموحد أولًا.','error');
+  const source=sources.find(x=>Number(x.id)===Number(sourceId));
+  const partyId=Number(manualPartySelection.get(Number(sourceId))||source?.linked_party_id||0);
+  if(!partyId)return msg('اختر العميل الموحد من البحث أولًا.','error');
   msg('جاري حفظ الربط…');
   let {data,error}=await adminRpc('admin_customer_link_source_account_manual','workspace_admin_link_source_account_manual',{
     p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:false
@@ -549,6 +671,7 @@ async function linkSource(sourceId){
   await generateSuggestions({silent:true});
   await load();
   const learned=Number(data?.learned_candidate_identities||0);
+  manualPartySelection.delete(Number(sourceId));
   msg('تم حفظ الربط اليدوي.'+(learned?' تعلّم النظام '+learned+' هوية للترشيح فقط.':''),'ok');
 }
 async function createFromSource(sourceId){
