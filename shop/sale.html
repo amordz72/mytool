@@ -200,7 +200,7 @@
   const WORKER_TOKEN_KEY='mytool_shop_worker_token'
   const WORKER_NICKNAME_KEY='mytool_shop_worker_nickname'
   const WORKER_EXPIRES_KEY='mytool_shop_worker_expires_at'
-  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],digitalCustomers:[],digitalServices:[],operationParties:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
+  const state={mode:'none',workerToken:'',workerName:'',workerIsTest:false,adminDataMode:(localStorage.getItem('mytool_admin_data_mode')==='test'?'test':'real'),branches:[],operatingBranches:[],defaultBranchId:null,suppliers:[],products:[],inventory:[],transfers:[],pricing:[],digitalCustomers:[],digitalServices:[],customerServiceLinks:[],operationParties:[],permissions:{can_sell:true,can_inventory:true,can_purchase:true,can_transfer:true},busy:false}
   const $=id=>document.getElementById(id)
   const OPERATION_TYPES={
     product:{icon:'🛒',title:'منتج من المخزون',note:'بيع مرتبط بالمخزون الحالي.'},
@@ -245,9 +245,16 @@
       .replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
       .replace(/[^\p{L}\p{N}]+/gu,' ').replace(/\s+/g,' ').trim()
   }
+  function customerAllowedForService(partyId,serviceCode){
+    const code=String(serviceCode||$('digitalServiceCode')?.value||'').trim().toUpperCase()
+    if(!code)return true
+    const row=state.customerServiceLinks.find(x=>Number(x.party_id)===Number(partyId)&&String(x.service_code||'').toUpperCase()===code)
+    return !!row?.enabled
+  }
   function customerByTypedName(value){
     const key=customerKey(value);if(!key)return null
     const matches=state.digitalCustomers.filter(p=>{
+      if(!customerAllowedForService(p.id))return false
       const vals=[p.display_name,p.primary_phone,...(p.aliases||[])].filter(Boolean)
       return vals.some(v=>customerKey(v)===key)
     })
@@ -261,11 +268,13 @@
     const list=$('digitalCustomerList');if(!list)return
     const seen=new Set()
     list.innerHTML=state.digitalCustomers.filter(p=>{
+      if(!customerAllowedForService(p.id))return false
       const k=customerKey(p.display_name);if(!k||seen.has(k))return false;seen.add(k);return true
     }).slice(0,1000).map(p=>'<option value="'+esc(p.display_name)+'"></option>').join('')
   }
   function setCustomerLinkedState(partyId,name,source='manual'){
-    const id=Number(partyId||0)||null
+    let id=Number(partyId||0)||null
+    if(id&&!customerAllowedForService(id))id=null
     setDigitalValue('digitalCustomerPartyId',id||'')
     const hint=$('digitalCustomerHint')
     if(id){
@@ -292,7 +301,7 @@
   }
   function renderCustomerSuggestions(handoff){
     const box=$('digitalCustomerSuggestions');if(!box)return
-    const rows=Array.isArray(handoff?.customer_candidates)?handoff.customer_candidates:[]
+    const rows=(Array.isArray(handoff?.customer_candidates)?handoff.customer_candidates:[]).filter(x=>customerAllowedForService(x.party_id))
     if(!rows.length){box.classList.add('hidden');box.innerHTML='';return}
     box.innerHTML=rows.slice(0,5).map(x=>'<button type="button" data-party-id="'+Number(x.party_id)+'" data-party-name="'+esc(x.party_name||'')+'">'+esc(x.party_name||'عميل')+' <span class="score">'+Math.round(Number(x.score||0))+'%</span></button>').join('')
     box.classList.remove('hidden')
@@ -309,9 +318,16 @@
       const currentId=Number(saleHandoff.customer_party_id||0)
       if(currentId){
         const party=state.digitalCustomers.find(p=>Number(p.id)===currentId)
-        if(party){setDigitalValue('digitalCustomer',party.display_name);setCustomerLinkedState(party.id,party.display_name,'existing')}
+        if(party&&customerAllowedForService(party.id)){setDigitalValue('digitalCustomer',party.display_name);setCustomerLinkedState(party.id,party.display_name,'existing')}
       }else resolveDigitalCustomerInput()
     }
+  }
+  async function loadCustomerServiceLinks(){
+    if(state.mode!=='admin')return
+    const {data,error}=await supabase.rpc('admin_customer_list_service_links')
+    if(error)return
+    state.customerServiceLinks=Array.isArray(data)?data:[]
+    renderDigitalCustomerList()
   }
   async function rememberSaleCustomerIdentity(partyId){
     const sender=saleHandoff?.customer_sender||saleHandoff?.parsed_payload?.whatsapp?.customer_sender||''
@@ -392,6 +408,12 @@
     const typed=$('digitalServiceName')?.value.trim()||''
     const match=serviceByTypedName(typed)
     setDigitalValue('digitalServiceCode',match?.code||'')
+    renderDigitalCustomerList()
+    const currentId=currentCustomerPartyId()
+    if(currentId&&!customerAllowedForService(currentId,match?.code||'')){
+      setCustomerLinkedState(null,$('digitalCustomer')?.value.trim()||'','service_filter')
+    }
+    renderCustomerSuggestions(saleHandoff)
     const hint=$('digitalServiceHint')
     if(hint){
       if(match){hint.textContent='مرتبطة بالخدمة '+match.code+' — ويمكن تغييرها.';hint.className='customer-hint linked'}
@@ -865,7 +887,7 @@
       await detectSession()
       if(state.mode==='none'){notify('لا توجد جلسة صالحة. ادخل إلى حساب المحل أولًا.','error');return}
       if(state.mode==='worker')await loadWorker();else await loadAdmin()
-      await Promise.all([loadDigitalCustomers(),loadDigitalServices(),loadOperationParties()])
+      await Promise.all([loadDigitalCustomers(),loadDigitalServices(),loadCustomerServiceLinks(),loadOperationParties()])
       renderBase();applyScreenMode();await loadInventory(state.defaultBranchId)
       if(document.body.dataset.screen==='transfers'&&state.permissions.can_transfer)await loadTransfers()
       notify('العمليات جاهزة حسب الفرع.','ok')
