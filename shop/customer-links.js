@@ -403,7 +403,7 @@ function renderSources(){
     const checked=selectedSources.has(Number(s.id));
     return '<div class="source-card'+(checked?' selected':'')+'" data-source-card="'+s.id+'">'+
       '<div class="source-top"><label class="source-select"><input type="checkbox" data-select-source="'+s.id+'" '+(checked?'checked':'')+'><span><div class="name">'+esc(name)+'</div><div class="username">'+esc(s.username)+'</div></span></label>'+
-      '<div class="badges"><span class="badge platform">'+esc(platformLabel(s.platform_key))+'</span><span class="badge '+esc(s.link_status)+'">'+esc(s.link_status==='linked'&&platformCount>=2?'مجمّع بين '+platformCount+' منصات':statusLabel(s.link_status))+'</span></div></div>'+
+      '<div class="badges"><span class="badge platform">'+esc(platformLabel(s.platform_key))+'</span><span class="badge '+esc(s.link_status)+'">'+esc(s.link_status==='linked'&&platformCount>=2?'مجمّع بين '+platformCount+' منصات':(s.link_status==='unlinked'&&previousPartyId?'سبق ربطه':statusLabel(s.link_status)))+'</span></div></div>'+
       (contactLine(s)?'<div class="meta">'+contactLine(s)+'</div>':'')+
       linkedLine+previousLine+
       primaryActions+manualBox+
