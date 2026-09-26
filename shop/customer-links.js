@@ -529,7 +529,7 @@ async function linkSource(sourceId){
   if(!partyId)return msg('اختر العميل الموحد أولًا.','error');
   msg('جاري حفظ الربط…');
   let {data,error}=await adminRpc('admin_customer_link_source_account_manual','workspace_admin_link_source_account_manual',{
-    p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:false,p_reason:null
+    p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:false
   });
   if(error)return msg('تعذر الربط: '+safeError(error),'error');
   if(data?.status==='conflict'){
@@ -540,7 +540,7 @@ async function linkSource(sourceId){
     );
     if(!ok)return msg('لم يتم تغيير الربط.','info');
     ({data,error}=await adminRpc('admin_customer_link_source_account_manual','workspace_admin_link_source_account_manual',{
-      p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:true,p_reason:'نقل الربط من شاشة إدارة ربط العملاء'
+      p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:true
     }));
     if(error)return msg('تعذر نقل الربط: '+safeError(error),'error');
   }
