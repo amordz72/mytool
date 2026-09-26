@@ -9,8 +9,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=v=>String(v??'').trim().toLowerCase();
 
-let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformSignatures=[],identityReviews=[],usageContexts=[],importQueue=[],page=1;
-const USAGE_CONTEXTS=[['flexy','فليكسي'],['games','ألعاب'],['repair','تصليح'],['supplier','مورد']];
+let me=null,sources=[],parties=[],suggestions=[],platforms=[],platformSignatures=[],identityReviews=[],customerServices=[],serviceLinks=[],importQueue=[],page=1;
 let adminMode='none',workspaceToken='';
 let importBusy=false;
 let importMode='build';
@@ -105,7 +104,7 @@ async function adminRpc(ownerName,workspaceName,params={}){
   return supabase.rpc(ownerName,params);
 }
 function saveCache(){
-  const payload={saved_at:Date.now(),sources,parties,suggestions,platforms,platformSignatures,identityReviews};
+  const payload={saved_at:Date.now(),sources,parties,suggestions,platforms,platformSignatures,identityReviews,customerServices,serviceLinks};
   localStorage.setItem(CACHE,JSON.stringify(payload));
   localStorage.setItem(DIRECTORY_CACHE,JSON.stringify({
     saved_at:payload.saved_at,
@@ -120,7 +119,7 @@ function loadCache(){
   try{
     const v=JSON.parse(localStorage.getItem(CACHE)||'null');
     if(!v||!Array.isArray(v.sources)||!Array.isArray(v.parties))return false;
-    sources=v.sources;parties=v.parties;suggestions=Array.isArray(v.suggestions)?v.suggestions:[];platforms=Array.isArray(v.platforms)?v.platforms:[];platformSignatures=Array.isArray(v.platformSignatures)?v.platformSignatures:[];identityReviews=Array.isArray(v.identityReviews)?v.identityReviews:[];
+    sources=v.sources;parties=v.parties;suggestions=Array.isArray(v.suggestions)?v.suggestions:[];platforms=Array.isArray(v.platforms)?v.platforms:[];platformSignatures=Array.isArray(v.platformSignatures)?v.platformSignatures:[];identityReviews=Array.isArray(v.identityReviews)?v.identityReviews:[];customerServices=Array.isArray(v.customerServices)?v.customerServices:[];serviceLinks=Array.isArray(v.serviceLinks)?v.serviceLinks:[];
     renderPlatformControls();renderAll();
     const when=v.saved_at?new Date(v.saved_at).toLocaleString('ar-DZ'):'';
     msg('Offline — تعرض آخر نسخة محفوظة'+(when?' ('+when+')':'')+'.','warn');
@@ -489,11 +488,19 @@ function partyMatrix(p){
     return '<div class="platform-slot"><b>'+esc(pl.display_name)+'</b>'+rows.map(s=>esc(s.display_name||s.username)+' · '+esc(s.username)).join('<br>')+'</div>';
   }).join('')+'</div>';
 }
-function usageContextControls(p){return '<div class="badges" style="margin-top:8px">'+USAGE_CONTEXTS.map(([key,label])=>{const row=usageContexts.find(x=>Number(x.party_id)===Number(p.id)&&x.context_key===key);const on=!!row?.visible;return '<button type="button" class="btn '+(on?'':'secondary')+'" style="width:auto;padding:6px 9px" data-usage-party="'+p.id+'" data-usage-key="'+key+'" data-usage-visible="'+(on?'1':'0')+'">'+esc(label)+(on?' ✓':'')+'</button>'}).join('')+'</div>'}
-async function toggleUsageContext(partyId,key,current){
- const {error}=await adminRpc('admin_customer_set_usage_context','workspace_admin_set_customer_usage_context',{p_party_id:partyId,p_context_key:key,p_visible:!current});
- if(error)return msg('تعذر تعديل مكان الاستخدام: '+safeError(error),'error');
- await load();msg('تم تحديث مكان ظهور العميل.','ok');
+function serviceControls(p){
+  const rows=customerServices.slice().sort((a,b)=>Number(a.sort_order||100)-Number(b.sort_order||100)||String(a.display_name||'').localeCompare(String(b.display_name||''),'ar'));
+  if(!rows.length)return '<div class="meta" style="margin-top:8px">لا توجد خدمات معرفة بعد.</div>';
+  return '<div class="badges" style="margin-top:8px">'+rows.map(s=>{
+    const row=serviceLinks.find(x=>Number(x.party_id)===Number(p.id)&&x.service_code===s.code);
+    const on=!!row?.enabled;
+    return '<button type="button" class="btn '+(on?'':'secondary')+'" style="width:auto;padding:6px 9px" data-service-party="'+p.id+'" data-service-code="'+esc(s.code)+'" data-service-enabled="'+(on?'1':'0')+'">'+esc(s.display_name)+(s.enabled===false?' · متوقفة':'')+(on?' ✓':'')+'</button>';
+  }).join('')+'</div>';
+}
+async function toggleServiceLink(partyId,code,current){
+  const {error}=await adminRpc('admin_customer_set_service_link','workspace_admin_set_customer_service_link',{p_party_id:partyId,p_service_code:code,p_enabled:!current});
+  if(error)return msg('تعذر تعديل خدمات العميل: '+safeError(error),'error');
+  await load();msg('تم تحديث علاقة العميل بالخدمة.','ok');
 }
 function renderParties(){
   if(!parties.length){
@@ -501,13 +508,13 @@ function renderParties(){
     return;
   }
   $('parties').innerHTML=parties.map(p=>'<div class="party-card"><div><b>#'+p.id+' · '+esc(p.display_name)+'</b></div>'+
-    partyMatrix(p)+usageContextControls(p)+
+    partyMatrix(p)+serviceControls(p)+
     '<div class="party-edit"><div class="field"><label>اسم الماستر الثابت</label><input data-party-name="'+p.id+'" value="'+esc(p.display_name)+'" readonly></div>'+
     '<div class="field"><label>الهاتف</label><input data-party-phone="'+p.id+'" value="'+esc(p.primary_phone||'')+'" inputmode="tel"></div>'+
     '<div class="field"><label>البريد</label><input data-party-email="'+p.id+'" value="'+esc(p.primary_email||'')+'" inputmode="email"></div>'+
     '<button class="btn secondary" data-party-save="'+p.id+'" type="button">حفظ</button></div></div>').join('');
   document.querySelectorAll('[data-party-save]').forEach(b=>b.onclick=()=>saveParty(Number(b.dataset.partySave)));
-  document.querySelectorAll('[data-usage-party]').forEach(b=>b.onclick=()=>toggleUsageContext(Number(b.dataset.usageParty),b.dataset.usageKey,b.dataset.usageVisible==='1'));
+  document.querySelectorAll('[data-service-party]').forEach(b=>b.onclick=()=>toggleServiceLink(Number(b.dataset.serviceParty),b.dataset.serviceCode,b.dataset.serviceEnabled==='1'));
 }
 function updateSourceVisibilityButton(){
   const b=$('showAllSourcesBtn');if(!b)return;
@@ -587,22 +594,24 @@ async function load(){
     return;
   }
   msg('جاري تحميل دليل الربط…');
-  const [a,b,c,d,e,f]=await Promise.all([
+  const [a,b,c,d,e,f,g]=await Promise.all([
     adminRpc('admin_customer_list_linking','workspace_admin_list_customer_linking'),
     adminRpc('admin_customer_list_link_suggestions','workspace_admin_list_link_suggestions',{p_status:null}),
     adminRpc('admin_customer_list_platforms','workspace_admin_list_platforms'),
     adminRpc('admin_customer_list_identity_reviews','workspace_admin_list_identity_reviews'),
     adminRpc('admin_customer_list_schema_signatures','workspace_admin_list_schema_signatures'),
-    adminRpc('admin_customer_list_usage_contexts','workspace_admin_list_customer_usage_contexts')
+    adminRpc('admin_customer_list_services','workspace_admin_list_customer_services'),
+    adminRpc('admin_customer_list_service_links','workspace_admin_list_customer_service_links')
   ]);
-  if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;if(d.error)throw d.error;if(e.error)throw e.error;if(f.error)console.warn('usage contexts unavailable:',safeError(f.error));
+  if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;if(d.error)throw d.error;if(e.error)throw e.error;if(f.error)throw f.error;if(g.error)throw g.error;
   sources=Array.isArray(a.data?.sources)?a.data.sources:[];
   parties=(Array.isArray(a.data?.parties)?a.data.parties:[]).filter(p=>p.party_type!=='system');
   suggestions=Array.isArray(b.data)?b.data:[];
   platforms=Array.isArray(c.data)?c.data:[];
   identityReviews=Array.isArray(d.data)?d.data:[];
   platformSignatures=Array.isArray(e.data)?e.data:[];
-  usageContexts=Array.isArray(f.data)?f.data:[];
+  customerServices=Array.isArray(f.data)?f.data:[];
+  serviceLinks=Array.isArray(g.data)?g.data:[];
   renderPlatformControls();saveCache();renderAll();
   msg('تم تحديث دليل العملاء والروابط.','ok');
 }
