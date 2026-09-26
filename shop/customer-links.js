@@ -597,7 +597,7 @@ async function load(){
   ]);
   if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;if(d.error)throw d.error;if(e.error)throw e.error;if(f.error)console.warn('usage contexts unavailable:',safeError(f.error));
   sources=Array.isArray(a.data?.sources)?a.data.sources:[];
-  parties=Array.isArray(a.data?.parties)?a.data.parties:[];
+  parties=(Array.isArray(a.data?.parties)?a.data.parties:[]).filter(p=>p.party_type!=='system');
   suggestions=Array.isArray(b.data)?b.data:[];
   platforms=Array.isArray(c.data)?c.data:[];
   identityReviews=Array.isArray(d.data)?d.data:[];
