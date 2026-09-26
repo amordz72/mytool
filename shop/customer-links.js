@@ -268,7 +268,7 @@ function renderSources(){
     const unlink=s.link_status==='linked'&&s.link_id
       ? '<button class="btn danger" data-unlink="'+s.link_id+'" data-source="'+s.id+'" type="button">إلغاء الربط</button>'
       : '';
-    const manualBox='<div class="link-controls" data-manual-link-box="'+s.id+'" hidden><div class="field"><label>اختر العميل الموحد</label><select data-party-select="'+s.id+'">'+partyOptions(s.linked_party_id)+'</select></div><button class="btn secondary" data-link="'+s.id+'" type="button">حفظ الربط</button></div>';
+    const manualBox='<div class="link-controls" data-manual-link-box="'+s.id+'" hidden><div class="field"><label>اختر الـMaster — مسموح حتى بدون تطابق</label><select data-party-select="'+s.id+'">'+partyOptions(s.linked_party_id)+'</select><div class="meta">الربط اليدوي يثبت الحساب تحت هذا الـMaster، وما يتعلمه النظام منه يُستخدم لاحقًا كمرشح فقط.</div></div><button class="btn secondary" data-link="'+s.id+'" type="button">حفظ الربط اليدوي</button></div>';
     const primaryActions=s.link_status==='linked'
       ? '<div class="actions"><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">تغيير الربط يدويًا</button>'+unlink+'</div>'
       : '<div class="actions"><button class="btn" data-create-source="'+s.id+'" type="button">إنشاء كعميل جديد</button><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">ربط يدوي</button></div>';
@@ -299,7 +299,7 @@ function renderSources(){
 }
 function reasonHtml(r){
   if(!r||typeof r!=='object')return '';
-  const labels={phone:'نفس الهاتف',email:'نفس البريد',username:'نفس المستخدم',username_loose:'مستخدم متشابه',email_loose:'بريد متشابه',phone_near:'هاتف قريب',near_phone:'هاتف قريب',person_name_close:'اسم الشخص متشابه',name_close:'اسم قديم ملغى',identity_history:'هوية سابقة مشتركة',smart_similarity:'تشابه ذكي',exact_identity_conflict:'تعارض هوية قوي'};
+  const labels={phone:'نفس الهاتف',email:'نفس البريد',username:'نفس المستخدم',external_id:'نفس معرف المصدر',username_loose:'مستخدم متشابه',email_loose:'بريد متشابه',phone_near:'هاتف قريب',near_phone:'هاتف قريب',person_name_close:'اسم الشخص متشابه',name_close:'اسم قديم ملغى',identity_history:'هوية سابقة مشتركة',manual_identity_candidate:'هوية تعلّمناها من ربط يدوي',multiple_master_candidates:'نفس الهوية تقود لأكثر من Master',smart_similarity:'تشابه ذكي',exact_identity_conflict:'تعارض هوية قوي'};
   return Object.keys(r).filter(k=>r[k]!==false&&r[k]!=null).map(k=>'<span class="reason">'+esc(labels[k]||k)+'</span>').join('');
 }
 function suggestionSide(prefix,s){
@@ -490,7 +490,7 @@ async function mergeSelectedSources(){
   if(!ok)return;
 
   $('mergeSelected').disabled=true;
-  const {data,error}=await adminRpc('admin_customer_merge_selected_sources','workspace_admin_merge_selected_sources',{
+  const {data,error}=await adminRpc('admin_customer_merge_selected_sources_manual','workspace_admin_merge_selected_sources_manual',{
     p_source_account_ids:ids,
     p_target_party_id:target
   });
@@ -528,7 +528,7 @@ async function linkSource(sourceId){
   const partyId=Number(sel?.value||0);
   if(!partyId)return msg('اختر العميل الموحد أولًا.','error');
   msg('جاري حفظ الربط…');
-  let {data,error}=await adminRpc('admin_customer_link_source_account_safe','workspace_admin_link_source_account_safe',{
+  let {data,error}=await adminRpc('admin_customer_link_source_account_manual','workspace_admin_link_source_account_manual',{
     p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:false,p_reason:null
   });
   if(error)return msg('تعذر الربط: '+safeError(error),'error');
@@ -539,12 +539,15 @@ async function linkSource(sourceId){
       'فك ونقل الربط'
     );
     if(!ok)return msg('لم يتم تغيير الربط.','info');
-    ({data,error}=await adminRpc('admin_customer_link_source_account_safe','workspace_admin_link_source_account_safe',{
+    ({data,error}=await adminRpc('admin_customer_link_source_account_manual','workspace_admin_link_source_account_manual',{
       p_source_account_id:sourceId,p_party_id:partyId,p_allow_move:true,p_reason:'نقل الربط من شاشة إدارة ربط العملاء'
     }));
     if(error)return msg('تعذر نقل الربط: '+safeError(error),'error');
   }
-  await load();msg('تم حفظ الربط.','ok');
+  await generateSuggestions({silent:true});
+  await load();
+  const learned=Number(data?.learned_candidate_identities||0);
+  msg('تم حفظ الربط اليدوي.'+(learned?' تعلّم النظام '+learned+' هوية للترشيح فقط.':''),'ok');
 }
 async function createFromSource(sourceId){
   if(!navigator.onLine)return msg('إنشاء العميل يحتاج اتصالًا.','warn');
@@ -595,17 +598,35 @@ async function generateSuggestions({silent=false}={}){
   if(!navigator.onLine)return null;
   if($('smartBtn'))$('smartBtn').disabled=true;
   if(!silent)msg('جاري البحث عن اقتراحات للمراجعة…');
-  const {data,error}=await adminRpc('admin_customer_generate_link_suggestions','workspace_admin_generate_link_suggestions');
-  if($('smartBtn'))$('smartBtn').disabled=false;
-  if(error){
-    if(!silent)msg('تعذر فحص الروابط: '+safeError(error),'error');
+
+  const base=await adminRpc('admin_customer_generate_link_suggestions','workspace_admin_generate_link_suggestions');
+  if(base.error){
+    if($('smartBtn'))$('smartBtn').disabled=false;
+    if(!silent)msg('تعذر فحص الروابط: '+safeError(base.error),'error');
     return null;
   }
+
+  const learned=await adminRpc(
+    'admin_customer_generate_manual_identity_suggestions',
+    'workspace_admin_generate_manual_identity_suggestions'
+  );
+  if($('smartBtn'))$('smartBtn').disabled=false;
+  if(learned.error){
+    if(!silent)msg('تم الفحص الأساسي لكن تعذر فحص الهويات المتعلّمة: '+safeError(learned.error),'warn');
+    return base.data;
+  }
+
+  const result={
+    ...(base.data||{}),
+    pending:Math.max(Number(base.data?.pending||0),Number(learned.data?.pending||0)),
+    learned_candidates:Number(learned.data?.processed||0)
+  };
+
   if(!silent){
     await load();
-    msg('تم الفحص: '+Number(data?.pending||0)+' اقتراح للمراجعة، '+Number(data?.conflicts||0)+' تعارض. لا يوجد دمج تلقائي من الواجهة.','ok');
+    msg('تم الفحص: '+Number(result.pending||0)+' اقتراح للمراجعة، '+Number(result.conflicts||0)+' تعارض، ومنها '+Number(result.learned_candidates||0)+' مرشح من معرفة ربط يدوي. لا يوجد دمج تلقائي من هذه المعرفة.','ok');
   }
-  return data;
+  return result;
 }
 function parseCsv(text){
   const rows=[];let row=[],field='',quoted=false;
