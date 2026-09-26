@@ -58,8 +58,8 @@ dialog{border:0;border-radius:18px;padding:0;width:min(94vw,560px);box-shadow:0 
           <option value="unknown_exception">مصدر مجهول — استثناء</option>
         </select>
       </div>
-      <div class="field"><label>اسم / وصف المصدر</label><input id="sourceLabel" placeholder="مثال: وفرلي، Digital Home، مرتجع عميل"></div>
-      <div class="field"><label>مرجع الدفعة أو اسم الملف</label><input id="sourceReference" placeholder="اختياري"></div>
+      <div class="field"><label>اسم / وصف المصدر</label><input id="sourceLabel" list="platformSourceList" placeholder="مثال: وفرلي، Digital Home، مرتجع عميل"></div>
+      <datalist id="platformSourceList"></datalist><div class="field"><label>مرجع الدفعة أو اسم الملف</label><input id="sourceReference" placeholder="اختياري"></div>
       <div class="field full"><label>ملاحظة</label><input id="note" placeholder="اختياري؛ إلزامي عمليًا إذا كانت الحالة استثنائية"></div>
       <div class="field full">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t);cursor:pointer">
@@ -123,7 +123,7 @@ dialog{border:0;border-radius:18px;padding:0;width:min(94vw,560px);box-shadow:0 
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
 const $=id=>document.getElementById(id),DRAFT_KEY='mytool.cards.masterStockDraft.v1';
-let types=[],currentTaken=null,currentTakenRisk=false,importMethod='manual';
+let types=[],platformSources=[],currentTaken=null,currentTakenRisk=false,importMethod='manual';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const statusName=s=>({available:'متاحة',reserved:'محجوزة',review:'مراجعة',used:'مستعملة',invalid:'غير صالحة',transferred:'منقولة لتغذية SAMA'}[s]||s);
 const sourceName=s=>({supplier:'مورد',platform:'منصة',customer_return:'مرتجع عميل',internal:'داخلي',unknown_exception:'مصدر مجهول'}[s]||s);
@@ -133,6 +133,17 @@ function parseRows(){
     const comma=line.indexOf(',')>=0?line.indexOf(','):line.indexOf('،');
     return comma<0?{code:line,serial:null}:{code:line.slice(0,comma).trim(),serial:line.slice(comma+1).trim()||null};
   });
+}
+async function loadPlatformSources(){
+  const {data,error}=await supabase.rpc('card_stock_admin_platform_sources');
+  if(error)throw error;
+  platformSources=Array.isArray(data)?data:[];
+  const list=$('platformSourceList');if(list)list.innerHTML=platformSources.map(p=>'<option value="'+esc(p.display_name)+'"></option>').join('');
+}
+function validatePlatformSource(errors){
+  if($('sourceKind').value!=='platform')return;
+  const value=$('sourceLabel').value.trim();
+  if(!platformSources.some(p=>p.display_name===value))errors.push('اختر منصة رسمية من Master المنصات.');
 }
 function selectedType(){return types.find(x=>x.type_key===$('type').value)}
 function codeLooksValid(t,code){
@@ -163,7 +174,7 @@ function localCheck(show=true){
     });
     if(['mobilis','idoom'].includes(t.type_key)&&!$('denomination').value.trim())errors.push('الفئة/القيمة مطلوبة لهذا النوع.');
   }
-  if(!$('sourceLabel').value.trim())errors.push('اكتب وصف المصدر.');
+  if(!$('sourceLabel').value.trim())errors.push('اكتب وصف المصدر.');validatePlatformSource(errors);
   if(['customer_return','unknown_exception'].includes($('sourceKind').value)&&!($('note').value.trim()||$('sourceLabel').value.trim()))errors.push('اكتب وصفًا واضحًا للحالة الاستثنائية.');
   $('preview').textContent=rows.length+' بطاقة'+(errors.length?' • '+errors.length+' ملاحظة':' • جاهزة للفحص');
   if(show)setStatus(errors.length?errors.slice(0,4).join(' — '):'الفحص المحلي سليم. الخادم سيعيد التحقق قبل الحفظ.',errors.length>0);
@@ -171,6 +182,7 @@ function localCheck(show=true){
 }
 function updateException(){
   $('exceptionNote').hidden=!['customer_return','unknown_exception'].includes($('sourceKind').value);
+  if($('sourceKind').value==='platform'){$('sourceLabel').placeholder='اختر منصة من Master المنصات';}
 }
 function updateLegacy(){
   $('legacyNote').hidden=!$('legacyUncertain').checked;
@@ -299,7 +311,7 @@ $('copySecret').onclick=async()=>{await navigator.clipboard.writeText($('secretC
 $('finishUsed').onclick=()=>finish('used');$('finishReturn').onclick=()=>finish(currentTakenRisk?'review':'available');$('finishReview').onclick=()=>finish('review');
 try{
   const {data:sess}=await supabase.auth.getSession();if(!sess?.session)throw new Error('سجّل دخول الإدارة أولًا.');
-  await loadTypes();applyDraft();updateException();updateLegacy();await refreshAll();
+  await Promise.all([loadTypes(),loadPlatformSources()]);applyDraft();updateException();updateLegacy();await refreshAll();
 }catch(e){setStatus(e.message||'تعذر فتح المخزون الرئيسي.',true);$('items').innerHTML='<div class="empty">تعذر تحميل البيانات.</div>'}
 </script>
 </body>
