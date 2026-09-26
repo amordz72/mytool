@@ -163,9 +163,9 @@ function searchNorm(v){
 function partyById(id){return parties.find(p=>Number(p.id)===Number(id))||null}
 function masterCode(p){
   if(!p)return '';
-  const uid=String(p.mt_uid||'').trim();
-  if(uid)return uid;
   if(p.mt_number!=null&&String(p.mt_number)!=='')return 'MT-'+String(p.mt_number).padStart(6,'0');
+  const uid=String(p.mt_uid||'').trim();
+  if(uid)return uid.replace(/^MT-V\\d+-/i,'MT-');
   return 'Master #'+p.id;
 }
 function partyLinkedSources(partyId){
@@ -384,6 +384,11 @@ function renderSources(){
           ? 'مجمّع بين '+platformCount+' منصات تحت العميل «'+esc(s.linked_party_name||('عميل #'+s.linked_party_id))+'» · '+linkedCount+' حسابات'
           : 'مسجل في MyTool فقط: '+esc(s.linked_party_name||('عميل #'+s.linked_party_id)))+'</div>'
       : '';
+    const previousPartyId=Number(s.previous_party_id||0);
+    const previousPartyName=s.previous_party_name||('عميل #'+previousPartyId);
+    const previousLine=s.link_status!=='linked'&&previousPartyId
+      ? '<div class="linked-line">سبق ربط هذا الحساب بـ «'+esc(previousPartyName)+'».</div>'
+      : '';
     const unlink=s.link_status==='linked'&&s.link_id
       ? '<button class="btn danger" data-unlink="'+s.link_id+'" data-source="'+s.id+'" type="button">إلغاء الربط</button>'
       : '';
@@ -392,13 +397,15 @@ function renderSources(){
     const manualBox='<div class="link-controls" data-manual-link-box="'+s.id+'" hidden><div class="field manual-party-field"><label>اختر الـMaster — مسموح حتى بدون تطابق</label><button class="party-picker-trigger" data-pick-party="'+s.id+'" type="button">'+partyChoiceMarkup(chosenParty)+'</button><div class="meta">الربط اليدوي يثبت الحساب تحت هذا الـMaster، وما يتعلمه النظام منه يُستخدم لاحقًا كمرشح فقط.</div></div><button class="btn secondary manual-link-save" data-link="'+s.id+'" type="button">حفظ الربط اليدوي</button></div>';
     const primaryActions=s.link_status==='linked'
       ? '<div class="actions"><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">تغيير الربط يدويًا</button>'+unlink+'</div>'
-      : '<div class="actions"><button class="btn" data-create-source="'+s.id+'" type="button">إنشاء كعميل جديد</button><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">ربط يدوي</button></div>';
+      : previousPartyId
+        ? '<div class="actions"><button class="btn" data-relink-source="'+s.id+'" type="button">إعادة الربط</button><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">ربط بعميل آخر</button><button class="btn secondary" data-create-source="'+s.id+'" type="button">إنشاء كعميل جديد</button></div>'
+        : '<div class="actions"><button class="btn" data-create-source="'+s.id+'" type="button">إنشاء كعميل جديد</button><button class="btn secondary" data-show-manual-link="'+s.id+'" type="button">ربط يدوي</button></div>';
     const checked=selectedSources.has(Number(s.id));
     return '<div class="source-card'+(checked?' selected':'')+'" data-source-card="'+s.id+'">'+
       '<div class="source-top"><label class="source-select"><input type="checkbox" data-select-source="'+s.id+'" '+(checked?'checked':'')+'><span><div class="name">'+esc(name)+'</div><div class="username">'+esc(s.username)+'</div></span></label>'+
       '<div class="badges"><span class="badge platform">'+esc(platformLabel(s.platform_key))+'</span><span class="badge '+esc(s.link_status)+'">'+esc(s.link_status==='linked'&&platformCount>=2?'مجمّع بين '+platformCount+' منصات':statusLabel(s.link_status))+'</span></div></div>'+
       (contactLine(s)?'<div class="meta">'+contactLine(s)+'</div>':'')+
-      linkedLine+
+      linkedLine+previousLine+
       primaryActions+manualBox+
       '</div>';
   }).join('');
@@ -416,6 +423,7 @@ function renderSources(){
   });
   document.querySelectorAll('[data-pick-party]').forEach(b=>b.onclick=()=>openPartyPicker(Number(b.dataset.pickParty)));
   document.querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>linkSource(Number(b.dataset.link)));
+  document.querySelectorAll('[data-relink-source]').forEach(b=>b.onclick=()=>relinkSource(Number(b.dataset.relinkSource)));
   document.querySelectorAll('[data-create-source]').forEach(b=>b.onclick=()=>createFromSource(Number(b.dataset.createSource)));
   document.querySelectorAll('[data-unlink]').forEach(b=>b.onclick=()=>unlinkSource(Number(b.dataset.unlink),Number(b.dataset.source)));
 }
@@ -644,6 +652,45 @@ async function autoLinkExact(platform=null){
     return {linked:0,unmatched:0,error:safeError(error)};
   }
   return data;
+}
+
+async function relinkSource(sourceId){
+  if(!navigator.onLine)return msg('إعادة الربط تحتاج اتصالًا.','warn');
+  const source=sources.find(x=>Number(x.id)===Number(sourceId));
+  const previousPartyId=Number(source?.previous_party_id||0);
+  const previousPartyName=source?.previous_party_name||('عميل #'+previousPartyId);
+  if(!previousPartyId)return msg('لا توجد علاقة سابقة صالحة لإعادة الربط.','warn');
+
+  const ok=await askConfirm(
+    'إعادة الربط',
+    'إعادة الحساب «'+(source?.display_name||source?.username||'الحساب')+'» إلى «'+previousPartyName+'»؟',
+    'إعادة الربط'
+  );
+  if(!ok)return;
+
+  msg('جاري إعادة الربط…');
+  const {data,error}=await adminRpc(
+    'admin_customer_relink_previous',
+    'workspace_admin_customer_relink_previous',
+    {p_source_account_id:sourceId}
+  );
+  if(error)return msg('تعذر إعادة الربط: '+safeError(error),'error');
+
+  if(data?.status==='no_previous_link'){
+    await load();
+    return msg('لم تعد هناك علاقة سابقة صالحة لهذا الحساب.','warn');
+  }
+  if(data?.status==='already_linked'){
+    await load();
+    return msg('الحساب مربوط بالفعل. تم تحديث الصفحة.','info');
+  }
+  if(data?.status!=='linked'){
+    await load();
+    return msg('تعذر إعادة الربط تلقائيًا. راجع الربط الحالي.','warn');
+  }
+
+  await load();
+  msg('تمت إعادة الربط مع «'+(data?.party_name||previousPartyName)+'».','ok');
 }
 
 async function linkSource(sourceId){
