@@ -234,6 +234,10 @@
         :'أدخل بيانات البيع. إذا كان الطلب قادمًا من صندوق الطلبات ستتعبأ الحقول تلقائيًا.'
       setTimeout(()=>$('digitalPrice')?.focus(),60)
     }
+    renderDigitalCustomerList()
+    const currentId=currentCustomerPartyId()
+    if(currentId&&!customerAllowedForService(currentId))setCustomerLinkedState(null,$('digitalCustomer')?.value.trim()||'','operation_filter')
+    renderCustomerSuggestions(saleHandoff)
     closeOperationPicker()
   }
   function setDigitalValue(id,value){
@@ -245,11 +249,21 @@
       .replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')
       .replace(/[^\p{L}\p{N}]+/gu,' ').replace(/\s+/g,' ').trim()
   }
+  function relevantCustomerServiceCodes(serviceCode=''){
+    const explicit=String(serviceCode||$('digitalServiceCode')?.value||'').trim().toUpperCase()
+    if(explicit)return [explicit]
+    if(selectedOperationType==='external_flexy'){
+      return state.digitalServices.filter(s=>s.enabled!==false&&s.action_kind==='flexy').map(s=>String(s.code||'').toUpperCase()).filter(Boolean)
+    }
+    if(selectedOperationType==='game'){
+      return state.digitalServices.filter(s=>s.enabled!==false&&s.destination_kind==='player_id').map(s=>String(s.code||'').toUpperCase()).filter(Boolean)
+    }
+    return []
+  }
   function customerAllowedForService(partyId,serviceCode){
-    const code=String(serviceCode||$('digitalServiceCode')?.value||'').trim().toUpperCase()
-    if(!code)return true
-    const row=state.customerServiceLinks.find(x=>Number(x.party_id)===Number(partyId)&&String(x.service_code||'').toUpperCase()===code)
-    return !!row?.enabled
+    const codes=relevantCustomerServiceCodes(serviceCode)
+    if(!codes.length)return true
+    return codes.some(code=>state.customerServiceLinks.some(x=>Number(x.party_id)===Number(partyId)&&String(x.service_code||'').toUpperCase()===code&&x.enabled))
   }
   function customerByTypedName(value){
     const key=customerKey(value);if(!key)return null
@@ -424,7 +438,7 @@
   }
   async function loadDigitalServices(){
     if(state.mode!=='admin')return
-    const {data,error}=await supabase.from('mytool_service_catalog').select('code,display_name,aliases,enabled').order('sort_order').order('code')
+    const {data,error}=await supabase.from('mytool_service_catalog').select('code,display_name,aliases,enabled,action_kind,destination_kind,sort_order').order('sort_order').order('code')
     if(error)return
     state.digitalServices=data||[]
     renderDigitalServiceList()
