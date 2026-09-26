@@ -49,8 +49,8 @@
             <option value="unknown_exception">مصدر غير معروف</option>
           </select>
         </div>
-        <div class="field"><label>اسم / وصف المصدر</label><input id="sourceLabel" placeholder="مثال: علاء الدين / Hani Rouhek / ملف قديم"></div>
-        <div class="field"><label>مرجع الدفعة — اختياري</label><input id="sourceReference" placeholder="رقم فاتورة / اسم ملف / تاريخ"></div>
+        <div class="field"><label>اسم / وصف المصدر</label><input id="sourceLabel" list="platformSourceList" placeholder="مثال: علاء الدين / Hani Rouhek / ملف قديم"></div>
+        <datalist id="platformSourceList"></datalist><div class="field"><label>مرجع الدفعة — اختياري</label><input id="sourceReference" placeholder="رقم فاتورة / اسم ملف / تاريخ"></div>
         <div class="field"><label>اسم المنتج — اختياري</label><input id="productLabel" placeholder="Mobilis 1000 / Free Fire ..."></div>
         <div class="field full"><label>رفع ملف TXT / CSV / XLSX</label><input id="file" type="file" accept=".txt,.csv,.xlsx,.xls,text/plain,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
         <div class="field full"><label>أو الصق البطاقات يدويًا — كل سطر Code أو Code,Serial</label><textarea id="rows" placeholder="123456789012345&#10;123456789012346,998877"></textarea></div>
@@ -91,7 +91,7 @@ import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
 const supabase=createClient('https://wqyebqzbbpohbnznqdjj.supabase.co','sb_publishable_gO4umNBMJ0AWRk19HtKd7A_9X4DibYj');
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let types=[],fileRows=[],fileName='';
+let types=[],platformSources=[],fileRows=[],fileName='';
 
 function setStatus(text,kind='ok'){$('status').className='status '+kind;$('status').textContent=text}
 function normalizeRows(rows){
@@ -140,7 +140,7 @@ function validate(){
   const rows=allRows(),t=selectedType(),errors=[];
   if(!t)errors.push('اختر نوع البطاقة.');
   if(!rows.length)errors.push('لا توجد بطاقات.');
-  if(!$('sourceLabel').value.trim())errors.push('اكتب المصدر.');
+  if(!$('sourceLabel').value.trim())errors.push('اكتب المصدر.');validatePlatformSource(errors);
   if(t){
     rows.forEach((r,i)=>{
       if(!codeLooksValid(t,r.code))errors.push('السطر '+(i+1)+' كوده غير مطابق.');
@@ -177,6 +177,18 @@ async function parseFile(file){
     return {code:parts[0]||'',serial:parts[1]||''};
   }));
 }
+async function loadPlatformSources(){
+  const {data,error}=await supabase.rpc('card_stock_admin_platform_sources');
+  if(error)throw error;
+  platformSources=Array.isArray(data)?data:[];
+  const list=$('platformSourceList');if(list)list.innerHTML=platformSources.map(p=>'<option value="'+esc(p.display_name)+'"></option>').join('');
+}
+function validatePlatformSource(errors){
+  if($('sourceKind').value!=='platform')return;
+  const value=$('sourceLabel').value.trim();
+  if(!platformSources.some(p=>p.display_name===value))errors.push('اختر منصة رسمية من Master المنصات.');
+}
+function updateSourceMode(){if($('sourceKind').value==='platform')$('sourceLabel').placeholder='اختر منصة من Master المنصات';}
 async function loadTypes(){
   const {data,error}=await supabase.from('card_stock_types').select('*').eq('active',true).order('family').order('name');
   if(error)throw error;
@@ -217,14 +229,14 @@ async function save(){
 $('file').onchange=async()=>{
   const f=$('file').files?.[0];fileRows=f?await parseFile(f):[];renderPreview();
 };
-$('rows').oninput=renderPreview;
+$('sourceKind').onchange=updateSourceMode;$('rows').oninput=renderPreview;
 $('legacy').onchange=()=>{$('legacyNote').hidden=!$('legacy').checked};
 $('check').onclick=validate;
 $('save').onclick=save;
 try{
   const {data:sess}=await supabase.auth.getSession();
   if(!sess?.session)throw new Error('سجّل دخول الإدارة أولًا.');
-  await loadTypes();renderPreview();await loadBatches();
+  await Promise.all([loadTypes(),loadPlatformSources()]);updateSourceMode();renderPreview();await loadBatches();
 }catch(e){setStatus(e.message||'تعذر فتح الصفحة.','bad')}
 </script>
 </body>
