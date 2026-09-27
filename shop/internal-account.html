@@ -405,6 +405,13 @@ function renderDraftSales(){
   }))
   updateTotal()
 }
+function draftItemKey(line){
+  const pid=Number(line?.product_id||0)
+  if(pid)return 'product:'+pid
+  const name=String(line?.name||'').trim().toLowerCase().replace(/\s+/g,' ')
+  return 'new:'+(line?.item_type||'product')+':'+name
+}
+
 function commitEditor(){
   const line=state.editor||blankEditor()
   const product=state.products.find(p=>Number(p.id)===Number(line.product_id))
@@ -423,8 +430,20 @@ function commitEditor(){
     unit_price:price
   }
 
-  if(state.editingKey==null)state.lines.push(saved)
-  else state.lines=state.lines.map(x=>x.key===state.editingKey?saved:x)
+  const duplicate=state.lines.find(x=>
+    x.key!==state.editingKey && draftItemKey(x)===draftItemKey(saved)
+  )
+
+  if(duplicate){
+    duplicate.quantity=Math.max(1,Number(duplicate.quantity)||1)+quantity
+    if(state.editingKey!=null){
+      state.lines=state.lines.filter(x=>x.key!==state.editingKey)
+    }
+  }else if(state.editingKey==null){
+    state.lines.push(saved)
+  }else{
+    state.lines=state.lines.map(x=>x.key===state.editingKey?saved:x)
+  }
 
   state.editingKey=null
   state.editor=blankEditor()
