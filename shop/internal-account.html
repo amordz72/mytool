@@ -116,8 +116,9 @@
             </div>
             <div class="row">
               <div class="field"><label>المستلم</label><input id="paymentReceiver" list="partyList" autocomplete="off" placeholder="اختياري"></div>
-              <div class="field"><label>ملاحظة</label><input id="paymentNote" placeholder="مثال: دفعة على الحساب"></div>
+              <div class="field"><label>مكان المال بعد الاستلام</label><select id="paymentMoneyAccount"><option value="">تحصيلات الفرع — افتراضي</option></select><div class="muted" style="margin-top:5px">حدد أين أصبح المال فعليًا: الكيس، الخزنة أو عند شخص.</div></div>
             </div>
+            <div class="field"><label>ملاحظة</label><input id="paymentNote" placeholder="مثال: دفعة على الحساب"></div>
               <div class="actions"><button id="savePayment" class="btn secondary" type="button">تسجيل الدفعة</button></div>
               <div id="paymentResult" class="message hidden"></div>
             </div>
@@ -583,10 +584,20 @@ async function loadBase(){
 function updateMoneyAccounts(){
   const bid=currentBranchId()
   const rows=state.cashPlaces.filter(p=>p.branch_id==null||Number(p.branch_id)===bid)
-  $('moneyAccount').innerHTML='<option value="">تحصيلات الفرع — افتراضي</option>'+rows.map(p=>{
+  const options='<option value="">تحصيلات الفرع — افتراضي</option>'+rows.map(p=>{
     const kind=p.party_id?'شخص':p.place_type==='shop_bag'?'كيس':p.place_type==='reserve'?'خزنة':'مكان مال'
     return '<option value="'+p.account_id+'">'+esc(p.name)+' — '+esc(kind)+'</option>'
   }).join('')
+  const operationValue=$('moneyAccount')?.value||''
+  const paymentValue=$('paymentMoneyAccount')?.value||''
+  if($('moneyAccount')){
+    $('moneyAccount').innerHTML=options
+    if([...$('moneyAccount').options].some(o=>o.value===operationValue))$('moneyAccount').value=operationValue
+  }
+  if($('paymentMoneyAccount')){
+    $('paymentMoneyAccount').innerHTML=options
+    if([...$('paymentMoneyAccount').options].some(o=>o.value===paymentValue))$('paymentMoneyAccount').value=paymentValue
+  }
 }
 
 async function selectParty(p){
@@ -705,7 +716,7 @@ async function savePayment(){
     p_branch_id:currentBranchId(),
     p_actual_payer_party_id:payer?.id||null,
     p_received_by_party_id:receiver?.id||null,
-    p_to_account_id:Number($('moneyAccount').value||0)||null,
+    p_to_account_id:Number($('paymentMoneyAccount').value||0)||null,
     p_notes:$('paymentNote').value.trim()||null,
     p_operation_at:new Date().toISOString()
   })
