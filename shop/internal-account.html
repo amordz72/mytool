@@ -20,7 +20,7 @@
     .btn{border:0;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;font-weight:900;cursor:pointer}
     .btn.secondary{background:#fff;color:var(--main);border:1px solid var(--main)}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}.btn:disabled{opacity:.55;cursor:not-allowed}
     .message{padding:10px 12px;border-radius:12px;margin-bottom:10px;font-size:12px;font-weight:800}.message.info{background:#eff6ff;color:#1d4ed8}.message.ok{background:#ecfdf5;color:var(--ok)}.message.warn{background:#fff7ed;color:#9a3412}.message.error{background:#fff1f2;color:var(--danger)}
-    .party-summary{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.party-results{display:grid;gap:6px;margin-top:7px;max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px;background:#fff}.party-result{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;background:#fff;border:1px solid #eef2f7;padding:10px 11px;border-radius:10px;cursor:pointer}.party-result strong{font-size:14px}.party-result small{display:block;color:var(--muted);margin-top:3px}.party-count{margin-top:6px;color:var(--muted);font-size:11px;font-weight:800}.balance{font-size:28px;font-weight:950}.balance.due{color:#b91c1c}.balance.credit{color:#047857}.balance.zero{color:#475569}
+    .party-summary{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.party-results{display:grid;gap:6px;margin-top:7px;max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px;background:#fff}.catalog-results{display:grid;gap:5px;margin-top:6px;max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:5px;background:#fff}.catalog-result{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;background:#fff;border:1px solid #eef2f7;padding:9px 10px;border-radius:9px;cursor:pointer}.catalog-result small{display:block;color:var(--muted);margin-top:2px}.party-result{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;background:#fff;border:1px solid #eef2f7;padding:10px 11px;border-radius:10px;cursor:pointer}.party-result strong{font-size:14px}.party-result small{display:block;color:var(--muted);margin-top:3px}.party-count{margin-top:6px;color:var(--muted);font-size:11px;font-weight:800}.balance{font-size:28px;font-weight:950}.balance.due{color:#b91c1c}.balance.credit{color:#047857}.balance.zero{color:#475569}
     .lines{display:grid;gap:8px;margin-top:12px}.op-line{display:grid;grid-template-columns:1.7fr .8fr .7fr .8fr auto;gap:7px;align-items:end;padding:10px;border:1px solid var(--line);border-radius:14px;background:#fafafa}
     .op-line button{width:42px;height:42px;padding:0}.line-kind{font-size:11px;color:var(--muted);font-weight:800}.total-box{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:13px;background:#f0fdfa;border:1px solid #99f6e4;margin-top:10px}.total-box strong{font-size:22px}
     .actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.actions button{width:auto}
@@ -207,6 +207,44 @@ function findProductByInput(value){
   const v=String(value||'').trim().toLowerCase()
   return state.products.find(p=>p.label.toLowerCase()===v)||state.products.find(p=>p.name.toLowerCase()===v)||null
 }
+function catalogSearchText(p){
+  return [p.name,p.item_type==='service'?'خدمة':'منتج',p.label].join(' ').toLowerCase()
+}
+function renderCatalogResults(row,line,query=''){
+  const root=row.querySelector('.catalog-results')
+  const q=String(query||'').trim().toLowerCase()
+  const rows=(q
+    ? state.products.filter(p=>catalogSearchText(p).includes(q))
+    : state.products
+  ).slice(0,30)
+
+  if(!rows.length){
+    root.innerHTML='<div class="empty">لا يوجد مطابق. يمكنك حفظه كعنصر جديد.</div>'
+    root.classList.remove('hidden')
+    return
+  }
+
+  root.innerHTML=rows.map(p=>
+    '<button type="button" class="catalog-result" data-product-id="'+p.id+'">'
+      +'<span><strong>'+esc(p.name)+'</strong><small>'+(p.item_type==='service'?'خدمة':'منتج')+'</small></span>'
+      +'<span>‹</span>'
+    +'</button>'
+  ).join('')
+
+  root.querySelectorAll('.catalog-result').forEach(btn=>btn.addEventListener('click',()=>{
+    const p=state.products.find(x=>Number(x.id)===Number(btn.dataset.productId))
+    if(!p)return
+    line.product_id=p.id
+    line.name=p.name
+    line.item_type=p.item_type
+    row.querySelector('.line-name').value=p.name
+    row.querySelector('.line-type').value=p.item_type
+    row.querySelector('.line-kind').textContent='موجود في الكتالوج'
+    root.classList.add('hidden')
+    updateTotal()
+  }))
+  root.classList.remove('hidden')
+}
 function lineTotal(line){return Math.max(0,Number(line.quantity||0))*Math.max(0,Number(line.unit_price||0))}
 function operationTotal(){return state.lines.reduce((s,l)=>s+lineTotal(l),0)}
 function renderLines(){
@@ -216,7 +254,7 @@ function renderLines(){
     const product=state.products.find(p=>Number(p.id)===Number(line.product_id))
     const display=product?product.label:(line.name||'')
     return '<div class="op-line" data-key="'+line.key+'">'
-      +'<div class="wide"><label>المنتج / الخدمة</label><input class="line-name" list="productList" value="'+esc(display)+'" placeholder="اختر موجودًا أو اكتب اسمًا جديدًا"><div class="line-kind">'+(product?'موجود في الكتالوج':'يمكن إنشاؤه سريعًا')+'</div></div>'
+      +'<div class="wide"><label>المنتج / الخدمة</label><input class="line-name" autocomplete="off" value="'+esc(display)+'" placeholder="ابحث أو اكتب اسمًا جديدًا"><div class="line-kind">'+(product?'موجود في الكتالوج':'يمكن إنشاؤه سريعًا')+'</div><div class="catalog-results hidden"></div></div>'
       +'<div><label>النوع</label><select class="line-type"><option value="product"'+(line.item_type==='product'?' selected':'')+'>منتج</option><option value="service"'+(line.item_type==='service'?' selected':'')+'>خدمة</option></select></div>'
       +'<div><label>الكمية</label><input class="line-qty" type="number" min="1" step="1" value="'+esc(line.quantity)+'"></div>'
       +'<div><label>سعر الوحدة</label><input class="line-price" type="number" min="0" step="0.01" value="'+esc(line.unit_price)+'"></div>'
@@ -225,13 +263,51 @@ function renderLines(){
   }).join('')
   root.querySelectorAll('.op-line').forEach(row=>{
     const key=Number(row.dataset.key),line=state.lines.find(x=>x.key===key)
-    row.querySelector('.line-name').addEventListener('change',e=>{
+    const nameInput=row.querySelector('.line-name')
+    const catalogRoot=row.querySelector('.catalog-results')
+
+    nameInput.addEventListener('focus',()=>renderCatalogResults(row,line,nameInput.value))
+    nameInput.addEventListener('input',e=>{
       const p=findProductByInput(e.target.value)
-      if(p){line.product_id=p.id;line.name=p.name;line.item_type=p.item_type}
-      else{line.product_id='';line.name=e.target.value.trim()}
-      renderLines()
+      if(p){
+        line.product_id=p.id
+        line.name=p.name
+        line.item_type=p.item_type
+        row.querySelector('.line-type').value=p.item_type
+        row.querySelector('.line-kind').textContent='موجود في الكتالوج'
+      }else{
+        line.product_id=''
+        line.name=e.target.value.trim()
+        row.querySelector('.line-kind').textContent='سيُنشأ كعنصر جديد إذا حفظت العملية'
+      }
+      renderCatalogResults(row,line,e.target.value)
     })
-    row.querySelector('.line-type').addEventListener('change',e=>{line.item_type=e.target.value;line.product_id='';updateTotal()})
+    nameInput.addEventListener('change',e=>{
+      const p=findProductByInput(e.target.value)
+      if(p){
+        line.product_id=p.id
+        line.name=p.name
+        line.item_type=p.item_type
+        row.querySelector('.line-type').value=p.item_type
+        row.querySelector('.line-kind').textContent='موجود في الكتالوج'
+        catalogRoot.classList.add('hidden')
+      }else{
+        line.product_id=''
+        line.name=e.target.value.trim()
+      }
+    })
+    row.querySelector('.line-type').addEventListener('change',e=>{
+      line.item_type=e.target.value
+      if(line.product_id){
+        const p=state.products.find(x=>Number(x.id)===Number(line.product_id))
+        if(p&&p.item_type!==line.item_type){
+          line.product_id=''
+          row.querySelector('.line-kind').textContent='سيُنشأ كعنصر جديد إذا حفظت العملية'
+        }
+      }
+      renderCatalogResults(row,line,nameInput.value)
+      updateTotal()
+    })
     row.querySelector('.line-qty').addEventListener('input',e=>{line.quantity=Math.max(1,Number(e.target.value||1));updateTotal()})
     row.querySelector('.line-price').addEventListener('input',e=>{line.unit_price=e.target.value;updateTotal()})
     row.querySelector('.line-remove').addEventListener('click',()=>{state.lines=state.lines.filter(x=>x.key!==key);renderLines()})
@@ -283,7 +359,6 @@ async function loadBase(){
   renderPartyResults('')
   $('partyResults').classList.add('hidden')
   renderBalance()
-  const dl=document.createElement('datalist');dl.id='productList';dl.innerHTML=state.products.map(p=>'<option value="'+esc(p.label)+'"></option>').join('');document.body.appendChild(dl)
   $('branch').innerHTML=state.branches.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('')
   const saved=Number(localStorage.getItem('mytool_admin_branch_id')||0)
   if(saved&&state.branches.some(b=>Number(b.id)===saved))$('branch').value=String(saved)
@@ -374,7 +449,7 @@ async function refreshCatalog(){
   const {data,error}=await supabase.from('products').select('id,name,item_type,is_test,workspace_code').eq('is_test',false).eq('workspace_code','REAL').order('name').limit(3000)
   if(error)return
   state.products=(data||[]).map(p=>({...p,label:p.name+' — '+(p.item_type==='service'?'خدمة':'منتج')}))
-  const dl=$('productList');if(dl)dl.innerHTML=state.products.map(p=>'<option value="'+esc(p.label)+'"></option>').join('')
+  // Product/service search lists are rendered directly under each operation line for reliable mobile use.
 }
 async function savePayment(){
   if(!state.party)return notify('اختر العميل أولًا.','error')
