@@ -20,7 +20,7 @@
     .btn{border:0;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;font-weight:900;cursor:pointer}
     .btn.secondary{background:#fff;color:var(--main);border:1px solid var(--main)}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}.btn:disabled{opacity:.55;cursor:not-allowed}
     .message{padding:10px 12px;border-radius:12px;margin-bottom:10px;font-size:12px;font-weight:800}.message.info{background:#eff6ff;color:#1d4ed8}.message.ok{background:#ecfdf5;color:var(--ok)}.message.warn{background:#fff7ed;color:#9a3412}.message.error{background:#fff1f2;color:var(--danger)}
-    .party-summary{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.balance{font-size:28px;font-weight:950}.balance.due{color:#b91c1c}.balance.credit{color:#047857}.balance.zero{color:#475569}
+    .party-summary{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.party-results{display:grid;gap:6px;margin-top:7px;max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px;background:#fff}.party-result{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;background:#fff;border:1px solid #eef2f7;padding:10px 11px;border-radius:10px;cursor:pointer}.party-result strong{font-size:14px}.party-result small{display:block;color:var(--muted);margin-top:3px}.party-count{margin-top:6px;color:var(--muted);font-size:11px;font-weight:800}.balance{font-size:28px;font-weight:950}.balance.due{color:#b91c1c}.balance.credit{color:#047857}.balance.zero{color:#475569}
     .lines{display:grid;gap:8px;margin-top:12px}.op-line{display:grid;grid-template-columns:1.7fr .8fr .7fr .8fr auto;gap:7px;align-items:end;padding:10px;border:1px solid var(--line);border-radius:14px;background:#fafafa}
     .op-line button{width:42px;height:42px;padding:0}.line-kind{font-size:11px;color:var(--muted);font-weight:800}.total-box{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:13px;background:#f0fdfa;border:1px solid #99f6e4;margin-top:10px}.total-box strong{font-size:22px}
     .actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.actions button{width:auto}
@@ -52,7 +52,9 @@
             <div class="muted">للمنتجات والخدمات التي يديرها MyTool داخليًا فقط. حسابات هني روحك وتهنى باي تبقى منفصلة.</div>
             <div class="field">
               <label>العميل</label>
-              <input id="partySearch" list="partyList" autocomplete="off" placeholder="ابحث بالاسم أو MT أو الهاتف">
+              <input id="partySearch" autocomplete="off" placeholder="ابحث بالاسم أو MT أو الهاتف">
+              <div id="partyCount" class="party-count">جاري تحميل الحسابات…</div>
+              <div id="partyResults" class="party-results hidden"></div>
               <datalist id="partyList"></datalist>
             </div>
           </div>
@@ -149,6 +151,45 @@ function resolveParty(value){
     ||state.parties.find(p=>String(p.mt_number||'')===v.replace(/^mt/i,''))
     ||null
 }
+function partySearchText(p){
+  return [
+    p.display_name,
+    p.mt_number?'MT'+p.mt_number:'',
+    p.primary_phone||'',
+    p.primary_email||''
+  ].filter(Boolean).join(' ').toLowerCase()
+}
+function renderPartyResults(query=''){
+  const root=$('partyResults')
+  const q=String(query||'').trim().toLowerCase()
+  const rows=(q
+    ? state.parties.filter(p=>partySearchText(p).includes(q))
+    : state.parties
+  ).slice(0,30)
+
+  $('partyCount').textContent=state.parties.length+' حساب متاح'+(q?' — '+rows.length+' نتيجة ظاهرة':'')
+  if(!rows.length){
+    root.innerHTML='<div class="empty">لا يوجد حساب مطابق.</div>'
+    root.classList.remove('hidden')
+    return
+  }
+  root.innerHTML=rows.map(p=>{
+    const meta=[
+      p.mt_number?'MT'+p.mt_number:'',
+      p.primary_phone||'',
+      p.primary_email||''
+    ].filter(Boolean).join(' — ')
+    return '<button type="button" class="party-result" data-party-id="'+p.id+'"><span><strong>'+esc(p.display_name)+'</strong>'+(meta?'<small>'+esc(meta)+'</small>':'')+'</span><span>‹</span></button>'
+  }).join('')
+  root.querySelectorAll('.party-result').forEach(btn=>btn.addEventListener('click',async()=>{
+    const p=state.parties.find(x=>Number(x.id)===Number(btn.dataset.partyId))
+    if(!p)return
+    $('partySearch').value=partyLabel(p)
+    root.classList.add('hidden')
+    await selectParty(p)
+  }))
+  root.classList.remove('hidden')
+}
 function selectedPartyFrom(inputId){return resolveParty($(inputId).value)}
 function currentBranchId(){return Number($('branch').value||0)||null}
 
@@ -239,6 +280,9 @@ async function loadBase(){
   state.cashPlaces=cashPlaces.data||[]
 
   $('partyList').innerHTML=state.parties.map(p=>'<option value="'+esc(partyLabel(p))+'"></option>').join('')
+  renderPartyResults('')
+  $('partyResults').classList.add('hidden')
+  renderBalance()
   const dl=document.createElement('datalist');dl.id='productList';dl.innerHTML=state.products.map(p=>'<option value="'+esc(p.label)+'"></option>').join('');document.body.appendChild(dl)
   $('branch').innerHTML=state.branches.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('')
   const saved=Number(localStorage.getItem('mytool_admin_branch_id')||0)
@@ -371,7 +415,20 @@ async function saveCorrection(lineId){
   await refreshAccount()
 }
 
-$('partySearch').addEventListener('change',()=>selectParty(resolveParty($('partySearch').value)))
+$('partySearch').addEventListener('focus',()=>renderPartyResults($('partySearch').value))
+$('partySearch').addEventListener('input',()=>{
+  state.party=null
+  state.account=null
+  renderBalance()
+  renderPartyResults($('partySearch').value)
+})
+$('partySearch').addEventListener('change',async()=>{
+  const p=resolveParty($('partySearch').value)
+  if(p){
+    $('partyResults').classList.add('hidden')
+    await selectParty(p)
+  }
+})
 $('branch').addEventListener('change',()=>{localStorage.setItem('mytool_admin_branch_id',$('branch').value);updateMoneyAccounts()})
 $('addLine').addEventListener('click',()=>newLine())
 $('saveOperation').addEventListener('click',saveOperation)
