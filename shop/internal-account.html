@@ -307,16 +307,18 @@ function renderLines(){
   const newNamed=!product&&String(line.name||'').trim()
   const kindText=product?'موجود في الكتالوج':newNamed?'عنصر جديد — اختر منتج أو خدمة مرة واحدة':'ابحث عن منتج أو خدمة'
 
-  root.innerHTML='<div class="op-line">'
-    +'<div class="wide"><label>المنتج / الخدمة</label><input class="line-name" autocomplete="off" value="'+esc(display)+'" placeholder="ابحث أو اكتب اسمًا جديدًا"><div class="line-kind">'+kindText+'</div><div class="catalog-results hidden"></div></div>'
+  root.innerHTML='<div class="editor-box">'
+    +'<div class="editor-head"><strong>محرر إضافة بيع</strong><span class="line-kind">'+kindText+'</span></div>'
+    +'<div class="wide"><input class="line-name" autocomplete="off" value="'+esc(display)+'" placeholder="ابحث أو اكتب اسمًا جديدًا"><div class="catalog-results hidden"></div></div>'
     +'<div class="line-type-wrap'+(newNamed?'':' hidden')+'"><label>النوع</label><select class="line-type"><option value="product"'+(line.item_type==='product'?' selected':'')+'>منتج</option><option value="service"'+(line.item_type==='service'?' selected':'')+'>خدمة</option></select></div>'
-    +'<div class="line-compact-row">'
+    +'<div class="editor-grid">'
       +'<div><label>الكمية</label><select class="line-qty">'+quantityOptions(line.quantity)+'</select></div>'
       +'<div><label>سعر الوحدة</label><input class="line-price" type="number" min="0" step="0.01" inputmode="decimal" value="'+esc(line.unit_price)+'"></div>'
+      +'<button id="addLine" class="btn editor-add" type="button">'+(state.editingKey==null?'＋ إضافة بيع':'✓ تحديث البيع')+'</button>'
     +'</div>'
     +'</div>'
 
-  const row=root.querySelector('.op-line')
+  const row=root.querySelector('.editor-box')
   const nameInput=row.querySelector('.line-name')
   const catalogRoot=row.querySelector('.catalog-results')
 
@@ -358,28 +360,31 @@ function renderLines(){
   row.querySelector('.line-type').addEventListener('change',e=>{line.item_type=e.target.value})
   row.querySelector('.line-qty').addEventListener('change',e=>{line.quantity=Math.max(1,Math.floor(Number(e.target.value)||1))})
   row.querySelector('.line-price').addEventListener('input',e=>{line.unit_price=e.target.value})
+  row.querySelector('#addLine').addEventListener('click',commitEditor)
 
-  $('addLine').textContent=state.editingKey==null?'＋ إضافة بيع':'✓ تحديث البيع'
   renderDraftSales()
 }
-
 function renderDraftSales(){
   const root=$('draftSales')
+  $('draftCount').textContent=state.lines.length+' بنود'
   if(!state.lines.length){
     root.innerHTML='<div class="empty">لم تضف أي بيع للفاتورة بعد.</div>'
     updateTotal()
     return
   }
-  root.innerHTML='<div class="draft-table-wrap"><table class="draft-table"><thead><tr><th>البيع</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th><th></th></tr></thead><tbody>'
+
+  root.innerHTML='<div class="draft-heading"><span>البنود المسجلة</span><span>تعديل سريع قبل الحفظ</span></div><div class="invoice-list">'
     +state.lines.map(line=>{
       const p=state.products.find(x=>Number(x.id)===Number(line.product_id))
       const name=p?.name||line.name||'—'
       const kind=(p?.item_type||line.item_type)==='service'?'خدمة':'منتج'
-      return '<tr><td><span class="draft-name">'+esc(name)+'</span><span class="draft-kind">'+kind+'</span></td>'
-        +'<td>'+esc(line.quantity)+'</td><td>'+money(line.unit_price)+'</td><td><strong>'+money(lineTotal(line))+'</strong></td>'
-        +'<td><div class="draft-actions"><button type="button" class="btn secondary draft-edit" data-key="'+line.key+'">تعديل</button><button type="button" class="btn danger draft-delete" data-key="'+line.key+'">حذف</button></div></td></tr>'
+      return '<div class="invoice-row" data-key="'+line.key+'">'
+        +'<div class="invoice-main"><div class="invoice-name">'+esc(name)+'</div>'
+        +'<div class="invoice-meta"><span>'+kind+' · '+esc(line.quantity)+' × '+money(line.unit_price)+'</span><span class="invoice-total">'+money(lineTotal(line))+'</span></div></div>'
+        +'<div class="invoice-actions"><button type="button" class="btn secondary draft-edit" data-key="'+line.key+'">تعديل</button><button type="button" class="btn danger draft-delete" data-key="'+line.key+'">حذف</button></div>'
+        +'</div>'
     }).join('')
-    +'</tbody></table></div>'
+    +'</div>'
 
   root.querySelectorAll('.draft-edit').forEach(btn=>btn.addEventListener('click',()=>{
     const key=Number(btn.dataset.key)
@@ -400,7 +405,6 @@ function renderDraftSales(){
   }))
   updateTotal()
 }
-
 function commitEditor(){
   const line=state.editor||blankEditor()
   const product=state.products.find(p=>Number(p.id)===Number(line.product_id))
@@ -634,7 +638,13 @@ $('partySearch').addEventListener('change',async()=>{
 $('branch').addEventListener('change',()=>{localStorage.setItem('mytool_admin_branch_id',$('branch').value);updateMoneyAccounts()})
 $('inputStageToggle').addEventListener('click',()=>setOperationStage('input'))
 $('paymentStageToggle').addEventListener('click',()=>setOperationStage('payment'))
-$('addLine').addEventListener('click',commitEditor)
+$('paymentOnlyToggle').addEventListener('click',()=>{
+  const body=$('paymentOnlyBody')
+  const open=body.classList.contains('hidden')
+  body.classList.toggle('hidden',!open)
+  $('paymentOnlyToggle').setAttribute('aria-expanded',open?'true':'false')
+  $('paymentOnlyToggle').querySelector('.stage-arrow').textContent=open?'⌃':'⌄'
+})
 $('saveOperation').addEventListener('click',saveOperation)
 $('savePayment').addEventListener('click',savePayment)
 
