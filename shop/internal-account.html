@@ -326,14 +326,6 @@ function renderCatalogResults(row,line,query=''){
   }))
   root.classList.remove('hidden')
 }
-function quantityOptions(selected){
-  const q=Math.max(1,Math.floor(Number(selected)||1))
-  const max=Math.max(100,q)
-  return Array.from({length:max},(_,i)=>{
-    const n=i+1
-    return '<option value="'+n+'"'+(n===q?' selected':'')+'>'+n+'</option>'
-  }).join('')
-}
 function lineTotal(line){return Math.max(0,Number(line.quantity||0))*Math.max(0,Number(line.unit_price||0))}
 function operationTotal(){return state.lines.reduce((s,l)=>s+lineTotal(l),0)}
 function renderLines(){
@@ -351,7 +343,7 @@ function renderLines(){
     +'<div class="line-type-wrap'+(newNamed?'':' hidden')+'"><label>النوع</label><select class="line-type"><option value="product"'+(line.item_type==='product'?' selected':'')+'>منتج</option><option value="service"'+(line.item_type==='service'?' selected':'')+'>خدمة</option></select></div>'
     +'<div class="price-qty-grid">'
       +'<div><label>سعر الوحدة</label><input class="line-price" type="number" min="0.01" step="0.01" inputmode="decimal" required value="'+esc(line.unit_price)+'"></div>'
-      +'<div><label>الكمية</label><select class="line-qty">'+quantityOptions(line.quantity)+'</select></div>'
+      +'<div><label>الكمية</label><input class="line-qty" type="number" min="1" step="1" inputmode="numeric" required value="'+esc(Math.max(1,Math.floor(Number(line.quantity)||1)))+'"></div>'
     +'</div>'
     +'<div class="editor-add-row"><button id="addLine" class="btn editor-add" type="button">'+(state.editingKey==null?'＋ إضافة بيع':'✓ تحديث البيع')+'</button></div>'
     +'</div>'
@@ -396,7 +388,20 @@ function renderLines(){
     }
   })
   row.querySelector('.line-type').addEventListener('change',e=>{line.item_type=e.target.value})
-  row.querySelector('.line-qty').addEventListener('change',e=>{line.quantity=Math.max(1,Math.floor(Number(e.target.value)||1))})
+  row.querySelector('.line-qty').addEventListener('input',e=>{
+    const n=Math.floor(Number(e.target.value))
+    if(Number.isFinite(n)&&n>=1)line.quantity=n
+  })
+  row.querySelector('.line-qty').addEventListener('change',e=>{
+    const n=Math.floor(Number(e.target.value))
+    if(!Number.isFinite(n)||n<1){
+      e.target.value='1'
+      line.quantity=1
+      return
+    }
+    e.target.value=String(n)
+    line.quantity=n
+  })
   row.querySelector('.line-price').addEventListener('input',e=>{line.unit_price=e.target.value})
   row.querySelector('#addLine').addEventListener('click',commitEditor)
 
