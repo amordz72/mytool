@@ -133,7 +133,7 @@ const supabase=createClient(cfg.url,cfg.key)
 const $=id=>document.getElementById(id)
 const money=v=>new Intl.NumberFormat('ar-DZ',{maximumFractionDigits:2}).format(Number(v||0))+' دج'
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
-const state={parties:[],products:[],branches:[],cashPlaces:[],party:null,account:null,lines:[],lineSeq:0,busy:false}
+const state={parties:[],products:[],branches:[],cashPlaces:[],priceRefs:[],salePolicies:[],party:null,account:null,lines:[],lineSeq:0,busy:false}
 
 function notify(text,type='info',target='status'){
   const el=$(target);el.textContent=text;el.className='message '+type;el.classList.remove('hidden')
@@ -207,6 +207,29 @@ function findProductByInput(value){
   const v=String(value||'').trim().toLowerCase()
   return state.products.find(p=>p.label.toLowerCase()===v)||state.products.find(p=>p.name.toLowerCase()===v)||null
 }
+function anyStoredSalePrice(productId){
+  const ref=state.priceRefs.find(r=>Number(r.product_id)===Number(productId)&&Number(r.sale_price)>0)
+  if(ref)return Number(ref.sale_price)
+  const policy=state.salePolicies.find(r=>Number(r.product_id)===Number(productId)&&Number(r.target_sale_price)>0)
+  if(policy)return Number(policy.target_sale_price)
+  return null
+}
+function applyKnownProduct(row,line,p){
+  line.product_id=p.id
+  line.name=p.name
+  line.item_type=p.item_type
+  row.querySelector('.line-name').value=p.name
+  row.querySelector('.line-type').value=p.item_type
+  const savedPrice=anyStoredSalePrice(p.id)
+  if(savedPrice!==null){
+    line.unit_price=savedPrice
+    row.querySelector('.line-price').value=String(savedPrice)
+    row.querySelector('.line-kind').textContent='موجود في الكتالوج — السعر تعبأ تلقائيًا'
+  }else{
+    row.querySelector('.line-kind').textContent='موجود في الكتالوج — لا يوجد سعر محفوظ'
+  }
+  updateTotal()
+}
 function catalogSearchText(p){
   return [p.name,p.item_type==='service'?'خدمة':'منتج',p.label].join(' ').toLowerCase()
 }
@@ -224,24 +247,19 @@ function renderCatalogResults(row,line,query=''){
     return
   }
 
-  root.innerHTML=rows.map(p=>
-    '<button type="button" class="catalog-result" data-product-id="'+p.id+'">'
-      +'<span><strong>'+esc(p.name)+'</strong><small>'+(p.item_type==='service'?'خدمة':'منتج')+'</small></span>'
+  root.innerHTML=rows.map(p=>{
+    const savedPrice=anyStoredSalePrice(p.id)
+    return '<button type="button" class="catalog-result" data-product-id="'+p.id+'">'
+      +'<span><strong>'+esc(p.name)+'</strong><small>'+(p.item_type==='service'?'خدمة':'منتج')+(savedPrice!==null?' — '+money(savedPrice):'')+'</small></span>'
       +'<span>‹</span>'
     +'</button>'
-  ).join('')
+  }).join('')
 
   root.querySelectorAll('.catalog-result').forEach(btn=>btn.addEventListener('click',()=>{
     const p=state.products.find(x=>Number(x.id)===Number(btn.dataset.productId))
     if(!p)return
-    line.product_id=p.id
-    line.name=p.name
-    line.item_type=p.item_type
-    row.querySelector('.line-name').value=p.name
-    row.querySelector('.line-type').value=p.item_type
-    row.querySelector('.line-kind').textContent='موجود في الكتالوج'
+    applyKnownProduct(row,line,p)
     root.classList.add('hidden')
-    updateTotal()
   }))
   root.classList.remove('hidden')
 }
@@ -270,11 +288,7 @@ function renderLines(){
     nameInput.addEventListener('input',e=>{
       const p=findProductByInput(e.target.value)
       if(p){
-        line.product_id=p.id
-        line.name=p.name
-        line.item_type=p.item_type
-        row.querySelector('.line-type').value=p.item_type
-        row.querySelector('.line-kind').textContent='موجود في الكتالوج'
+        applyKnownProduct(row,line,p)
       }else{
         line.product_id=''
         line.name=e.target.value.trim()
@@ -285,11 +299,7 @@ function renderLines(){
     nameInput.addEventListener('change',e=>{
       const p=findProductByInput(e.target.value)
       if(p){
-        line.product_id=p.id
-        line.name=p.name
-        line.item_type=p.item_type
-        row.querySelector('.line-type').value=p.item_type
-        row.querySelector('.line-kind').textContent='موجود في الكتالوج'
+        applyKnownProduct(row,line,p)
         catalogRoot.classList.add('hidden')
       }else{
         line.product_id=''
@@ -342,18 +352,22 @@ async function loadBase(){
     return
   }
 
-  const [parties,products,branches,cashPlaces]=await Promise.all([
+  const [parties,products,branches,cashPlaces,priceRefs,salePolicies]=await Promise.all([
     supabase.from('money_party_directory').select('id,display_name,mt_number,primary_phone,primary_email,party_type,active,approval_status,is_canonical,data_mode').eq('active',true).eq('approval_status','approved').eq('is_canonical',true).eq('data_mode','real').neq('party_type','system').order('display_name').limit(3000),
     supabase.from('products').select('id,name,item_type,is_test,workspace_code').eq('is_test',false).eq('workspace_code','REAL').order('name').limit(3000),
     supabase.from('branches').select('id,name,code').eq('active',true).order('id'),
-    supabase.from('cash_places').select('id,name,account_id,branch_id,party_id,place_type,active').eq('active',true).order('id')
+    supabase.from('cash_places').select('id,name,account_id,branch_id,party_id,place_type,active').eq('active',true).order('id'),
+    supabase.from('branch_product_price_reference').select('product_id,sale_price').not('sale_price','is',null),
+    supabase.from('branch_product_sale_policy').select('product_id,target_sale_price').not('target_sale_price','is',null)
   ])
-  const err=parties.error||products.error||branches.error||cashPlaces.error
+  const err=parties.error||products.error||branches.error||cashPlaces.error||priceRefs.error||salePolicies.error
   if(err)throw err
   state.parties=parties.data||[]
   state.products=(products.data||[]).map(p=>({...p,label:p.name+' — '+(p.item_type==='service'?'خدمة':'منتج')}))
   state.branches=branches.data||[]
   state.cashPlaces=cashPlaces.data||[]
+  state.priceRefs=priceRefs.data||[]
+  state.salePolicies=salePolicies.data||[]
 
   $('partyList').innerHTML=state.parties.map(p=>'<option value="'+esc(partyLabel(p))+'"></option>').join('')
   renderPartyResults('')
