@@ -220,6 +220,7 @@ function applyKnownProduct(row,line,p){
   line.item_type=p.item_type
   row.querySelector('.line-name').value=p.name
   row.querySelector('.line-type').value=p.item_type
+  row.querySelector('.line-type-wrap')?.classList.add('hidden')
   const savedPrice=anyStoredSalePrice(p.id)
   if(savedPrice!==null){
     line.unit_price=savedPrice
@@ -273,7 +274,7 @@ function renderLines(){
     const display=product?product.label:(line.name||'')
     return '<div class="op-line" data-key="'+line.key+'">'
       +'<div class="wide"><label>المنتج / الخدمة</label><input class="line-name" autocomplete="off" value="'+esc(display)+'" placeholder="ابحث أو اكتب اسمًا جديدًا"><div class="line-kind">'+(product?'موجود في الكتالوج':'يمكن إنشاؤه سريعًا')+'</div><div class="catalog-results hidden"></div></div>'
-      +'<div><label>النوع</label><select class="line-type"><option value="product"'+(line.item_type==='product'?' selected':'')+'>منتج</option><option value="service"'+(line.item_type==='service'?' selected':'')+'>خدمة</option></select></div>'
+      +'<div class="line-type-wrap'+(product?' hidden':'')+'"><label>النوع</label><select class="line-type"><option value="product"'+(line.item_type==='product'?' selected':'')+'>منتج</option><option value="service"'+(line.item_type==='service'?' selected':'')+'>خدمة</option></select></div>'
       +'<div><label>الكمية</label><input class="line-qty" type="number" min="1" step="1" value="'+esc(line.quantity)+'"></div>'
       +'<div><label>سعر الوحدة</label><input class="line-price" type="number" min="0" step="0.01" value="'+esc(line.unit_price)+'"></div>'
       +'<button class="btn danger line-remove" type="button">×</button>'
@@ -292,7 +293,8 @@ function renderLines(){
       }else{
         line.product_id=''
         line.name=e.target.value.trim()
-        row.querySelector('.line-kind').textContent='سيُنشأ كعنصر جديد إذا حفظت العملية'
+        row.querySelector('.line-type-wrap')?.classList.remove('hidden')
+        row.querySelector('.line-kind').textContent='عنصر جديد — اختر منتج أو خدمة مرة واحدة'
       }
       renderCatalogResults(row,line,e.target.value)
     })
@@ -304,6 +306,8 @@ function renderLines(){
       }else{
         line.product_id=''
         line.name=e.target.value.trim()
+        row.querySelector('.line-type-wrap')?.classList.remove('hidden')
+        row.querySelector('.line-kind').textContent='عنصر جديد — اختر منتج أو خدمة مرة واحدة'
       }
     })
     row.querySelector('.line-type').addEventListener('change',e=>{
