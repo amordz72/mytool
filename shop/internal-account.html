@@ -190,30 +190,45 @@ function clearSectionResult(id){
   const el=$(id)
   if(el)el.classList.add('hidden')
 }
+function normalizeSearchText(value){
+  return String(value||'')
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u064B-\u065F\u0670]/g,'')
+    .replace(/[أإآٱ]/g,'ا')
+    .replace(/ى/g,'ي')
+    .replace(/ؤ/g,'و')
+    .replace(/ئ/g,'ي')
+    .replace(/ة/g,'ه')
+    .replace(/ـ/g,'')
+    .replace(/\s+/g,' ')
+}
 function partyLabel(p){
   const mt=p.mt_number?'MT'+p.mt_number:''
   const phone=p.primary_phone||''
   return [p.display_name,mt,phone].filter(Boolean).join(' — ')
 }
 function resolveParty(value){
-  const v=String(value||'').trim().toLowerCase()
+  const raw=String(value||'').trim()
+  const v=normalizeSearchText(raw)
   if(!v)return null
-  return state.parties.find(p=>partyLabel(p).toLowerCase()===v)
-    ||state.parties.find(p=>String(p.id)===v)
-    ||state.parties.find(p=>String(p.mt_number||'')===v.replace(/^mt/i,''))
+  return state.parties.find(p=>normalizeSearchText(partyLabel(p))===v)
+    ||state.parties.find(p=>String(p.id)===raw)
+    ||state.parties.find(p=>String(p.mt_number||'')===raw.replace(/^mt/i,''))
     ||null
 }
 function partySearchText(p){
-  return [
+  return normalizeSearchText([
     p.display_name,
     p.mt_number?'MT'+p.mt_number:'',
     p.primary_phone||'',
     p.primary_email||''
-  ].filter(Boolean).join(' ').toLowerCase()
+  ].filter(Boolean).join(' '))
 }
 function renderPartyResults(query=''){
   const root=$('partyResults')
-  const q=String(query||'').trim().toLowerCase()
+  const q=normalizeSearchText(query)
   const rows=(q
     ? state.parties.filter(p=>partySearchText(p).includes(q))
     : state.parties
