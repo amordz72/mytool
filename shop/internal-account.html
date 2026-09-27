@@ -19,7 +19,7 @@
     input,select,textarea{width:100%}textarea{min-height:64px;resize:vertical}.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
     .btn{border:0;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;font-weight:900;cursor:pointer}
     .btn.secondary{background:#fff;color:var(--main);border:1px solid var(--main)}.btn.danger{background:#fff;color:var(--danger);border:1px solid #fecaca}.btn:disabled{opacity:.55;cursor:not-allowed}
-    .message{padding:10px 12px;border-radius:12px;margin-bottom:10px;font-size:12px;font-weight:800}.message.info{background:#eff6ff;color:#1d4ed8}.message.ok{background:#ecfdf5;color:var(--ok)}.message.warn{background:#fff7ed;color:#9a3412}.message.error{background:#fff1f2;color:var(--danger)}
+    .message{padding:10px 12px;border-radius:12px;margin-bottom:10px;font-size:12px;font-weight:800}.message.info{background:#eff6ff;color:#1d4ed8}.message.ok{background:#ecfdf5;color:var(--ok)}.message.warn{background:#fff7ed;color:#9a3412}.message.error{background:#fff1f2;color:var(--danger)}.field-error{margin-top:4px;font-size:10px;line-height:1.35;font-weight:900;color:var(--danger)}input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:#ef4444!important;box-shadow:0 0 0 2px rgba(239,68,68,.08)}
     .customer-card{padding:10px 12px}.customer-compact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}.customer-card .field{margin-top:0}.customer-balance{min-width:92px;text-align:left}.customer-balance .balance{font-size:22px;line-height:1.1}.customer-balance .muted{white-space:nowrap}.party-summary{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.party-results{display:grid;gap:6px;margin-top:7px;max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px;background:#fff}.catalog-results{display:grid;gap:5px;margin-top:6px;max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:5px;background:#fff}.catalog-result{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;background:#fff;border:1px solid #eef2f7;padding:9px 10px;border-radius:9px;cursor:pointer}.catalog-result small{display:block;color:var(--muted);margin-top:2px}.party-result{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;background:#fff;border:1px solid #eef2f7;padding:10px 11px;border-radius:10px;cursor:pointer}.party-result strong{font-size:14px}.party-result small{display:block;color:var(--muted);margin-top:3px}.party-count{display:none}.balance{font-size:28px;font-weight:950}.balance.due{color:#b91c1c}.balance.credit{color:#047857}.balance.zero{color:#475569}
     .lines{display:grid;gap:8px;margin-top:12px}.op-line{display:block;padding:10px;border:1px solid var(--line);border-radius:14px;background:#fafafa}
     .line-kind{font-size:10px;color:var(--muted);font-weight:800}.line-type-wrap{margin-top:6px;max-width:160px}.line-compact-row{display:grid;grid-template-columns:86px minmax(120px,170px);gap:6px;align-items:end;justify-content:start;margin-top:6px}.line-compact-row>div{min-width:0}.line-qty,.line-price{width:100%}.draft-sales{margin-top:12px}.draft-table-wrap{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#fff;max-width:100%}.draft-table{width:100%;max-width:100%;border-collapse:collapse;table-layout:fixed}.draft-table th,.draft-table td{padding:8px 5px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle;overflow-wrap:anywhere}.draft-table th{font-size:10px;color:var(--muted);background:#f8fafc;white-space:normal}.draft-table td{font-size:11px}.draft-table th:nth-child(1),.draft-table td:nth-child(1){width:34%}.draft-table th:nth-child(2),.draft-table td:nth-child(2){width:10%;text-align:center}.draft-table th:nth-child(3),.draft-table td:nth-child(3){width:17%}.draft-table th:nth-child(4),.draft-table td:nth-child(4){width:18%}.draft-table th:nth-child(5),.draft-table td:nth-child(5){width:21%}.draft-table tr:last-child td{border-bottom:0}.draft-actions{display:flex;gap:4px;justify-content:flex-start;flex-wrap:wrap}.draft-actions button{padding:5px 6px;font-size:10px;width:auto;height:auto;min-width:0}.draft-name{font-weight:900}.draft-kind{display:block;color:var(--muted);font-size:10px;margin-top:2px}.total-box{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;border-radius:10px;background:#ccfbf1;border:1px solid #99f6e4;margin:8px 12px}.total-box span{font-size:12px;font-weight:900}.total-box strong{font-size:20px}
@@ -119,6 +119,7 @@
               <div class="field"><label>ملاحظة</label><input id="paymentNote" placeholder="مثال: دفعة على الحساب"></div>
             </div>
               <div class="actions"><button id="savePayment" class="btn secondary" type="button">تسجيل الدفعة</button></div>
+              <div id="paymentResult" class="message hidden"></div>
             </div>
           </section>
         </div>
@@ -152,6 +153,42 @@ const state={parties:[],products:[],branches:[],cashPlaces:[],priceRefs:[],saleP
 
 function notify(text,type='info',target='status'){
   const el=$(target);el.textContent=text;el.className='message '+type;el.classList.remove('hidden')
+}
+let inlineErrorSeq=0
+function targetEl(target){return typeof target==='string'?$(target):target}
+function clearFieldError(target){
+  const el=targetEl(target)
+  if(!el)return
+  const id=el.dataset?.fieldErrorId
+  if(id)document.getElementById(id)?.remove()
+  if(el.dataset)delete el.dataset.fieldErrorId
+  el.classList?.remove('field-invalid')
+  el.removeAttribute?.('aria-invalid')
+  el.removeAttribute?.('aria-describedby')
+}
+function setFieldError(target,text){
+  const el=targetEl(target)
+  if(!el)return false
+  clearFieldError(el)
+  const msg=document.createElement('div')
+  const id='field-error-'+(++inlineErrorSeq)
+  msg.id=id
+  msg.className='field-error'
+  msg.textContent=text
+  el.insertAdjacentElement('afterend',msg)
+  if(el.matches?.('input,select,textarea')){
+    el.classList.add('field-invalid')
+    el.setAttribute('aria-invalid','true')
+    el.setAttribute('aria-describedby',id)
+    el.focus({preventScroll:true})
+    el.scrollIntoView({behavior:'smooth',block:'center'})
+  }
+  if(el.dataset)el.dataset.fieldErrorId=id
+  return false
+}
+function clearSectionResult(id){
+  const el=$(id)
+  if(el)el.classList.add('hidden')
 }
 function partyLabel(p){
   const mt=p.mt_number?'MT'+p.mt_number:''
@@ -200,6 +237,7 @@ function renderPartyResults(query=''){
     const p=state.parties.find(x=>Number(x.id)===Number(btn.dataset.partyId))
     if(!p)return
     $('partySearch').value=partyLabel(p)
+    clearFieldError('partySearch')
     root.classList.add('hidden')
     await selectParty(p)
   }))
@@ -416,10 +454,15 @@ function commitEditor(){
   const line=state.editor||blankEditor()
   const product=state.products.find(p=>Number(p.id)===Number(line.product_id))
   const name=String(product?.name||line.name||'').trim()
-  if(!name)return notify('اختر منتجًا أو اكتب اسمًا جديدًا أولًا.','error')
-  const quantity=Math.max(1,Math.floor(Number(line.quantity)||1))
+  const editorRoot=$('operationLines')
+  const nameEl=editorRoot?.querySelector('.line-name')
+  const priceEl=editorRoot?.querySelector('.line-price')
+  const qtyEl=editorRoot?.querySelector('.line-qty')
+  if(!name)return setFieldError(nameEl,'اختر منتجًا أو اكتب اسمًا جديدًا.')
+  const quantity=Math.floor(Number(line.quantity)||0)
+  if(quantity<1)return setFieldError(qtyEl,'الكمية يجب أن تبدأ من 1.')
   const price=Number(line.unit_price)
-  if(!Number.isFinite(price)||price<=0)return notify('لا يمكن إضافة بيع بدون سعر. أدخل سعرًا أكبر من 0.','error')
+  if(!Number.isFinite(price)||price<=0)return setFieldError(priceEl,'لا يمكن إضافة بيع بدون سعر. أدخل سعرًا أكبر من 0.')
 
   const saved={
     key:state.editingKey==null?++state.lineSeq:state.editingKey,
@@ -566,12 +609,36 @@ async function renderHistory(){
 
 async function saveOperation(){
   if(state.busy)return
+  clearSectionResult('saveResult')
+  if(!state.party)return setFieldError('partySearch','اختر العميل أولًا.')
+  if(!currentBranchId()){
+    setOperationStage('input')
+    return setFieldError('branch','اختر الفرع.')
+  }
+  if(!state.lines.length){
+    setOperationStage('input')
+    return setFieldError('draftSales','أضف بيعًا واحدًا على الأقل للفاتورة.')
+  }
+  const paid=Number($('paidNow').value||0)
+  if(paid<0){
+    setOperationStage('payment')
+    return setFieldError('paidNow','المبلغ المدفوع لا يمكن أن يكون سالبًا.')
+  }
+  const payerText=$('payerSearch').value.trim()
+  const payer=selectedPartyFrom('payerSearch')||state.party
+  if(payerText&&!selectedPartyFrom('payerSearch')){
+    setOperationStage('payment')
+    return setFieldError('payerSearch','اختر الدافع من الحسابات الموجودة.')
+  }
+  const receiverText=$('receiverSearch').value.trim()
+  const receiver=selectedPartyFrom('receiverSearch')
+  if(receiverText&&!receiver){
+    setOperationStage('payment')
+    return setFieldError('receiverSearch','اختر المستلم من الحسابات الموجودة أو اتركه فارغًا.')
+  }
   try{
-    state.busy=true;$('saveOperation').disabled=true;$('saveResult').classList.add('hidden')
-    const lines=operationPayload(),paid=Number($('paidNow').value||0)
-    if(paid<0)throw new Error('المبلغ المدفوع لا يمكن أن يكون سالبًا.')
-    const payer=selectedPartyFrom('payerSearch')||state.party
-    const receiver=selectedPartyFrom('receiverSearch')
+    state.busy=true;$('saveOperation').disabled=true
+    const lines=operationPayload()
     const accountId=Number($('moneyAccount').value||0)||null
     const {data,error}=await supabase.rpc('admin_create_internal_operation_with_payment',{
       p_party_id:state.party.id,
@@ -602,11 +669,16 @@ async function refreshCatalog(){
   // Product/service search lists are rendered directly under each operation line for reliable mobile use.
 }
 async function savePayment(){
-  if(!state.party)return notify('اختر العميل أولًا.','error')
+  clearSectionResult('paymentResult')
+  if(!state.party)return setFieldError('partySearch','اختر العميل أولًا.')
   const amount=Number($('paymentAmount').value||0)
-  if(!(amount>0))return notify('أدخل مبلغ دفعة صحيحًا.','error')
+  if(!(amount>0))return setFieldError('paymentAmount','أدخل مبلغ دفعة أكبر من 0.')
+  const payerText=$('paymentPayer').value.trim()
   const payer=selectedPartyFrom('paymentPayer')||state.party
+  if(payerText&&!selectedPartyFrom('paymentPayer'))return setFieldError('paymentPayer','اختر الدافع من الحسابات الموجودة.')
+  const receiverText=$('paymentReceiver').value.trim()
   const receiver=selectedPartyFrom('paymentReceiver')
+  if(receiverText&&!receiver)return setFieldError('paymentReceiver','اختر المستلم من الحسابات الموجودة أو اتركه فارغًا.')
   const {data,error}=await supabase.rpc('admin_record_internal_payment',{
     p_account_party_id:state.party.id,
     p_amount:amount,
@@ -617,17 +689,17 @@ async function savePayment(){
     p_notes:$('paymentNote').value.trim()||null,
     p_operation_at:new Date().toISOString()
   })
-  if(error)return notify(error.message,'error')
+  if(error)return notify(error.message,'error','paymentResult')
   $('paymentAmount').value='';$('paymentPayer').value='';$('paymentReceiver').value='';$('paymentNote').value=''
-  notify('تم تسجيل الدفعة. الرصيد الآن '+money(data.party_balance)+'.','ok')
+  notify('تم تسجيل الدفعة. الرصيد الآن '+money(data.party_balance)+'.','ok','paymentResult')
   await refreshAccount()
 }
 async function saveCorrection(lineId){
   const delta=Number($('corrQty-'+lineId).value||0)
-  if(!Number.isInteger(delta)||delta===0)return notify('فرق الكمية يجب أن يكون عددًا صحيحًا غير صفر.','error')
+  if(!Number.isInteger(delta)||delta===0)return setFieldError('corrQty-'+lineId,'فرق الكمية يجب أن يكون عددًا صحيحًا غير صفر.')
   const reason=$('corrReason-'+lineId).value
   const note=$('corrNote-'+lineId).value.trim()
-  if(reason==='other'&&!note)return notify('اكتب سبب التصحيح عند اختيار أخرى.','error')
+  if(reason==='other'&&!note)return setFieldError('corrNote-'+lineId,'اكتب سبب التصحيح عند اختيار «أخرى».')
   const {data,error}=await supabase.rpc('admin_correct_internal_line_quantity',{
     p_line_id:lineId,
     p_quantity_delta:delta,
@@ -640,6 +712,8 @@ async function saveCorrection(lineId){
   await refreshAccount()
 }
 
+document.addEventListener('input',e=>{if(e.target.matches?.('input,textarea'))clearFieldError(e.target)})
+document.addEventListener('change',e=>{if(e.target.matches?.('input,select,textarea'))clearFieldError(e.target)})
 $('partySearch').addEventListener('focus',()=>renderPartyResults($('partySearch').value))
 $('partySearch').addEventListener('input',()=>{
   state.party=null
