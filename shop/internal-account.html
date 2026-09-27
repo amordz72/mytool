@@ -23,7 +23,7 @@
     .party-summary{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.party-results{display:grid;gap:6px;margin-top:7px;max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px;background:#fff}.catalog-results{display:grid;gap:5px;margin-top:6px;max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:5px;background:#fff}.catalog-result{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;background:#fff;border:1px solid #eef2f7;padding:9px 10px;border-radius:9px;cursor:pointer}.catalog-result small{display:block;color:var(--muted);margin-top:2px}.party-result{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;background:#fff;border:1px solid #eef2f7;padding:10px 11px;border-radius:10px;cursor:pointer}.party-result strong{font-size:14px}.party-result small{display:block;color:var(--muted);margin-top:3px}.party-count{margin-top:6px;color:var(--muted);font-size:11px;font-weight:800}.balance{font-size:28px;font-weight:950}.balance.due{color:#b91c1c}.balance.credit{color:#047857}.balance.zero{color:#475569}
     .lines{display:grid;gap:8px;margin-top:12px}.op-line{display:grid;grid-template-columns:1.7fr .8fr .7fr .8fr auto;gap:7px;align-items:end;padding:10px;border:1px solid var(--line);border-radius:14px;background:#fafafa}
     .op-line button{width:42px;height:42px;padding:0}.line-kind{font-size:11px;color:var(--muted);font-weight:800}.total-box{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:13px;background:#f0fdfa;border:1px solid #99f6e4;margin-top:10px}.total-box strong{font-size:22px}
-    .actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.actions button{width:auto}
+    .actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.actions button{width:auto}.stage-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;background:#fff;border:1px solid var(--line);font-weight:900;cursor:pointer}.stage-toggle.active{border-color:#99f6e4;background:#f0fdfa;color:var(--main)}.stage-toggle .stage-arrow{font-size:18px;line-height:1}.stage-panel{padding-top:4px}.stage-panel.hidden{display:none!important}
     .history{display:grid;gap:8px}.movement,.operation{border:1px solid var(--line);border-radius:13px;padding:10px;background:#fafafa}.movement-head,.operation-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.amount-pos{color:#b91c1c;font-weight:900}.amount-neg{color:#047857;font-weight:900}
     .operation-lines{display:grid;gap:6px;margin-top:8px}.history-line{display:flex;justify-content:space-between;gap:8px;padding:8px;border-radius:10px;background:#fff;border:1px solid var(--line)}.history-line small{display:block;color:var(--muted);margin-top:2px}
     .warning-list{display:grid;gap:6px;margin-top:8px}.warning-item{padding:9px;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:800}
@@ -70,27 +70,36 @@
         <div>
           <section class="card">
             <h2>عملية جديدة</h2>
-            <div class="row">
-              <div class="field"><label>الفرع</label><select id="branch"></select></div>
-              <div class="field"><label>ملاحظة العملية</label><input id="operationNote" placeholder="اختياري"></div>
-            </div>
+            <button id="inputStageToggle" class="stage-toggle active" type="button" aria-expanded="true">
+              <span>الإدخال</span><span class="stage-arrow">⌃</span>
+            </button>
+            <div id="inputStage" class="stage-panel">
+              <div class="row">
+                <div class="field"><label>الفرع</label><select id="branch"></select></div>
+                <div class="field"><label>ملاحظة العملية</label><input id="operationNote" placeholder="اختياري"></div>
+              </div>
 
-            <div id="operationLines" class="lines"></div>
-            <div class="actions"><button id="addLine" class="btn secondary" type="button">＋ إضافة بيع</button></div>
+              <div id="operationLines" class="lines"></div>
+              <div class="actions"><button id="addLine" class="btn secondary" type="button">＋ إضافة بيع</button></div>
+            </div>
 
             <div class="total-box"><span>إجمالي العملية</span><strong id="operationTotal">0 دج</strong></div>
 
-            <h3 style="margin-top:14px">الدفع الآن</h3>
-            <div class="row">
-              <div class="field"><label>المبلغ المدفوع الآن</label><input id="paidNow" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div>
-              <div class="field"><label>الدافع الفعلي</label><input id="payerSearch" list="partyList" autocomplete="off" placeholder="نفس العميل افتراضيًا"></div>
+            <button id="paymentStageToggle" class="stage-toggle" type="button" aria-expanded="false">
+              <span>الدفع الآن</span><span class="stage-arrow">⌄</span>
+            </button>
+            <div id="paymentStage" class="stage-panel hidden">
+              <div class="row">
+                <div class="field"><label>المبلغ المدفوع الآن</label><input id="paidNow" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div>
+                <div class="field"><label>الدافع الفعلي</label><input id="payerSearch" list="partyList" autocomplete="off" placeholder="نفس العميل افتراضيًا"></div>
+              </div>
+              <div class="row">
+                <div class="field"><label>المستلم</label><input id="receiverSearch" list="partyList" autocomplete="off" placeholder="مثال: كمال — اختياري"></div>
+                <div class="field"><label>مكان المال بعد الاستلام</label><select id="moneyAccount"><option value="">تحصيلات الفرع — افتراضي</option></select><div class="muted" style="margin-top:5px">اختر الكيس/الخزنة/الشخص إذا بقي المال عنده فعليًا.</div></div>
+              </div>
+              <div class="actions"><button id="saveOperation" class="btn" type="button">حفظ العملية</button></div>
+              <div id="saveResult" class="message hidden"></div>
             </div>
-            <div class="row">
-              <div class="field"><label>المستلم</label><input id="receiverSearch" list="partyList" autocomplete="off" placeholder="مثال: كمال — اختياري"></div>
-              <div class="field"><label>مكان المال بعد الاستلام</label><select id="moneyAccount"><option value="">تحصيلات الفرع — افتراضي</option></select><div class="muted" style="margin-top:5px">اختر الكيس/الخزنة/الشخص إذا بقي المال عنده فعليًا.</div></div>
-            </div>
-            <div class="actions"><button id="saveOperation" class="btn" type="button">حفظ العملية</button></div>
-            <div id="saveResult" class="message hidden"></div>
           </section>
 
           <section class="card">
@@ -329,6 +338,17 @@ function renderLines(){
   updateTotal()
 }
 function updateTotal(){$('operationTotal').textContent=money(operationTotal())}
+function setOperationStage(stage){
+  const inputOpen=stage==='input'
+  $('inputStage').classList.toggle('hidden',!inputOpen)
+  $('paymentStage').classList.toggle('hidden',inputOpen)
+  $('inputStageToggle').classList.toggle('active',inputOpen)
+  $('paymentStageToggle').classList.toggle('active',!inputOpen)
+  $('inputStageToggle').setAttribute('aria-expanded',inputOpen?'true':'false')
+  $('paymentStageToggle').setAttribute('aria-expanded',inputOpen?'false':'true')
+  $('inputStageToggle').querySelector('.stage-arrow').textContent=inputOpen?'⌃':'⌄'
+  $('paymentStageToggle').querySelector('.stage-arrow').textContent=inputOpen?'⌄':'⌃'
+}
 
 function operationPayload(){
   if(!state.party)throw new Error('اختر العميل أولًا.')
@@ -457,7 +477,7 @@ async function saveOperation(){
     const warnings=data?.operation?.stock_warnings||[]
     notify('تم حفظ العملية. الإجمالي '+money(data.total_amount)+'، المدفوع '+money(data.paid_now)+'، الرصيد بعد العملية '+money(data.remaining_after_operation)+'.'+(warnings.length?' يوجد '+warnings.length+' تنبيه مخزون.':''),warnings.length?'warn':'ok','saveResult')
     if(warnings.length)$('saveResult').innerHTML+='<div class="warning-list">'+warnings.map(w=>'<div class="warning-item">'+esc(w.product_name)+': المخزون أصبح '+w.stock_after+' (ناقص '+w.missing_quantity+').</div>').join('')+'</div>'
-    state.lines=[];newLine();$('paidNow').value='0';$('operationNote').value='';$('payerSearch').value='';$('receiverSearch').value=''
+    state.lines=[];newLine();$('paidNow').value='0';$('operationNote').value='';$('payerSearch').value='';$('receiverSearch').value='';setOperationStage('input')
     await refreshCatalog()
     await refreshAccount()
   }catch(e){notify(e.message||String(e),'error','saveResult')}
@@ -523,6 +543,8 @@ $('partySearch').addEventListener('change',async()=>{
   }
 })
 $('branch').addEventListener('change',()=>{localStorage.setItem('mytool_admin_branch_id',$('branch').value);updateMoneyAccounts()})
+$('inputStageToggle').addEventListener('click',()=>setOperationStage('input'))
+$('paymentStageToggle').addEventListener('click',()=>setOperationStage('payment'))
 $('addLine').addEventListener('click',()=>newLine())
 $('saveOperation').addEventListener('click',saveOperation)
 $('savePayment').addEventListener('click',savePayment)
