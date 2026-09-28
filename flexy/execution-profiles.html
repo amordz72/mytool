@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
+<title>مسارات التنفيذ — Flexy</title>
+<link rel="stylesheet" href="app.css?v=20260928-execution-profiles-1">
+<script src="../auth-guard.js?v=20260923-admin-split-1" data-access="admin"></script>
+<style>
+.fx-profile-list{display:grid;gap:10px}.fx-profile{border:1px solid var(--fx-line);border-radius:16px;background:#fff;overflow:hidden}
+.fx-profile>summary{list-style:none;cursor:pointer;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+.fx-profile>summary::-webkit-details-marker{display:none}.fx-profile[open]>summary{border-bottom:1px solid var(--fx-line);background:#fbfdff}
+.fx-profile-body{padding:14px}.fx-code{direction:ltr;text-align:left;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f5f8fb;border:1px solid var(--fx-line);border-radius:10px;padding:9px;overflow-wrap:anywhere}
+.fx-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.fx-box{border:1px solid var(--fx-line);border-radius:13px;padding:11px}
+.fx-box h3{font-size:14px;margin:0 0 8px}.fx-kv{display:grid;gap:6px}.fx-kv-row{display:grid;grid-template-columns:minmax(90px,.8fr) 1.5fr;gap:8px;font-size:12px;padding:6px 0;border-bottom:1px dashed #e5edf2}
+.fx-kv-row:last-child{border-bottom:0}.fx-kv-row b{overflow-wrap:anywhere}.fx-kv-row span{color:var(--fx-muted);overflow-wrap:anywhere}
+.fx-step{display:grid;grid-template-columns:34px 90px 1fr;gap:8px;align-items:start;padding:7px 0;border-bottom:1px dashed #e5edf2;font-size:12px}.fx-step:last-child{border-bottom:0}
+.fx-step code,.fx-pattern code{direction:ltr;text-align:left;overflow-wrap:anywhere}.fx-pattern{padding:8px 0;border-bottom:1px dashed #e5edf2;font-size:12px}.fx-pattern:last-child{border-bottom:0}
+@media(max-width:680px){.fx-columns{grid-template-columns:1fr}.fx-profile>summary{grid-template-columns:1fr}.fx-kv-row{grid-template-columns:110px 1fr}.fx-step{grid-template-columns:30px 72px 1fr}}
+</style>
+</head>
+<body>
+<main class="fx-wrap">
+  <div class="fx-top">
+    <div><h1 class="fx-title">مسارات التنفيذ</h1><p class="fx-sub">تعريف طريقة التنفيذ نفسها: كود البداية، نوع الشريحة، المتغيرات ومصدرها، الخطوات، وردود الشبكة المعروفة.</p></div>
+    <a class="fx-back" href="admin.html">← الإدارة</a>
+  </div>
+
+  <nav class="fx-tabs">
+    <a class="fx-tab" href="./">فليكسي</a>
+    <a class="fx-tab" href="admin.html">الإدارة</a>
+    <a class="fx-tab active" href="execution-profiles.html">مسارات التنفيذ</a>
+    <a class="fx-tab" href="sims.html">الشرائح</a>
+    <a class="fx-tab" href="sim-feeding.html">التغذية</a>
+    <a class="fx-tab" href="accounts.html">الحسابات</a>
+    <a class="fx-tab" href="orders.html">الطابور</a>
+    <a class="fx-tab" href="review.html">المراجعة</a>
+  </nav>
+
+  <div id="message" class="fx-message" hidden></div>
+
+  <section class="fx-summary">
+    <div><span>Profiles</span><strong id="profileCount">—</strong></div>
+    <div><span>Verified</span><strong id="verifiedCount">—</strong></div>
+    <div><span>Routes مرتبطة</span><strong id="routeCount">—</strong></div>
+  </section>
+
+  <section class="fx-card">
+    <div class="fx-section-title">
+      <div><h2>Execution Profiles</h2><div class="fx-meta">هذه الصفحة لا تعرض Catalog العروض. العرض يرتبط بالـProfile عبر Execution Route.</div></div>
+      <button id="reloadBtn" class="fx-btn secondary" type="button">تحديث</button>
+    </div>
+    <div id="profileList" class="fx-profile-list"><div class="fx-empty">جاري التحميل…</div></div>
+  </section>
+</main>
+
+<script type="module">
+import {rpc,escapeHtml,fmtDate} from './api.js';
+const list=document.getElementById('profileList');
+const msg=document.getElementById('message');
+let rows=[];
+
+const statusLabel=v=>({verified:'مؤكد',draft:'مسودة',disabled:'موقوف'})[v]||v||'—';
+const evidenceLabel=v=>({response_pattern:'رد الشبكة',sms:'SMS',response_or_sms:'رد الشبكة أو SMS',manual_review:'مراجعة يدوية'})[v]||v||'—';
+const sourceLabel=v=>({request:'الطلب',offer:'العرض',route:'Route العرض',sim:'الشريحة',sim_secret:'Secret الشريحة',sim_account:'حساب الشريحة',static:'ثابت',previous_step:'خطوة سابقة',runtime:'وقت التشغيل'})[v]||v||'—';
+const actionLabel=v=>({send:'إرسال بداية',reply:'رد',wait:'انتظار رد',stop:'إغلاق الجلسة',api:'API',manual:'يدوي'})[v]||v||'—';
+const outcomeLabel=v=>({success:'نجاح',failure:'فشل',continue:'استمرار',review:'مراجعة'})[v]||v||'—';
+
+function show(text,bad=false){
+  msg.hidden=false;msg.textContent=text;msg.className='fx-message '+(bad?'bad':'ok');
+  clearTimeout(show.timer);show.timer=setTimeout(()=>msg.hidden=true,4500);
+}
+function arr(v){return Array.isArray(v)?v:[]}
+function simHtml(p){
+  const sims=arr(p.sim_types);
+  if(!sims.length)return '<span class="fx-meta">لا يوجد نوع شريحة مربوط.</span>';
+  return '<div class="fx-pills">'+sims.map(s=>'<span class="fx-pill '+(s.enabled?'ok':'bad')+'">'+escapeHtml(s.display_name||s.sim_type)+'</span>').join('')+'</div>';
+}
+function variablesHtml(p){
+  const vars=arr(p.variables);
+  if(!vars.length)return '<div class="fx-meta">لا توجد متغيرات.</div>';
+  return '<div class="fx-kv">'+vars.map(v=>'<div class="fx-kv-row"><b>{'+escapeHtml(v.variable_key)+'}</b><span>'+escapeHtml(sourceLabel(v.source_kind))+' → '+escapeHtml(v.source_key??v.static_value??'—')+(v.required?' · إجباري':' · اختياري')+'</span></div>').join('')+'</div>';
+}
+function stepsHtml(p){
+  const steps=arr(p.steps);
+  if(!steps.length)return '<div class="fx-meta">لا توجد خطوات.</div>';
+  return steps.map(s=>'<div class="fx-step"><b>#'+escapeHtml(s.position)+'</b><span>'+escapeHtml(actionLabel(s.action))+'</span><div>'+(s.value_template?'<code>'+escapeHtml(s.value_template)+'</code>':'<span class="fx-meta">بدون قيمة</span>')+(s.notes?'<div class="fx-meta">'+escapeHtml(s.notes)+'</div>':'')+'</div></div>').join('');
+}
+function patternsHtml(p){
+  const patterns=arr(p.response_patterns);
+  if(!patterns.length)return '<div class="fx-meta">لا يوجد رد نجاح/فشل مثبت كنمط بعد.</div>';
+  return patterns.map(x=>'<div class="fx-pattern"><div class="fx-pills"><span class="fx-pill '+(x.outcome==='success'?'ok':x.outcome==='failure'?'bad':'warn')+'">'+escapeHtml(outcomeLabel(x.outcome))+'</span><span class="fx-pill">'+escapeHtml(x.match_type)+'</span>'+(x.family?'<span class="fx-pill">'+escapeHtml(x.family)+' '+escapeHtml(x.amount??'')+'</span>':'')+'</div><code>'+escapeHtml(x.pattern_text)+'</code>'+(x.verified_at?'<div class="fx-meta">مثبت: '+escapeHtml(fmtDate(x.verified_at))+'</div>':'')+'</div>').join('');
+}
+function render(){
+  document.getElementById('profileCount').textContent=rows.length;
+  document.getElementById('verifiedCount').textContent=rows.filter(x=>x.status==='verified').length;
+  document.getElementById('routeCount').textContent=rows.reduce((n,x)=>n+Number(x.linked_routes||0),0);
+  if(!rows.length){list.innerHTML='<div class="fx-empty">لا توجد مسارات تنفيذ.</div>';return}
+  list.innerHTML=rows.map(function(p,i){
+    return '<details class="fx-profile" '+(i===0?'open':'')+'><summary><div><div class="fx-name">'+escapeHtml(p.display_name)+'</div><div class="fx-meta">'+escapeHtml(p.profile_key)+' · '+escapeHtml(p.operator_key)+' · '+escapeHtml(p.execution_method)+'</div>'+simHtml(p)+'</div><div class="fx-pills"><span class="fx-pill '+(p.status==='verified'?'ok':p.status==='disabled'?'bad':'warn')+'">'+escapeHtml(statusLabel(p.status))+'</span><span class="fx-pill">'+Number(p.linked_routes||0)+' Route</span></div></summary><div class="fx-profile-body"><div class="fx-meta">كود البداية</div><div class="fx-code">'+escapeHtml(p.start_code_template||'—')+'</div><div class="fx-pills"><span class="fx-pill">دليل النجاح: '+escapeHtml(evidenceLabel(p.success_evidence_mode))+'</span><span class="fx-pill '+(p.require_terminal_success_match?'warn':'')+'">'+(p.require_terminal_success_match?'نجاح نهائي مطلوب':'ACK مسموح')+'</span><span class="fx-pill">Version '+escapeHtml(p.version_no)+'</span></div><div class="fx-columns"><section class="fx-box"><h3>المتغيرات ومصدرها</h3>'+variablesHtml(p)+'</section><section class="fx-box"><h3>خطوات التنفيذ</h3>'+stepsHtml(p)+'</section><section class="fx-box"><h3>ردود الشبكة المعروفة</h3>'+patternsHtml(p)+'</section><section class="fx-box"><h3>المرجع والحالة</h3><div class="fx-meta">'+escapeHtml(p.notes||'—')+'</div><div class="fx-meta" style="margin-top:8px">المصدر: '+escapeHtml(p.source_ref||'—')+'</div><div class="fx-meta">آخر تحقق: '+escapeHtml(fmtDate(p.verified_at))+'</div></section></div></div></details>';
+  }).join('');
+
+  const details=[...document.querySelectorAll('.fx-profile')];
+  details.forEach(d=>d.addEventListener('toggle',()=>{
+    if(!d.open)return;
+    details.forEach(other=>{if(other!==d)other.open=false});
+    if(window.innerWidth<=680)setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'start'}),30);
+  }));
+}
+async function load(){
+  list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';
+  try{
+    const data=await rpc('admin_flexy_execution_profile_matrix');
+    rows=Array.isArray(data)?data:[];
+    render();
+  }catch(error){
+    rows=[];render();show(String(error?.message||error),true);
+  }
+}
+document.getElementById('reloadBtn').addEventListener('click',load);
+load();
+</script>
+<script src="flexy-nav.js?v=20260928-execution-profiles-1"></script>
+</body></html>
