@@ -3,7 +3,7 @@
 
   const script=document.currentScript;
   const rootUrl=script?.dataset?.root?new URL(script.dataset.root,location.href):new URL('./',script?.src||location.href);
-  const labels={cards:'البطاقات',qr:'QR',flexy:'فليكسي',programs:'البرامج',shop:'المحل',notes:'الملاحظات','accounts-review':'الحسابات',communication:'التواصل'};
+  const labels={cards:'البطاقات',qr:'QR',flexy:'فليكسي',programs:'البرامج',shop:'المحل',notes:'الملاحظات','accounts-review':'حسابات المنصات',communication:'التواصل'};
   const rootPath=rootUrl.pathname.endsWith('/')?rootUrl.pathname:rootUrl.pathname+'/';
   const LAST_ROUTE_KEY='mytool.nav.last_route.v1';
   const PREVIOUS_ROUTE_KEY='mytool.nav.previous_route.v1';

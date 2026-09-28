@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#0f766e">
-  <title>الحساب الداخلي — MyTool</title>
+  <title>حساب العميل — MyTool</title>
   <link rel="stylesheet" href="shop-common.css?v=20260927-internal-account-1">
   <script src="shop-routes.js?v=20260927-internal-account-1"></script>
   <script src="shop-shell.js?v=20260927-internal-account-1"></script>
@@ -37,11 +37,11 @@
   <div id="sharedAdminSidebar"></div>
   <main>
     <div id="sharedAdminTop"></div>
-    <div id="status" class="message info">جاري التحقق من الجلسة وميزة الحساب الداخلي…</div>
+    <div id="status" class="message info">جاري التحقق من الجلسة وميزة حساب العميل…</div>
 
     <section id="featureUnavailable" class="card hidden">
-      <h2>الحساب الداخلي غير مفعّل على قاعدة الإنتاج بعد</h2>
-      <p class="muted">الواجهة جاهزة، لكن قاعدة الإنتاج لا تحتوي بعد على migrations الحساب الداخلي. لن نحاول كتابة أي بيانات قبل نشر النواة المعتمدة.</p>
+      <h2>حساب العميل غير مفعّل على قاعدة الإنتاج بعد</h2>
+      <p class="muted">الواجهة جاهزة، لكن قاعدة الإنتاج لا تحتوي بعد على migrations الخاصة بحساب العميل. لن نحاول كتابة أي بيانات قبل نشر النواة المعتمدة.</p>
     </section>
 
     <div id="appContent" class="hidden">
@@ -141,7 +141,7 @@
   </main>
 </div>
 
-<script>ShopShell.watchAdmin({title:'الحساب الداخلي',active:'internal-account'})</script>
+<script>ShopShell.watchAdmin({title:'حساب العميل',active:'internal-account'})</script>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
@@ -578,7 +578,7 @@ async function loadBase(){
   if(saved&&state.branches.some(b=>Number(b.id)===saved))$('branch').value=String(saved)
   updateMoneyAccounts()
   $('appContent').classList.remove('hidden')
-  notify('الحساب الداخلي جاهز. اختر العميل.','ok')
+  notify('حساب العميل جاهز. اختر العميل.','ok')
   if(!state.lines.length)newLine()
 }
 function updateMoneyAccounts(){
@@ -772,7 +772,7 @@ $('paymentOnlyToggle').addEventListener('click',()=>{
 $('saveOperation').addEventListener('click',saveOperation)
 $('savePayment').addEventListener('click',savePayment)
 
-loadBase().catch(e=>notify('تعذر فتح الحساب الداخلي: '+(e.message||e),'error'))
+loadBase().catch(e=>notify('تعذر فتح حساب العميل: '+(e.message||e),'error'))
 </script>
 </body>
 </html>
