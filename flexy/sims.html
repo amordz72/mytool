@@ -28,7 +28,7 @@
 .sim-edit label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--fx-muted)}
 .sim-edit input,.sim-edit select{width:100%;padding:10px;border:1px solid var(--fx-line);border-radius:10px;background:#fff;font:inherit;color:inherit}
 .sim-id{font-family:monospace;direction:ltr;text-align:left}
-.type-grid{display:grid;gap:8px;margin-top:12px}.type-row{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;align-items:center;padding:10px;background:#f8fbfd;border-radius:12px}.type-row small{display:block;color:var(--fx-muted)}.type-form{margin-top:12px}.type-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.type-form label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--fx-muted)}.type-form input,.type-form select{width:100%;padding:10px;border:1px solid var(--fx-line);border-radius:10px;background:#fff;font:inherit}
+.operator-tabs{display:flex;gap:6px;overflow-x:auto;margin:12px 0 10px;padding-bottom:2px}.operator-tab{border:1px solid var(--fx-line);background:#fff;color:var(--fx-muted);border-radius:12px;padding:9px 14px;font:inherit;font-weight:900;white-space:nowrap;cursor:pointer}.operator-tab.active{background:#168bc1;color:#fff;border-color:#168bc1}.operator-tab small{margin-inline-start:5px;opacity:.8}.sim-type-group{border:1px solid var(--fx-line);border-radius:14px;background:#f8fbfd;overflow:hidden}.sim-type-group+.sim-type-group{margin-top:8px}.sim-type-head{width:100%;border:0;background:transparent;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;font:inherit;color:inherit;cursor:pointer;text-align:right}.sim-type-head strong{font-size:14px}.sim-type-meta{font-size:11px;color:var(--fx-muted)}.sim-type-body{display:grid;gap:8px;padding:0 8px 8px}.sim-type-group.collapsed .sim-type-body{display:none}.sim-type-group.collapsed .sim-type-chevron{transform:rotate(90deg)}.sim-type-chevron{transition:transform .15s}.sim-card{box-shadow:none}.sim-details-wrap{margin-top:9px}.sim-details-toggle{border:0;background:transparent;color:#168bc1;font:inherit;font-size:12px;font-weight:900;padding:4px 0;cursor:pointer}.sim-details-wrap:not(.open) .sim-details{display:none}.type-grid{display:grid;gap:8px;margin-top:12px}.type-row{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;align-items:center;padding:10px;background:#f8fbfd;border-radius:12px}.type-row small{display:block;color:var(--fx-muted)}.type-form{margin-top:12px}.type-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.type-form label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--fx-muted)}.type-form input,.type-form select{width:100%;padding:10px;border:1px solid var(--fx-line);border-radius:10px;background:#fff;font:inherit}
 @media(max-width:720px){.type-row{grid-template-columns:1fr 1fr}.type-form-grid{grid-template-columns:1fr}}
 @media(max-width:720px){.sim-details{grid-template-columns:1fr 1fr}.sim-edit-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.sim-balance{font-size:23px}}
@@ -60,7 +60,7 @@
       </div>
       <span id="count" class="fx-pill">0</span>
     </div>
-    <div id="list" class="sim-grid"><div class="fx-empty">جاري التحميل…</div></div>
+    <div id="operatorTabs" class="operator-tabs"></div><div id="list" class="sim-grid"><div class="fx-empty">جاري التحميل…</div></div>
   </section>
 
   <section class="fx-card">
@@ -98,8 +98,8 @@
 
 <script type="module">
 import {rpc,escapeHtml,money,fmtDate} from './api.js';
-const list=document.getElementById('list'),msg=document.getElementById('message'),count=document.getElementById('count'),typeList=document.getElementById('typeList'),typeForm=document.getElementById('typeForm');
-let rows=[],simTypes=[],operators=[];
+const list=document.getElementById('list'),operatorTabs=document.getElementById('operatorTabs'),msg=document.getElementById('message'),count=document.getElementById('count'),typeList=document.getElementById('typeList'),typeForm=document.getElementById('typeForm');
+let rows=[],simTypes=[],operators=[],activeOperator='';
 function operatorName(key){return operators.find(x=>x.operator_key===key)?.display_name||key||'غير معروف'}
 function operatorForRow(row){
   const type=simTypes.find(x=>x.sim_type===row?.sim_type);
@@ -184,53 +184,60 @@ function openType(key=''){
 function render(data){
   rows=data;
   count.textContent=String(rows.length);
-  if(!rows.length){list.innerHTML='<div class="fx-empty">لا توجد شرائح مسجلة.</div>';return}
-  list.innerHTML=rows.map(row=>{
-    const [st,cls]=state(row);
-    const [cn,ccls]=connection(row);
-    const discovery=discoveryLabel(row);
-    const op=row.operational_balance==null?'—':money(row.operational_balance)+' دج';
-    const currentType=String(row.sim_type||'unknown');
-    const currentOperator=operatorForRow(row);
-    return '<article class="sim-card" data-id="'+escapeHtml(row.sim_uuid)+'">'+
-      '<div class="sim-head"><div><div class="sim-name">'+escapeHtml(label(currentType))+'</div>'+
-      '<div class="sim-phone" dir="ltr">'+escapeHtml(row.msisdn||'بدون رقم')+'</div>'+
-      '<div class="sim-phone">المتعامل: <strong>'+escapeHtml(operatorName(currentOperator))+'</strong></div>'+
-      '<div class="sim-phone">صاحب الشريحة: <strong>'+escapeHtml(row.owner_name||'غير محدد')+'</strong></div></div>'+
-      '<div class="sim-badges"><span class="state '+ccls+'">'+escapeHtml(cn)+'</span><span class="state '+cls+'">'+escapeHtml(st)+'</span>'+(discovery?'<span class="state '+discovery[1]+'">'+escapeHtml(discovery[0])+'</span>':'')+'</div></div>'+
-      '<div class="sim-balance">'+escapeHtml(op)+'</div>'+
-      '<div class="sim-rule">'+escapeHtml(rule(currentType))+'</div>'+
-      '<div class="sim-details">'+
-        '<div><small>المحطة الحالية</small><strong>'+escapeHtml(row.station_name||'—')+'</strong></div>'+
-        '<div><small>المودم الحالي</small><strong>'+escapeHtml(modemLabel(row))+'</strong></div>'+
-        '<div><small>المتعامل</small><strong>'+escapeHtml(operatorName(currentOperator))+'</strong></div>'+
-        '<div><small>ICCID — هوية الشريحة</small><strong class="sim-id">'+escapeHtml(row.iccid||'—')+'</strong></div>'+
-        '<div><small>IMEI — هوية المودم</small><strong class="sim-id">'+escapeHtml(row.modem_imei||'—')+'</strong></div>'+
-        '<div><small>آخر ظهور للشريحة</small><strong>'+escapeHtml(row.sim_last_seen_at?new Date(row.sim_last_seen_at).toLocaleString('ar-DZ'):'—')+'</strong></div>'+
-        '<div><small>PIN</small><strong>'+(row.has_pin?'محفوظ':'غير محفوظ')+'</strong></div>'+
-        '<div><small>صاحب الشريحة</small><strong>'+escapeHtml(row.owner_name||'—')+'</strong></div>'+
-        '<div><small>آخر مرجع شبكة</small><strong>'+escapeHtml(fmtDate(row.baseline_checked_at))+'</strong></div>'+
-        '<div><small>عمليات مؤكدة</small><strong>'+escapeHtml(row.confirmed_execution_count||0)+'</strong></div>'+
-      '</div>'+
-      '<div class="sim-actions"><button class="fx-btn secondary edit-sim" type="button">'+(row.flexy_approved?'تعديل بيانات / PIN':'بيانات الاعتماد')+'</button>'+(!row.flexy_approved?'<button class="fx-btn approve-sim" type="button">اعتماد الشريحة</button>':'<button class="fx-btn secondary revoke-sim" type="button">إلغاء الاعتماد</button>')+(!row.msisdn?'<button class="fx-btn secondary discover-number" type="button">اكتشف الرقم الآن</button>':'')+'</div>'+
-      '<form class="sim-edit" hidden>'+
-        '<div class="sim-edit-grid">'+
-          '<label>نوع الشريحة<select name="sim_type">'+
-            '<option value="" '+(currentType==='unknown'?'selected':'')+'>غير مصنفة</option>'+
-            simTypes.filter(x=>x.enabled).map(x=>'<option value="'+escapeHtml(x.sim_type)+'" '+(currentType===x.sim_type?'selected':'')+'>'+escapeHtml(x.display_name)+'</option>').join('')+
-          '</select></label>'+
-          '<label>رقم الشريحة<input name="msisdn" inputmode="numeric" placeholder="06xxxxxxxx" value="'+escapeHtml(row.msisdn||'')+'"></label>'+
-          '<label>صاحب الشريحة<input name="owner_name" autocomplete="off" placeholder="اسم صاحب الشريحة" value="'+escapeHtml(row.owner_name||'')+'"></label>'+
-          '<label>PIN<input name="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="'+(row.has_pin?'اتركه فارغًا للإبقاء على PIN الحالي':'أدخل PIN')+'"></label>'+
-        '</div>'+
-        '<div class="sim-actions"><button class="fx-btn save-sim" type="submit">حفظ</button><button class="fx-btn secondary cancel-sim" type="button">إلغاء</button></div>'+
-        '<div class="fx-meta">ICCID ثابت للشريحة ولا يتغير عند نقلها بين المودمات.</div>'+
-      '</form>'+
-    '</article>';
+  const availableOps=operators.filter(o=>o.enabled&&o.operator_key!=='unknown'&&(simTypes.some(t=>t.operator_key===o.operator_key)||rows.some(r=>operatorForRow(r)===o.operator_key)));
+  if(!activeOperator||!availableOps.some(o=>o.operator_key===activeOperator))activeOperator=availableOps[0]?.operator_key||'';
+  operatorTabs.innerHTML=availableOps.map(o=>{
+    const n=rows.filter(r=>operatorForRow(r)===o.operator_key).length;
+    return '<button type="button" class="operator-tab '+(activeOperator===o.operator_key?'active':'')+'" data-operator="'+escapeHtml(o.operator_key)+'">'+escapeHtml(o.display_name)+' <small>'+n+'</small></button>';
+  }).join('');
+  operatorTabs.querySelectorAll('.operator-tab').forEach(btn=>btn.addEventListener('click',()=>{activeOperator=btn.dataset.operator;render(rows)}));
+  const visibleRows=rows.filter(r=>operatorForRow(r)===activeOperator);
+  const operatorTypes=simTypes.filter(t=>t.operator_key===activeOperator).sort((a,b)=>(a.sort_order??100)-(b.sort_order??100));
+  if(!operatorTypes.length&&!visibleRows.length){list.innerHTML='<div class="fx-empty">لا توجد شرائح أو أنواع لهذا المتعامل.</div>';return}
+  const groups=operatorTypes.map(t=>({type:t,items:visibleRows.filter(r=>r.sim_type===t.sim_type)}));
+  const unknown=visibleRows.filter(r=>!operatorTypes.some(t=>t.sim_type===r.sim_type));
+  if(unknown.length)groups.push({type:{sim_type:'unknown',display_name:'غير مصنفة',enabled:true,sort_order:9999},items:unknown});
+  groups.sort((a,b)=>{
+    const aa=a.items.some(r=>r.connected||r.flexy_approved),bb=b.items.some(r=>r.connected||r.flexy_approved);
+    return Number(bb)-Number(aa)||((a.type.sort_order??100)-(b.type.sort_order??100));
+  });
+  list.innerHTML=groups.map(g=>{
+    const available=g.items.some(r=>r.connected||r.flexy_approved);
+    const collapsed=!available;
+    const balance=g.items.reduce((s,r)=>s+(Number(r.operational_balance)||0),0);
+    const cards=g.items.length?g.items.map(renderSimCard).join(''):'<div class="fx-empty">لا توجد شريحة مستخدمة حاليًا لهذا النوع.</div>';
+    return '<section class="sim-type-group '+(collapsed?'collapsed':'')+'" data-type="'+escapeHtml(g.type.sim_type)+'">'+
+      '<button type="button" class="sim-type-head"><div><strong>'+escapeHtml(g.type.display_name)+'</strong><div class="sim-type-meta">'+g.items.length+' شريحة'+(available?' · متاح الآن':' · غير مستخدم حاليًا')+'</div></div>'+
+      '<div class="sim-type-meta">'+(balance?escapeHtml(money(balance))+' دج · ':'')+'<span class="sim-type-chevron">⌄</span></div></button>'+
+      '<div class="sim-type-body">'+cards+'</div></section>';
   }).join('');
   bind();
 }
+function renderSimCard(row){
+  const [st,cls]=state(row),[cn,ccls]=connection(row),discovery=discoveryLabel(row);
+  const op=row.operational_balance==null?'—':money(row.operational_balance)+' دج';
+  const currentType=String(row.sim_type||'unknown'),currentOperator=operatorForRow(row);
+  const typeOptions=simTypes.filter(x=>x.enabled&&x.operator_key===currentOperator);
+  return '<article class="sim-card" data-id="'+escapeHtml(row.sim_uuid)+'">'+
+    '<div class="sim-head"><div><div class="sim-name">'+escapeHtml(row.msisdn||'بدون رقم')+'</div><div class="sim-phone">'+escapeHtml(label(currentType))+' · '+escapeHtml(row.station_name||'بدون محطة')+'</div></div>'+
+    '<div><div class="sim-balance">'+escapeHtml(op)+'</div><div class="sim-badges"><span class="state '+ccls+'">'+escapeHtml(cn)+'</span><span class="state '+cls+'">'+escapeHtml(st)+'</span>'+(discovery?'<span class="state '+discovery[1]+'">'+escapeHtml(discovery[0])+'</span>':'')+'</div></div></div>'+
+    '<div class="sim-rule">'+escapeHtml(rule(currentType))+'</div>'+
+    '<div class="sim-details-wrap"><button type="button" class="sim-details-toggle">التفاصيل التقنية ⌄</button><div class="sim-details">'+
+      '<div><small>المحطة الحالية</small><strong>'+escapeHtml(row.station_name||'—')+'</strong></div><div><small>المودم الحالي</small><strong>'+escapeHtml(modemLabel(row))+'</strong></div>'+
+      '<div><small>ICCID — هوية الشريحة</small><strong class="sim-id">'+escapeHtml(row.iccid||'—')+'</strong></div><div><small>IMEI — هوية المودم</small><strong class="sim-id">'+escapeHtml(row.modem_imei||'—')+'</strong></div>'+
+      '<div><small>آخر ظهور</small><strong>'+escapeHtml(row.sim_last_seen_at?new Date(row.sim_last_seen_at).toLocaleString('ar-DZ'):'—')+'</strong></div><div><small>PIN</small><strong>'+(row.has_pin?'محفوظ':'غير محفوظ')+'</strong></div>'+
+      '<div><small>صاحب الشريحة</small><strong>'+escapeHtml(row.owner_name||'—')+'</strong></div><div><small>آخر مرجع شبكة</small><strong>'+escapeHtml(fmtDate(row.baseline_checked_at))+'</strong></div><div><small>عمليات مؤكدة</small><strong>'+escapeHtml(row.confirmed_execution_count||0)+'</strong></div>'+
+    '</div></div>'+
+    '<div class="sim-actions"><button class="fx-btn secondary edit-sim" type="button">'+(row.flexy_approved?'تعديل بيانات / PIN':'بيانات الاعتماد')+'</button>'+(!row.flexy_approved?'<button class="fx-btn approve-sim" type="button">اعتماد الشريحة</button>':'<button class="fx-btn secondary revoke-sim" type="button">إلغاء الاعتماد</button>')+(!row.msisdn?'<button class="fx-btn secondary discover-number" type="button">اكتشف الرقم الآن</button>':'')+'</div>'+
+    '<form class="sim-edit" hidden><div class="sim-edit-grid"><label>نوع الشريحة<select name="sim_type"><option value="" '+(currentType==='unknown'?'selected':'')+'>غير مصنفة</option>'+typeOptions.map(x=>'<option value="'+escapeHtml(x.sim_type)+'" '+(currentType===x.sim_type?'selected':'')+'>'+escapeHtml(x.display_name)+'</option>').join('')+'</select></label>'+
+      '<label>رقم الشريحة<input name="msisdn" inputmode="numeric" placeholder="06xxxxxxxx" value="'+escapeHtml(row.msisdn||'')+'"></label><label>صاحب الشريحة<input name="owner_name" autocomplete="off" placeholder="اسم صاحب الشريحة" value="'+escapeHtml(row.owner_name||'')+'"></label>'+
+      '<label>PIN<input name="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="'+(row.has_pin?'اتركه فارغًا للإبقاء على PIN الحالي':'أدخل PIN')+'"></label></div>'+
+      '<div class="sim-actions"><button class="fx-btn save-sim" type="submit">حفظ</button><button class="fx-btn secondary cancel-sim" type="button">إلغاء</button></div><div class="fx-meta">ICCID ثابت للشريحة ولا يتغير عند نقلها بين المودمات.</div></form>'+
+  '</article>';
+}
 function bind(){
+  document.querySelectorAll('.sim-type-head').forEach(btn=>btn.addEventListener('click',()=>btn.closest('.sim-type-group').classList.toggle('collapsed')));
+  document.querySelectorAll('.sim-details-toggle').forEach(btn=>btn.addEventListener('click',()=>btn.closest('.sim-details-wrap').classList.toggle('open')));
   document.querySelectorAll('.approve-sim').forEach(btn=>btn.addEventListener('click',async()=>{
     const card=btn.closest('.sim-card');
     const row=rows.find(x=>String(x.sim_uuid)===String(card.dataset.id));
