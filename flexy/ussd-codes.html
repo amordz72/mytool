@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
+<title>أكواد الشبكة — Flexy</title>
+<link rel="stylesheet" href="app.css?v=20260928-ussd-codes-1">
+<script src="../auth-guard.js?v=20260923-admin-split-1" data-access="admin"></script>
+<style>
+.code-grid{display:grid;gap:10px}.code-card{border:1px solid var(--fx-line);border-radius:16px;background:#fff;padding:14px}
+.code-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.code-main{min-width:0}
+.code-template{direction:ltr;text-align:left;font:800 15px ui-monospace,SFMono-Regular,Consolas,monospace;background:#f5f8fb;border:1px solid var(--fx-line);border-radius:10px;padding:9px;margin-top:8px;overflow-wrap:anywhere}
+.bindings{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.binding{display:inline-flex;gap:5px;align-items:center;border:1px solid var(--fx-line);border-radius:999px;padding:5px 8px;font-size:11px;font-weight:800}
+.binding.auto{background:var(--fx-green-soft);color:var(--fx-green)}.binding.manual{background:var(--fx-orange-soft);color:var(--fx-orange)}
+.bind-form{display:grid;grid-template-columns:1fr 150px auto;gap:8px;align-items:end;margin-top:10px;padding-top:10px;border-top:1px dashed var(--fx-line)}
+.editor-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.editor-grid .wide{grid-column:span 2}.editor-grid label{display:grid;gap:5px;font-size:12px;font-weight:800;color:var(--fx-muted)}
+.fx-check{display:flex!important;align-items:center;gap:7px;padding:11px 0;color:var(--fx-text)!important}
+@media(max-width:680px){.code-head{display:grid}.bind-form,.editor-grid{grid-template-columns:1fr}.editor-grid .wide{grid-column:auto}}
+</style>
+</head>
+<body>
+<main class="fx-wrap">
+  <div class="fx-top">
+    <div><h1 class="fx-title">أكواد الشبكة</h1><p class="fx-sub">جدول مركزي لأكواد USSD والخدمات. اختيار الكود يعتمد على نوع الشريحة المرتبط به، وليس على اسم المتعامل وحده.</p></div>
+    <a class="fx-back" href="admin.html">← الإدارة</a>
+  </div>
+
+  <nav class="fx-tabs">
+    <a class="fx-tab" href="./">فليكسي</a>
+    <a class="fx-tab" href="admin.html">الإدارة</a>
+    <a class="fx-tab" href="execution-profiles.html">مسارات التنفيذ</a>
+    <a class="fx-tab active" href="ussd-codes.html">أكواد الشبكة</a>
+    <a class="fx-tab" href="sims.html">الشرائح</a>
+    <a class="fx-tab" href="sim-feeding.html">التغذية</a>
+    <a class="fx-tab" href="accounts.html">الحسابات</a>
+    <a class="fx-tab" href="orders.html">الطابور</a>
+  </nav>
+
+  <div id="message" class="fx-message" hidden></div>
+
+  <section class="fx-card">
+    <div class="fx-section-title">
+      <div><h2>قاعدة الاختيار</h2><div class="fx-meta">PLMN/IMSI يحدد المتعامل. التنفيذ التلقائي لا يبدأ إلا إذا كان الكود مربوطًا صراحة بـSimType ومسموحًا له Auto.</div></div>
+      <button id="newBtn" class="fx-btn secondary" type="button">إضافة كود</button>
+    </div>
+    <form id="editor" class="fx-form" hidden>
+      <input type="hidden" name="ussd_uuid">
+      <div class="editor-grid">
+        <label>المتعامل<select class="fx-select" name="operator_key" required><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option></select></label>
+        <label>الغرض<input class="fx-input" name="purpose_key" dir="ltr" placeholder="phone_number" required></label>
+        <label>الطريقة<select class="fx-select" name="method"><option value="ussd">USSD</option><option value="service_code">Service Code</option></select></label>
+        <label class="wide">الاسم<input class="fx-input" name="title_ar" required></label>
+        <label>الكود / القالب<input class="fx-input" name="code_template" dir="ltr" required></label>
+        <label>حالة المعلومة<select class="fx-select" name="knowledge_status"><option value="confirmed">confirmed</option><option value="tested_partial">tested_partial</option><option value="needs_test">needs_test</option><option value="rejected_current">rejected_current</option><option value="unknown">unknown</option></select></label>
+        <label>حالة البرنامج<select class="fx-select" name="implementation_status"><option value="available">available</option><option value="planned">planned</option><option value="blocked">blocked</option><option value="unavailable">unavailable</option></select></label>
+        <label>الترتيب<input class="fx-input" name="sort_order" type="number" min="0" value="100"></label>
+        <label class="fx-check"><input name="requires_pin" type="checkbox"> يحتاج PIN</label>
+        <label class="wide">المصدر<input class="fx-input" name="source_ref" placeholder="developer/telecom/..."></label>
+        <label class="wide">ملاحظات<input class="fx-input" name="notes"></label>
+      </div>
+      <div class="fx-actions">
+        <button class="fx-btn" type="submit">حفظ الكود</button>
+        <button id="cancelBtn" class="fx-btn secondary" type="button">إلغاء</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="fx-card">
+    <div class="fx-section-title">
+      <div><h2>الجدول</h2><div class="fx-meta">الربط الأخضر = مسموح تلقائيًا. البرتقالي = يدوي فقط. كود بدون ربط لا يُستعمل تلقائيًا لأي SimType.</div></div>
+      <select id="operatorFilter" class="fx-select" style="max-width:180px"><option value="">كل المتعاملين</option><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option></select>
+    </div>
+    <div id="list" class="code-grid"><div class="fx-empty">جاري التحميل…</div></div>
+  </section>
+</main>
+
+<script type="module">
+import {rpc,escapeHtml,fmtDate} from './api.js';
+const list=document.getElementById('list'),msg=document.getElementById('message'),editor=document.getElementById('editor'),filter=document.getElementById('operatorFilter');
+let codes=[],simTypes=[];
+
+function show(text,bad=false){
+  msg.hidden=false;msg.textContent=text;msg.className='fx-message '+(bad?'bad':'ok');
+  clearTimeout(show.timer);show.timer=setTimeout(()=>msg.hidden=true,4500);
+}
+function arr(v){return Array.isArray(v)?v:[]}
+function statusPill(value){
+  const cls=value==='confirmed'||value==='available'?'ok':value==='blocked'||value==='rejected_current'||value==='unavailable'?'bad':'warn';
+  return '<span class="fx-pill '+cls+'">'+escapeHtml(value||'—')+'</span>';
+}
+function bindingHtml(row){
+  const bindings=arr(row.sim_types);
+  if(!bindings.length)return '<div class="fx-meta">لا يوجد SimType مربوط — لن يستعمل تلقائيًا.</div>';
+  return '<div class="bindings">'+bindings.map(b=>'<span class="binding '+(b.auto_allowed?'auto':'manual')+'">'+escapeHtml(b.display_name||b.sim_type)+' · '+(b.auto_allowed?'Auto':'يدوي')+'</span>').join('')+'</div>';
+}
+function compatibleTypes(row){
+  return simTypes.filter(t=>t.enabled&&t.operator_key===row.operator_key);
+}
+function render(){
+  const op=filter.value;
+  const rows=codes.filter(r=>!op||r.operator_key===op);
+  if(!rows.length){list.innerHTML='<div class="fx-empty">لا توجد أكواد.</div>';return}
+  list.innerHTML=rows.map(row=>{
+    const types=compatibleTypes(row);
+    const bound=new Map(arr(row.sim_types).map(x=>[x.sim_type,x]));
+    return '<article class="code-card" data-id="'+escapeHtml(row.ussd_uuid)+'">'+
+      '<div class="code-head"><div class="code-main"><div class="fx-name">'+escapeHtml(row.title_ar)+'</div>'+
+      '<div class="fx-meta">'+escapeHtml(row.operator_key)+' · '+escapeHtml(row.purpose_key)+' · '+escapeHtml(row.method)+'</div></div>'+
+      '<div class="fx-pills">'+statusPill(row.knowledge_status)+statusPill(row.implementation_status)+'</div></div>'+
+      '<div class="code-template">'+escapeHtml(row.code_template)+'</div>'+
+      bindingHtml(row)+
+      '<div class="fx-meta">آخر تحقق: '+escapeHtml(fmtDate(row.last_verified_at))+(row.requires_pin?' · يحتاج PIN':'')+'</div>'+
+      '<div class="fx-actions" style="margin-top:9px"><button class="fx-btn secondary edit-code" type="button">تعديل الكود</button></div>'+
+      '<div class="bind-form"><div class="fx-field"><label>ربط SimType</label><select class="fx-select bind-type">'+
+      '<option value="">اختر النوع</option>'+types.map(t=>'<option value="'+escapeHtml(t.sim_type)+'">'+escapeHtml(t.display_name)+' · '+escapeHtml(t.sim_type)+(bound.has(t.sim_type)?' · مربوط':'')+'</option>').join('')+
+      '</select></div><div class="fx-field"><label>طريقة الاستعمال</label><select class="fx-select bind-auto"><option value="false">يدوي فقط</option><option value="true">تلقائي مسموح</option></select></div><button class="fx-btn bind-save" type="button">حفظ الربط</button></div>'+
+      '</article>';
+  }).join('');
+
+  document.querySelectorAll('.edit-code').forEach(btn=>btn.addEventListener('click',()=>openEditor(btn.closest('[data-id]').dataset.id)));
+  document.querySelectorAll('.bind-save').forEach(btn=>btn.addEventListener('click',async()=>{
+    const card=btn.closest('[data-id]'),simType=card.querySelector('.bind-type').value;
+    if(!simType){show('اختر SimType أولًا.',true);return}
+    btn.disabled=true;
+    try{
+      await rpc('mytool_admin_ussd_code_bind_sim_type',{
+        p_ussd_uuid:card.dataset.id,
+        p_sim_type:simType,
+        p_enabled:true,
+        p_auto_allowed:card.querySelector('.bind-auto').value==='true',
+        p_priority:10,
+        p_notes:null
+      });
+      show('تم حفظ ربط الكود بنوع الشريحة.');await load();
+    }catch(e){show(String(e?.message||e),true)}
+    finally{btn.disabled=false}
+  }));
+}
+function openEditor(id=''){
+  const row=codes.find(x=>x.ussd_uuid===id);
+  editor.hidden=false;editor.reset();
+  editor.elements.ussd_uuid.value=row?.ussd_uuid||'';
+  editor.elements.operator_key.value=row?.operator_key||'mobilis';
+  editor.elements.purpose_key.value=row?.purpose_key||'phone_number';
+  editor.elements.method.value=row?.method||'ussd';
+  editor.elements.title_ar.value=row?.title_ar||'';
+  editor.elements.code_template.value=row?.code_template||'';
+  editor.elements.knowledge_status.value=row?.knowledge_status||'unknown';
+  editor.elements.implementation_status.value=row?.implementation_status||'planned';
+  editor.elements.sort_order.value=row?.sort_order??100;
+  editor.elements.requires_pin.checked=Boolean(row?.requires_pin);
+  editor.elements.source_ref.value=row?.source_ref||'';
+  editor.elements.notes.value=row?.notes||'';
+  editor.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function load(){
+  list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';
+  try{
+    const [codeRows,typeRows]=await Promise.all([
+      rpc('mytool_admin_ussd_code_matrix'),
+      rpc('station_connect_admin_sim_types')
+    ]);
+    codes=Array.isArray(codeRows)?codeRows:[];
+    simTypes=Array.isArray(typeRows)?typeRows:[];
+    render();
+  }catch(e){codes=[];simTypes=[];render();show(String(e?.message||e),true)}
+}
+document.getElementById('newBtn').addEventListener('click',()=>openEditor());
+document.getElementById('cancelBtn').addEventListener('click',()=>{editor.hidden=true});
+filter.addEventListener('change',render);
+editor.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const fd=new FormData(editor),btn=editor.querySelector('button[type="submit"]');btn.disabled=true;
+  try{
+    await rpc('mytool_admin_ussd_code_save',{
+      p_ussd_uuid:String(fd.get('ussd_uuid')||'').trim()||null,
+      p_operator_key:String(fd.get('operator_key')||''),
+      p_sim_profile:'any',
+      p_purpose_key:String(fd.get('purpose_key')||'').trim(),
+      p_title_ar:String(fd.get('title_ar')||'').trim(),
+      p_method:String(fd.get('method')||'ussd'),
+      p_code_template:String(fd.get('code_template')||'').trim(),
+      p_requires_pin:fd.get('requires_pin')==='on',
+      p_knowledge_status:String(fd.get('knowledge_status')||'unknown'),
+      p_implementation_status:String(fd.get('implementation_status')||'planned'),
+      p_notes:String(fd.get('notes')||'').trim()||null,
+      p_source_ref:String(fd.get('source_ref')||'').trim()||null,
+      p_sort_order:Number(fd.get('sort_order')||100),
+      p_last_verified_at:null
+    });
+    editor.hidden=true;show('تم حفظ الكود. اربطه الآن بنوع الشريحة المناسب.');await load();
+  }catch(err){show(String(err?.message||err),true)}
+  finally{btn.disabled=false}
+});
+load();
+</script>
+<script src="flexy-nav.js?v=20260928-ussd-codes-1"></script>
+</body></html>
