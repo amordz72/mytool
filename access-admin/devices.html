@@ -96,18 +96,17 @@ function operatorLabel(v){return ({mobilis:'Mobilis',djezzy:'Djezzy',ooredoo:'Oo
 function centerForModem(modemUuid){return usbCenter.find(x=>x.modem_uuid===modemUuid)||null;}
 function numberRequirement(operator,simType){
   const type=String(simType||'').toLowerCase();
-  const base=r=>
+  if(!type||type==='unknown')return null;
+  const exact=ussdCodes.find(r=>
     r.operator_key===operator &&
     r.purpose_key==='phone_number' &&
     ['ussd','service_code'].includes(r.method) &&
     r.code_template &&
-    !String(r.code_template).includes('{');
-  if(type&&type!=='unknown'){
-    const exact=ussdCodes.find(r=>base(r)&&Array.isArray(r.sim_types)&&r.sim_types.some(b=>b.sim_type===type&&b.enabled));
-    if(exact)return {...exact,_binding_kind:'exact_sim_type',_binding:exact.sim_types.find(b=>b.sim_type===type&&b.enabled)};
-  }
-  const candidate=ussdCodes.find(r=>base(r)&&(!Array.isArray(r.sim_types)||r.sim_types.length===0));
-  return candidate?{...candidate,_binding_kind:'operator_candidate',_binding:null}:null;
+    !String(r.code_template).includes('{') &&
+    Array.isArray(r.sim_types) &&
+    r.sim_types.some(b=>b.sim_type===type&&b.enabled)
+  );
+  return exact?{...exact,_binding_kind:'exact_sim_type',_binding:exact.sim_types.find(b=>b.sim_type===type&&b.enabled)}:null;
 }
 function phoneCandidates(raw){
   const values=(String(raw||'').match(/(?:\+?213|0)[\s.\-]*(?:5|6|7)(?:[\s.\-]*\d){8}/g)||[])
@@ -177,7 +176,7 @@ function simSetup(likely,operator,usbLabel,agentVersion){
       '<input class="manual-lookup-code" dir="ltr" value="'+esc(lookup.code_template)+'" autocomplete="off"></label>'+
       '<div class="sim-setup-actions"><button class="mt-btn manual-lookup" type="button" data-sim="'+esc(likely.sim_uuid)+'">إرسال الاستعلام</button>'+
       (autoAllowed?'<button class="mt-btn secondary discover-msisdn" type="button" data-sim="'+esc(likely.sim_uuid)+'">اكتشاف تلقائي</button>':'')+
-      '</div><div class="mt-meta" style="margin-top:5px">'+(exactLookup?'الكود مربوط صراحة بنوع الشريحة '+esc(likely.sim_type)+'.':'هذا مرشح للمتعامل فقط؛ التنفيذ اليدوي يحتاج تأكد من نوع الشريحة، ولا يُستعمل تلقائيًا.')+'</div></div>';
+      '</div><div class="mt-meta" style="margin-top:5px">الكود مربوط صراحة بنوع الشريحة '+esc(likely.sim_type)+'.</div></div>';
   }else if(!known&&lookup?.method==='service_code'){
     const canDial=versionAtLeast(agentVersion,'0.4.11')&&lookup.implementation_status==='available';
     discover='<div style="width:100%"><label style="display:grid;gap:5px;font-size:11px;font-weight:800;color:#65778a">كود معرفة الرقم'+
