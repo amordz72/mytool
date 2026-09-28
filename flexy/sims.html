@@ -73,7 +73,7 @@
       <div class="type-form-grid">
         <label>SimType<input name="sim_type" dir="ltr" placeholder="mobilis-sama" required></label>
         <label>الاسم الظاهر<input name="display_name" placeholder="SAMA" required></label>
-        <label>المتعامل<select name="operator_key"><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option><option value="unknown">غير معروف</option></select></label>
+        <label>المتعامل<select name="operator_key" required><option value="">جاري تحميل المتعاملين…</option></select></label>
         <label>أكواد الشبكة<a class="fx-link" href="ussd-codes.html">إدارة الربط من جدول الأكواد ←</a></label>
         <label>الترتيب<input name="sort_order" type="number" min="0" value="100"></label>
         <label>الحالة<select name="enabled"><option value="true">مفعل</option><option value="false">موقوف</option></select></label>
@@ -99,7 +99,10 @@
 <script type="module">
 import {rpc,escapeHtml,money,fmtDate} from './api.js';
 const list=document.getElementById('list'),msg=document.getElementById('message'),count=document.getElementById('count'),typeList=document.getElementById('typeList'),typeForm=document.getElementById('typeForm');
-let rows=[],simTypes=[];
+let rows=[],simTypes=[],operators=[];
+function operatorName(key){return operators.find(x=>x.operator_key===key)?.display_name||key||'غير معروف'}
+function operatorOptions(includeUnknown=true){return operators.filter(x=>x.enabled&&(includeUnknown||x.operator_key!=='unknown')).map(x=>'<option value="'+escapeHtml(x.operator_key)+'">'+escapeHtml(x.display_name)+' · '+escapeHtml(x.operator_key)+'</option>').join('')}
+function refreshOperatorSelect(){const select=typeForm.elements.operator_key;if(select)select.innerHTML=operatorOptions(true)}
 
 function label(type){
   const managed=simTypes.find(x=>x.sim_type===type);if(managed)return managed.display_name;
@@ -107,10 +110,7 @@ function label(type){
     'mobilis-sama':'SAMA',
     'mobilis-arsselli':'Arsselli GTS',
     'unknown':'غير مصنفة',
-    'mobilis':'Mobilis',
-    'djezzy':'Djezzy',
-    'ooredoo':'Ooredoo',
-    'pixx':'PixX'
+        'pixx':'PixX'
   })[String(type||'').toLowerCase()]||type||'شريحة';
 }
 function state(row){
@@ -160,7 +160,8 @@ function openType(key=''){
   typeForm.elements.sim_type.value=t?.sim_type||'';
   typeForm.elements.sim_type.readOnly=!!t;
   typeForm.elements.display_name.value=t?.display_name||'';
-  typeForm.elements.operator_key.value=t?.operator_key||'mobilis';
+  refreshOperatorSelect();
+  typeForm.elements.operator_key.value=t?.operator_key||(operators.find(x=>x.enabled&&x.operator_key!=='unknown')?.operator_key||'unknown');
   typeForm.elements.sort_order.value=t?.sort_order??100;
   typeForm.elements.enabled.value=String(t?.enabled??true);
   typeForm.elements.notes.value=t?.notes||'';
@@ -283,12 +284,14 @@ function bind(){
 async function load(){
   list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';msg.hidden=true;
   try{
-    const [inventory,balances,discoveries,types]=await Promise.all([
+    const [inventory,balances,discoveries,types,operatorRows]=await Promise.all([
       rpc('station_connect_admin_sim_inventory'),
       rpc('station_connect_admin_sim_operational_balances'),
       rpc('station_connect_admin_sim_phone_discovery_state'),
-      rpc('station_connect_admin_sim_types')
+      rpc('station_connect_admin_sim_types'),
+      rpc('station_connect_admin_operators')
     ]);
+    operators=Array.isArray(operatorRows)?operatorRows:[];refreshOperatorSelect();
     simTypes=Array.isArray(types)?types:[];renderTypes();
     const balanceMap=new Map((Array.isArray(balances)?balances:[]).map(row=>[row.sim_uuid,row]));
     const discoveryMap=new Map((Array.isArray(discoveries)?discoveries:[]).map(row=>[row.sim_uuid,row]));
