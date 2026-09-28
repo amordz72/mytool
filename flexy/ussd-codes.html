@@ -46,7 +46,7 @@
     <form id="editor" class="fx-form" hidden>
       <input type="hidden" name="ussd_uuid">
       <div class="editor-grid">
-        <label>المتعامل<select class="fx-select" name="operator_key" required><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option></select></label>
+        <label>المتعامل<select class="fx-select" name="operator_key" required><option value="">جاري تحميل المتعاملين…</option></select></label>
         <label>الغرض<input class="fx-input" name="purpose_key" dir="ltr" placeholder="phone_number" required></label>
         <label>الطريقة<select class="fx-select" name="method"><option value="ussd">USSD</option><option value="service_code">Service Code</option></select></label>
         <label class="wide">الاسم<input class="fx-input" name="title_ar" required></label>
@@ -68,7 +68,7 @@
   <section class="fx-card">
     <div class="fx-section-title">
       <div><h2>الجدول</h2><div class="fx-meta">الربط الأخضر = مسموح تلقائيًا. البرتقالي = يدوي فقط. كود بدون ربط لا يُستعمل تلقائيًا لأي SimType.</div></div>
-      <select id="operatorFilter" class="fx-select" style="max-width:180px"><option value="">كل المتعاملين</option><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option></select>
+      <select id="operatorFilter" class="fx-select" style="max-width:220px"><option value="">كل المتعاملين</option></select>
     </div>
     <div id="list" class="code-grid"><div class="fx-empty">جاري التحميل…</div></div>
   </section>
@@ -77,7 +77,16 @@
 <script type="module">
 import {rpc,escapeHtml,fmtDate} from './api.js';
 const list=document.getElementById('list'),msg=document.getElementById('message'),editor=document.getElementById('editor'),filter=document.getElementById('operatorFilter');
-let codes=[],simTypes=[];
+let codes=[],simTypes=[],operators=[];
+function operatorName(key){return operators.find(x=>x.operator_key===key)?.display_name||key||'—'}
+function refreshOperatorControls(){
+  const active=operators.filter(x=>x.enabled&&x.operator_key!=='unknown');
+  const opts=active.map(x=>'<option value="'+escapeHtml(x.operator_key)+'">'+escapeHtml(x.display_name)+' · '+escapeHtml(x.operator_key)+'</option>').join('');
+  editor.elements.operator_key.innerHTML='<option value="">اختر المتعامل</option>'+opts;
+  const current=filter.value;
+  filter.innerHTML='<option value="">كل المتعاملين</option>'+opts;
+  if(active.some(x=>x.operator_key===current))filter.value=current;
+}
 
 function show(text,bad=false){
   msg.hidden=false;msg.textContent=text;msg.className='fx-message '+(bad?'bad':'ok');
@@ -105,7 +114,7 @@ function render(){
     const bound=new Map(arr(row.sim_types).map(x=>[x.sim_type,x]));
     return '<article class="code-card" data-id="'+escapeHtml(row.ussd_uuid)+'">'+
       '<div class="code-head"><div class="code-main"><div class="fx-name">'+escapeHtml(row.title_ar)+'</div>'+
-      '<div class="fx-meta">'+escapeHtml(row.operator_key)+' · '+escapeHtml(row.purpose_key)+' · '+escapeHtml(row.method)+'</div></div>'+
+      '<div class="fx-meta">'+escapeHtml(operatorName(row.operator_key))+' · '+escapeHtml(row.operator_key)+' · '+escapeHtml(row.purpose_key)+' · '+escapeHtml(row.method)+'</div></div>'+
       '<div class="fx-pills">'+statusPill(row.knowledge_status)+statusPill(row.implementation_status)+'</div></div>'+
       '<div class="code-template">'+escapeHtml(row.code_template)+'</div>'+
       bindingHtml(row)+
@@ -140,7 +149,8 @@ function openEditor(id=''){
   const row=codes.find(x=>x.ussd_uuid===id);
   editor.hidden=false;editor.reset();
   editor.elements.ussd_uuid.value=row?.ussd_uuid||'';
-  editor.elements.operator_key.value=row?.operator_key||'mobilis';
+  refreshOperatorControls();
+  editor.elements.operator_key.value=row?.operator_key||(operators.find(x=>x.enabled&&x.operator_key!=='unknown')?.operator_key||'');
   editor.elements.purpose_key.value=row?.purpose_key||'phone_number';
   editor.elements.method.value=row?.method||'ussd';
   editor.elements.title_ar.value=row?.title_ar||'';
@@ -156,10 +166,12 @@ function openEditor(id=''){
 async function load(){
   list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';
   try{
-    const [codeRows,typeRows]=await Promise.all([
+    const [codeRows,typeRows,operatorRows]=await Promise.all([
       rpc('mytool_admin_ussd_code_matrix'),
-      rpc('station_connect_admin_sim_types')
+      rpc('station_connect_admin_sim_types'),
+      rpc('station_connect_admin_operators')
     ]);
+    operators=Array.isArray(operatorRows)?operatorRows:[];refreshOperatorControls();
     codes=Array.isArray(codeRows)?codeRows:[];
     simTypes=Array.isArray(typeRows)?typeRows:[];
     render();
