@@ -311,7 +311,7 @@
           <a class="card" href="https://pairdrop.net/" target="_blank" rel="noopener"><div class="icon">📲</div><h2>PairDrop</h2><p>نقل ملفات بين الهاتف والكمبيوتر من المتصفح.</p><span class="badge">خارجي</span></a>
           <a class="card" href="https://omnitools.app/" target="_blank" rel="noopener"><div class="icon">🖼️</div><h2>أدوات الصور والملفات</h2><p>تحويل وضغط الصور وPDF وأدوات أخرى.</p><span class="badge">خارجي</span></a>
         </section>
-        <div id="toolsSessionNote" class="small">هذه جلسة مؤقتة للأدوات العامة فقط، ولا تفتح حساب المحل أو الملاحظات أو بيانات الإدارة.</div>`;
+        <div id="toolsSessionNote" class="small">هذه جلسة مؤقتة للأدوات العامة فقط، ولا تفتح تشغيل المحل أو الملاحظات أو بيانات الإدارة.</div>`;
       workerTools.insertAdjacentElement('beforebegin',panel);
     }
   }
@@ -329,7 +329,7 @@
     if($('sessionMode'))$('sessionMode').textContent=accessType==='personal'?'دخول أدوات — جهاز شخصي':'دخول أدوات مؤقت';
     if($('toolsSessionNote'))$('toolsSessionNote').textContent=accessType==='personal'
       ?'هذا الجهاز معتمد حاليًا كجهاز شخصي أونلاين. لا يوجد PIN أو Offline في هذه الدفعة، ويمكن للإدارة إلغاء الجلسة في أي وقت.'
-      :'هذه جلسة مؤقتة للأدوات العامة فقط، ولا تفتح حساب المحل أو الملاحظات أو بيانات الإدارة.';
+      :'هذه جلسة مؤقتة للأدوات العامة فقط، ولا تفتح تشغيل المحل أو الملاحظات أو بيانات الإدارة.';
     updateToolsExpiry(expiresAt,accessType);
     if(expiryTimer)clearInterval(expiryTimer);
     expiryTimer=setInterval(()=>{

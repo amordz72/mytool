@@ -46,10 +46,10 @@
     }
     if(currentApp==='shop'){
       const screen=document.body?.dataset?.screen||file.replace(/\.html$/,'');
-      const map={index:'حساب المحل',sale:'البيع',purchase:'المشتريات',stock:'المخزون',inventory:'الجرد','inventory-count':'الجرد','physical-inventory':'الجرد الفعلي','opening-stock':'الجرد الافتتاحي',transfers:'التحويلات',money:'الأموال','cash-receipts':'استلام الأموال','shift-close':'إغلاق الوردية',daily:'التشغيل اليومي',users:'المستخدمون',settings:'الإعدادات',products:'المنتجات',catalog:'التصنيفات',barcodes:'الباركود'};
+      const map={index:'تشغيل المحل',sale:'البيع',purchase:'المشتريات',stock:'المخزون',inventory:'الجرد','inventory-count':'الجرد','physical-inventory':'الجرد الفعلي','opening-stock':'الجرد الافتتاحي',transfers:'التحويلات',money:'الأموال','cash-receipts':'استلام الأموال','shift-close':'إغلاق الوردية',daily:'التشغيل اليومي',users:'المستخدمون',settings:'الإعدادات',products:'المنتجات',catalog:'التصنيفات',barcodes:'الباركود'};
       return map[screen]||titleFromDocument();
     }
-    const map={cards:'معالج البطاقات','accounts-review':'الحسابات',notes:'الملاحظات',orders:'الطلبات',customers:'العملاء',programs:'البرامج',qr:'QR','document-reader':'قارئ المستندات','chat-payments-reader':'قارئ مدفوعات الدردشة',links:'روابط العمل','access-admin':'الإدارة'};
+    const map={cards:'معالج البطاقات','accounts-review':'حسابات المنصات',notes:'الملاحظات',orders:'الطلبات',customers:'العملاء',programs:'البرامج',qr:'QR','document-reader':'قارئ الوصولات','chat-payments-reader':'قارئ مدفوعات الدردشة',links:'روابط العمل','access-admin':'الإدارة'};
     return map[currentApp]||titleFromDocument();
   }
 
@@ -57,7 +57,7 @@
     const a=access();
     if(a.tools&&!a.admin)return [
       ['home','⌂','رئيسية My Tools',''],
-      ['shop','🧾','حساب المحل','shop/'],
+      ['shop','🧾','تشغيل المحل','shop/'],
       ['cards','🎫','معالج البطاقات','cards/'],
       ['programs','🧰','البرامج','programs/'],
       ['links','↗','روابط العمل','links/'],
@@ -65,15 +65,15 @@
     ];
     const base=[
       ['home','⌂','رئيسية My Tools',''],
-      ['shop','🧾','حساب المحل','shop/'],
+      ['shop','🧾','تشغيل المحل','shop/'],
       ['flexy','📱','تميز / فليكسي','flexy/home.html'],
       ['orders','📥','الطلبات','orders/?v=20260923-person-identity-only1'],
       ['customers','👥','العملاء','shop/customers.html?v=20260923-customer-registry1'],
-      ['internal-account','🧾','الحساب الداخلي','shop/internal-account.html'],
+      ['internal-account','🧾','حساب العميل','shop/internal-account.html'],
       ['cards','🎫','معالج البطاقات','cards/'],
-      ['accounts-review','📊','الحسابات','accounts-review/'],
+      ['accounts-review','📊','حسابات المنصات','accounts-review/'],
       ['notes','📝','الملاحظات','notes/'],
-      ['document-reader','📄','قارئ المستندات','document-reader/'],
+      ['document-reader','📄','قارئ الوصولات','document-reader/'],
       ['chat-payments-reader','💬','قارئ مدفوعات الدردشة','chat-payments-reader/'],
       ['offline-transfer','👤','الحسابات والأجهزة','offline-transfer/admin.html'],
       ['programs','🧰','البرامج','programs/'],
