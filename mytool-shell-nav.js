@@ -41,7 +41,7 @@
     const file=(location.pathname.split('/').pop()||'index.html').toLowerCase();
     if(!currentApp)return 'رئيسية My Tools';
     if(currentApp==='flexy'){
-      const map={'home.html':'تميز','index.html':'فليكسي','admin.html':'إدارة فليكسي','accounts.html':'حسابات فليكسي','orders.html':'الطابور','review.html':'مراجعة فليكسي','my-account.html':'حسابي','sims.html':'الشرائح والأرصدة','sim-feeding.html':'تغذية الشرائح','execution-profiles.html':'مسارات التنفيذ'};
+      const map={'home.html':'تميز','index.html':'فليكسي','admin.html':'إدارة فليكسي','accounts.html':'حسابات فليكسي','orders.html':'الطابور','review.html':'مراجعة فليكسي','my-account.html':'حسابي','sims.html':'الشرائح والأرصدة','sim-feeding.html':'تغذية الشرائح','execution-profiles.html':'مسارات التنفيذ','ussd-codes.html':'أكواد الشبكة','execution-profiles.html':'مسارات التنفيذ'};
       return map[file]||'تميز';
     }
     if(currentApp==='shop'){
@@ -92,6 +92,8 @@
       ['cards','▣','البطاقات','cards/']
     ];
     if(a.admin)items.push(
+      ['execution','⇄','مسارات التنفيذ','flexy/execution-profiles.html'],
+      ['ussd-codes','⌁','أكواد الشبكة','flexy/ussd-codes.html'],
       ['sims','📶','الشرائح والأرصدة','flexy/sims.html'],
       ['feeding','🔋','تغذية الشرائح','flexy/sim-feeding.html'],
       ['execution-profiles','⇢','مسارات التنفيذ','flexy/execution-profiles.html'],
