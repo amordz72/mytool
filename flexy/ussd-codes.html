@@ -43,14 +43,29 @@
       <div><h2>قاعدة الاختيار</h2><div class="fx-meta">PLMN/IMSI يحدد المتعامل. التنفيذ التلقائي لا يبدأ إلا إذا كان الكود مربوطًا صراحة بـSimType ومسموحًا له Auto.</div></div>
       <button id="newBtn" class="fx-btn secondary" type="button">إضافة كود</button>
     </div>
-    <form id="editor" class="fx-form" hidden>
+    <form id="editor" class="fx-form" hidden novalidate>
       <input type="hidden" name="ussd_uuid">
       <div class="editor-grid">
-        <label>المتعامل<select class="fx-select" name="operator_key" required><option value="">جاري تحميل المتعاملين…</option></select></label>
-        <label>الغرض<input class="fx-input" name="purpose_key" dir="ltr" placeholder="phone_number" required></label>
+        <label>المتعامل<select class="fx-select" name="operator_key"><option value="">جاري تحميل المتعاملين…</option></select></label>
+        <label>الغرض
+    <input class="fx-input" name="purpose_key" dir="ltr" list="purposeOptions" placeholder="phone_number" autocomplete="off">
+    <datalist id="purposeOptions">
+      <option value="phone_number">معرفة رقم الهاتف</option>
+      <option value="balance">معرفة الرصيد</option>
+      <option value="offer_send">إرسال عرض</option>
+      <option value="offer_send_net">إرسال عرض Net</option>
+      <option value="standard_balance_send">إرسال رصيد عادي</option>
+      <option value="wholesale_transfer">تحويل جملة</option>
+      <option value="bill_payment">دفع فاتورة</option>
+      <option value="flexy_list">قائمة Flexy</option>
+      <option value="transfers_list">قائمة التحويلات</option>
+      <option value="pin_change">تغيير PIN</option>
+      <option value="international_balance">رصيد دولي</option>
+    </datalist>
+  </label>
         <label>الطريقة<select class="fx-select" name="method"><option value="ussd">USSD</option><option value="service_code">Service Code</option></select></label>
-        <label class="wide">الاسم<input class="fx-input" name="title_ar" required></label>
-        <label>الكود / القالب<input class="fx-input" name="code_template" dir="ltr" required></label>
+        <label class="wide">الاسم<input class="fx-input" name="title_ar"></label>
+        <label>الكود / القالب<input class="fx-input" name="code_template" dir="ltr"></label>
         <label>حالة المعلومة<select class="fx-select" name="knowledge_status"><option value="confirmed">confirmed</option><option value="tested_partial">tested_partial</option><option value="needs_test">needs_test</option><option value="rejected_current">rejected_current</option><option value="unknown">unknown</option></select></label>
         <label>حالة البرنامج<select class="fx-select" name="implementation_status"><option value="available">available</option><option value="planned">planned</option><option value="blocked">blocked</option><option value="unavailable">unavailable</option></select></label>
         <label>الترتيب<input class="fx-input" name="sort_order" type="number" min="0" value="100"></label>
@@ -180,8 +195,35 @@ async function load(){
 document.getElementById('newBtn').addEventListener('click',()=>openEditor());
 document.getElementById('cancelBtn').addEventListener('click',()=>{editor.hidden=true});
 filter.addEventListener('change',render);
+
+function validateEditor(){
+  const fields=[
+    ['operator_key','اختر المتعامل.'],
+    ['purpose_key','حدد الغرض من الكود، مثل معرفة رقم الهاتف.'],
+    ['title_ar','اكتب اسمًا واضحًا للكود.'],
+    ['code_template','أدخل الكود أو القالب.']
+  ];
+  for(const [name,message] of fields){
+    const el=editor.elements[name];
+    if(!el||!String(el.value||'').trim()){
+      show(message,true);
+      el?.focus();
+      el?.scrollIntoView({behavior:'smooth',block:'center'});
+      return false;
+    }
+  }
+  const purpose=String(editor.elements.purpose_key.value||'').trim();
+  if(!/^[a-z0-9][a-z0-9._-]{1,80}$/.test(purpose)){
+    show('الغرض يجب أن يكون مفتاحًا تقنيًا مثل phone_number بدون مسافات.',true);
+    editor.elements.purpose_key.focus();
+    return false;
+  }
+  return true;
+}
+
 editor.addEventListener('submit',async e=>{
   e.preventDefault();
+  if(!validateEditor())return;
   const fd=new FormData(editor),btn=editor.querySelector('button[type="submit"]');btn.disabled=true;
   try{
     await rpc('mytool_admin_ussd_code_save',{
