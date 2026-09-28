@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#168bc1">
+<title>المتعاملون — Flexy</title>
+<link rel="stylesheet" href="app.css?v=20260928-operators-1">
+<script src="../auth-guard.js?v=20260923-admin-split-1" data-access="admin"></script>
+<style>
+.operator-list{display:grid;gap:10px}
+.operator-card{border:1px solid var(--fx-line);border-radius:16px;background:#fff;overflow:hidden}
+.operator-card>summary{list-style:none;cursor:pointer;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+.operator-card>summary::-webkit-details-marker{display:none}.operator-card[open]>summary{border-bottom:1px solid var(--fx-line);background:#fbfdff}
+.operator-body{padding:14px}.operator-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.identifier-list{display:grid;gap:7px}.identifier-row{display:grid;grid-template-columns:100px 1fr auto;gap:8px;align-items:center;padding:9px;border:1px solid var(--fx-line);border-radius:12px;background:#f8fbfd}
+.identifier-value{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;direction:ltr;text-align:left;font-weight:900}
+.operator-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.operator-form-grid label,.identifier-form label{display:grid;gap:5px;font-size:12px;font-weight:800;color:var(--fx-muted)}
+.identifier-form{display:grid;grid-template-columns:140px 1fr 120px auto;gap:8px;align-items:end;margin-top:10px}
+.operator-form-grid .wide{grid-column:span 2}
+@media(max-width:720px){.operator-card>summary,.operator-grid,.operator-form-grid,.identifier-form{grid-template-columns:1fr}.operator-form-grid .wide{grid-column:auto}.identifier-row{grid-template-columns:90px 1fr}.identifier-row button{grid-column:1/-1}.operator-card[open]{scroll-margin-top:74px}}
+</style>
+</head>
+<body data-mytool-app="flexy">
+<main class="fx-wrap">
+  <div class="fx-top">
+    <div><h1 class="fx-title">المتعاملون</h1><p class="fx-sub">الكيان الأب للشبكة. IMSI/PLMN يحدد المتعامل، ثم SimType يحدد نوع الشريحة، وبعده نربط أكواد الخدمة المناسبة.</p></div>
+    <a class="fx-back" href="admin.html">← الإدارة</a>
+  </div>
+
+  <nav class="fx-tabs">
+    <a class="fx-tab" href="./">فليكسي</a>
+    <a class="fx-tab" href="admin.html">الإدارة</a>
+    <a class="fx-tab active" href="operators.html">المتعاملون</a>
+    <a class="fx-tab" href="sims.html">الشرائح</a>
+    <a class="fx-tab" href="ussd-codes.html">أكواد الشبكة</a>
+    <a class="fx-tab" href="execution-profiles.html">مسارات التنفيذ</a>
+  </nav>
+
+  <div id="message" class="fx-message" hidden></div>
+
+  <section class="fx-card">
+    <div class="fx-section-title">
+      <div><h2>تعريف المتعامل</h2><div class="fx-meta">إضافة متعامل جديد هنا لا تمنحه أي كود تلقائيًا. بعده تنشئ SimType وتربط الأكواد صراحة.</div></div>
+      <button id="newBtn" class="fx-btn secondary" type="button">إضافة متعامل</button>
+    </div>
+    <form id="operatorForm" class="fx-form" hidden>
+      <div class="operator-form-grid">
+        <label>المفتاح<input class="fx-input" name="operator_key" dir="ltr" placeholder="mobilis" required></label>
+        <label>الاسم الظاهر<input class="fx-input" name="display_name" placeholder="Mobilis" required></label>
+        <label>الدولة<input class="fx-input" name="country_code" dir="ltr" maxlength="2" value="DZ" required></label>
+        <label>الترتيب<input class="fx-input" name="sort_order" type="number" min="0" value="100"></label>
+        <label>الحالة<select class="fx-select" name="enabled"><option value="true">مفعل</option><option value="false">موقوف</option></select></label>
+        <label class="wide">ملاحظات<input class="fx-input" name="notes"></label>
+      </div>
+      <div class="fx-actions"><button class="fx-btn" type="submit">حفظ المتعامل</button><button id="cancelBtn" class="fx-btn secondary" type="button">إلغاء</button></div>
+    </form>
+  </section>
+
+  <section class="fx-card">
+    <div class="fx-section-title"><div><h2>السجل</h2><div class="fx-meta">افتح متعاملًا واحدًا؛ فتح آخر يغلق السابق. على الهاتف ينتقل العرض إلى البطاقة المفتوحة.</div></div><span id="count" class="fx-pill">0</span></div>
+    <div id="list" class="operator-list"><div class="fx-empty">جاري التحميل…</div></div>
+  </section>
+</main>
+
+<script type="module">
+import {rpc,escapeHtml} from './api.js';
+const list=document.getElementById('list'),msg=document.getElementById('message'),form=document.getElementById('operatorForm'),count=document.getElementById('count');
+let rows=[];
+
+function show(text,bad=false){msg.hidden=false;msg.textContent=text;msg.className='fx-message '+(bad?'bad':'ok');clearTimeout(show.t);show.t=setTimeout(()=>msg.hidden=true,4500)}
+function arr(v){return Array.isArray(v)?v:[]}
+function identifierName(kind){return kind==='imsi_prefix'?'IMSI Prefix':kind==='plmn'?'PLMN':kind}
+function openEditor(key=''){
+  const row=rows.find(x=>x.operator_key===key);
+  form.hidden=false;form.reset();
+  form.elements.operator_key.value=row?.operator_key||'';
+  form.elements.operator_key.readOnly=Boolean(row);
+  form.elements.display_name.value=row?.display_name||'';
+  form.elements.country_code.value=row?.country_code||'DZ';
+  form.elements.sort_order.value=row?.sort_order??100;
+  form.elements.enabled.value=String(row?.enabled??true);
+  form.elements.notes.value=row?.notes||'';
+  form.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function identifiersHtml(row){
+  const ids=arr(row.identifiers);
+  if(!ids.length)return '<div class="fx-empty">لا توجد معرفات IMSI/PLMN بعد.</div>';
+  return '<div class="identifier-list">'+ids.map(i=>
+    '<div class="identifier-row"><span class="fx-pill">'+escapeHtml(identifierName(i.identifier_kind))+'</span>'+
+    '<span class="identifier-value">'+escapeHtml(i.identifier_value)+'</span>'+
+    '<button class="fx-btn secondary toggle-id" type="button" data-kind="'+escapeHtml(i.identifier_kind)+'" data-value="'+escapeHtml(i.identifier_value)+'" data-enabled="'+String(Boolean(i.enabled))+'">'+(i.enabled?'تعطيل':'تفعيل')+'</button></div>'
+  ).join('')+'</div>';
+}
+function render(){
+  count.textContent=String(rows.length);
+  if(!rows.length){list.innerHTML='<div class="fx-empty">لا يوجد متعاملون.</div>';return}
+  list.innerHTML=rows.map((row,index)=>
+    '<details class="operator-card" data-key="'+escapeHtml(row.operator_key)+'" '+(index===0?'open':'')+'>'+
+      '<summary><div><div class="fx-name">'+escapeHtml(row.display_name)+'</div><div class="fx-meta" dir="ltr">'+escapeHtml(row.operator_key)+' · '+escapeHtml(row.country_code)+'</div></div>'+
+      '<div class="fx-pills"><span class="fx-pill '+(row.enabled?'ok':'bad')+'">'+(row.enabled?'مفعل':'موقوف')+'</span><span class="fx-pill">'+arr(row.identifiers).filter(x=>x.enabled).length+' معرف</span></div></summary>'+
+      '<div class="operator-body"><div class="operator-grid"><section><h3>معرفات الشبكة</h3>'+identifiersHtml(row)+'</section>'+
+      '<section><h3>الإدارة</h3><div class="fx-meta">'+escapeHtml(row.notes||'لا توجد ملاحظات.')+'</div><div class="fx-actions"><button class="fx-btn secondary edit-operator" type="button">تعديل المتعامل</button><a class="fx-btn secondary" href="sims.html">أنواع الشرائح</a><a class="fx-btn secondary" href="ussd-codes.html">الأكواد</a></div></section></div>'+
+      (row.operator_key==='unknown'?'':'<form class="identifier-form"><label>النوع<select class="fx-select" name="identifier_kind"><option value="imsi_prefix">IMSI Prefix</option><option value="plmn">PLMN</option></select></label><label>القيمة<input class="fx-input" name="identifier_value" dir="ltr" inputmode="numeric" placeholder="60301" required></label><label>الأولوية<input class="fx-input" name="priority" type="number" min="0" value="100"></label><button class="fx-btn" type="submit">حفظ المعرف</button></form>')+
+      '</div></details>'
+  ).join('');
+
+  const details=[...document.querySelectorAll('.operator-card')];
+  details.forEach(d=>d.addEventListener('toggle',()=>{
+    if(!d.open)return;
+    details.forEach(o=>{if(o!==d)o.open=false});
+    if(window.innerWidth<=720)setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'start'}),30);
+  }));
+  document.querySelectorAll('.edit-operator').forEach(btn=>btn.addEventListener('click',()=>openEditor(btn.closest('[data-key]').dataset.key)));
+  document.querySelectorAll('.identifier-form').forEach(f=>f.addEventListener('submit',saveIdentifier));
+  document.querySelectorAll('.toggle-id').forEach(btn=>btn.addEventListener('click',toggleIdentifier));
+}
+async function saveIdentifier(e){
+  e.preventDefault();
+  const f=e.currentTarget,card=f.closest('[data-key]'),fd=new FormData(f),btn=f.querySelector('button[type="submit"]');
+  const value=String(fd.get('identifier_value')||'').replace(/\D/g,'');
+  if(!/^\d{3,15}$/.test(value)){show('المعرف يجب أن يكون أرقامًا فقط من 3 إلى 15 رقمًا.',true);return}
+  btn.disabled=true;
+  try{
+    await rpc('station_connect_admin_save_operator_identifier',{
+      p_operator_key:card.dataset.key,
+      p_identifier_kind:String(fd.get('identifier_kind')||''),
+      p_identifier_value:value,
+      p_enabled:true,
+      p_priority:Number(fd.get('priority')||100),
+      p_notes:null
+    });
+    show('تم حفظ معرف الشبكة.');await load();
+  }catch(err){show(String(err?.message||err),true)}
+  finally{btn.disabled=false}
+}
+async function toggleIdentifier(e){
+  const btn=e.currentTarget,card=btn.closest('[data-key]'),next=btn.dataset.enabled!=='true';
+  btn.disabled=true;
+  try{
+    await rpc('station_connect_admin_save_operator_identifier',{
+      p_operator_key:card.dataset.key,
+      p_identifier_kind:btn.dataset.kind,
+      p_identifier_value:btn.dataset.value,
+      p_enabled:next,
+      p_priority:100,
+      p_notes:null
+    });
+    show(next?'تم تفعيل المعرف.':'تم تعطيل المعرف.');await load();
+  }catch(err){show(String(err?.message||err),true)}
+  finally{btn.disabled=false}
+}
+form.addEventListener('submit',async e=>{
+  e.preventDefault();const fd=new FormData(form),btn=form.querySelector('button[type="submit"]');btn.disabled=true;
+  try{
+    await rpc('station_connect_admin_save_operator',{
+      p_operator_key:String(fd.get('operator_key')||'').trim().toLowerCase(),
+      p_display_name:String(fd.get('display_name')||'').trim(),
+      p_country_code:String(fd.get('country_code')||'DZ').trim().toUpperCase(),
+      p_enabled:String(fd.get('enabled'))==='true',
+      p_sort_order:Number(fd.get('sort_order')||100),
+      p_notes:String(fd.get('notes')||'').trim()||null
+    });
+    form.hidden=true;show('تم حفظ المتعامل.');await load();
+  }catch(err){show(String(err?.message||err),true)}
+  finally{btn.disabled=false}
+});
+document.getElementById('newBtn').addEventListener('click',()=>openEditor());
+document.getElementById('cancelBtn').addEventListener('click',()=>form.hidden=true);
+async function load(){
+  list.innerHTML='<div class="fx-empty">جاري التحميل…</div>';
+  try{
+    const data=await rpc('station_connect_admin_operators');
+    rows=Array.isArray(data)?data:[];
+    render();
+  }catch(err){rows=[];render();show(String(err?.message||err),true)}
+}
+load();
+</script>
+<script src="flexy-nav.js?v=20260928-operators-1"></script>
+</body></html>
