@@ -101,8 +101,8 @@ import {rpc,escapeHtml,money,fmtDate} from './api.js';
 const list=document.getElementById('list'),msg=document.getElementById('message'),count=document.getElementById('count'),typeList=document.getElementById('typeList'),typeForm=document.getElementById('typeForm');
 let rows=[],simTypes=[],operators=[];
 function operatorName(key){return operators.find(x=>x.operator_key===key)?.display_name||key||'غير معروف'}
-function operatorOptions(includeUnknown=true){return operators.filter(x=>x.enabled&&(includeUnknown||x.operator_key!=='unknown')).map(x=>'<option value="'+escapeHtml(x.operator_key)+'">'+escapeHtml(x.display_name)+' · '+escapeHtml(x.operator_key)+'</option>').join('')}
-function refreshOperatorSelect(){const select=typeForm.elements.operator_key;if(select)select.innerHTML=operatorOptions(true)}
+function operatorOptions(includeUnknown=false){return operators.filter(x=>x.enabled&&(includeUnknown||x.operator_key!=='unknown')).map(x=>'<option value="'+escapeHtml(x.operator_key)+'">'+escapeHtml(x.display_name)+' · '+escapeHtml(x.operator_key)+'</option>').join('')}
+function refreshOperatorSelect(includeUnknown=false){const select=typeForm.elements.operator_key;if(select)select.innerHTML=operatorOptions(includeUnknown)}
 
 function label(type){
   const managed=simTypes.find(x=>x.sim_type===type);if(managed)return managed.display_name;
@@ -160,8 +160,8 @@ function openType(key=''){
   typeForm.elements.sim_type.value=t?.sim_type||'';
   typeForm.elements.sim_type.readOnly=!!t;
   typeForm.elements.display_name.value=t?.display_name||'';
-  refreshOperatorSelect();
-  typeForm.elements.operator_key.value=t?.operator_key||(operators.find(x=>x.enabled&&x.operator_key!=='unknown')?.operator_key||'unknown');
+  refreshOperatorSelect(t?.sim_type==='unknown');
+  typeForm.elements.operator_key.value=t?.operator_key||(operators.find(x=>x.enabled&&x.operator_key!=='unknown')?.operator_key||'');
   typeForm.elements.sort_order.value=t?.sort_order??100;
   typeForm.elements.enabled.value=String(t?.enabled??true);
   typeForm.elements.notes.value=t?.notes||'';
@@ -291,7 +291,7 @@ async function load(){
       rpc('station_connect_admin_sim_types'),
       rpc('station_connect_admin_operators')
     ]);
-    operators=Array.isArray(operatorRows)?operatorRows:[];refreshOperatorSelect();
+    operators=Array.isArray(operatorRows)?operatorRows:[];refreshOperatorSelect(false);
     simTypes=Array.isArray(types)?types:[];renderTypes();
     const balanceMap=new Map((Array.isArray(balances)?balances:[]).map(row=>[row.sim_uuid,row]));
     const discoveryMap=new Map((Array.isArray(discoveries)?discoveries:[]).map(row=>[row.sim_uuid,row]));
