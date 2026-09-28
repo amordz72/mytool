@@ -65,7 +65,7 @@
 
   <section class="fx-card">
     <div class="fx-section-title">
-      <div><h2>أنواع الشرائح SimType</h2><div class="fx-meta">النوع هو بروفايل تشغيل. كود معرفة الرقم تابع للنوع ويمكن تعديله من هنا.</div></div>
+      <div><h2>أنواع الشرائح SimType</h2><div class="fx-meta">النوع هو بروفايل تشغيل. أكواد الشبكة لا تُخزن داخل النوع؛ تُربط به من صفحة أكواد الشبكة.</div></div>
       <button id="newTypeBtn" class="fx-btn secondary" type="button">إضافة SimType</button>
     </div>
     <div id="typeList" class="type-grid"></div>
@@ -74,8 +74,7 @@
         <label>SimType<input name="sim_type" dir="ltr" placeholder="mobilis-sama" required></label>
         <label>الاسم الظاهر<input name="display_name" placeholder="SAMA" required></label>
         <label>المتعامل<select name="operator_key"><option value="mobilis">Mobilis</option><option value="djezzy">Djezzy</option><option value="ooredoo">Ooredoo</option><option value="unknown">غير معروف</option></select></label>
-        <label>طريقة قراءة الرقم<select name="phone_lookup_method"><option value="ussd">USSD</option><option value="service_code">Service Code</option><option value="">بدون</option></select></label>
-        <label>كود معرفة الرقم<input name="phone_lookup_code" dir="ltr" placeholder="*101#"></label>
+        <label>أكواد الشبكة<a class="fx-link" href="ussd-codes.html">إدارة الربط من جدول الأكواد ←</a></label>
         <label>الترتيب<input name="sort_order" type="number" min="0" value="100"></label>
         <label>الحالة<select name="enabled"><option value="true">مفعل</option><option value="false">موقوف</option></select></label>
         <label style="grid-column:span 2">ملاحظات<input name="notes"></label>
@@ -87,7 +86,7 @@
   <section class="fx-card">
     <div class="fx-section-title">
       <div><h2>إدارة تقنية</h2><div class="fx-meta">لكشف أجهزة USB الموجودة فعليًا في Windows وربطها بمودمات HiLink والشرائح.</div></div>
-      <div class="sim-actions"><a class="fx-link" href="../access-admin/usb-sim-center.html">مركز USB والشرائح ←</a><a class="fx-link" href="../access-admin/devices.html">كشف Windows USB ←</a><a class="fx-link" href="../access-admin/sim-summary.html">ملخص الشرائح ←</a><a class="fx-link" href="../access-admin/program-requirements.html">متطلبات البرنامج ←</a></div>
+      <div class="sim-actions"><a class="fx-link" href="../access-admin/usb-sim-center.html">مركز USB والشرائح ←</a><a class="fx-link" href="../access-admin/devices.html">كشف Windows USB ←</a><a class="fx-link" href="../access-admin/sim-summary.html">ملخص الشرائح ←</a><a class="fx-link" href="ussd-codes.html">أكواد الشبكة ←</a><a class="fx-link" href="../access-admin/program-requirements.html">متطلبات البرنامج ←</a></div>
     </div>
   </section>
 
@@ -152,7 +151,7 @@ function discoveryLabel(row){
 }
 function renderTypes(){
   if(!simTypes.length){typeList.innerHTML='<div class="fx-empty">لا توجد أنواع شرائح.</div>';return}
-  typeList.innerHTML=simTypes.map(t=>'<div class="type-row"><div><strong>'+escapeHtml(t.display_name)+'</strong><small dir="ltr">'+escapeHtml(t.sim_type)+'</small></div><div><small>المتعامل</small><strong>'+escapeHtml(t.operator_key)+'</strong></div><div><small>قراءة الرقم</small><strong dir="ltr">'+escapeHtml(t.phone_lookup_code||'—')+'</strong></div><button class="fx-btn secondary edit-type" type="button" data-type="'+escapeHtml(t.sim_type)+'">تعديل</button></div>').join('');
+  typeList.innerHTML=simTypes.map(t=>'<div class="type-row"><div><strong>'+escapeHtml(t.display_name)+'</strong><small dir="ltr">'+escapeHtml(t.sim_type)+'</small></div><div><small>المتعامل</small><strong>'+escapeHtml(t.operator_key)+'</strong></div><div><small>أكواد الشبكة</small><a class="fx-link" href="ussd-codes.html">عرض الربط</a></div><button class="fx-btn secondary edit-type" type="button" data-type="'+escapeHtml(t.sim_type)+'">تعديل</button></div>').join('');
   document.querySelectorAll('.edit-type').forEach(btn=>btn.addEventListener('click',()=>openType(btn.dataset.type)));
 }
 function openType(key=''){
@@ -162,8 +161,6 @@ function openType(key=''){
   typeForm.elements.sim_type.readOnly=!!t;
   typeForm.elements.display_name.value=t?.display_name||'';
   typeForm.elements.operator_key.value=t?.operator_key||'mobilis';
-  typeForm.elements.phone_lookup_method.value=t?.phone_lookup_method||'ussd';
-  typeForm.elements.phone_lookup_code.value=t?.phone_lookup_code||'';
   typeForm.elements.sort_order.value=t?.sort_order??100;
   typeForm.elements.enabled.value=String(t?.enabled??true);
   typeForm.elements.notes.value=t?.notes||'';
@@ -308,15 +305,13 @@ document.getElementById('newTypeBtn').addEventListener('click',()=>openType());
 document.getElementById('cancelTypeBtn').addEventListener('click',()=>{typeForm.hidden=true});
 typeForm.addEventListener('submit',async e=>{
   e.preventDefault();const fd=new FormData(typeForm),button=typeForm.querySelector('button[type="submit"]');
-  const method=String(fd.get('phone_lookup_method')||''),code=String(fd.get('phone_lookup_code')||'').trim();
-  if((method&&!code)||(!method&&code)){show('طريقة قراءة الرقم والكود يجب أن يكونا معًا.',true);return}
   button.disabled=true;button.textContent='جاري الحفظ…';
   try{
     await rpc('station_connect_admin_save_sim_type',{
       p_sim_type:String(fd.get('sim_type')||'').trim().toLowerCase(),
       p_display_name:String(fd.get('display_name')||'').trim(),
       p_operator_key:String(fd.get('operator_key')||''),
-      p_phone_lookup_method:method||null,p_phone_lookup_code:code||null,
+      p_phone_lookup_method:null,p_phone_lookup_code:null,
       p_enabled:String(fd.get('enabled'))==='true',
       p_sort_order:Number(fd.get('sort_order')||100),
       p_notes:String(fd.get('notes')||'').trim()||null
