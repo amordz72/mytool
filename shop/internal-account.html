@@ -556,7 +556,7 @@ async function loadBase(){
     supabase.from('money_party_directory').select('id,display_name,mt_number,primary_phone,primary_email,party_type,active,approval_status,is_canonical,data_mode').eq('active',true).eq('approval_status','approved').eq('is_canonical',true).eq('data_mode','real').neq('party_type','system').order('display_name').limit(3000),
     supabase.from('products').select('id,name,item_type,is_test,workspace_code').eq('is_test',false).eq('workspace_code','REAL').order('name').limit(3000),
     supabase.from('branches').select('id,name,code').eq('active',true).order('id'),
-    supabase.from('cash_places').select('id,name,account_id,branch_id,party_id,place_type,active').eq('active',true).order('id'),
+    supabase.rpc('admin_internal_receipt_cash_places'),
     supabase.from('branch_product_price_reference').select('product_id,sale_price').not('sale_price','is',null),
     supabase.from('branch_product_sale_policy').select('product_id,target_sale_price').not('target_sale_price','is',null)
   ])
