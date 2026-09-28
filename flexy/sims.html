@@ -101,6 +101,20 @@ import {rpc,escapeHtml,money,fmtDate} from './api.js';
 const list=document.getElementById('list'),msg=document.getElementById('message'),count=document.getElementById('count'),typeList=document.getElementById('typeList'),typeForm=document.getElementById('typeForm');
 let rows=[],simTypes=[],operators=[];
 function operatorName(key){return operators.find(x=>x.operator_key===key)?.display_name||key||'غير معروف'}
+function operatorForRow(row){
+  const type=simTypes.find(x=>x.sim_type===row?.sim_type);
+  if(type?.operator_key&&type.operator_key!=='unknown')return type.operator_key;
+  const imsi=String(row?.imsi||'').replace(/\D/g,'');
+  let best=null;
+  operators.forEach(op=>{
+    (Array.isArray(op.identifiers)?op.identifiers:[]).forEach(id=>{
+      if(id?.enabled===false||id?.identifier_kind!=='imsi_prefix')return;
+      const prefix=String(id.identifier_value||'').replace(/\D/g,'');
+      if(prefix&&imsi.startsWith(prefix)&&(!best||prefix.length>best.prefix.length))best={key:op.operator_key,prefix};
+    });
+  });
+  return best?.key||'unknown';
+}
 function operatorOptions(includeUnknown=false){return operators.filter(x=>x.enabled&&(includeUnknown||x.operator_key!=='unknown')).map(x=>'<option value="'+escapeHtml(x.operator_key)+'">'+escapeHtml(x.display_name)+' · '+escapeHtml(x.operator_key)+'</option>').join('')}
 function refreshOperatorSelect(includeUnknown=false){const select=typeForm.elements.operator_key;if(select)select.innerHTML=operatorOptions(includeUnknown)}
 
@@ -132,7 +146,7 @@ function rule(type){
     :type==='mobilis-arsselli'
       ?'النجاح يخصم قيمة المبلغ فقط'
       :type==='unknown'
-        ?'اختر نوع الشريحة وPIN ثم اعتمدها للفليكسي.'
+        ?'اكتشاف الرقم مستقل عن اعتماد Flexy؛ المتعامل يُعرف من IMSI ثم يُستخدم كود معرفة الرقم مباشرة. نوع الشريحة وPIN مطلوبان لاحقًا لاعتماد Flexy.'
         :'يُحسب من آخر قراءة وعمليات المصدر المؤكدة';
 }
 function show(t,bad=false){
@@ -177,9 +191,11 @@ function render(data){
     const discovery=discoveryLabel(row);
     const op=row.operational_balance==null?'—':money(row.operational_balance)+' دج';
     const currentType=String(row.sim_type||'unknown');
+    const currentOperator=operatorForRow(row);
     return '<article class="sim-card" data-id="'+escapeHtml(row.sim_uuid)+'">'+
       '<div class="sim-head"><div><div class="sim-name">'+escapeHtml(label(currentType))+'</div>'+
       '<div class="sim-phone" dir="ltr">'+escapeHtml(row.msisdn||'بدون رقم')+'</div>'+
+      '<div class="sim-phone">المتعامل: <strong>'+escapeHtml(operatorName(currentOperator))+'</strong></div>'+
       '<div class="sim-phone">صاحب الشريحة: <strong>'+escapeHtml(row.owner_name||'غير محدد')+'</strong></div></div>'+
       '<div class="sim-badges"><span class="state '+ccls+'">'+escapeHtml(cn)+'</span><span class="state '+cls+'">'+escapeHtml(st)+'</span>'+(discovery?'<span class="state '+discovery[1]+'">'+escapeHtml(discovery[0])+'</span>':'')+'</div></div>'+
       '<div class="sim-balance">'+escapeHtml(op)+'</div>'+
@@ -187,6 +203,7 @@ function render(data){
       '<div class="sim-details">'+
         '<div><small>المحطة الحالية</small><strong>'+escapeHtml(row.station_name||'—')+'</strong></div>'+
         '<div><small>المودم الحالي</small><strong>'+escapeHtml(modemLabel(row))+'</strong></div>'+
+        '<div><small>المتعامل</small><strong>'+escapeHtml(operatorName(currentOperator))+'</strong></div>'+
         '<div><small>ICCID — هوية الشريحة</small><strong class="sim-id">'+escapeHtml(row.iccid||'—')+'</strong></div>'+
         '<div><small>IMEI — هوية المودم</small><strong class="sim-id">'+escapeHtml(row.modem_imei||'—')+'</strong></div>'+
         '<div><small>آخر ظهور للشريحة</small><strong>'+escapeHtml(row.sim_last_seen_at?new Date(row.sim_last_seen_at).toLocaleString('ar-DZ'):'—')+'</strong></div>'+
