@@ -96,7 +96,8 @@ function operatorLabel(v){return ({mobilis:'Mobilis',djezzy:'Djezzy',ooredoo:'Oo
 function centerForModem(modemUuid){return usbCenter.find(x=>x.modem_uuid===modemUuid)||null;}
 function numberRequirement(operator,simType){
   const type=String(simType||'').toLowerCase();
-  const exact=type&&type!=='unknown'?ussdCodes.find(r=>
+  if(!type||type==='unknown')return null;
+  const exact=ussdCodes.find(r=>
     r.operator_key===operator &&
     r.purpose_key==='phone_number' &&
     ['ussd','service_code'].includes(r.method) &&
@@ -104,18 +105,8 @@ function numberRequirement(operator,simType){
     !String(r.code_template).includes('{') &&
     Array.isArray(r.sim_types) &&
     r.sim_types.some(b=>b.sim_type===type&&b.enabled)
-  ):null;
-  if(exact)return {...exact,_binding_kind:'exact_sim_type',_binding:exact.sim_types.find(b=>b.sim_type===type&&b.enabled)};
-  const operatorFallback=ussdCodes.find(r=>
-    r.operator_key===operator &&
-    r.purpose_key==='phone_number' &&
-    ['ussd','service_code'].includes(r.method) &&
-    r.code_template &&
-    !String(r.code_template).includes('{') &&
-    r.knowledge_status==='confirmed' &&
-    r.implementation_status==='available'
   );
-  return operatorFallback?{...operatorFallback,_binding_kind:'operator',_binding:null}:null;
+  return exact?{...exact,_binding_kind:'exact_sim_type',_binding:exact.sim_types.find(b=>b.sim_type===type&&b.enabled)}:null;
 }
 function phoneCandidates(raw){
   const values=(String(raw||'').match(/(?:\+?213|0)[\s.\-]*(?:5|6|7)(?:[\s.\-]*\d){8}/g)||[])
@@ -179,13 +170,13 @@ function simSetup(likely,operator,usbLabel,agentVersion){
   let discover='';
   const lookup=numberRequirement(operator,likely.sim_type);
   const exactLookup=lookup?._binding_kind==='exact_sim_type';
-  const autoAllowed=Boolean((exactLookup&&lookup?._binding?.auto_allowed)||lookup?._binding_kind==='operator');
+  const autoAllowed=Boolean(exactLookup&&lookup?._binding?.auto_allowed);
   if(!known&&lookup?.method==='ussd'&&lookup.knowledge_status==='confirmed'&&lookup.implementation_status==='available'){
     discover='<div style="width:100%"><label style="display:grid;gap:5px;font-size:11px;font-weight:800;color:#65778a">كود الاستعلام عن الرقم'+
       '<input class="manual-lookup-code" dir="ltr" value="'+esc(lookup.code_template)+'" autocomplete="off"></label>'+
       '<div class="sim-setup-actions"><button class="mt-btn manual-lookup" type="button" data-sim="'+esc(likely.sim_uuid)+'">إرسال الاستعلام</button>'+
       (autoAllowed?'<button class="mt-btn secondary discover-msisdn" type="button" data-sim="'+esc(likely.sim_uuid)+'">اكتشاف تلقائي</button>':'')+
-      '</div><div class="mt-meta" style="margin-top:5px">'+(lookup._binding_kind==='operator'?'اختير الكود مباشرة حسب المتعامل؛ لا يلزم تحديد SimType لمعرفة الرقم.':'الكود مربوط صراحة بنوع الشريحة '+esc(likely.sim_type)+'.')+'</div></div>';
+      '</div><div class="mt-meta" style="margin-top:5px">الكود مربوط صراحة بنوع الشريحة '+esc(likely.sim_type)+'.</div></div>';
   }else if(!known&&lookup?.method==='service_code'){
     const canDial=versionAtLeast(agentVersion,'0.4.11')&&lookup.implementation_status==='available';
     discover='<div style="width:100%"><label style="display:grid;gap:5px;font-size:11px;font-weight:800;color:#65778a">كود معرفة الرقم'+
@@ -199,7 +190,7 @@ function simSetup(likely,operator,usbLabel,agentVersion){
       '<input dir="ltr" value="'+esc(lookup.code_template)+'" readonly></label>'+
       '<div class="mt-meta" style="margin-top:5px">الكود محفوظ لكن حالته '+esc(lookup.knowledge_status)+' / '+esc(lookup.implementation_status)+'، لذلك لا ننفذه آليًا بعد.</div></div>';
   }else if(!known){
-    discover='<span class="mt-chip muted">'+(operator==='unknown'?'لم يُعرف المتعامل من IMSI بعد.':'لا يوجد كود معرفة رقم مؤكد ومتاح لهذا المتعامل.')+'</span>';
+    discover='<span class="mt-chip muted">'+(likely.sim_type==='unknown'?'المتعامل معروف، لكن نوع الشريحة غير محدد. حدده أولًا قبل اختيار كود تلقائي.':'لا يوجد كود معرفة رقم مربوط بهذا SimType.')+'</span>';
   }
   return '<div class="sim-setup" data-sim="'+esc(likely.sim_uuid)+'">'+
     '<div class="operator-line">المتعامل: '+esc(operatorLabel(operator))+
@@ -398,7 +389,7 @@ document.addEventListener('click',async event=>{
       if(number){msg('تم اكتشاف الرقم','رقم الشريحة: '+number+' — أدخل PIN ثم اضغط حفظ.');await load();}
       else{msg('الاستعلام ما زال قيد المراجعة','لم يصل رقم مؤكد بعد. يمكنك الضغط على تحديث بعد قليل.');}
     }catch(error){msg('تعذر اكتشاف الرقم',error?.message||'خطأ غير متوقع','danger')}
-    finally{discover.disabled=false;discover.textContent='اكتشف رقم الشريحة'}
+    finally{discover.disabled=false;discover.textContent='اكتشف رقم الشريحة (*101#)'}
     return;
   }
 

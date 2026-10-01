@@ -57,7 +57,6 @@
     const a=access();
     if(a.tools&&!a.admin)return [
       ['home','⌂','رئيسية My Tools',''],
-      ['nuxt-preview','N','Nuxt الجديد · قيد التطوير','nuxt-preview/'],
       ['shop','🧾','تشغيل المحل','shop/'],
       ['cards','🎫','معالج البطاقات','cards/'],
       ['programs','🧰','البرامج','programs/'],
@@ -66,7 +65,6 @@
     ];
     const base=[
       ['home','⌂','رئيسية My Tools',''],
-      ['nuxt-preview','N','Nuxt الجديد · قيد التطوير','nuxt-preview/'],
       ['shop','🧾','تشغيل المحل','shop/'],
       ['flexy','📱','تميز / فليكسي','flexy/home.html'],
       ['orders','📥','الطلبات','orders/?v=20260923-person-identity-only1'],
