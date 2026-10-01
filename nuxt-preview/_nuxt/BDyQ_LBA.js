@@ -1,0 +1,1 @@
+import{O as e,P as t,Q as n,ft as r}from"./C1kTMLBQ.js";import{u as i}from"./kf1Jnthi.js";var a=t({__name:`index`,async setup(t){let a,o;return[a,o]=r(()=>i(`/platforms`,{redirectCode:301})),await a,o(),(t,r)=>(n(),e(`div`))}});export{a as default};
