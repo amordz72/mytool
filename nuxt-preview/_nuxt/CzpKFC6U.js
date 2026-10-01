@@ -1,1 +1,0 @@
-import{O as e,P as t,Q as n,Y as r}from"./-_7-uOC4.js";import{u as i}from"./DEsDrsjI.js";var a={class:`p-6`},o=t({__name:`index`,setup(t){return r(()=>{i(`/platforms`,{replace:!0})}),(t,r)=>(n(),e(`div`,a,`جاري فتح إدارة المنصات...`))}});export{o as default};
