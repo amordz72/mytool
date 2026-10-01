@@ -1,1 +1,0 @@
-import{O as e,P as t,Q as n,ft as r}from"./BlXN6h2G.js";import{u as i}from"./52NHcUIZ.js";var a=t({__name:`index`,async setup(t){let a,o;return[a,o]=r(()=>i(`/platforms`,{replace:!0})),await a,o(),(t,r)=>(n(),e(`div`))}});export{a as default};
