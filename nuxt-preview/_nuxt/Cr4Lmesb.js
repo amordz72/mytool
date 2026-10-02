@@ -1,1 +1,0 @@
-import{Ot as e,P as t,U as n,on as r}from"./CjjZwQeH.js";import{u as i}from"./VIiEXd8q.js";var a=n({__name:`index`,async setup(n){let a,o;return[a,o]=r(()=>i(`/platforms`,{redirectCode:301})),await a,o(),(n,r)=>(e(),t(`div`))}});export{a as default};
