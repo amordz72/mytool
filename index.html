@@ -9,10 +9,10 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="manifest.webmanifest?v=20260921-pwa1">
+  <link rel="manifest" href="manifest.webmanifest?v=21260921-pwa1">
   <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <script src="pwa-install.js?v=20260921-pwa1" defer></script>
+  <script src="pwa-install.js?v=21260921-pwa1" defer></script>
   <title>MyTool - أدوات العمل</title>
   <style>
     :root{--orange:#ff8a1f;--blue:#2ea8e6;--text:#163047;--muted:#61778a;--line:#dbe7f0;--soft:#f6fbff;--danger:#b91c1c;--ok:#047857}
@@ -29,8 +29,8 @@
     .mfa-qr{display:block;width:min(230px,100%);height:auto;margin:12px auto;border:1px solid var(--line);border-radius:14px;background:#fff;padding:8px}.mfa-secret{display:block;direction:ltr;text-align:center;word-break:break-all;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px;margin:8px 0;font-size:12px}
     @media(max-width:600px){body{padding:10px}.grid{grid-template-columns:1fr}.core-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.core-grid .card{padding:12px}.core-grid .icon{width:42px;height:42px;font-size:22px}.core-grid .card h2{font-size:14px}.core-grid .card p,.core-grid .badge{display:none}.hero{padding:16px 15px}.hero h1{font-size:24px}.sessionbar{align-items:center;flex-direction:row}.sessionbar button{width:auto}.sessionbar .mode{font-size:13px}.sessionbar .small{font-size:10px}}
   </style>
-  <script src="auth-guard.js?v=20260918-real-local-1" data-access="public" data-nav="off"></script>
-  <script src="auth-device.js?v=20260919-owner-remember1"></script>
+  <script src="auth-guard.js?v=21260918-real-local-1" data-access="public" data-nav="off"></script>
+  <script src="auth-device.js?v=21260919-owner-remember1"></script>
 </head>
 <body>
   <div id="loginView" class="login-wrap" hidden>
@@ -98,12 +98,12 @@
 
     <div id="adminTools">
       <h2 class="section-title">البرامج الأساسية</h2><section class="grid core-grid" data-dashboard-section="core">
-        <a class="card" href="nuxt-preview/platforms/?v=20"><div class="icon">N</div><h2>Nuxt الجديد · V20</h2><p>فتح الواجهة الجديدة قيد التطوير مباشرة.</p><span class="badge">تطوير</span></a>
+        <a class="card" href="nuxt-preview/platforms/?v=21"><div class="icon">N</div><h2>Nuxt الجديد · V21</h2><p>فتح الواجهة الجديدة قيد التطوير مباشرة.</p><span class="badge">تطوير</span></a>
         <a class="card" href="notes/"><div class="icon">📝</div><h2>الملاحظات</h2><p>صندوق الملاحظات اليومي والأفكار والمهام والرجوع السريع للمعلومات.</p><span class="badge">أساسي</span></a>
         <a class="card" href="shop/"><div class="icon">🧾</div><h2>تشغيل المحل</h2><p>المبيعات والمخزون والجرد ودورة العمل اليومية للمحل.</p><span class="badge">أساسي</span></a>
         <a class="card" href="flexy/"><div class="icon">📱</div><h2>فليكسي</h2><p>خدمات الفليكسي والمحطات والعروض والتنفيذ المرتبط بها.</p><span class="badge">أساسي</span></a>
-        <a class="card" href="orders/?v=20260923-person-identity-only1"><div class="icon">📥</div><h2>الطلبات</h2><p>ألصق رسائل الطلبات، اربط العميل، افتح الخدمة وسجل النتيجة بدون ضياع العملية.</p><span class="badge">تشغيل</span></a>
-        <a class="card" href="shop/customers.html?v=20260923-customer-registry1"><div class="icon">👥</div><h2>العملاء</h2><p>السجل المركزي لهوية العميل وحساباته في المنصات وأسمائه وأرقامه وأرصدته.</p><span class="badge">Customer Registry</span></a>
+        <a class="card" href="orders/?v=21260923-person-identity-only1"><div class="icon">📥</div><h2>الطلبات</h2><p>ألصق رسائل الطلبات، اربط العميل، افتح الخدمة وسجل النتيجة بدون ضياع العملية.</p><span class="badge">تشغيل</span></a>
+        <a class="card" href="shop/customers.html?v=21260923-customer-registry1"><div class="icon">👥</div><h2>العملاء</h2><p>السجل المركزي لهوية العميل وحساباته في المنصات وأسمائه وأرقامه وأرصدته.</p><span class="badge">Customer Registry</span></a>
         <a class="card" href="shop/internal-account.html"><div class="icon">🧾</div><h2>حساب العميل</h2><p>سجل عمليات العميل ودينه ودفعاته ومكان وصول المال.</p><span class="badge">دفتر العميل</span></a>
         <a class="card" href="cards/"><div class="icon">🎫</div><h2>معالج البطاقات</h2><p>استخراج وتنظيم أكواد البطاقات والملفات بسرعة.</p><span class="badge">أساسي</span></a>
         <a class="card" href="accounts-review/"><div class="icon">📊</div><h2>حسابات المنصات</h2><p>مراجعة حسابات المنصات الخارجية وديونها وأرصدتها وأرباحها كمرجع مستقل.</p><span class="badge">أساسي</span></a>
@@ -124,7 +124,7 @@
       <h2 class="section-title">أدوات سريعة</h2><section class="grid" data-dashboard-section="quick">
         <a class="card" href="offline-transfer/admin.html"><div class="icon">👤</div><h2>الحسابات والأجهزة</h2><p>إنشاء حسابات المستخدمين واعتماد الأجهزة وإدارة PIN ومراجعة التقارير.</p><span class="badge">الإدارة المحلية</span></a>
         <a class="card" href="qr/"><div class="icon">🔳</div><h2>مولّد QR</h2><p>حوّل رابطًا أو رقمًا أو نصًا إلى QR مباشرة من MyTool ثم حمّله PNG.</p><span class="badge">داخل MyTool</span></a>
-        <a class="card" href="document-reader/?v=20260923-docflow16"><div class="icon">📄</div><h2>قارئ الوصولات</h2><p>اقرأ صورة إيصال بنكي محليًا واستخرج التاريخ والمبلغ والبنك والمرسل والمستفيد بدون تخمين.</p><span class="badge">محلي وآمن</span></a>
+        <a class="card" href="document-reader/?v=21260923-docflow16"><div class="icon">📄</div><h2>قارئ الوصولات</h2><p>اقرأ صورة إيصال بنكي محليًا واستخرج التاريخ والمبلغ والبنك والمرسل والمستفيد بدون تخمين.</p><span class="badge">محلي وآمن</span></a>
         <a class="card" href="https://pairdrop.net/" target="_blank" rel="noopener"><div class="icon">📲</div><h2>نقل ملفات PairDrop</h2><p>إرسال ملفات وصور ونصوص بين الهاتف والكمبيوتر من المتصفح.</p><span class="badge">يفتح أونلاين</span></a>
         <a class="card" href="https://omnitools.app/" target="_blank" rel="noopener"><div class="icon">🖼️</div><h2>أدوات الصور والملفات</h2><p>ضغط وتغيير حجم وتحويل الصور وPDF والنصوص وأدوات أخرى من المتصفح.</p><span class="badge">OmniTools</span></a>
       </section>
@@ -444,8 +444,8 @@
   restore();
 })();
 </script>
-<script src="tools-access.js?v=20260919-tools-resume2"></script>
-<script src="tools-home.js?v=20260919-dashboard1"></script>
-<script src="smart-intake.js?v=20260923-person-identity-only1"></script>\n<script src="dashboard-order.js?v=20260919-order2"></script>\n<script src="dashboard-accordion.js?v=20260928-accordion2"></script>
+<script src="tools-access.js?v=21260919-tools-resume2"></script>
+<script src="tools-home.js?v=21260919-dashboard1"></script>
+<script src="smart-intake.js?v=21260923-person-identity-only1"></script>\n<script src="dashboard-order.js?v=21260919-order2"></script>\n<script src="dashboard-accordion.js?v=21260928-accordion2"></script>
 </body>
 </html>
