@@ -61,7 +61,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   <div id="message" class="message info">جاري تحميل إدارة ربط العملاء…</div>
 
   <section class="card">
-    <div class="section-head"><div><h1>بناء وربط العملاء</h1><div class="muted">حساب المنصة يبقى مصدرًا مستقلًا. التطابق الدقيق الأصلي في username أو الهاتف أو البريد يتبع قاعدة الربط المباشر الحالية. ويمكن الربط يدويًا حتى بدون تطابق؛ هذا يثبت الحساب تحت الـMaster، لكن الهوية التي يتعلمها النظام من هذا القرار تُستخدم لاحقًا كمرشح للمراجعة فقط ولا تتحول إلى ربط تلقائي.</div></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn" href="customer-master-feed.html?v=20260923-1" style="width:auto;text-decoration:none">⊕ بناء العملاء</a><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div></div>
+    <div class="section-head"><div><h1>بناء وربط العملاء · V25</h1><div class="muted">حساب المنصة يبقى مصدرًا مستقلًا. التطابق الدقيق الأصلي في username أو الهاتف أو البريد يتبع قاعدة الربط المباشر الحالية. ويمكن الربط يدويًا حتى بدون تطابق؛ هذا يثبت الحساب تحت الـMaster، لكن الهوية التي يتعلمها النظام من هذا القرار تُستخدم لاحقًا كمرشح للمراجعة فقط ولا تتحول إلى ربط تلقائي.</div></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn" href="customer-master-feed.html?v=20260923-1" style="width:auto;text-decoration:none">⊕ بناء العملاء</a><a class="btn secondary" href="customers.html?v=20260923-customer-registry1" style="width:auto;text-decoration:none">👥 سجل العملاء</a></div></div>
     <details id="linkingMetricsDrawer" class="metrics-drawer">
       <summary><span>ملخص الربط</span><b id="metricsSummary">جاري الحساب…</b></summary>
       <div class="metrics metrics-compact">
@@ -84,7 +84,7 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   <section id="sourceImport" class="card" data-import-mode="build">
     <div class="section-head"><div><h2 id="importModeTitle">بناء العملاء</h2><div id="importModeHelp" class="muted">هذا المسار يبني الـMaster. أي تطابق دقيق في username أو الهاتف أو البريد يُربط مباشرة؛ غير المطابق فقط ينشئ Master جديدًا.</div></div></div><div class="toolbar" style="margin-bottom:9px"><div class="field"><label>المهمة</label><select id="importMode"><option value="build">بناء العملاء</option><option value="update">تحيين بيانات منصة</option></select></div><div id="buildMethodField" class="field"><label>طريقة البناء</label><select id="buildMethod"><option value="add_only">إضافة الجدد فقط</option></select></div></div>
     <div class="toolbar">
-      <div class="field"><label>اقتراح منصة للملفات غير المعروفة</label><select id="importPlatform"><option value="">لا تخمّن — راجع كل ملف</option></select><div class="platform-add"><input id="newPlatformName" placeholder="اسم منصة جديدة"><button id="newPlatformBtn" class="btn secondary" type="button">إضافة</button></div></div>
+      <div class="field"><label>المنصة التي ستستورد ملفها</label><select id="importPlatform"><option value="">اختر المنصة أولًا</option></select><div class="platform-add"><input id="newPlatformName" placeholder="اسم منصة جديدة"><button id="newPlatformBtn" class="btn secondary" type="button">إضافة</button></div></div>
       <div class="field"><label>CSV / XLSX — يمكنك اختيار عدة ملفات</label><input id="sourceFile" class="file-input" type="file" multiple accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
       <button id="importBtn" class="btn" type="button">معاينة الملفات</button>
       <button id="smartBtn" class="btn secondary" type="button">إعادة فحص الروابط</button>
@@ -172,6 +172,6 @@ h1{font-size:22px;margin:0 0 5px}h2{font-size:16px;margin:0 0 9px}.muted{font-si
   </div>
 </div>
 
-<script type="module" src="customer-links.js?v=20260926-master-picker1"></script>
+<script type="module" src="customer-links.js?v=25"></script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+import {roles, signature, validateHeaders, suggestMapping, mapAccounts} from './import-format.mjs?v=25';
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 const supabase=createClient(window.ShopApiConfig.url,window.ShopApiConfig.key);
@@ -32,8 +33,8 @@ function platformKeyFromName(name){
   return base?('custom_'+base.slice(0,32)):('platform_'+Date.now().toString(36));
 }
 function renderPlatformControls(){
-  const current=$('importPlatform').value;
-  $('importPlatform').innerHTML='<option value="">لا تخمّن — اطلب مني الاختيار</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
+  const current=$('importPlatform').value||new URLSearchParams(location.search).get('platform')||'';
+  $('importPlatform').innerHTML='<option value="">اختر المنصة قبل رفع الملف</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
   if(platforms.some(p=>p.platform_key===current))$('importPlatform').value=current;
   const pf=$('platformFilter').value;
   $('platformFilter').innerHTML='<option value="all">كل المنصات</option>'+platforms.map(p=>'<option value="'+esc(p.platform_key)+'">'+esc(p.display_name)+'</option>').join('');
@@ -883,95 +884,62 @@ function numericValue(value){
   const n=Number(s);
   return Number.isFinite(n)?n:null;
 }
-function headerSignature(headers){return headers.map(norm).filter(Boolean).join('|')}
-function detectPlatformFromMatrix(matrix,headerIndex,headers){
-  const h=new Set(headers.map(norm));
-  const roleIndex=headers.findIndex(v=>norm(v)==='الدور'||norm(v)==='role');
-  const sampleRoles=roleIndex>=0
-    ? matrix.slice(headerIndex+1,Math.min(matrix.length,headerIndex+20)).map(r=>String(r?.[roleIndex]??'').trim()).filter(Boolean)
-    : [];
-
-  const haniiMarkers=['معرف الشبكة','اسم المحل','الحد الأقصى للديون','تاريخ الإنشاء'];
-  const haniiHits=haniiMarkers.filter(x=>h.has(norm(x))).length;
-  if(haniiHits>=2)return 'hanii_rohek';
-
-  const tehnaCore=['اسم المستخدم','الدور','حالة الحساب','رصيد','ديون','ارباح'];
-  const tehnaHits=tehnaCore.filter(x=>h.has(norm(x))).length;
-  const hasTehnaRole=sampleRoles.some(v=>/^ROLE_/i.test(v));
-  if(tehnaHits>=5&&hasTehnaRole&&!h.has(norm('اسم المحل')))return 'tehna_pay';
-
-  const waf=['uid','user','رصيد','مقترض','مقترض (المفوض)'];
-  if(waf.filter(x=>h.has(norm(x))).length>=4)return 'wafarly';
-
-  const sig=headerSignature(headers);
-  const learned=platformSignatures.find(x=>x.header_signature===sig);
-  return learned?.platform_key||null;
-}
-function rowsToAccounts(matrix){
-  const headerIndex=matrix.findIndex(r=>Array.isArray(r)&&r.some(v=>['اسم المستخدم','username','user'].includes(norm(v))));
-  if(headerIndex<0)throw new Error('لم أجد عمود اسم المستخدم.');
+function rowsToAccounts(matrix,chosenRow=null){
+  let headerIndex=chosenRow??matrix.findIndex(r=>Array.isArray(r)&&r.some(v=>['اسم المستخدم','username','user','uid','المعرف','id'].includes(norm(v))));
+  if(headerIndex<0)headerIndex=matrix.findIndex(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()));
+  if(headerIndex<0)throw new Error('الملف فارغ.');
   const headers=matrix[headerIndex].map(v=>String(v??'').trim());
-  const detectedPlatform=detectPlatformFromMatrix(matrix,headerIndex,headers);
-  const balanceNames=['رصيد','الرصيد','balance','solde'];
-  const debtNames=['ديون','الدين','debt','مقترض','مقترض (المفوض)'];
-  const profitNames=['ارباح','أرباح','الارباح','الأرباح','profit'];
-  const financialFields={
-    balance:hasColumn(headers,balanceNames),
-    debt:hasColumn(headers,debtNames),
-    profit:hasColumn(headers,profitNames)
-  };
-  const accounts=matrix.slice(headerIndex+1).filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()!=='')).map(row=>{
-    const obj={};headers.forEach((h,i)=>{if(h)obj[h]=row[i]??''});
-    let username=firstValue(obj,['اسم المستخدم','username','user']);
-    const uid=firstValue(obj,['uid']);
-    if(!username&&!uid)return null;
-    const first=firstValue(obj,['الاسم','first name','firstname']);
-    const last=firstValue(obj,['اللقب','last name','lastname']);
-    const shop=firstValue(obj,['اسم المحل','المحل','shop name','display name']);
-    let phone=firstValue(obj,['الهاتف','رقم الهاتف','هاتف','phone','telephone']);
-    if(detectedPlatform==='wafarly'&&username){
-      const m=username.match(/(?:-|\s)?(\+?213\d{9}|0[5-7]\d{8})\s*$/);
-      if(m&&!phone)phone=m[1];
-      if(m)username=username.slice(0,m.index).replace(/[\s-]+$/,'').trim()||username;
-    }
-    let email=firstValue(obj,['بريد إلكتروني','البريد الإلكتروني','البريد الالكتروني','email']);
-    if(!email&&username.includes('@')&&username.includes('.'))email=username;
-    const status=firstValue(obj,['حالة الحساب','الحالة','status']);
-    const external=firstValue(obj,['المعرف','معرف الحساب','account id','id']);
-    const created=firstValue(obj,['تاريخ الإنشاء','created at','joined at']);
-    const updated=firstValue(obj,['تاريخ التحديث','تعديل','updated at','updated_at']);
-    const disabled=/معطل|disabled|inactive/i.test(status);
-    const payload={
-      username:uid||username,
-      external_account_id:external||uid||null,
-      display_name:shop||[first,last].filter(Boolean).join(' ').trim()||username,
-      first_name:first||null,last_name:last||null,phone:phone||null,email:email||null,
-      source_status:status||null,source_updated_at:updated||null,source_created_at:created||null,
-      active:!disabled,raw_data:obj
-    };
-    if(financialFields.balance){
-      const n=numericValue(firstValue(obj,balanceNames));if(n!==null)payload.balance=n;
-    }
-    if(financialFields.debt){
-      const n=numericValue(firstValue(obj,debtNames));if(n!==null)payload.debt=n;
-    }
-    if(financialFields.profit){
-      const n=numericValue(firstValue(obj,profitNames));if(n!==null)payload.profit=n;
-    }
-    return payload;
-  }).filter(Boolean);
-  const seenUsernames=new Map(),duplicateUsernames=[];
-  for(const account of accounts){
-    const key=norm(account.username);
-    if(!key)continue;
-    if(seenUsernames.has(key))duplicateUsernames.push(account.username);
-    else seenUsernames.set(key,account.username);
-  }
-  if(duplicateUsernames.length){
-    const sample=[...new Set(duplicateUsernames)].slice(0,5).join('، ');
-    throw new Error('يوجد اسم مستخدم مكرر داخل نفس الملف: '+sample+'. صحح الملف قبل الاعتماد.');
-  }
-  return {accounts,detectedPlatform,headers,financialFields,headerSignature:headerSignature(headers)};
+  validateHeaders(headers);
+  return {matrix,headerIndex,headers,headerSignature:signature(headers),accounts:[],financialFields:{}};
+}
+function applyItemFormat(item){
+  const saved=platformSignatures.find(s=>s.platform_key===item.platform&&s.header_signature===item.parsed.headerSignature&&s.format_id);
+  item.format=saved||null;
+  item.draft=saved||{mapping:suggestMapping(item.parsed.headers),number_style:'plain',phone_suffix:false};
+  if(saved)item.parsed={...item.parsed,...mapAccounts(item.parsed.matrix,item.parsed.headerIndex,saved)};
+  else {item.parsed.accounts=[];item.parsed.financialFields={};}
+}
+function formatEditor(item,index){
+  if(!item.parsed||!item.platform||['duplicate','duplicate_batch','wrong_platform','done','processing','skipped'].includes(item.status))return '';
+  const shared=platformSignatures.filter(s=>s.header_signature===item.parsed.headerSignature&&s.platform_key!==item.platform);
+  const saved=item.format;
+  const note=shared.length?'<p class="message warn">هذه الصيغة مسجّلة أيضًا لدى: '+esc([...new Set(shared.map(s=>platformLabel(s.platform_key)))].join('، '))+'. تشابه الأعمدة لا يثبت مصدر الملف.</p>':'';
+  if(saved)return '<details style="margin-top:10px"><summary>صيغة محفوظة · الإصدار '+Number(saved.version)+' · عرض تعريف الأعمدة</summary>'+note+'<div class="meta">'+Object.entries(saved.mapping).filter(([,h])=>h).map(([r,h])=>esc(roles[r])+': '+esc(h)).join('<br>')+'</div></details>';
+  const sample=item.parsed.matrix.slice(item.parsed.headerIndex+1,item.parsed.headerIndex+3);
+  return '<details open style="margin-top:10px"><summary>مراجعة الصيغة لأول مرة</summary>'+note+
+    '<div class="field"><label>صف العناوين</label><select data-header-row="'+index+'" '+(importBusy?'disabled':'')+'>'+item.parsed.matrix.slice(0,10).map((row,j)=>'<option value="'+j+'" '+(j===item.parsed.headerIndex?'selected':'')+'>صف '+(j+1)+' · '+esc(row.slice(0,4).join(' / ').slice(0,100))+'</option>').join('')+'</select></div>'+
+    '<p class="muted">هذه اقتراحات للأعمدة فقط. راجعها ثم احفظ. معرّف الحساب الثابت يمنع تكرار الحساب؛ لا تختَر اسم الشخص بدل المعرّف.</p>'+
+    '<div class="toolbar">'+Object.entries(roles).map(([r,label])=>'<div class="field"><label>'+esc(label)+'</label><select data-format-role="'+r+'" data-format-index="'+index+'" '+(importBusy?'disabled':'')+'><option value="">غير موجود</option>'+item.parsed.headers.map(h=>'<option value="'+esc(h)+'" '+(item.draft.mapping[r]===h?'selected':'')+'>'+esc(h)+'</option>').join('')+'</select></div>').join('')+
+    '<div class="field"><label>صيغة المبالغ</label><select data-number-style="'+index+'" '+(importBusy?'disabled':'')+'>'+[['plain','1234.50 بدون فواصل آلاف'],['dot','1,234.50 نقطة عشرية'],['comma','1.234,50 فاصلة عشرية']].map(([v,l])=>'<option value="'+v+'" '+(item.draft.number_style===v?'selected':'')+'>'+l+'</option>').join('')+'</select></div></div>'+
+    '<label class="muted"><input type="checkbox" style="width:auto" data-phone-suffix="'+index+'" '+(item.draft.phone_suffix?'checked':'')+' '+(importBusy?'disabled':'')+'> الهاتف موجود في نهاية اسم المستخدم</label>'+
+    '<details><summary>عينة من الملف</summary><div style="overflow:auto;max-height:220px"><table><thead><tr>'+item.parsed.headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+sample.map(row=>'<tr>'+item.parsed.headers.map((h,j)=>'<td>'+esc(String(row[j]??'').slice(0,100))+'</td>').join('')+'</tr>').join('')+'</tbody></table></div></details>'+
+    '<button type="button" class="btn" style="margin-top:8px" data-save-format="'+index+'" '+(importBusy?'disabled':'')+'>'+(shared.length?'تأكيد توافق الصيغة مع هذه المنصة وحفظ':'تأكيد تعريف الأعمدة وحفظ الصيغة')+'</button></details>';
+}
+async function saveItemFormat(index){
+  const item=importQueue[index];if(!item||importBusy)return;
+  const list=$('importPreviewList');
+  const mapping={};
+  list.querySelectorAll('[data-format-index="'+index+'"]').forEach(s=>mapping[s.dataset.formatRole]=s.value);
+  const draft={mapping,number_style:list.querySelector('[data-number-style="'+index+'"]').value,phone_suffix:list.querySelector('[data-phone-suffix="'+index+'"]').checked};
+  item.draft=draft;
+  try{
+    const parsed=mapAccounts(item.parsed.matrix,item.parsed.headerIndex,draft);
+    const shared=platformSignatures.some(s=>s.header_signature===item.parsed.headerSignature&&s.platform_key!==item.platform);
+    if(shared&&!await askConfirm('الصيغة موجودة لمنصة أخرى','هل راجعت مصدر الملف وتعريف أعمدته وتؤكد توافق هذه الصيغة مع «'+platformLabel(item.platform)+'»؟ لن تتغير علاقة المنصة الأخرى.','تأكيد التوافق'))return;
+    importBusy=true;renderImportQueue();
+    const {data,error}=await adminRpc('admin_customer_save_import_format','workspace_admin_save_import_format',{p_platform_key:item.platform,p_headers:item.parsed.headers,p_mapping:mapping,p_number_style:draft.number_style,p_phone_suffix:draft.phone_suffix,p_allow_shared:shared});
+    if(error)throw error;
+    const saved={...draft,headers:item.parsed.headers,format_id:data.id,version:data.version,platform_key:item.platform,header_signature:item.parsed.headerSignature};
+    platformSignatures=platformSignatures.filter(s=>!(s.platform_key===item.platform&&s.header_signature===item.parsed.headerSignature));
+    platformSignatures.push(saved);item.format=saved;item.parsed={...item.parsed,...parsed};
+    await evaluateImportItem(item);
+  }catch(error){item.status='review';item.error='تعذر اعتماد الصيغة: '+safeError(error);}
+  finally{importBusy=false;renderImportQueue();}
+}
+async function bindItemFormat(item,batchId){
+  if(!item.format?.format_id)throw new Error('راجع تعريف الأعمدة واحفظ الصيغة أولًا.');
+  const {error}=await adminRpc('admin_customer_bind_import_format','workspace_admin_bind_import_format',{p_batch_id:batchId,p_format_id:item.format.format_id});
+  if(error)throw error;
 }
 async function parseImportFile(file){
   const ext=(file.name.split('.').pop()||'').toLowerCase();
@@ -983,7 +951,7 @@ async function parseImportFile(file){
   const buffer=await file.arrayBuffer();
   const wb=window.XLSX.read(buffer,{type:'array'});
   const ws=wb.Sheets[wb.SheetNames[0]];
-  const matrix=window.XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  const matrix=window.XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
   return rowsToAccounts(matrix);
 }
 function platformHints(accounts){
@@ -1093,13 +1061,13 @@ function renderImportQueue(){
     const diff=item.diff||{};
     const finance=item.parsed?.financialFields||{};
     const finLabels=[finance.debt?'دين':'',finance.balance?'رصيد':'',finance.profit?'ربح':''].filter(Boolean).join(' + ')||'لا توجد أعمدة مالية معروفة';
-    const locked=Boolean(importBusy||item.detectedPlatform||item.serverPreview?.existing_platform_key||item.status==='duplicate_batch');
+    const locked=Boolean(importBusy||item.serverPreview?.existing_platform_key||item.status==='duplicate_batch'||item.status==='done');
     const hint=item.hintPlatform?' · ترشيح فقط: '+item.hintPlatform.label:'';
     const existing=item.serverPreview?.existing_platform_key?' · مسجل سابقًا: '+platformLabel(item.serverPreview.existing_platform_key):'';
     return '<article class="import-file '+importStatusClass(item)+'">'+
       '<div class="import-file-top"><div><div class="import-file-name">'+esc(item.file?.name||'ملف')+'</div><div class="import-file-meta">SHA-256: '+esc((item.hash||'').slice(0,12)||'—')+'…'+existing+hint+'</div></div><span class="badge '+(item.status==='ready'||item.status==='resume'||item.status==='done'?'linked':item.status==='duplicate'?'pending_review':(['wrong_platform','shape_conflict','error'].includes(item.status)?'conflict':'platform'))+'">'+esc(importStatusText(item))+'</span></div>'+
       '<div class="import-file-platform"><div class="field"><label>المنصة</label><select data-import-platform-index="'+index+'" '+(locked?'disabled':'')+'>'+platformOptions(item.platform||'')+'</select></div>'+
-      (item.detectedPlatform?'<div class="badge linked">كشف من البنية: '+esc(platformLabel(item.detectedPlatform))+'</div>':'<div class="badge pending_review">غير مؤكدة من البنية</div>')+'</div>'+
+      '<div class="badge platform">المنصة المختارة: '+esc(platformLabel(item.platform))+'</div>'+'</div>'+
       '<div class="import-file-grid">'+
         '<div class="mini"><small>الحسابات في الملف</small><b>'+Number(item.parsed?.accounts?.length||0)+'</b></div>'+
         '<div class="mini"><small>موجودة بنفس username</small><b>'+Number(diff.matched||0)+'</b></div>'+
@@ -1111,25 +1079,29 @@ function renderImportQueue(){
       '<div class="meta" style="margin-top:7px">الأعمدة المالية: '+esc(finLabels)+' · تغير دين '+Number(diff.debtChanged||0)+' · رصيد '+Number(diff.balanceChanged||0)+' · ربح '+Number(diff.profitChanged||0)+(diff.stillMissing?' · ما زال غائبًا '+Number(diff.stillMissing):'')+'</div>'+
       (item.status==='duplicate'?'<div class="meta" style="margin-top:7px">هذا الملف مكتمل سابقًا؛ لن يعاد تطبيقه ولن تتضاعف القيم.</div>':'')+
       (item.status==='resume'?'<div class="meta" style="margin-top:7px">هذا الملف بدأ سابقًا ولم يكتمل؛ سيُستأنف بأمان ثم تُغلق لقطة المنصة.</div>':'')+
-      (item.error?'<div class="meta" style="color:#b91c1c;margin-top:7px">'+esc(item.error)+'</div>':'')+
+      formatEditor(item,index)+(item.error?'<div class="meta" style="color:#b91c1c;margin-top:7px">'+esc(item.error)+'</div>':'')+
       '</article>';
   }).join('');
   list.querySelectorAll('[data-import-platform-index]').forEach(select=>select.onchange=async()=>{
     const item=importQueue[Number(select.dataset.importPlatformIndex)];if(!item)return;
     item.platform=select.value||'';
-    await evaluateImportItem(item);
+    try{applyItemFormat(item);await evaluateImportItem(item);}catch(error){item.status='review';item.error=safeError(error);}
     renderImportQueue();
   });
+  list.querySelectorAll('[data-format-index]').forEach(s=>s.onchange=()=>{importQueue[Number(s.dataset.formatIndex)].draft.mapping[s.dataset.formatRole]=s.value;});
+  list.querySelectorAll('[data-number-style]').forEach(s=>s.onchange=()=>{importQueue[Number(s.dataset.numberStyle)].draft.number_style=s.value;});
+  list.querySelectorAll('[data-phone-suffix]').forEach(s=>s.onchange=()=>{importQueue[Number(s.dataset.phoneSuffix)].draft.phone_suffix=s.checked;});
+  list.querySelectorAll('[data-header-row]').forEach(s=>s.onchange=async()=>{
+    const item=importQueue[Number(s.dataset.headerRow)];
+    try{item.parsed=rowsToAccounts(item.parsed.matrix,Number(s.value));applyItemFormat(item);await evaluateImportItem(item);}
+    catch(error){item.status='error';item.error=safeError(error);}renderImportQueue();
+  });
+  list.querySelectorAll('[data-save-format]').forEach(b=>b.onclick=()=>saveItemFormat(Number(b.dataset.saveFormat)));
   renderConnectivity();
 }
 async function evaluateImportItem(item){
   item.error='';
-  if(item.detectedPlatform&&item.platform&&item.platform!==item.detectedPlatform){
-    item.status='shape_conflict';
-    item.error='بنية الملف تخص «'+platformLabel(item.detectedPlatform)+'» ولا يمكن نسبه إلى «'+platformLabel(item.platform)+'».';
-    return;
-  }
-  const server=await previewSourceImport(item.platform||item.detectedPlatform||null,item.hash);
+  const server=await previewSourceImport(item.platform||null,item.hash);
   item.serverPreview=server||{};
   if((server?.status==='duplicate_known'||server?.status==='duplicate_incomplete')&&!item.platform){
     item.platform=server.existing_platform_key||'';
@@ -1142,23 +1114,17 @@ async function evaluateImportItem(item){
   }else if(server?.status==='same_platform_incomplete'){
     item.status='resume';
   }else{
-    if(!item.platform&&item.detectedPlatform)item.platform=item.detectedPlatform;
-    item.status=item.platform?'ready':'review';
+    item.status=item.platform&&item.format?'ready':'review';
   }
   item.diff=estimateImportChanges(item);
-  const platformUnlinked=sources.filter(s=>s.platform_key===item.platform&&s.link_status!=='linked').length;
-  if(importMode==='build'&&item.status==='duplicate'&&Number(item.diff?.newCount||0)>0){
-    item.reuseBatchId=Number(item.serverPreview?.batch_id||0)||null;
-    item.status='ready';
-  }else if(importMode==='build'&&item.status==='duplicate'&&parties.length===0&&platformUnlinked>0){
-    item.bootstrapExisting=true;
-    item.status='ready';
-  }
+
 }
 async function previewImports(){
   if(!navigator.onLine)return msg('معاينة الاستيراد تحتاج اتصالًا.','warn');
   const files=[...($('sourceFile').files||[])];
   if(!files.length)return msg('اختر ملفًا واحدًا أو أكثر أولًا.','error');
+  const chosen=$('importPlatform').value;
+  if(!chosen)return msg('اختر المنصة أولًا، ثم ارفع ملفها.','warn');
   importQueue=[];
   importBusy=true;
   $('importBtn').disabled=true;
@@ -1172,11 +1138,8 @@ async function previewImports(){
     try{
       item.parsed=await parseImportFile(file);
       item.hash=await sha256File(file);
-      item.detectedPlatform=item.parsed.detectedPlatform||'';
-      item.platform=item.detectedPlatform||'';
-      if(!item.detectedPlatform&&fallback){
-        item.hintPlatform={key:fallback,label:platformLabel(fallback),score:null,manual_hint:true};
-      }
+      item.platform=fallback;
+      applyItemFormat(item);
       const prior=importQueue.find(x=>x!==item&&x.hash&&x.hash===item.hash);
       if(prior){
         item.platform=prior.platform||item.platform;
@@ -1184,10 +1147,6 @@ async function previewImports(){
         item.serverPreview={existing_platform_key:prior.platform||null};
         item.diff=estimateImportChanges(item);
       }else{
-        if(!item.detectedPlatform&&!item.platform&&!item.hintPlatform){
-          const hints=platformHints(item.parsed.accounts);
-          item.hintPlatform=hints[0]||null;
-        }
         await evaluateImportItem(item);
       }
     }catch(error){
@@ -1203,7 +1162,7 @@ async function processImportItem(item){
   if(item.status==='duplicate'){item.status='skipped';return {skipped:true,reason:'duplicate'}}
   if(item.status!=='ready'&&item.status!=='resume')return {skipped:true,reason:'not_ready'};
   if(!item.platform)throw new Error('PLATFORM_REQUIRED');
-  if(item.detectedPlatform&&item.detectedPlatform!==item.platform)throw new Error('FILE_PLATFORM_MISMATCH');
+  if(!item.format)throw new Error('FORMAT_REVIEW_REQUIRED');
   item.status='processing';renderImportQueue();
 
   const registration=await registerSourceImport(item.platform,item.file,item.hash);
@@ -1214,6 +1173,7 @@ async function processImportItem(item){
   if(!['new','resume_incomplete'].includes(registration?.status||''))throw new Error('IMPORT_REGISTRATION_FAILED');
   const batchId=Number(registration.batch_id||0);
   if(!batchId)throw new Error('IMPORT_BATCH_REQUIRED');
+  await bindItemFormat(item,batchId);
 
   const accounts=item.parsed.accounts||[];
   if(!accounts.length)throw new Error('لم أجد حسابات صالحة في الملف.');
@@ -1281,6 +1241,7 @@ async function approveBuildImports(){
         }
         if(!batchId&&item.bootstrapExisting)batchId=Number(item.serverPreview?.batch_id||0);
         if(!batchId)throw new Error('IMPORT_BATCH_REQUIRED');
+        await bindItemFormat(item,batchId);
         const onlyNew=(item.parsed.accounts||[]).filter(a=>!previewMatch(item.platform,a).source);
         for(let i=0;i<onlyNew.length;i+=150){
           const chunk=onlyNew.slice(i,i+150);
