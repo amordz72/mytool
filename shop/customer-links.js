@@ -1116,6 +1116,7 @@ async function evaluateImportItem(item){
   }else{
     item.status=item.platform&&item.format?'ready':'review';
   }
+  if(item.status==='resume'&&!item.format){item.status='review';item.error='الملف بدأ سابقًا. راجع تعريف الأعمدة واحفظه قبل الاستئناف.';}
   item.diff=estimateImportChanges(item);
 
 }
