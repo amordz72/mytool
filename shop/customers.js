@@ -156,7 +156,7 @@ function renderMetrics(){
 function haystack(p){
   const a=accountsFor(p.id),c=contacts(p);
   return normalize([
-    p.mytool_username,p.display_name,...(p.aliases||[]),...c.phones,...c.emails,
+    p.mt_number,p.mt_uid,p.mytool_username,p.display_name,...(p.aliases||[]),...c.phones,...c.emails,
     ...a.flatMap(s=>[s.username,s.display_name,s.first_name,s.last_name,s.phone,s.email,s.external_account_id,platformLabel(s.platform_key)])
   ].filter(Boolean).join(' '));
 }
@@ -286,7 +286,7 @@ function scheduleUsernameCheck(){
 async function saveIdentity(){
   const p=partyBy(selectedPartyId);if(!p)return;
   const name=$('editName').value.trim(),username=$('editUsername').value.trim().replace(/\s+/g,' '),phone=$('editPhone').value.trim(),email=$('editEmail').value.trim();
-  if(name.length<2)return msg('الاسم الرئيسي قصير جدًا.','error');
+  if(name.length<2)return msg('الاسم الظاهر قصير جدًا.','error');
   if(username&&(!/\p{L}/u.test(username)||username.length<2||username.length>60))return msg('Username يجب أن يحتوي حرفًا واحدًا على الأقل، ويمكن أن يحتوي حروفًا وأرقامًا ومسافات.','error');
   if(username&&!(await checkUsernameAvailability())){ $('editUsername').focus(); return; }
   $('saveIdentity').disabled=true;
