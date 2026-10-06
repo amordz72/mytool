@@ -1,5 +1,16 @@
 # MyTool
 
+## دور هذا المستودع
+
+هذا المستودع هو **Public Release / Deploy فقط** لـMyTool، وليس Source التطوير.
+
+- Source / Development: `amordz72/mytool-dev`
+- Canonical Nuxt source: `amordz72/mytool-dev/app-nuxt/`
+- Engineering decisions: `amordz72/developer`
+
+لا تبدأ تطوير Feature جديدة هنا مباشرة؛ التغييرات تأتي من المصدر الخاص عبر مسار النشر المعتمد.
+
+
 ## تشغيل MyTool مباشرة
 
 **الرابط الرئيسي:** https://amordz72.github.io/mytool/
