@@ -12,6 +12,16 @@ const OWNER_BRIDGE_TOKEN = 'mytool_today_route_owner_bridge_token_v1';
 const OWNER_BRIDGE_EXPIRES = 'mytool_today_route_owner_bridge_expires_v1';
 const $ = id => document.getElementById(id);
 const money = value => new Intl.NumberFormat('ar-DZ', { maximumFractionDigits: 2 }).format(Number(value || 0)) + ' دج';
+const cleanPhone = value => {
+  let phone = String(value ?? '').replace(/[٠-٩۰-۹]/g, digit => String(digit.charCodeAt(0) - (digit <= '٩' ? 0x660 : 0x6F0))).replace(/[^0-9+]/g, '');
+  if (/^(?:\+?213|00213)[0-9]{9}$/.test(phone)) phone = '0' + phone.slice(-9);
+  else if (/^[5-7][0-9]{8}$/.test(phone)) phone = '0' + phone;
+  return phone;
+};
+const phoneLink = value => {
+  const phone = cleanPhone(value);
+  return phone ? `<a class="phone-link" href="tel:${esc(phone)}">${esc(phone)}</a>` : '';
+};
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
 let token = '';
@@ -356,6 +366,7 @@ function selectRouteCustomer(id){
   if(!customer)return;
   $('draftPartyId').value=String(customer.id);
   $('draftShopName').value=customer.display_name;
+  $('draftPhone').value=cleanPhone(customer.primary_phone || '');
   $('draftUnresolved').checked=false;
   $('draftCustomerMatches').hidden=true;
   $('draftCustomerMatches').innerHTML='';
@@ -412,6 +423,8 @@ function adminVisitEdit(row) {
   return `<div class="admin-visit-edit" data-admin-edit-panel="${row.id}" hidden>
     ${nameField}
     <div class="field"><label>المتوقع اليوم</label><input data-admin-expected="${row.id}" type="number" min="0" step="0.01" value="${row.expected_amount == null ? '' : Number(row.expected_amount)}" placeholder="غير محدد"></div>
+    <div class="field"><label>الهاتف</label><input class="phone-input" data-admin-phone="${row.id}" type="tel" inputmode="tel" value="${esc(row.contact_phone || '')}"></div>
+    <div class="field"><label>حالة / ملاحظة</label><input data-admin-note="${row.id}" type="text" list="routeStatusSuggestions" value="${esc(row.notes || '')}" placeholder="اختياري"></div>
     <button class="btn secondary" data-admin-save="${row.id}" type="button">حفظ التعديل</button>
   </div>`;
 }
@@ -446,6 +459,7 @@ function renderDoneSection(doneRows) {
     const unlinked = !row.party_id && Number(row.received_amount || 0) > 0
       ? '<div class="warnbox">الاستلام محفوظ باسم المحل وغير مربوط بحساب بعد.</div>'
       : '';
+    const contact = row.contact_phone ? `<div class="meta">الهاتف: ${phoneLink(row.contact_phone)}</div>` : '';
     const receivedByAdmin = row.completed_source === 'admin_receipt';
     const reopen = !receivedByAdmin && (me.account_role === 'worker' || me.account_role === 'workspace_admin')
       ? `<div class="actions"><button class="btn secondary" data-reopen="${row.id}" type="button">إرجاع للزيارات</button></div>`
@@ -454,7 +468,7 @@ function renderDoneSection(doneRows) {
     const adminExtra = me.account_role === 'workspace_admin'
       ? `<div class="actions"><button class="btn secondary" data-admin-extra="${row.id}" type="button">استلام إضافي</button></div>`
       : '';
-    return `<div class="done-card" data-done-id="${row.id}"><div class="head"><div><div class="name">${esc(row.shop_name)}</div><div class="meta"><span class="done-label">${completionLabel}</span> ${pendingBadge(row)}</div></div></div>${moneyBlock(row)}${note}${unlinked}${reopen}${adminExtra}</div>`;
+    return `<div class="done-card" data-done-id="${row.id}"><div class="head"><div><div class="name">${esc(row.shop_name)}</div><div class="meta"><span class="done-label">${completionLabel}</span> ${pendingBadge(row)}</div>${contact}</div></div>${moneyBlock(row)}${note}${unlinked}${reopen}${adminExtra}</div>`;
   }).join('');
   root.querySelectorAll('[data-reopen]').forEach(button => {
     button.onclick = () => reopenVisit(Number(button.dataset.reopen));
@@ -497,7 +511,8 @@ function render() {
           <button class="icon-btn delete" data-del type="button" aria-label="حذف" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg></button>
         </div>`
       : '';
-    return `<section class="item" data-id="${row.id}"><div class="head"><div><div class="name">${index + 1}. ${esc(row.shop_name)}</div><div class="meta">${me.account_role === 'workspace_admin' && row.assigned_name ? esc(row.assigned_name) + ' · ' : ''}<span class="${cls(row.status)}">${label(row.status)}</span>${row.party_name ? ' · مربوط: ' + esc(row.party_name) : ''} ${pendingBadge(row)}</div></div></div>${row.notes ? `<div class="note">${esc(row.notes)}</div>` : ''}${moneyBlock(row)}${adminVisitEdit(row)}${workerLinkNotice(row)}<div class="actions">${workerActions}${adminActions}</div></section>`;
+    const contact = row.contact_phone ? `<div class="meta">الهاتف: ${phoneLink(row.contact_phone)}</div>` : '';
+    return `<section class="item" data-id="${row.id}"><div class="head"><div><div class="name">${index + 1}. ${esc(row.shop_name)}</div><div class="meta">${me.account_role === 'workspace_admin' && row.assigned_name ? esc(row.assigned_name) + ' · ' : ''}<span class="${cls(row.status)}">${label(row.status)}</span>${row.party_name ? ' · مربوط: ' + esc(row.party_name) : ''} ${pendingBadge(row)}</div>${contact}</div></div>${row.notes ? `<div class="note">${esc(row.notes)}</div>` : ''}${moneyBlock(row)}${adminVisitEdit(row)}${workerLinkNotice(row)}<div class="actions">${workerActions}${adminActions}</div></section>`;
   }).join('');
 
   dedupeRenderedCards(root);
@@ -659,19 +674,25 @@ async function saveAdminVisit(id) {
   if (!navigator.onLine) return stat('تعديل الزيارة يحتاج اتصالًا.', 'err');
   const nameInput = document.querySelector('[data-admin-name="' + id + '"]');
   const expectedInput = document.querySelector('[data-admin-expected="' + id + '"]');
+  const phoneInput = document.querySelector('[data-admin-phone="' + id + '"]');
+  const noteInput = document.querySelector('[data-admin-note="' + id + '"]');
   const name = nameInput?.value.trim() || '';
   const rawExpected = expectedInput?.value.trim() || '';
   const expected = rawExpected === '' ? null : Number(rawExpected);
+  const contactPhone = cleanPhone(phoneInput?.value || '') || null;
+  const notes = noteInput?.value.trim() || null;
 
   if (!name) return stat('اكتب اسم المحل.', 'err');
   if (expected !== null && (!Number.isFinite(expected) || expected < 0)) return stat('راجع المبلغ المتوقع.', 'err');
 
   stat('جاري حفظ تعديل الزيارة…');
-  const response = await s.rpc('workspace_admin_update_visit_task', {
+  const response = await s.rpc('workspace_admin_update_visit_task_v2', {
     p_session_token: token,
     p_task_id: id,
     p_shop_name: name,
-    p_expected_amount: expected
+    p_expected_amount: expected,
+    p_contact_phone: contactPhone,
+    p_notes: notes
   });
   if (response.error) return stat('تعذر حفظ التعديل: ' + safeError(response.error), 'err');
   await load();
@@ -902,7 +923,9 @@ function renderRouteDraft() {
     const identity = item.unresolved
       ? '<span class="identity-tag unresolved">غير مربوط مؤقتًا</span>'
       : '<span class="identity-tag">عميل موحد</span>';
-    return `<div class="route-draft-row"><span class="draft-order">#${index + 1}</span><div><div class="draft-name">${esc(item.name)} ${identity}</div><div class="draft-amount">${amount}</div></div><div class="route-draft-actions"><button class="icon-btn edit" type="button" data-draft-edit="${index}" aria-label="تعديل" title="تعديل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn delete" type="button" data-draft-remove="${index}" aria-label="حذف" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg></button></div></div>`;
+    const phone = item.phone ? ' · ' + esc(item.phone) : '';
+    const note = item.notes ? `<div class="draft-amount">${esc(item.notes)}</div>` : '';
+    return `<div class="route-draft-row"><span class="draft-order">#${index + 1}</span><div><div class="draft-name">${esc(item.name)} ${identity}</div><div class="draft-amount">${amount}${phone}</div>${note}</div><div class="route-draft-actions"><button class="icon-btn edit" type="button" data-draft-edit="${index}" aria-label="تعديل" title="تعديل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn delete" type="button" data-draft-remove="${index}" aria-label="حذف" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg></button></div></div>`;
   }).join('');
   $('confirmRouteBtn').hidden = routeDraft.length === 0;
   root.querySelectorAll('[data-draft-edit]').forEach(button => {
@@ -915,6 +938,8 @@ function renderRouteDraft() {
       $('draftPartyId').value = item.party_id ? String(item.party_id) : '';
       $('draftUnresolved').checked = Boolean(item.unresolved);
       $('draftExpected').value = item.expected == null ? '' : String(item.expected);
+      $('draftPhone').value = item.phone || '';
+      $('draftNote').value = item.notes || '';
       $('draftAddBtn').textContent = 'حفظ التعديل';
       $('draftShopName').focus();
     };
@@ -929,6 +954,8 @@ function renderRouteDraft() {
         $('draftPartyId').value = '';
         $('draftUnresolved').checked = false;
         $('draftExpected').value = '';
+        $('draftPhone').value = '';
+        $('draftNote').value = '';
         $('draftAddBtn').textContent = 'إضافة للقائمة';
       } else if (routeDraftEditIndex != null && routeDraftEditIndex > index) {
         routeDraftEditIndex -= 1;
@@ -941,6 +968,8 @@ function renderRouteDraft() {
 function addRouteDraftItem() {
   let name = $('draftShopName').value.trim();
   const rawExpected = $('draftExpected').value.trim();
+  const phone = cleanPhone($('draftPhone').value);
+  const notes = $('draftNote').value.trim() || null;
   const unresolved = $('draftUnresolved').checked;
   const partyId = Number($('draftPartyId').value || 0) || null;
 
@@ -960,7 +989,7 @@ function addRouteDraftItem() {
     if (!Number.isFinite(expected) || expected < 0) return stat('راجع المبلغ المتوقع.', 'err');
   }
 
-  const item = { party_id: unresolved ? null : partyId, name, expected, unresolved };
+  const item = { party_id: unresolved ? null : partyId, name, expected, phone: phone || null, notes, unresolved };
   if (routeDraftEditIndex == null) {
     routeDraft.push(item);
     stat(unresolved ? 'أضيف كاستثناء مؤقت يحتاج ربطًا لاحقًا.' : 'أضيف العميل الموحد للقائمة.', unresolved ? 'warn' : 'ok');
@@ -974,6 +1003,8 @@ function addRouteDraftItem() {
   $('draftPartyId').value = '';
   $('draftUnresolved').checked = false;
   $('draftExpected').value = '';
+  $('draftPhone').value = '';
+  $('draftNote').value = '';
   $('draftCustomerMatches').hidden = true;
   $('draftCustomerMatches').innerHTML = '';
   renderRouteDraft();
@@ -1018,6 +1049,8 @@ $('confirmRouteBtn').onclick = async () => {
   const items = routeDraft.map(item => ({
     party_id: item.party_id,
     expected_amount: item.expected,
+    contact_phone: item.phone,
+    notes: item.notes,
     unresolved: Boolean(item.unresolved),
     unresolved_name: item.unresolved ? item.name : null
   }));
