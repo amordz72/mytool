@@ -1,0 +1,1 @@
+import{_ as e}from"./C4h02Kli.js";var t=()=>e().$supabase.client;export{t};
