@@ -1,0 +1,1 @@
+import{_ as e}from"./Dk3YeGpW.js";var t=()=>e().$supabase.client;export{t};
